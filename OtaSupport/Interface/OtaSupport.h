@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2022 NXP
+ * Copyright 2016-2023 NXP
  * All rights reserved.
  *
  * \file
@@ -13,13 +13,9 @@
 #ifndef _OTA_SUPPORT_H_
 #define _OTA_SUPPORT_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "fsl_adapter_flash.h"
 #include "fwk_platform.h"
 #include "fsl_component_generic_list.h"
+#include "fwk_hal_macros.h"
 
 /*!
  * @addtogroup OTA_module
@@ -50,15 +46,18 @@ extern "C" {
 
 /*!< Select gOtaErasePolicy_c for efficiency */
 #define gOtaErasePolicy_c gOtaEraseBeforeImageBlockReq_c
-#define gOtaVerifyWrite_d 1
 
-/*!< Transaction size in posted_ops_storage set to sizeof(FLASH_TransactionOpNode_t)*/
-#define gOtaTransactionSz_d (sizeof(FLASH_TransactionOpNode_t))
+#ifndef gOtaVerifyWrite_d
+#define gOtaVerifyWrite_d 1
+#endif
 
 /*!< The internal flash has a program page of 128 whereas the external flash has 256 byte pages
  * 256 is a good compromise.
  */
 #define PROGRAM_PAGE_SZ 256U
+
+/*!< Transaction size in posted_ops_storage must match sizeof(FLASH_TransactionOpNode_t)*/
+#define gOtaTransactionSz_d (20U + PROGRAM_PAGE_SZ)
 
 /************************************************************************************
 *************************************************************************************
@@ -83,7 +82,8 @@ typedef enum
     gOtaInvalidOperation_c,
     gOtaExternalFlashError_c,
     gOtaInternalFlashError_c,
-    gOtaImageTooLarge_c
+    gOtaImageTooLarge_c,
+    gOtaImageInvalid_c,
 } otaResult_t;
 
 /*! Prototype of ota_completion callback */
@@ -97,38 +97,89 @@ typedef struct
     int maxConsecutiveTransactions;
 } ota_config_t;
 
+/*
+ The state transitions described below concern the
+ The MCU bootloader writes fields in the active and candidate image trailers.
+ The combination of the trailer states allows to determine the image state and passes
+ information back and forth between the bootloader and the application to handle firmware
+ update.
+
+
+                    ----------------------------------------------------------------
+                    |                                                               |
+        /---------------------------\                                               |
+       /    Bootloader image state   \___                                           |
+       \          test               /  |         if                                |
+        \ --------------------------/   | OtaImgState_CandidateRdy                  |
+           if        |                  |                                           |
+    OtaImgState None |                  |                                           |
+     or              |      ---------------------------                             |
+    Permanent        |      |        go to             |                            |
+                     |      | OtaImgState_RunCandidate |                            |
+                     |      ----------------------------                            |
+                     |                   |                                          |
+                     |                   -----------                                |
+                     |                             |                                |
+        -------------v------------     ------------v-------------                   |
+        | OtaImgState_None       |     |    Run candidate       |                   | R
+        --------------------------     --------------------------                   | E
+                        |                               |                           | S
+                        | OTA_StartImage    ------------v-------------              | E
+                        v                   |        go to           |              | T
+             ---------------------------    | OtaImgState_Permanent  |              |
+             |  OtaImgState_Acquiring  |    --------------------------              |
+             ---------------------------               |                            |
+                        |                              ---------------------------->|
+                        | OTA_CommitImage                                           |
+                        v                                                           |
+             ---------------------------                                            |
+             | OtaImgState_CandidateRdy|                                            |
+             ---------------------------                                            |
+                        |                                                           |
+                        -------------------------------------------------------------
+*/
+
 typedef enum
 {
-    FLASH_OP_WRITE,
-    FLASH_OP_ERASE_THEN_WRITE,
-    FLASH_OP_READ,
-    FLASH_OP_ERASE_SECTOR,
-    FLASH_OP_ERASE_BLOCK,
-    FLASH_OP_ERASE_AREA,
-    FLASH_OP_ERASE_NEXT_BLOCK,
-    FLASH_OP_ERASE_NEXT_BLOCK_COMPLETE,
-    FLASH_OP_CONSUMED = 0xff
-} FLASH_op_type;
+    OtaImgState_None,      /*!< Default value when there is no upgradable image and current image was made permanent */
+    OtaImgState_Acquiring, /*!< Acquisition of new firmware image is ongoing */
+    OtaImgState_CandidateRdy, /*!< Acquisition complete. It denotes that a candidate image is fully loaded.
+                               * The application has to switch to this state when finishing the update operation.
+                               * This state is transient and the bootloader is expected to change it to
+                               * OtaImgState_RunCandidate if the image verification criteria pass.
+                               */
+    OtaImgState_RunCandidate, /*!< The bootloader needs to switch to this state before allowing the the test image
+                               * to run. From this state, the application may decide to revert from the candidate image
+                               * to the original one, or make it permanent.
+                               */
+    OtaImgState_Permanent,    /*!< The application needs to switch to this state when the self-test is okay.
+                               * This state can only exist if the OTA system provides a revert/confirmation mechanism
+                               * such as that of MCUBOOT. When conplete, the image state become OtaImgState_None again
+                               * (allowing a    new OTA).
+                               */
+    OtaImgState_Fail,
+    OtaImgState_Max,
+} OtaImgState_t;
 
-typedef struct
-{
-    FLASH_op_type op_type;
-    uint32_t      flash_addr;
-    int32_t       sz;
-    uint8_t       buf[PROGRAM_PAGE_SZ];
-} FLASH_TransactionOp_t;
-
-typedef struct
-{
-    list_element_t        list_node;
-    FLASH_TransactionOp_t flash_transac;
-} FLASH_TransactionOpNode_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /************************************************************************************
 *************************************************************************************
 * Public functions
 *************************************************************************************
 ************************************************************************************/
+/*! *********************************************************************************
+ * \brief  Discover state of running image.
+ *
+ * \return
+ *  - gOtaSuccess_c if procedure Ok. gOtaError_c otherwise
+ *
+ * Note: Applications running in conjunction with MCUBOOT perform this as part of Self_test
+ *
+ ********************************************************************************** */
+otaResult_t OTA_Initialize(void);
 
 /*! *********************************************************************************
  * \brief  Starts the process of writing a new image to the selected OTA storage.
@@ -202,6 +253,14 @@ void OTA_CancelImage(void);
 void OTA_SetNewImageFlag(void);
 
 /*! *********************************************************************************
+ * \brief  Set the boot flags, to trigger the Bootloader at the next CPU reset.
+ *
+ * \param[in] offset specify an offset to determine image address
+ *
+ ********************************************************************************** */
+void OTA_SetNewImageFlagWithOffset(uint32_t offset);
+
+/*! *********************************************************************************
  * \brief  Read from the image storage (external memory or internal flash)
  *
  * \param[in] pData    pointer to the data chunk
@@ -249,6 +308,7 @@ otaResult_t OTA_EraseStorageMemory(void);
 /*! *********************************************************************************
  * \brief  Selects Internal Storage for OTA
  *
+ *  Offset and size of the partition must be set via PLATFORM_OtaGetOtaPartitionConfig.
  * \return  error code.
  *
  ********************************************************************************** */
@@ -257,12 +317,12 @@ otaResult_t OTA_SelectInternalStoragePartition(void);
 /*! *********************************************************************************
  * \brief  Selects External for OTA
  *
- * \param[in]  partition_offset offset at which OTA partition starts in external flash
- * \param[in]  partition_sz  size of claimed OTA partition in bytes
+ *  Offset and size of the partition must be set via PLATFORM_OtaGetOtaPartitionConfig.
+ *
  * \return  error code.
  *
  ********************************************************************************** */
-otaResult_t OTA_SelectExternalStoragePartition(uint32_t partition_offset, uint32_t partition_sz);
+otaResult_t OTA_SelectExternalStoragePartition(void);
 
 /*! *********************************************************************************
  * \brief  Attempt to resume OTA from some polling task (Idle Task preferably)
@@ -273,19 +333,24 @@ otaResult_t OTA_SelectExternalStoragePartition(uint32_t partition_offset, uint32
 int OTA_TransactionResume(void);
 
 /*! *********************************************************************************
-* \brief  Start OTA service Attempt to resume OTA from some polling task (Idle Task preferably)
-
-* \param[in] posted_ops_storage    pointer to the buffer used for transaction storage.
-*                                  Ideally application allocates a dynamic buffer to allow
-                                   allocation of transactions. Between 4 and 8 transaction
-                                   buffers are required to prevent stalling.
-                                   Note : Transaction size should be set to
-                                   gOtaTransactionSz_d (sizeof(FLASH_TransactionOpNode_t)).
-    @warning posted_ops_storage shall be 4 bytes aligned
-* \param[in] posted_ops_sz         size in bytes of the transaction buffer.
-* \return  error code.
-*
-********************************************************************************** */
+ * \brief  Start OTA service - Discover state of running image.
+ *
+ * \param[in] posted_ops_storage   pointer to the buffer used for transaction storage.
+ *            Ideally application allocates a dynamic buffer to allow
+ *            allocation of transactions. Between 4 and 8 transaction
+ *            buffers are required to prevent stalling.
+ *    @warning posted_ops_storage shall be 4 bytes aligned
+ * \param[in] posted_ops_sz         size in bytes of the transaction buffer.
+ *
+ * If posted_ops_storage is NULL and posted_ops_sz is 0, the direct operation mode is opted
+ * (no deferred flash transactions)
+ *
+ * \return
+ *  - gOtaSuccess_c if procedure Ok. gOtaError_c otherwise
+ *
+ *  Note: Transaction size should be set to gOtaTransactionSz_d (sizeof(FLASH_TransactionOpNode_t)).
+ *
+ ********************************************************************************** */
 otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz);
 
 /*! *********************************************************************************
@@ -339,6 +404,28 @@ uint32_t OTA_GetSelectedFlashAvailableSpace(void);
  *
  ********************************************************************************** */
 bool OTA_IsTransactionPending(void);
+
+/*! *********************************************************************************
+ * \brief  Determine Image state in order to determine whether it requires to be made
+ *         permanent or reverted. Only works in conjunction MCUBOOT or devices having a
+ *         hardware remap capability.
+ *
+ * \return  gOtaSuccess_c if operation correctly executed. Denotes error in all other cases.
+ *          OtaImgState_None is image is permanent
+ *          OtaImgState_Permanent is normally only transient in MCUBOOT
+ *
+ ********************************************************************************** */
+OtaImgState_t OTA_GetImgState(void);
+
+/*! *********************************************************************************
+ * \brief  After acquiring an firmware update image, update image image state to OtaImgState_CandidateRdy
+ *          before reset and handing it to MCUBOOT to apply the image.
+ * \param [in] new_state  state to which we intend to go to.
+ *
+ * \return  gOtaSuccess_c if successful, all other statuses denote errors.
+ *
+ ********************************************************************************** */
+otaResult_t OTA_UpdateImgState(OtaImgState_t new_state);
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,7 @@
 /* -------------------------------------------------------------------------- */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "fwk_platform_hdlc.h"
 #include "fsl_component_serial_manager.h"
@@ -129,7 +130,7 @@ int PLATFORM_InitHdlcInterface(platform_hdlc_rx_callback_t callback, void *param
             ret = -1;
             break;
         }
-    } while (0);
+    } while (false);
 
     if (ret < 0)
     {
@@ -203,7 +204,7 @@ int PLATFORM_SendHdlcMessage(uint8_t *msg, uint32_t len)
             ret = -4;
             break;
         }
-    } while (0);
+    } while (false);
 
     if (ret != 0)
     {
@@ -255,7 +256,7 @@ int PLATFORM_InitHdlcUart(void)
             break;
         }
         hdlcUartInitialized = true;
-    } while (0);
+    } while (false);
     OSA_InterruptEnable();
     assert(status == kStatus_SerialManager_Success);
 
@@ -289,7 +290,7 @@ static int PLATFORM_TerminateHdlcUart(void)
             break;
         }
         hdlcUartInitialized = false;
-    } while (0);
+    } while (false);
 
     return ret;
 }

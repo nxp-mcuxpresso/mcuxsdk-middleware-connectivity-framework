@@ -389,7 +389,7 @@ void FLib_MemSet(void *pData, uint8_t value, uint32_t cBytes)
 /*! *********************************************************************************
  * \brief  This function sets all words in a specified buffer to a set value.
  *
- * \param[in,out]  pDst  Address of the buffer to set.
+ * \param[in,out]  pData  Address of the buffer to set.
  *
  * \param[in]  value  Set value.
  *
@@ -599,14 +599,14 @@ void FLib_ReverseByteOrderInPlace(void *buf, uint32_t cBytes)
     else
     {
         uint8_t  tmpU8;
-        uint8_t *st  = buf;
-        uint8_t *end = &st[cBytes - 1u];
-        i            = cBytes / 2u;
+        uint8_t *st    = buf;
+        uint8_t *l_end = &st[cBytes - 1u];
+        i              = cBytes / 2u;
         while (i > 0u)
         {
-            tmpU8  = *end;
-            *end-- = *st;
-            *st++  = tmpU8;
+            tmpU8    = *l_end;
+            *l_end-- = *st;
+            *st++    = tmpU8;
             i--;
         }
     }

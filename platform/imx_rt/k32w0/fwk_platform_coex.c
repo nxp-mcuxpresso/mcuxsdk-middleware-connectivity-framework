@@ -9,6 +9,8 @@
 /* -------------------------------------------------------------------------- */
 
 #include <stdint.h>
+#include <stdbool.h>
+
 #include "fsl_os_abstraction.h"
 #include "fwk_otw.h"
 
@@ -67,13 +69,12 @@ int PLATFORM_InitControllers(uint8_t controllersMask)
         }
         isOtControllerUp = true;
 
-    } while (0);
+    } while (false);
 
     assert(ret == 0);
 
     return ret;
 }
-
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */

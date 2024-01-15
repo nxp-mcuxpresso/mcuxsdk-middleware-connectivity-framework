@@ -1,0 +1,5146 @@
+---
+middleware.wireless.framework_sec_lib:
+  section-type: component
+  meta-name: middleware.wireless.framework.sec_lib
+  contents:
+    repo_base_path: middleware/wireless/framework
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+    files:
+    - source: middleware/wireless/framework/SecLib/SecLib.h
+      repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/CryptoLibSW.h
+      repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/AesManager.h
+      repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib_ecp256.h
+      repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib.c
+      repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+      type: src
+    - source: middleware/wireless/framework/SecLib/lib_crypto_m7.a
+      toolchains: armgcc mcux
+      attribute: extra-libraries
+      repo_relative_path: SecLib
+      project_relative_path: SecLib
+      package_relative_path: SecLib
+      type: lib
+    - source: middleware/wireless/framework/middleware_wireless_framework_sec_lib.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless/framework
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Sec_lib
+    user_visible: never
+    description: Middleware wireless framework_sec_lib
+    display_name: wireless framework Sec_lib
+    taxonomy:
+      csub: framework_sec_lib
+      cclass: wireless
+      cgroup: framework_sec_lib
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_sec_lib
+middleware.wireless.framework_platform_common.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_common
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    files:
+    - source: middleware/wireless/framework/platform/include/fwk_platform_hdlc.h
+      project_relative_path: Platform/configs
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_coex.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_ot.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_common_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform Common
+    user_visible: never
+    description: Middleware wireless framework_platform_common
+    display_name: wireless framework Platform Common
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_common_MIMXRT595S
+middleware.wireless.framework_platform_coex.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_coex
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    files:
+    - source: middleware/wireless/framework/platform/include/fwk_platform_coex.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_coex_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform coex
+    user_visible: never
+    description: Middleware wireless framework_platform_coex
+    display_name: wireless framework Platform coex
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_coex_MIMXRT595S
+middleware.wireless.framework_board_lp.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_lp
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/lowpower
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT595S
+    files:
+    - source: middleware/wireless/framework/boards/MIMXRT595S/board_lp.c
+      project_relative_path: "./"
+      repo_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+      type: src
+    - source: middleware/wireless/framework/boards/MIMXRT595S/board_lp.h
+      project_relative_path: "./"
+      repo_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_board_lp_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_lp
+    user_visible: never
+    description: Middleware wireless framework_board_lp
+    display_name: wireless framework board_lp
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_lp_MIMXRT595S
+middleware.wireless.framework_board_dcdc.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_dcdc
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/dcdc
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_dcdc_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_dcdc
+    user_visible: never
+    description: Middleware wireless framework_board_dcdc
+    display_name: wireless framework board_dcdc
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_dcdc_MIMXRT595S
+middleware.wireless.framework_board_platform.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_platform
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/platform
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_platform_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_platform
+    user_visible: never
+    description: Middleware wireless framework_board_platform
+    display_name: wireless framework board_platform
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_platform_MIMXRT595S
+middleware.wireless.framework_board_comp.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_comp
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/components
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_comp_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_comp
+    user_visible: never
+    description: Middleware wireless framework_board_comp
+    display_name: wireless framework board_comp
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_comp_MIMXRT595S
+middleware.wireless.framework_board_extflash.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_extflash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/extflash
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_extflash_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_extflash
+    user_visible: never
+    description: Middleware wireless framework_board_extflash
+    display_name: wireless framework board_extflash
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_extflash_MIMXRT595S
+middleware.wireless.framework_lfs_config.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.lfs_config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S/configs
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/MIMXRT595S/configs
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_lfs_config_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        LFS_CONFIG: fwk_lfs_config.h
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework lfs_config
+    user_visible: always
+    description: Middleware wireless framework_lfs_config
+    display_name: wireless framework lfs_config
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_lfs_config_MIMXRT595S
+middleware.wireless.framework_matter_config.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.matter.config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+    - repo_relative_path: framework/Common/devices/MIMXRT595S/gcc
+      project_relative_path: framework/Common/devices/MIMXRT595S/gcc
+      package_relative_path: framework/Common/devices/MIMXRT595S/gcc
+    files:
+    - source: middleware/wireless/framework/boards/MIMXRT595S/board_lp.h
+      project_relative_path: framework/boards/MIMXRT595S
+      repo_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+      type: c_include
+    - source: middleware/wireless/framework/boards/MIMXRT595S/board_lp.c
+      project_relative_path: framework/boards/MIMXRT595S
+      repo_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_matter_config_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework matter config
+    user_visible: never
+    description: Middleware wireless framework matter config
+    display_name: wireless framework matter config
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_matter_config_MIMXRT595S
+middleware.wireless.framework_init_config.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.init.config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT595S
+      project_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+    files:
+    - source: middleware/wireless/framework/boards/MIMXRT595S/app_services_init.c
+      project_relative_path: framework/boards/MIMXRT595S
+      repo_relative_path: framework/boards/MIMXRT595S
+      package_relative_path: framework/boards/MIMXRT595S
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_init_config_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework init config
+    user_visible: never
+    description: Middleware wireless framework init config
+    display_name: wireless framework init config
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_init_config_MIMXRT595S
+middleware.wireless.framework_rpmsg_config.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.rpmsg_config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S/configs
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/MIMXRT595S/configs
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_rpmsg_config_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework rpmsg_config
+    user_visible: always
+    description: Middleware wireless framework_rpmsg_config
+    display_name: wireless framework rpmsg_config
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_rpmsg_config_MIMXRT595S
+middleware.wireless.framework_platform_rt_ot_coex:
+  section-type: component
+  meta-name: middleware.wireless.framework.framework_platform_rt_ot_coex
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/imx_rt/configs
+      project_relative_path: framework/platform/imx_rt/configs
+      package_relative_path: framework/platform/imx_rt/configs
+    files:
+    - source: middleware/wireless/framework/platform/imx_rt/fwk_platform_ot.c
+      project_relative_path: platform/imx_rt
+      repo_relative_path: framework/platform/imx_rt
+      package_relative_path: framework/platform/imx_rt
+      type: src
+    - source: middleware/wireless/framework/platform/imx_rt/fwk_platform_hdlc.c
+      project_relative_path: platform/imx_rt
+      repo_relative_path: framework/platform/imx_rt
+      package_relative_path: framework/platform/imx_rt
+      type: src
+    - source: middleware/wireless/framework/platform/imx_rt/k32w0/fwk_platform_coex.c
+      project_relative_path: platform/imx_rt/k32w0
+      repo_relative_path: framework/platform/imx_rt/k32w0
+      package_relative_path: framework/platform/imx_rt/k32w0
+      type: src
+    - source: middleware/wireless/framework/platform/imx_rt/iw612/fwk_platform_coex.c
+      project_relative_path: platform/imx_rt/iw612
+      repo_relative_path: framework/platform/imx_rt/iw612
+      package_relative_path: framework/platform/imx_rt/iw612
+      type: src
+    - source: middleware/wireless/framework/platform/imx_rt/CMakeLists.txt
+      project_relative_path: platform/imx_rt
+      repo_relative_path: framework/platform/imx_rt
+      package_relative_path: framework/platform/imx_rt
+      type: doc
+    - source: middleware/wireless/framework/platform/imx_rt/configs/fwk_lfs_config.c
+      project_relative_path: platform/imx_rt/configs
+      repo_relative_path: framework/platform/imx_rt/configs
+      package_relative_path: framework/platform/imx_rt/configs
+      type: src
+    - source: middleware/wireless/framework/platform/imx_rt/configs/fwk_lfs_config.h
+      project_relative_path: platform/imx_rt/configs
+      repo_relative_path: framework/platform/imx_rt/configs
+      package_relative_path: framework/platform/imx_rt/configs
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_rt_ot_coex.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform rt ot coex file
+    user_visible: never
+    description: Middleware wireless framework platform ot coex
+    display_name: wireless framework platform rt ot coex file
+    taxonomy:
+      csub: framework_platform_rt_ot_coex
+      cclass: wireless
+      cgroup: framework_platform_rt_ot_coex
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_rt_ot_coex
+middleware.wireless.framework_CMake.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.cmake
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    files:
+    - source: middleware/wireless/framework/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework
+      package_relative_path: framework
+      type: doc
+    - source: middleware/wireless/framework/cmake/utils.cmake
+      project_relative_path: framework/cmake
+      repo_relative_path: framework/cmake
+      package_relative_path: framework/cmake
+      type: script
+    - source: middleware/wireless/framework/cmake/toolchains/armgcc.cmake
+      project_relative_path: framework/cmake/toolchains
+      repo_relative_path: framework/cmake/toolchains
+      package_relative_path: framework/cmake/toolchains
+      type: script
+    - source: middleware/wireless/framework/cmake/toolchains/iar.cmake
+      project_relative_path: framework/cmake/toolchains
+      repo_relative_path: framework/cmake/toolchains
+      package_relative_path: framework/cmake/toolchains
+      type: script
+    - source: middleware/wireless/framework/boards/CMakeLists.txt
+      project_relative_path: framework/boards
+      repo_relative_path: framework/boards
+      package_relative_path: framework/boards
+      type: doc
+    - source: middleware/wireless/framework/FunctionLib/CMakeLists.txt
+      project_relative_path: framework/FunctionLib
+      repo_relative_path: framework/FunctionLib
+      package_relative_path: framework/FunctionLib
+      type: doc
+    - source: middleware/wireless/framework/FileSystem/CMakeLists.txt
+      project_relative_path: framework/FileSystem
+      repo_relative_path: framework/FileSystem
+      package_relative_path: framework/FileSystem
+      type: doc
+    - source: middleware/wireless/framework/LowPower/CMakeLists.txt
+      project_relative_path: framework/LowPower
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: doc
+    - source: middleware/wireless/framework/OtaSupport/CMakeLists.txt
+      project_relative_path: framework/OtaSupport
+      repo_relative_path: framework/OtaSupport
+      package_relative_path: framework/OtaSupport
+      type: doc
+    - source: middleware/wireless/framework/platform/CMakeLists.txt
+      project_relative_path: framework/platform
+      repo_relative_path: framework/platform
+      package_relative_path: framework/platform
+      type: doc
+    - source: middleware/wireless/framework/RNG/CMakeLists.txt
+      project_relative_path: framework/RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: doc
+    - source: middleware/wireless/framework/SecLib/CMakeLists.txt
+      project_relative_path: framework/SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: doc
+    - source: middleware/wireless/framework/Sensors/CMakeLists.txt
+      project_relative_path: framework/Sensors
+      repo_relative_path: framework/Sensors
+      package_relative_path: framework/Sensors
+      type: doc
+    - source: middleware/wireless/framework/third_party/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework/third_party
+      package_relative_path: framework/third_party
+      type: doc
+    - source: middleware/wireless/framework/third_party/freertos-kernel/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework/third_party/freertos-kernel
+      package_relative_path: framework/third_party/freertos-kernel
+      type: doc
+    - source: middleware/wireless/middleware_wireless_framework_CMake_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework CMake
+    user_visible: never
+    description: Middleware wireless framework_cmake
+    display_name: wireless framework CMake
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_CMake_MIMXRT595S
+middleware.wireless.framework_FSCI:
+  section-type: component
+  meta-name: middleware.wireless.framework.fsci
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FSCI/Interface
+      project_relative_path: FSCI/interface
+      package_relative_path: framework/FSCI/Interface
+    - repo_relative_path: framework/FSCI/Source
+      project_relative_path: FSCI/source
+      package_relative_path: framework/FSCI/Source
+    files:
+    - source: middleware/wireless/framework/FSCI/Interface/FsciInterface.h
+      project_relative_path: FSCI/interface
+      repo_relative_path: framework/FSCI/Interface
+      package_relative_path: framework/FSCI/Interface
+      type: c_include
+    - source: middleware/wireless/framework/FSCI/Source/FsciCommands.c
+      project_relative_path: FSCI/source
+      repo_relative_path: framework/FSCI/Source
+      package_relative_path: framework/FSCI/Source
+      type: src
+    - source: middleware/wireless/framework/FSCI/Source/FsciCommands.h
+      project_relative_path: FSCI/source
+      repo_relative_path: framework/FSCI/Source
+      package_relative_path: framework/FSCI/Source
+      type: c_include
+    - source: middleware/wireless/framework/FSCI/Source/FsciCommunication.c
+      project_relative_path: FSCI/source
+      repo_relative_path: framework/FSCI/Source
+      package_relative_path: framework/FSCI/Source
+      type: src
+    - source: middleware/wireless/framework/FSCI/Source/FsciCommunication.h
+      project_relative_path: FSCI/source
+      repo_relative_path: framework/FSCI/Source
+      package_relative_path: framework/FSCI/Source
+      type: c_include
+    - source: middleware/wireless/framework/FSCI/Source/FsciLogging.c
+      project_relative_path: FSCI/source
+      repo_relative_path: framework/FSCI/Source
+      package_relative_path: framework/FSCI/Source
+      type: src
+    - source: middleware/wireless/framework/FSCI/Source/FsciMain.c
+      project_relative_path: FSCI/source
+      repo_relative_path: framework/FSCI/Source
+      package_relative_path: framework/FSCI/Source
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_FSCI.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework FSCI
+    user_visible: never
+    description: Middleware wireless framework_fsci
+    display_name: wireless framework FSCI
+    taxonomy:
+      csub: framework_FSCI
+      cclass: wireless
+      cgroup: framework_FSCI
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_FSCI
+middleware.wireless.HWParameter:
+  section-type: component
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/HWParameter
+      project_relative_path: HWParameter
+      package_relative_path: framework/HWParameter
+    files:
+    - source: middleware/wireless/framework/HWParameter/HWParameter.h
+      project_relative_path: HWParameter
+      repo_relative_path: framework/HWParameter
+      package_relative_path: framework/HWParameter
+      type: c_include
+    - source: middleware/wireless/framework/HWParameter/HWParameter.c
+      project_relative_path: HWParameter
+      repo_relative_path: framework/HWParameter
+      package_relative_path: framework/HWParameter
+      type: src
+    - source: middleware/wireless/middleware_wireless_HWParameter.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless HWParameter
+    user_visible: never
+    description: Middleware wireless HWParameter
+    display_name: wireless HWParameter
+    taxonomy:
+      csub: HWParameter
+      cclass: wireless
+      cgroup: HWParameter
+    vendor: NXP
+  meta-name: middleware.wireless.HWParameter
+  cmake_module_name: middleware_wireless_HWParameter
+middleware.wireless.framework_Common:
+  section-type: component
+  meta-name: middleware.wireless.framework.common
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/Common
+      project_relative_path: Common
+      package_relative_path: framework/Common
+    files:
+    - source: middleware/wireless/framework/Common/EmbeddedTypes.h
+      project_relative_path: Common
+      repo_relative_path: framework/Common
+      package_relative_path: framework/Common
+      type: c_include
+    - source: middleware/wireless/framework/Common/fwk_hal_macros.h
+      project_relative_path: Common
+      repo_relative_path: framework/Common
+      package_relative_path: framework/Common
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_Common.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Common
+    user_visible: never
+    description: Middleware wireless framework_common
+    display_name: wireless framework Common
+    taxonomy:
+      csub: framework_Common
+      cclass: wireless
+      cgroup: framework_Common
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_Common
+middleware.wireless.framework_RNG:
+  section-type: component
+  meta-name: middleware.wireless.framework.rng
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/RNG
+      project_relative_path: RNG
+      package_relative_path: framework/RNG
+    files:
+    - source: middleware/wireless/framework/RNG/RNG_Interface.h
+      project_relative_path: RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: c_include
+    - source: middleware/wireless/framework/RNG/RNG.c
+      project_relative_path: RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_RNG.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework RNG
+    user_visible: never
+    description: Middleware wireless framework_rng
+    display_name: wireless framework RNG
+    taxonomy:
+      csub: framework_RNG
+      cclass: wireless
+      cgroup: framework_RNG
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_RNG
+middleware.wireless.framework_RNG_mbedtls:
+  section-type: component
+  meta-name: middleware.wireless.framework.rng_mbedtls
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/RNG
+      project_relative_path: RNG
+      package_relative_path: framework/RNG
+    files:
+    - source: middleware/wireless/framework/RNG/RNG_Interface.h
+      project_relative_path: RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: c_include
+    - source: middleware/wireless/framework/RNG/RNG_mbedTLS.c
+      project_relative_path: RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_RNG_mbedtls.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework RNG Mbedtls
+    user_visible: never
+    description: Middleware wireless framework_rng_mbedtls
+    display_name: wireless framework RNG Mbedtls
+    taxonomy:
+      csub: framework_RNG_mbedtls
+      cclass: wireless
+      cgroup: framework_RNG_mbedtls
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_RNG_mbedtls
+middleware.wireless.framework_sec_lib_cryptolib_src:
+  section-type: component
+  meta-name: middleware.wireless.framework.sec_lib_cryptolib_src
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/SecLib
+      project_relative_path: SecLib/interface
+      package_relative_path: framework/SecLib
+    - repo_relative_path: framework/SecLib/build/CryptoLib/src
+      project_relative_path: SecLib/CryptoLib
+      package_relative_path: framework/SecLib/build/CryptoLib/src
+    files:
+    - source: middleware/wireless/framework/SecLib/SecLib.h
+      project_relative_path: SecLib/interface
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/CryptoLibSW.h
+      project_relative_path: SecLib/interface
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib.c
+      project_relative_path: SecLib/source
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: src
+    - source: middleware/wireless/framework/SecLib/build/CryptoLib/src/SW_AES128.c
+      project_relative_path: SecLib/CryptoLib
+      repo_relative_path: framework/SecLib/build/CryptoLib/src
+      package_relative_path: framework/SecLib/build/CryptoLib/src
+      type: src
+    - source: middleware/wireless/framework/SecLib/build/CryptoLib/src/SW_RNG.c
+      project_relative_path: SecLib/CryptoLib
+      repo_relative_path: framework/SecLib/build/CryptoLib/src
+      package_relative_path: framework/SecLib/build/CryptoLib/src
+      type: src
+    - source: middleware/wireless/framework/SecLib/build/CryptoLib/src/SW_SHA1.c
+      project_relative_path: SecLib/CryptoLib
+      repo_relative_path: framework/SecLib/build/CryptoLib/src
+      package_relative_path: framework/SecLib/build/CryptoLib/src
+      type: src
+    - source: middleware/wireless/framework/SecLib/build/CryptoLib/src/SW_SHA256.c
+      project_relative_path: SecLib/CryptoLib
+      repo_relative_path: framework/SecLib/build/CryptoLib/src
+      package_relative_path: framework/SecLib/build/CryptoLib/src
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_sec_lib_cryptolib_src.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Sec_lib_CryptoLib
+    user_visible: never
+    description: Middleware wireless framework_sec_lib_cryptolib_src
+    display_name: wireless framework Sec_lib_CryptoLib
+    taxonomy:
+      csub: framework_sec_lib_cryptolib_src
+      cclass: wireless
+      cgroup: framework_sec_lib_cryptolib_src
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_sec_lib_cryptolib_src
+middleware.wireless.framework_function_lib:
+  section-type: component
+  meta-name: middleware.wireless.framework.function_lib
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FunctionLib
+      project_relative_path: FunctionLib
+      package_relative_path: framework/FunctionLib
+    files:
+    - source: middleware/wireless/framework/FunctionLib/FunctionLib.c
+      project_relative_path: FunctionLib
+      repo_relative_path: framework/FunctionLib
+      package_relative_path: framework/FunctionLib
+      type: src
+    - source: middleware/wireless/framework/FunctionLib/FunctionLib.h
+      project_relative_path: FunctionLib
+      repo_relative_path: framework/FunctionLib
+      package_relative_path: framework/FunctionLib
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_function_lib.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Function Lib
+    user_visible: never
+    description: Middleware wireless framework_function_lib
+    display_name: wireless framework Function Lib
+    taxonomy:
+      csub: framework_function_lib
+      cclass: wireless
+      cgroup: framework_function_lib
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_function_lib
+middleware.wireless.framework_module_info:
+  section-type: component
+  meta-name: middleware.wireless.framework.module_info
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/ModuleInfo
+      project_relative_path: ModuleInfo
+      package_relative_path: framework/ModuleInfo
+    files:
+    - source: middleware/wireless/framework/ModuleInfo/ModuleInfo.h
+      project_relative_path: ModuleInfo
+      repo_relative_path: framework/ModuleInfo
+      package_relative_path: framework/ModuleInfo
+      type: c_include
+    - source: middleware/wireless/framework/ModuleInfo/ModuleInfo.c
+      project_relative_path: ModuleInfo
+      repo_relative_path: framework/ModuleInfo
+      package_relative_path: framework/ModuleInfo
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_module_info.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Module Info
+    user_visible: never
+    description: Middleware wireless framework_module_info
+    display_name: wireless framework Module Info
+    taxonomy:
+      csub: framework_module_info
+      cclass: wireless
+      cgroup: framework_module_info
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_module_info
+middleware.wireless.framework_NVM:
+  section-type: component
+  meta-name: middleware.wireless.framework.nvm
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/NVM/Interface
+      project_relative_path: NVM/interface
+      package_relative_path: framework/NVM/Interface
+    - repo_relative_path: framework/NVM/Source
+      project_relative_path: NVM/source
+      package_relative_path: framework/NVM/Source
+    files:
+    - source: middleware/wireless/framework/NVM/Interface/NVM_Interface.h
+      project_relative_path: NVM/interface
+      repo_relative_path: framework/NVM/Interface
+      package_relative_path: framework/NVM/Interface
+      type: c_include
+    - source: middleware/wireless/framework/NVM/Source/NV_Flash.c
+      project_relative_path: NVM/source
+      repo_relative_path: framework/NVM/Source
+      package_relative_path: framework/NVM/Source
+      type: src
+    - source: middleware/wireless/framework/NVM/Source/NV_Flash.h
+      project_relative_path: NVM/source
+      repo_relative_path: framework/NVM/Source
+      package_relative_path: framework/NVM/Source
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_NVM.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework NVM
+    user_visible: never
+    description: Middleware wireless framework_nvm
+    display_name: wireless framework NVM
+    taxonomy:
+      csub: framework_NVM
+      cclass: wireless
+      cgroup: framework_NVM
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_NVM
+middleware.wireless.framework_NV_FSCI:
+  section-type: component
+  meta-name: middleware.wireless.framework.nv_fsci
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/NVM/Source
+      project_relative_path: NVM/source
+      package_relative_path: framework/NVM/Source
+    files:
+    - source: middleware/wireless/framework/NVM/Source/NV_FsciCommands.c
+      project_relative_path: NVM/source
+      repo_relative_path: framework/NVM/Source
+      package_relative_path: framework/NVM/Source
+      type: src
+    - source: middleware/wireless/framework/NVM/Source/NV_FsciCommands.h
+      project_relative_path: NVM/source
+      repo_relative_path: framework/NVM/Source
+      package_relative_path: framework/NVM/Source
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_NV_FSCI.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework NV_FSCI
+    user_visible: never
+    description: Middleware wireless framework_nv_fsci
+    display_name: wireless framework NV_FSCI
+    taxonomy:
+      csub: framework_NV_FSCI
+      cclass: wireless
+      cgroup: framework_NV_FSCI
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_NV_FSCI
+middleware.wireless.framework_OtaServerSupport:
+  section-type: component
+  meta-name: middleware.wireless.framework.otaServer
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/OtaSupport/Interface
+      project_relative_path: OtaSupport/interface
+      package_relative_path: framework/OtaSupport/Interface
+    - repo_relative_path: framework/OtaSupport/Source
+      project_relative_path: OtaSupport/source
+      package_relative_path: framework/OtaSupport/Source
+    files:
+    - source: middleware/wireless/framework/OtaSupport/Interface/OtaServerSupport.h
+      project_relative_path: OtaSupport/interface
+      repo_relative_path: framework/OtaSupport/Interface
+      package_relative_path: framework/OtaSupport/Interface
+      type: c_include
+    - source: middleware/wireless/framework/OtaSupport/Source/OtaServerSupport.c
+      project_relative_path: OtaSupport/source
+      repo_relative_path: framework/OtaSupport/Source
+      package_relative_path: framework/OtaSupport/Source
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_OtaServerSupport.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework OtaServerSupport
+    user_visible: never
+    description: Middleware wireless framework_otaServerSupport
+    display_name: wireless framework OtaServerSupport
+    taxonomy:
+      csub: framework_OtaServerSupport
+      cclass: wireless
+      cgroup: framework_OtaServerSupport
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_OtaServerSupport
+middleware.wireless.framework_sbtsnoop_ethermind_port:
+  section-type: component
+  meta-name: middleware.wireless.framework.sbtsnoop_ethermind_port
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/DBG/sbtsnoop
+      project_relative_path: DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+    files:
+    - source: middleware/wireless/framework/DBG/sbtsnoop/sbtsnoop_port_ethermind.h
+      project_relative_path: DBG/sbtsnoop
+      repo_relative_path: framework/DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_sbtsnoop_ethermind_port.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        SBTSNOOP_PORT_FILE: sbtsnoop_port_ethermind.h
+        SERIAL_BTSNOOP: 
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework sbtsnoop_ethermind_port
+    user_visible: never
+    description: Middleware wireless framework_sbtsnoop_ethermind_port
+    display_name: wireless framework sbtsnoop_ethermind_port
+    taxonomy:
+      csub: framework_sbtsnoop_ethermind_port
+      cclass: wireless
+      cgroup: framework_sbtsnoop_ethermind_por
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_sbtsnoop_ethermind_port
+middleware.wireless.framework_sbtsnoop_nxp_ble_port:
+  section-type: component
+  meta-name: middleware.wireless.framework.sbtsnoop_nxp_ble_port
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/DBG/sbtsnoop
+      project_relative_path: DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+    files:
+    - source: middleware/wireless/framework/DBG/sbtsnoop/sbtsnoop_port_nxp_ble.h
+      project_relative_path: DBG/sbtsnoop
+      repo_relative_path: framework/DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_sbtsnoop_nxp_ble_port.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        SBTSNOOP_PORT_FILE: sbtsnoop_port_nxp_ble.h
+        TM_ENABLE_TIME_STAMP: 1
+        SERIAL_BTSNOOP: 
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework sbtsnoop_nxp_ble_port
+    user_visible: never
+    description: Middleware wireless framework_sbtsnoop_nxp_ble_port
+    display_name: wireless framework sbtsnoop_nxp_ble_port
+    taxonomy:
+      csub: framework_sbtsnoop_nxp_ble_port
+      cclass: wireless
+      cgroup: framework_sbtsnoop_nxp_ble_port
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_sbtsnoop_nxp_ble_port
+middleware.wireless.framework_fwk_debug:
+  section-type: component
+  meta-name: middleware.wireless.framework.fwk_debug
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/DBG
+      project_relative_path: DBG
+      package_relative_path: framework/DBG
+    files:
+    - source: middleware/wireless/framework/DBG/fwk_debug.h
+      project_relative_path: DBG
+      repo_relative_path: framework/DBG
+      package_relative_path: framework/DBG
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_fwk_debug.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework fwk_debug
+    user_visible: never
+    description: Middleware wireless framework_fwk_debug
+    display_name: wireless framework fwk_debug
+    taxonomy:
+      csub: framework_fwk_debug
+      cclass: wireless
+      cgroup: framework_fwk_debug
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_fwk_debug
+middleware.wireless.framework_linkscripts_kw45:
+  section-type: component
+  meta-name: middleware.wireless.framework.linkscripts_kw45
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: linkscripts
+    files:
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript/end_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript/main_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript/symbols.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_linkscripts_kw45.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework linkscripts_kw45
+    user_visible: never
+    description: Middleware wireless framework_linkscripts_kw45
+    display_name: wireless framework linkscripts_kw45
+    taxonomy:
+      csub: framework_linkscripts_kw45
+      cclass: wireless
+      cgroup: framework_linkscripts_kw45
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_linkscripts_kw45
+middleware.wireless.framework_linkscripts_mcxw34xevk:
+  section-type: component
+  meta-name: middleware.wireless.framework.linkscripts_mcxw34xevk
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: linkscripts
+    files:
+    - source: middleware/wireless/framework/Common/devices/MCXW345/mcux/linkscript/end_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/MCXW345/mcux/linkscript
+      package_relative_path: framework/Common/devices/MCXW345/mcux/linkscript
+      type: src
+    - source: middleware/wireless/framework/Common/devices/MCXW345/mcux/linkscript/main_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/MCXW345/mcux/linkscript
+      package_relative_path: framework/Common/devices/MCXW345/mcux/linkscript
+      type: src
+    - source: middleware/wireless/framework/Common/devices/MCXW345/mcux/linkscript/symbols.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/MCXW345/mcux/linkscript
+      package_relative_path: framework/Common/devices/MCXW345/mcux/linkscript
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_linkscripts_mcxw34xevk.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework linkscripts_mcxw34xevk
+    user_visible: never
+    description: Middleware wireless framework_linkscripts_mcxw34xevk
+    display_name: wireless framework linkscripts_mcxw34xevk
+    taxonomy:
+      csub: framework_linkscripts_mcxw34xevk
+      cclass: wireless
+      cgroup: framework_linkscripts_mcxw34xevk
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_linkscripts_mcxw34xevk
+middleware.wireless.framework_linkscript_bootloader_kw45:
+  section-type: component
+  meta-name: middleware.wireless.framework.linkscript_bootloader_kw45
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: linkscripts
+    files:
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/end_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/main_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/main_text_section.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/symbols.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_linkscript_bootloader_kw45.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework linkscript_bootloader_kw45
+    user_visible: never
+    description: Middleware wireless framework_linkscript_bootloader_kw45
+    display_name: wireless framework linkscript_bootloader_kw45
+    taxonomy:
+      csub: framework_linkscript_bootloader_kw45
+      cclass: wireless
+      cgroup: framework_linkscript_bootloader_
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_linkscript_bootloader_kw45
+middleware.wireless.framework_linkscript_warmboot_kw45:
+  section-type: component
+  meta-name: middleware.wireless.framework.linkscript_warmboot_kw45
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: linkscripts
+    files:
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/end_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/main_text.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot
+      type: src
+    - source: middleware/wireless/framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/symbols.ldt
+      toolchains: mcux
+      project_relative_path: "./"
+      repo_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot
+      package_relative_path: framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_linkscript_warmboot_kw45.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework linkscript_warmboot_kw45
+    user_visible: never
+    description: Middleware wireless framework_linkscript_warmboot_kw45
+    display_name: wireless framework linkscript_warmboot_kw45
+    taxonomy:
+      csub: framework_linkscript_warmboot_kw45
+      cclass: wireless
+      cgroup: framework_linkscript_warmboot_kw
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_linkscript_warmboot_kw45
+middleware.wireless.HDI:
+  section-type: component
+  meta-name: middleware.wireless.framework.HDI
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/HDI
+      project_relative_path: HDI
+      package_relative_path: framework/HDI
+    files:
+    - source: middleware/wireless/framework/HDI/hdi.h
+      project_relative_path: HDI
+      repo_relative_path: framework/HDI
+      package_relative_path: framework/HDI
+      type: c_include
+    - source: middleware/wireless/framework/HDI/hdi.c
+      project_relative_path: HDI
+      repo_relative_path: framework/HDI
+      package_relative_path: framework/HDI
+      type: src
+    - source: middleware/wireless/middleware_wireless_HDI.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework HDI
+    user_visible: never
+    description: Middleware wireless HDI
+    display_name: wireless framework HDI
+    taxonomy:
+      csub: HDI
+      cclass: wireless
+      cgroup: HDI
+    vendor: NXP
+  cmake_module_name: middleware_wireless_HDI
+middleware.wireless.IPC:
+  section-type: component
+  meta-name: middleware.wireless.framework.IPC
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/IPC
+      project_relative_path: IPC
+      package_relative_path: framework/IPC
+    files:
+    - source: middleware/wireless/framework/IPC/ipc.h
+      project_relative_path: IPC
+      repo_relative_path: framework/IPC
+      package_relative_path: framework/IPC
+      type: c_include
+    - source: middleware/wireless/framework/IPC/ipc.c
+      project_relative_path: IPC
+      repo_relative_path: framework/IPC
+      package_relative_path: framework/IPC
+      type: src
+    - source: middleware/wireless/middleware_wireless_IPC.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework IPC
+    user_visible: never
+    description: Middleware wireless IPC
+    display_name: wireless framework IPC
+    taxonomy:
+      csub: IPC
+      cclass: wireless
+      cgroup: IPC
+    vendor: NXP
+  cmake_module_name: middleware_wireless_IPC
+middleware.wireless.framework_PDM:
+  section-type: component
+  meta-name: middleware.wireless.framework.PDM
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/PDM/Include
+      project_relative_path: PDM/Include
+      package_relative_path: framework/PDM/Include
+    files:
+    - source: middleware/wireless/framework/PDM/Include/PDM.h
+      project_relative_path: PDM/Include
+      repo_relative_path: framework/PDM/Include
+      package_relative_path: framework/PDM/Include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_PDM.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework PDM
+    user_visible: never
+    description: Middleware wireless framework_PDM
+    display_name: wireless framework PDM
+    taxonomy:
+      csub: framework_PDM
+      cclass: wireless
+      cgroup: framework_PDM
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_PDM
+middleware.wireless.framework_PDUM:
+  section-type: component
+  meta-name: middleware.wireless.framework.PDUM
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/PDUM/Include
+      project_relative_path: PDUM/Include
+      package_relative_path: framework/PDUM/Include
+    files:
+    - source: middleware/wireless/framework/PDUM/Include/pdum_apl.h
+      project_relative_path: PDUM/Include
+      repo_relative_path: framework/PDUM/Include
+      package_relative_path: framework/PDUM/Include
+      type: c_include
+    - source: middleware/wireless/framework/PDUM/Include/pdum_common.h
+      project_relative_path: PDUM/Include
+      repo_relative_path: framework/PDUM/Include
+      package_relative_path: framework/PDUM/Include
+      type: c_include
+    - source: middleware/wireless/framework/PDUM/Include/pdum_nwk.h
+      project_relative_path: PDUM/Include
+      repo_relative_path: framework/PDUM/Include
+      package_relative_path: framework/PDUM/Include
+      type: c_include
+    - source: middleware/wireless/framework/PDUM/Library/libPDUM.a
+      project_relative_path: PDUM/Library
+      repo_relative_path: framework/PDUM/Library
+      package_relative_path: framework/PDUM/Library
+      type: lib
+    - source: middleware/wireless/middleware_wireless_framework_PDUM.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework PDUM
+    user_visible: never
+    description: Middleware wireless framework_PDUM
+    display_name: wireless framework PDUM
+    taxonomy:
+      csub: framework_PDUM
+      cclass: wireless
+      cgroup: framework_PDUM
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_PDUM
+middleware.wireless.framework_markdown:
+  section-type: component
+  meta-name: middleware.wireless.framework.markdown
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    files:
+    - source: middleware/wireless/framework/NVM/README.md
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM
+      package_relative_path: framework/NVM
+      type: doc
+    - source: middleware/wireless/framework/NVM/pics/NVM_MIT_structure.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/NVM/pics/NVM_Page_copy_and_defragmentation.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/NVM/pics/NVM_entry_example.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/NVM/pics/NVM_table_entry_list_example.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/NVM/pics/NVM_virtual_page_getting_full_example.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/NVM/pics/flash_active_page_layout.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/NVM/pics/flash_copy_of_ram_table_entry_structure.PNG
+      project_relative_path: NVM
+      repo_relative_path: framework/NVM/pics
+      package_relative_path: framework/NVM/pics
+      type: other
+    - source: middleware/wireless/framework/FSCI/README.md
+      project_relative_path: FSCI
+      repo_relative_path: framework/FSCI
+      package_relative_path: framework/FSCI
+      type: doc
+    - source: middleware/wireless/framework/FSCI/pics/FSCI_packet_structure.PNG
+      project_relative_path: FSCI
+      repo_relative_path: framework/FSCI/pics
+      package_relative_path: framework/FSCI/pics
+      type: other
+    - source: middleware/wireless/framework/FSCI/pics/FSCI_packet_structure_fields.PNG
+      project_relative_path: FSCI
+      repo_relative_path: framework/FSCI/pics
+      package_relative_path: framework/FSCI/pics
+      type: other
+    - source: middleware/wireless/framework/FSCI/pics/FSCI_packet_structure_virtual_interface.PNG
+      project_relative_path: FSCI
+      repo_relative_path: framework/FSCI/pics
+      package_relative_path: framework/FSCI/pics
+      type: other
+    - source: middleware/wireless/framework/HWParameter/README.md
+      project_relative_path: HWParameter
+      repo_relative_path: framework/HWParameter
+      package_relative_path: framework/HWParameter
+      type: doc
+    - source: middleware/wireless/framework/RNG/README.md
+      project_relative_path: RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: doc
+    - source: middleware/wireless/framework/SecLib/README.md
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: doc
+    - source: middleware/wireless/framework/FunctionLib/README.md
+      project_relative_path: FunctionLib
+      repo_relative_path: framework/FunctionLib
+      package_relative_path: framework/FunctionLib
+      type: doc
+    - source: middleware/wireless/framework/ModuleInfo/README.md
+      project_relative_path: ModuleInfo
+      repo_relative_path: framework/ModuleInfo
+      package_relative_path: framework/ModuleInfo
+      type: doc
+    - source: middleware/wireless/framework/OtaSupport/README.md
+      project_relative_path: OtaSupport
+      repo_relative_path: framework/OtaSupport
+      package_relative_path: framework/OtaSupport
+      type: doc
+    - source: middleware/wireless/framework/Sensors/README.md
+      project_relative_path: Sensors
+      repo_relative_path: framework/Sensors
+      package_relative_path: framework/Sensors
+      type: doc
+    - source: middleware/wireless/framework/LowPower/README.md
+      project_relative_path: LowPower
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: doc
+    - source: middleware/wireless/framework/SFC/README.md
+      project_relative_path: SFC
+      repo_relative_path: framework/SFC
+      package_relative_path: framework/SFC
+      type: doc
+    - source: middleware/wireless/middleware_wireless_framework_markdown.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework markdown
+    user_visible: never
+    description: Middleware wireless framework_markdown
+    display_name: wireless framework markdown
+    taxonomy:
+      csub: framework_markdown
+      cclass: wireless
+      cgroup: framework_markdown
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_markdown
+middleware.wireless.framework_SFC:
+  section-type: component
+  meta-name: middleware.wireless.framework.SFC
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/SFC/
+      project_relative_path: SFC
+      package_relative_path: framework/SFC/
+    files:
+    - source: middleware/wireless/framework/SFC/fwk_sfc.h
+      project_relative_path: SFC/
+      repo_relative_path: framework/SFC
+      package_relative_path: framework/SFC
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_SFC.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework SFC
+    user_visible: never
+    description: Middleware wireless framework_SFC
+    display_name: wireless framework SFC
+    taxonomy:
+      csub: framework_SFC
+      cclass: wireless
+      cgroup: framework_SFC
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_SFC
+middleware.wireless.framework_RF_SFC:
+  section-type: component
+  meta-name: middleware.wireless.framework.rf_SFC
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/SFC/
+      project_relative_path: SFC
+      package_relative_path: framework/SFC/
+    files:
+    - source: middleware/wireless/framework/SFC/fwk_rf_sfc.h
+      project_relative_path: SFC/
+      repo_relative_path: framework/SFC
+      package_relative_path: framework/SFC
+      type: c_include
+    - source: middleware/wireless/framework/SFC/fwk_rf_sfc.c
+      project_relative_path: SFC/
+      repo_relative_path: framework/SFC
+      package_relative_path: framework/SFC
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_RF_SFC.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework RF_SFC
+    user_visible: never
+    description: Middleware wireless framework_RF_SFC
+    display_name: wireless framework RF_SFC
+    taxonomy:
+      csub: framework_RF_SFC
+      cclass: wireless
+      cgroup: framework_RF_SFC
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_RF_SFC
+middleware.wireless.framework_OTW:
+  section-type: component
+  meta-name: middleware.wireless.framework.OTW
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/OTW/Interface
+      project_relative_path: OTW/Interface
+      package_relative_path: framework/OTW/Interface
+    - repo_relative_path: framework/OTW/k32w0_transceiver
+      project_relative_path: OTW/k32w0_transceiver
+      package_relative_path: framework/OTW/k32w0_transceiver
+    files:
+    - source: middleware/wireless/framework/OTW/Interface/fwk_otw.h
+      project_relative_path: OTW/Interface/
+      repo_relative_path: framework/OTW/Interface
+      package_relative_path: framework/OTW/Interface
+      type: c_include
+    - source: middleware/wireless/framework/OTW/k32w0_transceiver/fwk_otw.c
+      project_relative_path: OTW/k32w0_transceiver/
+      repo_relative_path: framework/OTW/k32w0_transceiver
+      package_relative_path: framework/OTW/k32w0_transceiver
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_OTW.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework OTW
+    user_visible: never
+    description: Middleware wireless framework_OTW
+    display_name: wireless framework OTW
+    taxonomy:
+      csub: framework_OTW
+      cclass: wireless
+      cgroup: framework_OTW
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_OTW
+middleware.wireless.framework_FactoryDataProvider:
+  section-type: component
+  meta-name: middleware.wireless.framework.FactoryDataProvider
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FactoryDataProvider
+      project_relative_path: FactoryDataProvider
+      package_relative_path: framework/FactoryDataProvider
+    files:
+    - source: middleware/wireless/framework/FactoryDataProvider/fwk_factory_data_provider.h
+      project_relative_path: FactoryDataProvider
+      repo_relative_path: framework/FactoryDataProvider
+      package_relative_path: framework/FactoryDataProvider
+      type: c_include
+    - source: middleware/wireless/framework/FactoryDataProvider/fwk_factory_data_provider.c
+      project_relative_path: FactoryDataProvider
+      repo_relative_path: framework/FactoryDataProvider
+      package_relative_path: framework/FactoryDataProvider
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_FactoryDataProvider.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework FactoryDataProvider
+    user_visible: never
+    description: Middleware wireless framework_FactoryDataProvider
+    display_name: wireless framework FactoryDataProvider
+    taxonomy:
+      csub: framework_FactoryDataProvider
+      cclass: wireless
+      cgroup: framework_FactoryDataProvider
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_FactoryDataProvider
+middleware.wireless.framework_filesystem:
+  section-type: component
+  meta-name: middleware.wireless.framework.filesystem
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FileSystem
+      project_relative_path: FileSystem
+      package_relative_path: framework/FileSystem
+    files:
+    - source: middleware/wireless/framework/FileSystem/fwk_filesystem.h
+      project_relative_path: FileSystem
+      repo_relative_path: framework/FileSystem
+      package_relative_path: framework/FileSystem
+      type: c_include
+    - source: middleware/wireless/framework/FileSystem/fwk_filesystem.c
+      project_relative_path: FileSystem
+      repo_relative_path: framework/FileSystem
+      package_relative_path: framework/FileSystem
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_filesystem.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework FileSystem
+    user_visible: never
+    description: Middleware wireless framework_filesytem
+    display_name: wireless framework FileSystem
+    taxonomy:
+      csub: framework_filesystem
+      cclass: wireless
+      cgroup: framework_filesystem
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_filesystem
+middleware.wireless.framework_fsabstraction_littlefs:
+  section-type: component
+  meta-name: middleware.wireless.framework.framework_fsabstraction_littlefs
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FSAbstraction
+      project_relative_path: FSAbstraction
+      package_relative_path: framework/FSAbstraction
+    files:
+    - source: middleware/wireless/framework/FSAbstraction/fwk_lfs_mflash.h
+      project_relative_path: FSAbstraction
+      repo_relative_path: framework/FSAbstraction
+      package_relative_path: framework/FSAbstraction
+      type: c_include
+    - source: middleware/wireless/framework/FSAbstraction/fwk_lfs_mflash.c
+      project_relative_path: FSAbstraction
+      repo_relative_path: framework/FSAbstraction
+      package_relative_path: framework/FSAbstraction
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_fsabstraction_littlefs.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework fwk_lfs_mflash
+    user_visible: never
+    description: Middleware wireless fwk_lfs_mflash
+    display_name: wireless framework fwk_lfs_mflash
+    taxonomy:
+      csub: framework_fsabstraction_littlefs
+      cclass: wireless
+      cgroup: framework_fsabstraction_littlefs
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_fsabstraction_littlefs
+set.middleware.wireless.framework:
+  section-type: set
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    fixed_id: nxp_conn_fwk
+    version: 6.1.2
+    type: middleware
+    display_name: Wireless Connectivity Framework
+    description: Wireless Connectivity Framework
+    set_location:
+      repo_base_path: middleware/wireless/framework
+    vendor: NXP
+    product:
+      scr:
+      - scr.middleware.wireless.framework.FWK
+      - scr.middleware.wireless.framework.SecLib
+      kex_package:
+        kex_web_ui:
+          ui_control: true
+          ui_release_specific: true
+          ui_control_default: false
+          ui_category: Middleware
+      cmsis_pack:
+        vendor: NXP
+        supported: false
+scr.middleware.wireless.framework.FWK:
+  section-type: scr
+  belong_to: set.middleware.wireless.framework
+  contents:
+    license:
+    - license.bsd-3
+    Name: Connectivity Framework
+    Version: 6.2.0
+    Format: source code & header files
+    Description: Connectivity Framework middleware for Connectivity stacks
+    Location: middleware/wireless/framework
+    Origin: NXP (BSD-3-Clause)
+scr.middleware.wireless.framework.SecLib:
+  section-type: scr
+  belong_to: set.middleware.wireless.framework
+  contents:
+    license:
+    - license.EULA
+    Name: Connectivity SecLib
+    Version: 6.2.0
+    Format: Binary libraries
+    Description: Connectivity Security Library
+    Location: middleware/wireless/framework/SecLib/lib_crypto_*.a
+    Origin: NXP
+middleware.wireless.framework_platform_common.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_common
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    files:
+    - source: middleware/wireless/framework/platform/include/fwk_platform_hdlc.h
+      project_relative_path: Platform/configs
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_coex.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_ot.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_common_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform Common
+    user_visible: never
+    description: Middleware wireless framework_platform_common
+    display_name: wireless framework Platform Common
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_common_rt1170
+middleware.wireless.framework_platform_coex.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_coex
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    files:
+    - source: middleware/wireless/framework/platform/include/fwk_platform_coex.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_coex_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform coex
+    user_visible: never
+    description: Middleware wireless framework_platform_coex
+    display_name: wireless framework Platform coex
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_coex_rt1170
+middleware.wireless.framework_board_lp.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_lp
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/lowpower
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1176
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_lp_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_lp
+    user_visible: never
+    description: Middleware wireless framework_board_lp
+    display_name: wireless framework board_lp
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_lp_MIMXRT1176
+middleware.wireless.framework_board_dcdc.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_dcdc
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/dcdc
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1176
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_dcdc_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_dcdc
+    user_visible: never
+    description: Middleware wireless framework_board_dcdc
+    display_name: wireless framework board_dcdc
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_dcdc_MIMXRT1176
+middleware.wireless.framework_board_platform.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_platform
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/platform
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1176
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_platform_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_platform
+    user_visible: never
+    description: Middleware wireless framework_board_platform
+    display_name: wireless framework board_platform
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_platform_MIMXRT1176
+middleware.wireless.framework_board_comp.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_comp
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/components
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1176
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_comp_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_comp
+    user_visible: never
+    description: Middleware wireless framework_board_comp
+    display_name: wireless framework board_comp
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_comp_MIMXRT1176
+middleware.wireless.framework_board_extflash.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_extflash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/extflash
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1176
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_extflash_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_extflash
+    user_visible: never
+    description: Middleware wireless framework_board_extflash
+    display_name: wireless framework board_extflash
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_extflash_MIMXRT1176
+middleware.wireless.framework_lfs_config.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.lfs_config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170/configs
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/rt1170/configs
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_lfs_config_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        LFS_CONFIG: fwk_lfs_config.h
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework lfs_config
+    user_visible: always
+    description: Middleware wireless framework_lfs_config
+    display_name: wireless framework lfs_config
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_lfs_config_rt1170
+middleware.wireless.framework_matter_config.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.matter.config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: framework/boards/MIMXRT1176
+      package_relative_path: framework/boards/MIMXRT1176
+    - repo_relative_path: framework/Common/devices/MIMXRT1176/gcc
+      project_relative_path: framework/Common/devices/MIMXRT1176/gcc
+      package_relative_path: framework/Common/devices/MIMXRT1176/gcc
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_matter_config_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework matter config
+    user_visible: never
+    description: Middleware wireless framework matter config
+    display_name: wireless framework matter config
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_matter_config_MIMXRT1176
+middleware.wireless.framework_init_config.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.init.config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1176
+      project_relative_path: framework/boards/MIMXRT1176
+      package_relative_path: framework/boards/MIMXRT1176
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_init_config_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework init config
+    user_visible: never
+    description: Middleware wireless framework init config
+    display_name: wireless framework init config
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_init_config_MIMXRT1176
+middleware.wireless.framework_rpmsg_config.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.rpmsg_config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170/configs
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/rt1170/configs
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_rpmsg_config_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework rpmsg_config
+    user_visible: always
+    description: Middleware wireless framework_rpmsg_config
+    display_name: wireless framework rpmsg_config
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_rpmsg_config_rt1170
+middleware.wireless.framework_CMake.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.cmake
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    files:
+    - source: middleware/wireless/framework/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework
+      package_relative_path: framework
+      type: doc
+    - source: middleware/wireless/framework/cmake/utils.cmake
+      project_relative_path: framework/cmake
+      repo_relative_path: framework/cmake
+      package_relative_path: framework/cmake
+      type: script
+    - source: middleware/wireless/framework/cmake/toolchains/armgcc.cmake
+      project_relative_path: framework/cmake/toolchains
+      repo_relative_path: framework/cmake/toolchains
+      package_relative_path: framework/cmake/toolchains
+      type: script
+    - source: middleware/wireless/framework/cmake/toolchains/iar.cmake
+      project_relative_path: framework/cmake/toolchains
+      repo_relative_path: framework/cmake/toolchains
+      package_relative_path: framework/cmake/toolchains
+      type: script
+    - source: middleware/wireless/framework/boards/CMakeLists.txt
+      project_relative_path: framework/boards
+      repo_relative_path: framework/boards
+      package_relative_path: framework/boards
+      type: doc
+    - source: middleware/wireless/framework/FunctionLib/CMakeLists.txt
+      project_relative_path: framework/FunctionLib
+      repo_relative_path: framework/FunctionLib
+      package_relative_path: framework/FunctionLib
+      type: doc
+    - source: middleware/wireless/framework/FileSystem/CMakeLists.txt
+      project_relative_path: framework/FileSystem
+      repo_relative_path: framework/FileSystem
+      package_relative_path: framework/FileSystem
+      type: doc
+    - source: middleware/wireless/framework/LowPower/CMakeLists.txt
+      project_relative_path: framework/LowPower
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: doc
+    - source: middleware/wireless/framework/OtaSupport/CMakeLists.txt
+      project_relative_path: framework/OtaSupport
+      repo_relative_path: framework/OtaSupport
+      package_relative_path: framework/OtaSupport
+      type: doc
+    - source: middleware/wireless/framework/platform/CMakeLists.txt
+      project_relative_path: framework/platform
+      repo_relative_path: framework/platform
+      package_relative_path: framework/platform
+      type: doc
+    - source: middleware/wireless/framework/platform/rt1170/CMakeLists.txt
+      project_relative_path: framework/platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: doc
+    - source: middleware/wireless/framework/RNG/CMakeLists.txt
+      project_relative_path: framework/RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: doc
+    - source: middleware/wireless/framework/SecLib/CMakeLists.txt
+      project_relative_path: framework/SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: doc
+    - source: middleware/wireless/framework/Sensors/CMakeLists.txt
+      project_relative_path: framework/Sensors
+      repo_relative_path: framework/Sensors
+      package_relative_path: framework/Sensors
+      type: doc
+    - source: middleware/wireless/framework/third_party/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework/third_party
+      package_relative_path: framework/third_party
+      type: doc
+    - source: middleware/wireless/framework/third_party/freertos-kernel/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework/third_party/freertos-kernel
+      package_relative_path: framework/third_party/freertos-kernel
+      type: doc
+    - source: middleware/wireless/middleware_wireless_framework_CMake_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework CMake
+    user_visible: never
+    description: Middleware wireless framework_cmake
+    display_name: wireless framework CMake
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_CMake_rt1170
+middleware.wireless.framework_platform_common.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_common
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    files:
+    - source: middleware/wireless/framework/platform/include/fwk_platform_hdlc.h
+      project_relative_path: Platform/configs
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_coex.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_ot.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_common_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform Common
+    user_visible: never
+    description: Middleware wireless framework_platform_common
+    display_name: wireless framework Platform Common
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_common_rt1060
+middleware.wireless.framework_platform_coex.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_coex
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    files:
+    - source: middleware/wireless/framework/platform/include/fwk_platform_coex.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_coex_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform coex
+    user_visible: never
+    description: Middleware wireless framework_platform_coex
+    display_name: wireless framework Platform coex
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_platform_coex_rt1060
+middleware.wireless.framework_board_lp.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_lp
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/lowpower
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1062
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_lp_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_lp
+    user_visible: never
+    description: Middleware wireless framework_board_lp
+    display_name: wireless framework board_lp
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_lp_MIMXRT1062
+middleware.wireless.framework_board_dcdc.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_dcdc
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/dcdc
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1062
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_dcdc_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_dcdc
+    user_visible: never
+    description: Middleware wireless framework_board_dcdc
+    display_name: wireless framework board_dcdc
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_dcdc_MIMXRT1062
+middleware.wireless.framework_board_platform.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_platform
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/platform
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1062
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_platform_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_platform
+    user_visible: never
+    description: Middleware wireless framework_board_platform
+    display_name: wireless framework board_platform
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_platform_MIMXRT1062
+middleware.wireless.framework_board_comp.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_comp
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/components
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1062
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_comp_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_comp
+    user_visible: never
+    description: Middleware wireless framework_board_comp
+    display_name: wireless framework board_comp
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_comp_MIMXRT1062
+middleware.wireless.framework_board_extflash.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.board_extflash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: board/extflash
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: "./"
+      package_relative_path: framework/boards/MIMXRT1062
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_board_extflash_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework board_extflash
+    user_visible: never
+    description: Middleware wireless framework_board_extflash
+    display_name: wireless framework board_extflash
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_board_extflash_MIMXRT1062
+middleware.wireless.framework_lfs_config.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.lfs_config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060/configs
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/rt1060/configs
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_lfs_config_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        LFS_CONFIG: fwk_lfs_config.h
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework lfs_config
+    user_visible: always
+    description: Middleware wireless framework_lfs_config
+    display_name: wireless framework lfs_config
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_lfs_config_rt1060
+middleware.wireless.framework_matter_config.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.matter.config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: framework/boards/MIMXRT1062
+      package_relative_path: framework/boards/MIMXRT1062
+    - repo_relative_path: framework/Common/devices/MIMXRT1062/gcc
+      project_relative_path: framework/Common/devices/MIMXRT1062/gcc
+      package_relative_path: framework/Common/devices/MIMXRT1062/gcc
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_matter_config_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework matter config
+    user_visible: never
+    description: Middleware wireless framework matter config
+    display_name: wireless framework matter config
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_matter_config_MIMXRT1062
+middleware.wireless.framework_init_config.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.init.config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/boards/MIMXRT1062
+      project_relative_path: framework/boards/MIMXRT1062
+      package_relative_path: framework/boards/MIMXRT1062
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_init_config_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework init config
+    user_visible: never
+    description: Middleware wireless framework init config
+    display_name: wireless framework init config
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_init_config_MIMXRT1062
+middleware.wireless.framework_rpmsg_config.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.rpmsg_config
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060/configs
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/rt1060/configs
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_rpmsg_config_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework rpmsg_config
+    user_visible: always
+    description: Middleware wireless framework_rpmsg_config
+    display_name: wireless framework rpmsg_config
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_rpmsg_config_rt1060
+middleware.wireless.framework_CMake.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.cmake
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    files:
+    - source: middleware/wireless/framework/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework
+      package_relative_path: framework
+      type: doc
+    - source: middleware/wireless/framework/cmake/utils.cmake
+      project_relative_path: framework/cmake
+      repo_relative_path: framework/cmake
+      package_relative_path: framework/cmake
+      type: script
+    - source: middleware/wireless/framework/cmake/toolchains/armgcc.cmake
+      project_relative_path: framework/cmake/toolchains
+      repo_relative_path: framework/cmake/toolchains
+      package_relative_path: framework/cmake/toolchains
+      type: script
+    - source: middleware/wireless/framework/cmake/toolchains/iar.cmake
+      project_relative_path: framework/cmake/toolchains
+      repo_relative_path: framework/cmake/toolchains
+      package_relative_path: framework/cmake/toolchains
+      type: script
+    - source: middleware/wireless/framework/boards/CMakeLists.txt
+      project_relative_path: framework/boards
+      repo_relative_path: framework/boards
+      package_relative_path: framework/boards
+      type: doc
+    - source: middleware/wireless/framework/FunctionLib/CMakeLists.txt
+      project_relative_path: framework/FunctionLib
+      repo_relative_path: framework/FunctionLib
+      package_relative_path: framework/FunctionLib
+      type: doc
+    - source: middleware/wireless/framework/FileSystem/CMakeLists.txt
+      project_relative_path: framework/FileSystem
+      repo_relative_path: framework/FileSystem
+      package_relative_path: framework/FileSystem
+      type: doc
+    - source: middleware/wireless/framework/LowPower/CMakeLists.txt
+      project_relative_path: framework/LowPower
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: doc
+    - source: middleware/wireless/framework/OtaSupport/CMakeLists.txt
+      project_relative_path: framework/OtaSupport
+      repo_relative_path: framework/OtaSupport
+      package_relative_path: framework/OtaSupport
+      type: doc
+    - source: middleware/wireless/framework/platform/CMakeLists.txt
+      project_relative_path: framework/platform
+      repo_relative_path: framework/platform
+      package_relative_path: framework/platform
+      type: doc
+    - source: middleware/wireless/framework/platform/rt1060/CMakeLists.txt
+      project_relative_path: framework/platform
+      repo_relative_path: framework/platform/rt1060
+      package_relative_path: framework/platform/rt1060
+      type: doc
+    - source: middleware/wireless/framework/RNG/CMakeLists.txt
+      project_relative_path: framework/RNG
+      repo_relative_path: framework/RNG
+      package_relative_path: framework/RNG
+      type: doc
+    - source: middleware/wireless/framework/SecLib/CMakeLists.txt
+      project_relative_path: framework/SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: doc
+    - source: middleware/wireless/framework/Sensors/CMakeLists.txt
+      project_relative_path: framework/Sensors
+      repo_relative_path: framework/Sensors
+      package_relative_path: framework/Sensors
+      type: doc
+    - source: middleware/wireless/framework/third_party/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework/third_party
+      package_relative_path: framework/third_party
+      type: doc
+    - source: middleware/wireless/framework/third_party/freertos-kernel/CMakeLists.txt
+      project_relative_path: framework
+      repo_relative_path: framework/third_party/freertos-kernel
+      package_relative_path: framework/third_party/freertos-kernel
+      type: doc
+    - source: middleware/wireless/middleware_wireless_framework_CMake_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework CMake
+    user_visible: never
+    description: Middleware wireless framework_cmake
+    display_name: wireless framework CMake
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  cmake_module_name: middleware_wireless_framework_CMake_rt1060
+middleware.wireless.framework_platform.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    - repo_relative_path: framework/platform/MIMXRT595S/configs/
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/MIMXRT595S/configs/
+    files:
+    - source: middleware/wireless/framework/platform/MIMXRT595S/fwk_platform.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/MIMXRT595S
+      package_relative_path: framework/platform/MIMXRT595S
+      type: src
+    - source: middleware/wireless/framework/platform/MIMXRT595S/fwk_platform.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/MIMXRT595S
+      package_relative_path: framework/platform/MIMXRT595S
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform
+    user_visible: never
+    description: Middleware wireless framework_platform
+    display_name: wireless framework Platform
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_fwk_debug
+  cmake_module_name: middleware_wireless_framework_platform_MIMXRT595S
+middleware.wireless.framework_platform_flash.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_flash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    - repo_relative_path: framework/platform/Common
+      project_relative_path: Platform
+      package_relative_path: framework/platform/Common
+    files:
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mflash.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_extflash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_flash_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform flash
+    user_visible: never
+    description: Middleware wireless framework_platform_flash
+    display_name: wireless framework Platform flash
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_flash_MIMXRT595S
+middleware.wireless.framework_platform_extflash.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_extflash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    - repo_relative_path: framework/platform/Common
+      project_relative_path: Platform
+      package_relative_path: framework/platform/Common
+    files:
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mflash.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_extflash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_extflash_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform Extflash
+    user_visible: never
+    description: Middleware wireless framework_platform_extflash
+    display_name: wireless framework Platform Extflash
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_extflash_MIMXRT595S
+middleware.wireless.framework_platform_sensors.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_sensors
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_sensors_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform sensors
+    user_visible: never
+    description: Middleware wireless framework_platform_sensors
+    display_name: wireless framework Platform sensors
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_sensors_MIMXRT595S
+middleware.wireless.framework_platform_ota.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ota
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mcuboot_ota.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_ota.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_ota_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform OTA
+    user_visible: never
+    description: Middleware wireless framework_platform_ota
+    display_name: wireless framework Platform OTA
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_ota_MIMXRT595S
+middleware.wireless.framework_platform_lcl.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lcl
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lcl_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform localization
+    user_visible: never
+    description: Middleware wireless framework_platform_lcl
+    display_name: wireless framework platform localization
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - driver.trdc
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_lcl_MIMXRT595S
+middleware.wireless.framework_platform_mws.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_mws
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_mws_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_mws
+    user_visible: never
+    description: Middleware wireless framework_platform_mws
+    display_name: wireless framework platform_mws
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_mws_MIMXRT595S
+middleware.wireless.framework_platform_ble.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ble
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_ble_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_ble
+    user_visible: never
+    description: Middleware wireless framework_platform_ble
+    display_name: wireless framework platform_ble
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+    - middleware.wireless.framework_platform_coex.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_ble_MIMXRT595S
+middleware.wireless.framework_platform_genfsk.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_genfsk
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_genfsk_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_genfsk
+    user_visible: never
+    description: Middleware wireless framework_platform_genfsk
+    display_name: wireless framework platform_genfsk
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_genfsk_MIMXRT595S
+middleware.wireless.framework_platform_ot.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ot
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_ot_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_ot
+    user_visible: never
+    description: Middleware wireless framework_platform_ot
+    display_name: wireless framework platform_ot
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_ot_MIMXRT595S
+middleware.wireless.framework_platform_lowpower.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lowpower
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/framework/platform/MIMXRT595S/fwk_platform_lowpower.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/MIMXRT595S
+      package_relative_path: framework/platform/MIMXRT595S
+      type: src
+    - source: middleware/wireless/framework/platform/MIMXRT595S/fwk_platform_lowpower.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/MIMXRT595S
+      package_relative_path: framework/platform/MIMXRT595S
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_lowpower_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_lowpower
+    user_visible: never
+    description: Middleware wireless framework_platform_lowpower
+    display_name: wireless framework platform_lowpower
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_lowpower_MIMXRT595S
+middleware.wireless.framework_platform_lowpower_timer.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lowpower_timer
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/MIMXRT595S
+      project_relative_path: Platform
+      package_relative_path: framework/platform/MIMXRT595S
+    files:
+    - source: middleware/wireless/framework/platform/MIMXRT595S/fwk_platform_lowpower_timer.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/MIMXRT595S
+      package_relative_path: framework/platform/MIMXRT595S
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_lowpower_timer
+    user_visible: never
+    description: Middleware wireless framework_platform_lowpower_timer
+    display_name: wireless framework platform_lowpower_timer
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S
+middleware.wireless.framework_sec_lib_sss.m33:
+  section-type: component
+  meta-name: middleware.wireless.framework.sec_lib_sss
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/SecLib
+      project_relative_path: SecLib
+      package_relative_path: framework/SecLib
+    files:
+    - source: middleware/wireless/framework/SecLib/SecLib.h
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/CryptoLibSW.h
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib_ecp256.h
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib_sss.c
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: src
+    - source: middleware/wireless/framework/SecLib/lib_crypto_m33.a
+      toolchains: armgcc mcux
+      attribute: extra-libraries
+      repo_relative_path: framework/SecLib
+      project_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: lib
+    - source: middleware/wireless/middleware_wireless_framework_sec_lib_sss_m33.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Sec_lib_sss
+    user_visible: never
+    description: Middleware wireless framework_sec_lib_sss
+    display_name: wireless framework Sec_lib_sss
+    taxonomy:
+      csub: m33
+      cclass: wireless
+      cgroup: m33
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_sec_lib_sss_m33
+middleware.wireless.framework_sbtsnoop:
+  section-type: component
+  meta-name: middleware.wireless.framework.sbtsnoop
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/DBG/sbtsnoop
+      project_relative_path: DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+    files:
+    - source: middleware/wireless/framework/DBG/sbtsnoop/sbtsnoop.h
+      project_relative_path: DBG/sbtsnoop
+      repo_relative_path: framework/DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+      type: c_include
+    - source: middleware/wireless/framework/DBG/sbtsnoop/sbtsnoop_port.h
+      project_relative_path: DBG/sbtsnoop
+      repo_relative_path: framework/DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+      type: c_include
+    - source: middleware/wireless/framework/DBG/sbtsnoop/sbtsnoop.c
+      project_relative_path: DBG/sbtsnoop
+      repo_relative_path: framework/DBG/sbtsnoop
+      package_relative_path: framework/DBG/sbtsnoop
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_sbtsnoop.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework sbtsnoop
+    user_visible: never
+    description: Middleware wireless framework_sbtsnoop
+    display_name: wireless framework sbtsnoop
+    taxonomy:
+      csub: framework_sbtsnoop
+      cclass: wireless
+      cgroup: framework_sbtsnoop
+    vendor: NXP
+  dependency:
+    anyOf:
+    - middleware.wireless.framework_sbtsnoop_ethermind_port
+    - middleware.wireless.framework_sbtsnoop_nxp_ble_port
+  cmake_module_name: middleware_wireless_framework_sbtsnoop
+middleware.wireless.freertos_heap:
+  section-type: component
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: freertos
+    files:
+    - source: middleware/wireless/framework/Common/rtos/freertos/heap_mem_manager.c
+      project_relative_path: freertos_kernel/portable/MemMang/
+      repo_relative_path: framework/Common/rtos/freertos
+      package_relative_path: framework/Common/rtos/freertos
+      type: src
+    - source: middleware/wireless/middleware_wireless_freertos_heap.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    type: middleware
+    need_require: false
+    full_name: FreeRTOS heap for framework mem_manager
+    description: FreeRTOS heap for framework mem_manager
+    version: 1.0.0
+    user_visible: never
+    display_name: FreeRTOS heap for framework mem_manager
+    taxonomy:
+      csub: freertos_heap
+      cclass: wireless
+      cgroup: freertos_heap
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.freertos-kernel
+  meta-name: middleware.wireless.freertos_heap
+  cmake_module_name: middleware_wireless_freertos_heap
+middleware.wireless.framework_freertos_utils:
+  section-type: component
+  meta-name: middleware.wireless.framework_freertos_utils
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/Common/rtos/freertos
+      project_relative_path: framework/freertos
+      package_relative_path: framework/Common/rtos/freertos
+    files:
+    - source: middleware/wireless/framework/Common/rtos/freertos/fwk_freertos_utils.c
+      project_relative_path: framework/freertos
+      repo_relative_path: framework/Common/rtos/freertos
+      package_relative_path: framework/Common/rtos/freertos
+      type: src
+    - source: middleware/wireless/framework/Common/rtos/freertos/fwk_freertos_utils.h
+      project_relative_path: framework/freertos
+      repo_relative_path: framework/Common/rtos/freertos
+      package_relative_path: framework/Common/rtos/freertos
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_freertos_utils.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    type: middleware
+    need_require: true
+    full_name: Framework FreeRTOS utilities
+    description: Framework FreeRTOS utilities
+    version: 1.0.0
+    user_visible: never
+    display_name: Framework FreeRTOS utilities
+    taxonomy:
+      csub: framework_freertos_utils
+      cclass: wireless
+      cgroup: framework_freertos_utils
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.freertos-kernel
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_freertos_utils
+middleware.wireless.framework_LPM.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.lpm_MIMXRT595S
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/LowPower/
+      project_relative_path: LowPower/
+      package_relative_path: framework/LowPower/
+    files:
+    - source: middleware/wireless/framework/LowPower/PWR_Interface.h
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: c_include
+    - source: middleware/wireless/framework/LowPower/PWR.c
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_LPM_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        HAL_UART_ADAPTER_LOWPOWER: 1
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework LowPower
+    user_visible: never
+    description: Middleware wireless framework_lpm
+    display_name: wireless framework LowPower
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform_lowpower.MIMXRT595S
+    - middleware.wireless.framework_platform_lowpower_timer.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_LPM_MIMXRT595S
+middleware.wireless.framework_LPM_systicks.MIMXRT595S:
+  section-type: component
+  meta-name: middleware.wireless.framework.lpm_MIMXRT595S_systicks
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/LowPower/
+      project_relative_path: LowPower/
+      package_relative_path: framework/LowPower/
+    files:
+    - source: middleware/wireless/framework/LowPower/PWR_Interface.h
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: c_include
+    - source: middleware/wireless/framework/LowPower/PWR.c
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/framework/LowPower/PWR_systicks.c
+      project_relative_path: LowPower/
+      components: middleware.freertos-kernel
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/framework/LowPower/PWR_systicks_bm.c
+      project_relative_path: LowPower/
+      components: middleware.baremetal
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_LPM_systicks_MIMXRT595S.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        HAL_UART_ADAPTER_LOWPOWER: 1
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework LowPower
+    user_visible: never
+    description: Middleware wireless framework_lpm_systicks
+    display_name: wireless framework LowPower
+    taxonomy:
+      csub: MIMXRT595S
+      cclass: wireless
+      cgroup: MIMXRT595S
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform_lowpower.MIMXRT595S
+    - middleware.wireless.framework_platform_lowpower_timer.MIMXRT595S
+  cmake_module_name: middleware_wireless_framework_LPM_systicks_MIMXRT595S
+middleware.wireless.framework_fsabstraction:
+  section-type: component
+  meta-name: middleware.wireless.framework.fsabstraction
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FSAbstraction
+      project_relative_path: FSAbstraction
+      package_relative_path: framework/FSAbstraction
+    files:
+    - source: middleware/wireless/framework/FSAbstraction/fwk_fs_abstraction.h
+      project_relative_path: FSAbstraction
+      repo_relative_path: framework/FSAbstraction
+      package_relative_path: framework/FSAbstraction
+      type: c_include
+    - source: middleware/wireless/framework/FSAbstraction/fwk_fs_abstraction.c
+      project_relative_path: FSAbstraction
+      repo_relative_path: framework/FSAbstraction
+      package_relative_path: framework/FSAbstraction
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_fsabstraction.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework FSAbstraction
+    user_visible: never
+    description: Middleware wireless fsabstraction
+    display_name: wireless framework FSAbstraction
+    taxonomy:
+      csub: framework_fsabstraction
+      cclass: wireless
+      cgroup: framework_fsabstraction
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_fsabstraction_littlefs
+  cmake_module_name: middleware_wireless_framework_fsabstraction
+middleware.wireless.framework_filecache:
+  section-type: component
+  meta-name: middleware.wireless.framework.filecache
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/FileCache
+      project_relative_path: FileCache
+      package_relative_path: framework/FileCache
+    files:
+    - source: middleware/wireless/framework/FileCache/fwk_file_cache.h
+      project_relative_path: FileCache
+      repo_relative_path: framework/FileCache
+      package_relative_path: framework/FileCache
+      type: c_include
+    - source: middleware/wireless/framework/FileCache/fwk_file_cache.c
+      project_relative_path: FileCache
+      repo_relative_path: framework/FileCache
+      package_relative_path: framework/FileCache
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_filecache.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework FileCache
+    user_visible: never
+    description: Middleware wireless FileCache
+    display_name: wireless framework FileCache
+    taxonomy:
+      csub: framework_filecache
+      cclass: wireless
+      cgroup: framework_filecache
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_fsabstraction
+  cmake_module_name: middleware_wireless_framework_filecache
+middleware.wireless.framework_keystorage:
+  section-type: component
+  meta-name: middleware.wireless.framework.keystorage
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/KeyStorage
+      project_relative_path: KeyStorage
+      package_relative_path: framework/KeyStorage
+    files:
+    - source: middleware/wireless/framework/KeyStorage/fwk_key_storage.h
+      project_relative_path: KeyStorage
+      repo_relative_path: framework/KeyStorage
+      package_relative_path: framework/KeyStorage
+      type: c_include
+    - source: middleware/wireless/framework/KeyStorage/fwk_key_storage.c
+      project_relative_path: KeyStorage
+      repo_relative_path: framework/KeyStorage
+      package_relative_path: framework/KeyStorage
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_keystorage.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework KeyStorage
+    user_visible: never
+    description: Middleware wireless KeyStorage
+    display_name: wireless framework KeyStorage
+    taxonomy:
+      csub: framework_keystorage
+      cclass: wireless
+      cgroup: framework_keystorage
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_filecache
+  cmake_module_name: middleware_wireless_framework_keystorage
+middleware.wireless.framework_platform.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    - repo_relative_path: framework/platform/rt1170/configs/
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/rt1170/configs/
+    files:
+    - source: middleware/wireless/framework/platform/rt1170/configs/fwk_config.h
+      project_relative_path: Platform/configs
+      repo_relative_path: framework/platform/rt1170/configs
+      package_relative_path: framework/platform/rt1170/configs
+      type: c_include
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform_definitions.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: c_include
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: src
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform
+    user_visible: never
+    description: Middleware wireless framework_platform
+    display_name: wireless framework Platform
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_fwk_debug
+  cmake_module_name: middleware_wireless_framework_platform_rt1170
+middleware.wireless.framework_platform_flash.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_flash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    - repo_relative_path: framework/platform/Common
+      project_relative_path: Platform
+      package_relative_path: framework/platform/Common
+    files:
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mflash.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform_flash.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: src
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform_extflash.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: src
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform_flash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_extflash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_flash_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform flash
+    user_visible: never
+    description: Middleware wireless framework_platform_flash
+    display_name: wireless framework Platform flash
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_flash_rt1170
+middleware.wireless.framework_platform_extflash.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_extflash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    - repo_relative_path: framework/platform/Common
+      project_relative_path: Platform
+      package_relative_path: framework/platform/Common
+    files:
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform_extflash.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: src
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mflash.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_extflash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_extflash_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform Extflash
+    user_visible: never
+    description: Middleware wireless framework_platform_extflash
+    display_name: wireless framework Platform Extflash
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_extflash_rt1170
+middleware.wireless.framework_platform_sensors.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_sensors
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_sensors_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform sensors
+    user_visible: never
+    description: Middleware wireless framework_platform_sensors
+    display_name: wireless framework Platform sensors
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_sensors_rt1170
+middleware.wireless.framework_platform_ota.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ota
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/framework/platform/rt1170/fwk_platform_ota.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1170
+      package_relative_path: framework/platform/rt1170
+      type: src
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mcuboot_ota.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_ota.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_ota_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform OTA
+    user_visible: never
+    description: Middleware wireless framework_platform_ota
+    display_name: wireless framework Platform OTA
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_ota_rt1170
+middleware.wireless.framework_platform_lcl.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lcl
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lcl_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform localization
+    user_visible: never
+    description: Middleware wireless framework_platform_lcl
+    display_name: wireless framework platform localization
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - driver.trdc
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_lcl_rt1170
+middleware.wireless.framework_platform_mws.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_mws
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_mws_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_mws
+    user_visible: never
+    description: Middleware wireless framework_platform_mws
+    display_name: wireless framework platform_mws
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_mws_rt1170
+middleware.wireless.framework_platform_ble.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ble
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_ble_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_ble
+    user_visible: never
+    description: Middleware wireless framework_platform_ble
+    display_name: wireless framework platform_ble
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+    - middleware.wireless.framework_platform_coex.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_ble_rt1170
+middleware.wireless.framework_platform_genfsk.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_genfsk
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_genfsk_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_genfsk
+    user_visible: never
+    description: Middleware wireless framework_platform_genfsk
+    display_name: wireless framework platform_genfsk
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_genfsk_rt1170
+middleware.wireless.framework_platform_ot.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ot
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_ot_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_ot
+    user_visible: never
+    description: Middleware wireless framework_platform_ot
+    display_name: wireless framework platform_ot
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_ot_rt1170
+middleware.wireless.framework_platform_lowpower.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lowpower
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lowpower_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_lowpower
+    user_visible: never
+    description: Middleware wireless framework_platform_lowpower
+    display_name: wireless framework platform_lowpower
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_lowpower_rt1170
+middleware.wireless.framework_platform_lowpower_timer.rt1170:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lowpower_timer
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1170
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1170
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lowpower_timer_rt1170.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_lowpower_timer
+    user_visible: never
+    description: Middleware wireless framework_platform_lowpower_timer
+    display_name: wireless framework platform_lowpower_timer
+    taxonomy:
+      csub: rt1170
+      cclass: wireless
+      cgroup: rt1170
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1170
+  cmake_module_name: middleware_wireless_framework_platform_lowpower_timer_rt1170
+middleware.wireless.framework_sec_lib_sss.m7:
+  section-type: component
+  meta-name: middleware.wireless.framework.sec_lib_sss
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/SecLib
+      project_relative_path: SecLib
+      package_relative_path: framework/SecLib
+    files:
+    - source: middleware/wireless/framework/SecLib/SecLib.h
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/CryptoLibSW.h
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib_ecp256.h
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: c_include
+    - source: middleware/wireless/framework/SecLib/SecLib_sss.c
+      project_relative_path: SecLib
+      repo_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: src
+    - source: middleware/wireless/framework/SecLib/lib_crypto_m7.a
+      toolchains: armgcc mcux
+      attribute: extra-libraries
+      repo_relative_path: framework/SecLib
+      project_relative_path: framework/SecLib
+      package_relative_path: framework/SecLib
+      type: lib
+    - source: middleware/wireless/middleware_wireless_framework_sec_lib_sss_m7.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Sec_lib_sss
+    user_visible: never
+    description: Middleware wireless framework_sec_lib_sss
+    display_name: wireless framework Sec_lib_sss
+    taxonomy:
+      csub: m7
+      cclass: wireless
+      cgroup: m7
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_sec_lib_sss_m7
+middleware.wireless.framework_LPM.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.lpm_MIMXRT1176
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/LowPower/
+      project_relative_path: LowPower/
+      package_relative_path: framework/LowPower/
+    files:
+    - source: middleware/wireless/framework/LowPower/PWR_Interface.h
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: c_include
+    - source: middleware/wireless/framework/LowPower/PWR.c
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_LPM_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        HAL_UART_ADAPTER_LOWPOWER: 1
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework LowPower
+    user_visible: never
+    description: Middleware wireless framework_lpm
+    display_name: wireless framework LowPower
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform_lowpower.rt1170
+    - middleware.wireless.framework_platform_lowpower_timer.rt1170
+  cmake_module_name: middleware_wireless_framework_LPM_MIMXRT1176
+middleware.wireless.framework_LPM_systicks.MIMXRT1176:
+  section-type: component
+  meta-name: middleware.wireless.framework.lpm_MIMXRT1176_systicks
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/LowPower/
+      project_relative_path: LowPower/
+      package_relative_path: framework/LowPower/
+    files:
+    - source: middleware/wireless/framework/LowPower/PWR_Interface.h
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: c_include
+    - source: middleware/wireless/framework/LowPower/PWR.c
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/framework/LowPower/PWR_systicks.c
+      project_relative_path: LowPower/
+      components: middleware.freertos-kernel
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/framework/LowPower/PWR_systicks_bm.c
+      project_relative_path: LowPower/
+      components: middleware.baremetal
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_LPM_systicks_MIMXRT1176.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        HAL_UART_ADAPTER_LOWPOWER: 1
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework LowPower
+    user_visible: never
+    description: Middleware wireless framework_lpm_systicks
+    display_name: wireless framework LowPower
+    taxonomy:
+      csub: MIMXRT1176
+      cclass: wireless
+      cgroup: MIMXRT1176
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform_lowpower.rt1170
+    - middleware.wireless.framework_platform_lowpower_timer.rt1170
+  cmake_module_name: middleware_wireless_framework_LPM_systicks_MIMXRT1176
+middleware.wireless.framework_platform.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/include
+      project_relative_path: Platform
+      package_relative_path: framework/platform/include
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    - repo_relative_path: framework/platform/rt1060/configs/
+      project_relative_path: Platform/configs
+      package_relative_path: framework/platform/rt1060/configs/
+    files:
+    - source: middleware/wireless/framework/platform/rt1060/fwk_platform.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1060
+      package_relative_path: framework/platform/rt1060
+      type: src
+    - source: middleware/wireless/framework/platform/rt1060/fwk_platform.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1060
+      package_relative_path: framework/platform/rt1060
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform
+    user_visible: never
+    description: Middleware wireless framework_platform
+    display_name: wireless framework Platform
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_fwk_debug
+  cmake_module_name: middleware_wireless_framework_platform_rt1060
+middleware.wireless.framework_platform_flash.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_flash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    - repo_relative_path: framework/platform/Common
+      project_relative_path: Platform
+      package_relative_path: framework/platform/Common
+    files:
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mflash.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/rt1060/fwk_platform_flash.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1060
+      package_relative_path: framework/platform/rt1060
+      type: src
+    - source: middleware/wireless/framework/platform/rt1060/fwk_platform_flash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1060
+      package_relative_path: framework/platform/rt1060
+      type: c_include
+    - source: middleware/wireless/framework/platform/include/fwk_platform_extflash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_flash_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform flash
+    user_visible: never
+    description: Middleware wireless framework_platform_flash
+    display_name: wireless framework Platform flash
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_flash_rt1060
+middleware.wireless.framework_platform_extflash.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_extflash
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    - repo_relative_path: framework/platform/Common
+      project_relative_path: Platform
+      package_relative_path: framework/platform/Common
+    files:
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mflash.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_extflash.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_extflash_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform Extflash
+    user_visible: never
+    description: Middleware wireless framework_platform_extflash
+    display_name: wireless framework Platform Extflash
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_extflash_rt1060
+middleware.wireless.framework_platform_sensors.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_sensors
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_sensors_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform sensors
+    user_visible: never
+    description: Middleware wireless framework_platform_sensors
+    display_name: wireless framework Platform sensors
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_sensors_rt1060
+middleware.wireless.framework_platform_ota.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ota
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/framework/platform/rt1060/fwk_platform_ota.c
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/rt1060
+      package_relative_path: framework/platform/rt1060
+      type: src
+    - source: middleware/wireless/framework/platform/Common/fwk_platform_mcuboot_ota.ch
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/Common
+      package_relative_path: framework/platform/Common
+      type: other
+    - source: middleware/wireless/framework/platform/include/fwk_platform_ota.h
+      project_relative_path: Platform
+      repo_relative_path: framework/platform/include
+      package_relative_path: framework/platform/include
+      type: c_include
+    - source: middleware/wireless/middleware_wireless_framework_platform_ota_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework Platform OTA
+    user_visible: never
+    description: Middleware wireless framework_platform_ota
+    display_name: wireless framework Platform OTA
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_ota_rt1060
+middleware.wireless.framework_platform_lcl.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lcl
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lcl_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform localization
+    user_visible: never
+    description: Middleware wireless framework_platform_lcl
+    display_name: wireless framework platform localization
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - driver.trdc
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_lcl_rt1060
+middleware.wireless.framework_platform_mws.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_mws
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_mws_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_mws
+    user_visible: never
+    description: Middleware wireless framework_platform_mws
+    display_name: wireless framework platform_mws
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_mws_rt1060
+middleware.wireless.framework_platform_ble.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ble
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_ble_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_ble
+    user_visible: never
+    description: Middleware wireless framework_platform_ble
+    display_name: wireless framework platform_ble
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+    - middleware.wireless.framework_platform_coex.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_ble_rt1060
+middleware.wireless.framework_platform_genfsk.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_genfsk
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_genfsk_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_genfsk
+    user_visible: never
+    description: Middleware wireless framework_platform_genfsk
+    display_name: wireless framework platform_genfsk
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_genfsk_rt1060
+middleware.wireless.framework_platform_ot.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_ot
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_ot_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: false
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_ot
+    user_visible: never
+    description: Middleware wireless framework_platform_ot
+    display_name: wireless framework platform_ot
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_ot_rt1060
+middleware.wireless.framework_platform_lowpower.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lowpower
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lowpower_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_lowpower
+    user_visible: never
+    description: Middleware wireless framework_platform_lowpower
+    display_name: wireless framework platform_lowpower
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_lowpower_rt1060
+middleware.wireless.framework_platform_lowpower_timer.rt1060:
+  section-type: component
+  meta-name: middleware.wireless.framework.platform_lowpower_timer
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/platform/rt1060
+      project_relative_path: Platform
+      package_relative_path: framework/platform/rt1060
+    files:
+    - source: middleware/wireless/middleware_wireless_framework_platform_lowpower_timer_rt1060.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework platform_lowpower_timer
+    user_visible: never
+    description: Middleware wireless framework_platform_lowpower_timer
+    display_name: wireless framework platform_lowpower_timer
+    taxonomy:
+      csub: rt1060
+      cclass: wireless
+      cgroup: rt1060
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform.rt1060
+  cmake_module_name: middleware_wireless_framework_platform_lowpower_timer_rt1060
+middleware.wireless.framework_LPM.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.lpm_MIMXRT1062
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/LowPower/
+      project_relative_path: LowPower/
+      package_relative_path: framework/LowPower/
+    files:
+    - source: middleware/wireless/framework/LowPower/PWR_Interface.h
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: c_include
+    - source: middleware/wireless/framework/LowPower/PWR.c
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_LPM_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        HAL_UART_ADAPTER_LOWPOWER: 1
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework LowPower
+    user_visible: never
+    description: Middleware wireless framework_lpm
+    display_name: wireless framework LowPower
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform_lowpower.rt1060
+    - middleware.wireless.framework_platform_lowpower_timer.rt1060
+  cmake_module_name: middleware_wireless_framework_LPM_MIMXRT1062
+middleware.wireless.framework_LPM_systicks.MIMXRT1062:
+  section-type: component
+  meta-name: middleware.wireless.framework.lpm_MIMXRT1062_systicks
+  contents:
+    repo_base_path: middleware/wireless
+    project_base_path: framework
+    cc-include:
+    - repo_relative_path: framework/LowPower/
+      project_relative_path: LowPower/
+      package_relative_path: framework/LowPower/
+    files:
+    - source: middleware/wireless/framework/LowPower/PWR_Interface.h
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: c_include
+    - source: middleware/wireless/framework/LowPower/PWR.c
+      project_relative_path: LowPower/
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/framework/LowPower/PWR_systicks.c
+      project_relative_path: LowPower/
+      components: middleware.freertos-kernel
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/framework/LowPower/PWR_systicks_bm.c
+      project_relative_path: LowPower/
+      components: middleware.baremetal
+      repo_relative_path: framework/LowPower
+      package_relative_path: framework/LowPower
+      type: src
+    - source: middleware/wireless/middleware_wireless_framework_LPM_systicks_MIMXRT1062.cmake
+      type: workspace
+      toolchains: armgcc
+      hidden: true
+    configuration:
+      cc-define:
+        HAL_UART_ADAPTER_LOWPOWER: 1
+    package_base_path: middleware/wireless
+  belong_to: set.middleware.wireless.framework
+  section_info:
+    need_require: true
+    version: 1.0.0
+    type: middleware
+    full_name: wireless framework LowPower
+    user_visible: never
+    description: Middleware wireless framework_lpm_systicks
+    display_name: wireless framework LowPower
+    taxonomy:
+      csub: MIMXRT1062
+      cclass: wireless
+      cgroup: MIMXRT1062
+    vendor: NXP
+  dependency:
+    allOf:
+    - middleware.wireless.framework_platform_lowpower.rt1060
+    - middleware.wireless.framework_platform_lowpower_timer.rt1060
+  cmake_module_name: middleware_wireless_framework_LPM_systicks_MIMXRT1062

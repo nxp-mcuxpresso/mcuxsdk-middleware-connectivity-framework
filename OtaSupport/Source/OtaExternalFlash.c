@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2021 NXP
+ * Copyright 2021-2023 NXP
  * All rights reserved.
  *
  * \file
@@ -9,7 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
 
-#include "fwk_platform_flash.h"
+/* -------------------------------------------------------------------------- */
+/*                                  Includes                                  */
+/* -------------------------------------------------------------------------- */
+
+#include "fwk_config.h"
+#include "fwk_platform_extflash.h"
 #include "fwk_platform_ota.h"
 #include "FunctionLib.h"
 #include "OtaPrivate.h"
@@ -20,9 +25,6 @@
 * Private Macros
 *******************************************************************************
 ******************************************************************************/
-#define KB(x)  ((x)*1024U)
-#define MB(x)  (KB(x) * 1024U)
-#define MHz(x) ((x)*1000000U)
 
 #define OTA_WRITE_BUFFER_SIZE (1U * PLATFORM_EXTFLASH_PAGE_SIZE)
 
@@ -42,14 +44,11 @@
  */
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
 /* The dimension of the Erase bitmap must be sufficient to provide one bit per flash sector. */
-#define ERASE_BITMAP_SIZE  ((PLATFORM_OTA_EXTFLASH_TOTAL_SIZE / PLATFORM_EXTFLASH_SECTOR_SIZE) / 32U)
-#define SET_BIT(bitmap, i) bitmap[((i) >> 5)] |= (((uint32_t)1U << ((i)&0x1fU)))
-#define CLR_BIT(bitmap, i) bitmap[((i) >> 5)] &= ~(((uint32_t)1U << ((i)&0x1fU)))
-#define GET_BIT(bitmap, i) (((bitmap[(i) >> 5] & (((uint32_t)1U << ((i)&0x1fU)))) >> ((i)&0x1fU)) != 0U)
+#define ERASE_BITMAP_SIZE ((PLATFORM_OTA_EXTFLASH_TOTAL_SIZE / PLATFORM_EXTFLASH_SECTOR_SIZE) / 32U)
 #endif
 
 /*!< Macro to convert offset relative to start of external storage */
-#define PHYS_ADDR(x) ((uint32_t)(x) + ext_storage.base_offset)
+#define PHYS_ADDR(x) ((uint32_t)(x) + ota_ext_partition->start_offset)
 
 /******************************************************************************
 *******************************************************************************
@@ -64,8 +63,9 @@ static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void);
 static ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t Addr, uint8_t *inbuf);
 static uint8_t            ExternalFlash_isBusy(void);
 static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pAddr, int32_t *pSize, bool non_blocking);
-static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint16_t length);
-
+#if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
+static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint32_t length);
+#endif
 /******************************************************************************
 *******************************************************************************
 * Private type definitions
@@ -86,29 +86,22 @@ static uint32_t mWriteBufferIndex = 0U;
 static uint32_t eraseBitmap[ERASE_BITMAP_SIZE] = {0U};
 #endif
 
+static const OtaPartition_t *ota_ext_partition;
+
 /******************************************************************************
 *******************************************************************************
 * Public Memory
 *******************************************************************************
 ******************************************************************************/
 
-const OtaFlash_t ext_storage = {
-    .base_offset = PLATFORM_OTA_EXTFLASH_START_OFFSET,
-    .total_size  = PLATFORM_OTA_EXTFLASH_TOTAL_SIZE,
-    .sector_size = PLATFORM_EXTFLASH_SECTOR_SIZE,
-    .baudrate    = MHz(24),
-    .ops =
-        {
-            .init           = ExternalFlash_Init,
-            .format_storage = ExternalFlash_ChipErase,
-            .eraseBlock     = ExternalFlash_EraseBlock,
-            .writeData      = ExternalFlash_WriteData,
-            .readData       = ExternalFlash_ReadData,
-            .isBusy         = ExternalFlash_isBusy,
-            .eraseArea      = ExternalFlash_EraseArea,
-            .verify         = ExternalVerifyFlashProgram,
-            .flushWriteBuf  = ExternalFlash_FlushWriteBuffer,
-        },
+static const OtaFlashOps_t ext_flash_ops = {
+    .init           = ExternalFlash_Init,
+    .format_storage = ExternalFlash_ChipErase,
+    .writeData      = ExternalFlash_WriteData,
+    .readData       = ExternalFlash_ReadData,
+    .isBusy         = ExternalFlash_isBusy,
+    .eraseArea      = ExternalFlash_EraseArea,
+    .flushWriteBuf  = ExternalFlash_FlushWriteBuffer,
 };
 
 /******************************************************************************
@@ -135,7 +128,7 @@ static ota_flash_status_t ExternalFlash_Init(void)
             status = kStatus_OTA_Flash_Error;
             status_t st;
 
-            st = PLATFORM_InitExternalFlash(ext_storage.baudrate);
+            st = PLATFORM_InitExternalFlash();
 
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
             FLib_MemSet(eraseBitmap, 0x0U, ERASE_BITMAP_SIZE);
@@ -155,16 +148,33 @@ static ota_flash_status_t ExternalFlash_Init(void)
 
 /*! *********************************************************************************
  * \brief  Clean External storage partition by erasing all sectors
+ *  (so not quite a chip erase)
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  *
  ***********************************************************************************/
 static ota_flash_status_t ExternalFlash_ChipErase(void)
 {
-    ota_flash_status_t status;
-
-    status = ExternalFlash_EraseBlock(PLATFORM_OTA_EXTFLASH_START_OFFSET, PLATFORM_OTA_EXTFLASH_TOTAL_SIZE);
-
+    ota_flash_status_t status = kStatus_OTA_Flash_Success;
+    uint32_t           i;
+    uint32_t           phys_sector_addr;
+    uint32_t           nb_sect_in_partition = ota_ext_partition->size / ota_ext_partition->sector_size;
+    for (i = 0U; i < nb_sect_in_partition; i++)
+    {
+        phys_sector_addr = PHYS_ADDR(i * ota_ext_partition->sector_size);
+        if (PLATFORM_IsExternalFlashSectorBlank(phys_sector_addr))
+        {
+            continue;
+        }
+        else
+        {
+            if (PLATFORM_EraseExternalFlash(phys_sector_addr, ota_ext_partition->sector_size) != kStatus_Success)
+            {
+                status = kStatus_OTA_Flash_Fail;
+                break;
+            }
+        }
+    }
     return status;
 }
 
@@ -184,16 +194,16 @@ static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t Addr, uint32_t size)
     uint32_t           startBlock, endBlock;
     uint32_t           index;
 
-    if ((endAddr & (PLATFORM_EXTFLASH_SECTOR_SIZE - 1U)) != 0U)
+    if ((endAddr & (ota_ext_partition->sector_size - 1U)) != 0U)
     {
         /* If the address is in the middle of a block, round up to the next block
          * This gives the upper block limit, every blocks before this one will be erased but not this block
          * as it is outside the erase range */
-        endAddr = ((endAddr / PLATFORM_EXTFLASH_SECTOR_SIZE) + 1U) * PLATFORM_EXTFLASH_SECTOR_SIZE;
+        endAddr = ((endAddr / ota_ext_partition->sector_size) + 1U) * ota_ext_partition->sector_size;
     }
 
-    startBlock = Addr / PLATFORM_EXTFLASH_SECTOR_SIZE;
-    endBlock   = endAddr / PLATFORM_EXTFLASH_SECTOR_SIZE;
+    startBlock = Addr / ota_ext_partition->sector_size;
+    endBlock   = endAddr / ota_ext_partition->sector_size;
     index      = startBlock;
 
     while (index < endBlock)
@@ -207,9 +217,9 @@ static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t Addr, uint32_t size)
         else
 #endif
         {
-            uint32_t blockAddr  = index * PLATFORM_EXTFLASH_SECTOR_SIZE;
+            uint32_t blockAddr  = index * ota_ext_partition->sector_size;
             uint32_t blockCount = endBlock - index;
-            uint32_t eraseSize  = blockCount * PLATFORM_EXTFLASH_SECTOR_SIZE;
+            uint32_t eraseSize  = blockCount * ota_ext_partition->sector_size;
 
             if (PLATFORM_EraseExternalFlash(PHYS_ADDR(blockAddr), eraseSize) != kStatus_Success)
             {
@@ -237,7 +247,7 @@ static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t Addr, uint32_t size)
  *
  * \param[in] NoOfBytes   Number of bytes to be written
  * \param[in] Addr        offset address relative to start of External Storage
- * \param[in] Outbuf     pointer on buffer to be written
+ * \param[in] Outbuf      pointer on buffer to be written
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
@@ -247,7 +257,7 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
 
     do
     {
-        if (Addr > PLATFORM_OTA_EXTFLASH_TOTAL_SIZE)
+        if (Addr >= ota_ext_partition->size)
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
@@ -255,15 +265,14 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
-        if (NoOfBytes >= (uint32_t)(PLATFORM_OTA_EXTFLASH_TOTAL_SIZE - Addr))
+        if (Addr + NoOfBytes >= ota_ext_partition->size)
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
-
-        if (NoOfBytes == PLATFORM_EXTFLASH_PAGE_SIZE)
+        if (NoOfBytes == ota_ext_partition->page_size)
         {
             /* Write the current write buffer to flash */
-            if (PLATFORM_WriteExternalFlash(Outbuf, NoOfBytes, PHYS_ADDR(Addr)) != kStatus_Success)
+            if (PLATFORM_WriteExternalFlash(Outbuf, ota_ext_partition->page_size, PHYS_ADDR(Addr)) != kStatus_Success)
             {
                 status = kStatus_OTA_Flash_Fail;
                 break;
@@ -468,6 +477,7 @@ static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pAddr, int32_t *pSiz
     return status;
 }
 
+#if defined OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
 /*! *********************************************************************************
  * \brief  Read back flash after programming operation
  *
@@ -479,12 +489,71 @@ static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pAddr, int32_t *pSiz
  *
  * \return    kStatus_OTA_Flash_Success if identical, kStatus_OTA_Flash_Fail otherwise
  ***********************************************************************************/
-static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint16_t length)
+static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint32_t length)
 {
-    // TODO ?
-    NOT_USED(pData);
-    NOT_USED(Addr);
-    NOT_USED(length);
+    ota_flash_status_t status = kStatus_OTA_Flash_Success;
+    uint8_t            read_page_buf[PLATFORM_EXTFLASH_PAGE_SIZE];
+    uint32_t           endAddr = Addr + length;
+    /* Perform reads page by page becasue it seems to be a reasonable size but
+     * read buffer size could be different.
+     */
+    while (Addr < endAddr)
+    {
+        uint32_t read_sz = (endAddr - Addr);
+        if (read_sz > sizeof(read_page_buf))
+        {
+            read_sz = sizeof(read_page_buf);
+        }
+        if (PLATFORM_ReadExternalFlash(read_page_buf, read_sz, PHYS_ADDR(Addr), true) != kStatus_Success)
+        {
+            status = kStatus_OTA_Flash_Fail;
+            break;
+        }
+        if (!FLib_MemCmp(pData, (void const *)read_page_buf, read_sz))
+        {
+            status = kStatus_OTA_Flash_Fail;
+            break;
+        }
+        Addr += read_sz;
+        pData += read_sz;
+    }
 
-    return kStatus_OTA_Flash_Success;
+    return status;
+}
+#endif
+
+otaResult_t OTA_SelectExternalStoragePartition(void)
+{
+    otaResult_t    status = gOtaExternalFlashError_c;
+    OtaStateCtx_t *hdl    = &mHdl;
+
+    do
+    {
+        OTA_DEBUG_TRACE("Select External flash\r\n");
+
+        if (hdl->FwUpdImageState == OtaImgState_Acquiring)
+        {
+            RAISE_ERROR(status, gOtaInvalidOperation_c);
+        }
+        ota_ext_partition = PLATFORM_OtaGetOtaExternalPartitionConfig();
+        if (ota_ext_partition == NULL)
+        {
+            RAISE_ERROR(status, gOtaInvalidParam_c);
+        }
+        hdl->ota_partition  = ota_ext_partition;
+        hdl->FlashOps       = &ext_flash_ops;
+        hdl->ImageOffset    = PLATFORM_OtaGetImageOffset();
+        hdl->MaxImageLength = hdl->ota_partition->size - hdl->ImageOffset;
+
+        /* Define the start of the erase process */
+        hdl->ErasedUntilOffset = hdl->ImageOffset;
+
+        if (hdl->FlashOps->init() != kStatus_OTA_Flash_Success)
+        {
+            RAISE_ERROR(status, gOtaExternalFlashError_c);
+        }
+        status = gOtaSuccess_c;
+    } while (false);
+
+    return status;
 }

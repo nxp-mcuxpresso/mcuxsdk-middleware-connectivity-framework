@@ -153,7 +153,7 @@ void FLib_MemSet(void *pData, uint8_t value, uint32_t cBytes);
  * \brief  This function sets all words in a specified buffer to a set value.
  *   The memory set is done word per word
  *
- * \param[in,out]  pDst  Address of the buffer to set.
+ * \param[in,out]  pData  Address of the buffer to set.
  * \param[in]  value  Set value.
  * \param[in]  cWords Number of words to set in the buffer.
  *

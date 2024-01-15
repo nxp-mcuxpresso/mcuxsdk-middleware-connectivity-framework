@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2022-2023 NXP
 # All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -34,49 +34,48 @@ else()
     message(STATUS "CONNFWK is a subdirectory ! Make sure to set SDK properties to connfwk-config")
 endif()
 
+# CONNFWK_BOARD_LIB_EXTERNAL gives the possibility to link to an externally built board lib
+if(NOT CONNFWK_BOARD_LIB_EXTERNAL)
+    if(NOT CONNFWK_FREERTOS_CONFIG_PATH)
+        set(CONNFWK_FREERTOS_CONFIG_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${CONNFWK_BOARD}/freertos)
+    endif()
+    set(CONNFWK_BOARD_LIB connfwk-board-${CONNFWK_BOARD})
+else()
+    set(CONNFWK_BOARD_LIB ${CONNFWK_BOARD_LIB_EXTERNAL})
+endif()
+message(STATUS "CONNFWK_BOARD_LIB: ${CONNFWK_BOARD_LIB}")
+
+# CONNFWK_MCUX_SDK_LIB_EXTERNAL gives the possibility to link to an externally built sdk lib
+if(NOT CONNFWK_MCUX_SDK_LIB_EXTERNAL)
+    set(CONNFWK_MCUX_SDK_LIB mcux-sdk-${CONNFWK_PLATFORM})
+else()
+    set(CONNFWK_MCUX_SDK_LIB ${CONNFWK_MCUX_SDK_LIB_EXTERNAL})
+endif()
+message(STATUS "CONNFWK_MCUX_SDK_LIB: ${CONNFWK_MCUX_SDK_LIB}")
+
+set(CONNFWK_PLATFORM_LIB connfwk-platform-${CONNFWK_PLATFORM})
+message(STATUS "CONNFWK_PLATFORM_LIB: ${CONNFWK_PLATFORM_LIB}")
+
 # Set common paths for the framework
 target_include_directories(connfwk-config INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/Common
     ${CMAKE_CURRENT_SOURCE_DIR}/DBG
-    ${CMAKE_CURRENT_SOURCE_DIR}/FunctionLib
-    ${CMAKE_CURRENT_SOURCE_DIR}/SecLib
-    ${CMAKE_CURRENT_SOURCE_DIR}/RNG
-    ${CMAKE_CURRENT_SOURCE_DIR}/HWParameter
-    ${CMAKE_CURRENT_SOURCE_DIR}/Sensors
-    ${CMAKE_CURRENT_SOURCE_DIR}/FileSystem
-    ${CMAKE_CURRENT_SOURCE_DIR}/FSAbstraction
-    ${CMAKE_CURRENT_SOURCE_DIR}/FileCache
-    ${CMAKE_CURRENT_SOURCE_DIR}/LowPower
-    ${CMAKE_CURRENT_SOURCE_DIR}/ModuleInfo
-    ${CMAKE_CURRENT_SOURCE_DIR}/HDI
-    ${CMAKE_CURRENT_SOURCE_DIR}/IPC
-    ${CMAKE_CURRENT_SOURCE_DIR}/SFC
-    ${CMAKE_CURRENT_SOURCE_DIR}/OtaSupport/Interface
-    ${CMAKE_CURRENT_SOURCE_DIR}/FSCI/Interface
-    ${CMAKE_CURRENT_SOURCE_DIR}/NVM/Interface
-    ${CMAKE_CURRENT_SOURCE_DIR}/platform/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/platform/${CONNFWK_PLATFORM}
-    ${CMAKE_CURRENT_SOURCE_DIR}/platform/${CONNFWK_PLATFORM}/configs
+    ${CMAKE_CURRENT_SOURCE_DIR}/NVS/Interface
 )
 
-# Configure the board lib
-add_subdirectory(boards)
+if(NOT CONNFWK_BOARD_LIB_EXTERNAL)
+    # Configure the board lib
+    add_subdirectory(boards)
+endif()
 
 # Configure the platform lib
-add_subdirectory(platform/${CONNFWK_PLATFORM})
-
-if(CONNFWK_PLATFORM_FAMILY)
-    target_include_directories(connfwk-config INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/platform/${CONNFWK_PLATFORM_FAMILY}/${CONNFWK_PLATFORM}
-    )
-    add_subdirectory(platform/${CONNFWK_PLATFORM_FAMILY})
-endif()
+add_subdirectory(platform)
 
 if(CONNFWK_FLIB)
     add_subdirectory(FunctionLib)
 endif()
 
-if(CONNFWK_OTA)
+if(CONNFWK_OTA OR CONNFWK_OTA_SYS)
     add_subdirectory(OtaSupport)
 endif()
 
@@ -84,8 +83,16 @@ if(CONNFWK_FILESYSTEM)
     add_subdirectory(FileSystem)
 endif()
 
+if(CONNFWK_FACTORYDATAPROVIDER)
+    add_subdirectory(FactoryDataProvider)
+endif()
+
 if(CONNFWK_FILECACHE)
     add_subdirectory(FileCache)
+endif()
+
+if(CONNFWK_KEYSTORAGE)
+    add_subdirectory(KeyStorage)
 endif()
 
 if(CONNFWK_FSABSTRACTION)
@@ -120,6 +127,11 @@ if(CONNFWK_NVM)
     add_subdirectory(NVM)
 endif()
 
+if(CONNFWK_NVS)
+    add_subdirectory(NVS)
+endif()
+
+
 if(CONNFWK_SFC)
     add_subdirectory(SFC)
 endif()
@@ -128,8 +140,26 @@ if(CONNFWK_OTW)
     add_subdirectory(OTW)
 endif()
 
+if(CONNFWK_IPC)
+    add_subdirectory(IPC)
+endif()
+
+if(CONNFWK_HDI)
+    add_subdirectory(HDI)
+endif()
+
 if(CONNFWK_TESTS)
     add_subdirectory(tests)
 endif()
 
 add_subdirectory(third_party)
+
+include(${PROJECT_SOURCE_DIR}/cmake/utils.cmake)
+
+if(CONNFWK_EXPORT_TO_BIN)
+    connfwk_export_all_executables_to_bin()
+endif()
+
+if(CONNFWK_EXPORT_TO_SREC)
+    connfwk_export_all_executables_to_srec()
+endif()
