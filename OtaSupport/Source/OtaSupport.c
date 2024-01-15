@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2016-2022 NXP
+ * Copyright 2016-2023 NXP
  * All rights reserved.
  *
  * \file
@@ -14,13 +14,9 @@
 
 #include "EmbeddedTypes.h"
 #include "OtaSupport.h"
-#include "fsl_adapter_flash.h"
 #include "fsl_component_messaging.h"
-
 #include "FunctionLib.h"
-
 #include "fwk_platform_ota.h"
-#include "fwk_platform_flash.h"
 #include "OtaPrivate.h"
 #include "fsl_os_abstraction.h"
 
@@ -43,51 +39,6 @@
 * Private type definitions
 *******************************************************************************
 ******************************************************************************/
-
-typedef struct
-{
-    /*! Flag storing whether we are already in the process of writing an image received OTA in the OTA storage or not */
-    bool LoadOtaImageInProgress;
-    /*! Total length of the OTA image that is currently being written in OTA storage */
-    uint32_t OtaImageTotalLength;
-    /*! The length of the OTA image that has being written in OTA storage so far */
-    uint32_t OtaImageCurrentLength;
-    /*! Current write address in the OTA storage */
-    uint32_t CurrentStorageAddress;
-    /*! Limit up to which erase was completed */
-    uint32_t ErasedUntilAddress;
-    /*! When a new image is ready the flash flags will be written in idle task */
-    bool NewImageReady;
-    /*! Select where the image is to be written to internal storage or external one*/
-    const OtaFlash_t *SelectedFlash;
-    /*! Select offset at which the image is expected to start - leave space for a possible BootInfo section */
-    uint32_t ImageOffset;
-    /*! Define the maximum image size */
-    uint32_t MaxImageLength;
-
-    /*! Queue of flash operations */
-    messaging_t op_queue;
-    /*! Element in which accumulation of PROGRAM_PAGE_SZ bytes is performed  */
-    FLASH_TransactionOp_t *cur_transaction;
-    /*! Address of actual EEPROM address, must remain less than CurrentEepromAddress */
-    uint32_t StorageAddressWritten;
-    /*! Size actually written into OTA storage must be less than OtaImageCurrentLength */
-    uint32_t OtaImageLengthWritten;
-    /*! Number of polling: OTA_TransactionResume calls  */
-    int           cnt_idle_op;
-    int           max_cnt_idle;
-    int           q_sz;
-    int           q_max;
-    void *        PostedQueue_storage;
-    uint8_t       PostedQueue_capacity;
-    uint8_t       PostedQueue_nb_in_queue;
-    list_label_t  transaction_free_list;
-    bool          isInitialized;
-    ota_config_t *config;
-    /* Mutex used for locking OTA Transactions */
-    OSA_MUTEX_HANDLE_DEFINE(msgQueueMutex);
-
-} OtaStateCtx_t;
 
 union ota_op_completion_cb
 {
@@ -114,11 +65,14 @@ static otaResult_t            OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flas
 static otaResult_t            OTA_WriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *outbuf);
 
 static ota_flash_status_t OTA_TreatFlashOpWrite(FLASH_TransactionOp_t *pMsg);
-static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg);
 static ota_flash_status_t OTA_TreatFlashOpEraseNextBlock(FLASH_TransactionOp_t *pMsg);
 static ota_flash_status_t OTA_TreatFlashOpEraseNextBlockComplete(FLASH_TransactionOp_t *pMsg);
+#if defined               DeprecatedOtaHasPostedEraseArea && (DeprecatedOtaHasPostedEraseArea > 0)
+static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg);
+#endif
+#if defined               DeprecatedOtaHasPostedEraseSector && (DeprecatedOtaHasPostedEraseSector > 0)
 static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMsg);
-
+#endif
 /******************************************************************************
 *******************************************************************************
 * Private Memory Declarations
@@ -130,24 +84,25 @@ static ota_config_t configuration = {
     .maxConsecutiveTransactions = 3,
 };
 
-static OtaStateCtx_t mHdl = {
-    .LoadOtaImageInProgress = false,
-    .OtaImageTotalLength    = 0,
-    .OtaImageCurrentLength  = 0,
-    .CurrentStorageAddress  = 0,
-    .ErasedUntilAddress     = 0,
-    .NewImageReady          = false,
-    .SelectedFlash          = NULL,
-    .ImageOffset            = 0,
-    .MaxImageLength         = 0,
+OtaStateCtx_t mHdl = {
+    .OtaImageTotalLength   = 0,
+    .OtaImageCurrentLength = 0,
+    .CurrentStorageAddress = 0,
+    .ErasedUntilOffset     = 0,
+    .FwUpdImageState       = OtaImgState_None,
+    .FlashOps              = NULL,
+    .ota_partition         = NULL,
+    .ImageOffset           = 0,
+    .MaxImageLength        = 0,
 
     .q_sz                  = 0,
     .q_max                 = 0,
     .StorageAddressWritten = 0,
     .OtaImageLengthWritten = 0,
-    .PostedQueue_storage   = NULL,
-    .PostedQueue_capacity  = 0,
-    .isInitialized         = false,
+    .PostedQ_storage       = NULL,
+    .PostedQ_capacity      = 0,
+    .PostedQInitialized    = false,
+    .VerifyWrites          = true,
     .config                = &configuration,
 };
 
@@ -156,31 +111,89 @@ static OtaStateCtx_t mHdl = {
 * Public Functions
 *******************************************************************************
 ******************************************************************************/
-
-otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz)
+otaResult_t OTA_Initialize(void)
 {
-    otaResult_t           st = gOtaSuccess_c;
-    list_status_t         status;
-    list_element_handle_t list_handle;
-
-    /* FLASH_TransactionOpNode_t size shall be multiple of 4 bytes. The reason is to avoid
-        doing unaligned access when going through the transaction operation queue, this could lead to
-        crash on some toolchain (gcc) when using some instructions not supporting unaligned access*/
-    assert((sizeof(FLASH_TransactionOpNode_t) & 0x3U) == 0U);
+    otaResult_t status = gOtaSuccess_c;
 
     do
     {
-        int                        res            = -1;
+        OtaImgState_t img_state;
+
+        if (mHdl.FwUpdImageState != OtaImgState_None)
+        {
+            OTA_CancelImage();
+            break;
+        }
+        img_state = OTA_GetImgState();
+        if (img_state == OtaImgState_Fail)
+        {
+            RAISE_ERROR(status, gOtaError_c);
+        }
+
+        if ((img_state == OtaImgState_Permanent) || (img_state == OtaImgState_RunCandidate))
+        {
+            status = OTA_UpdateImgState(img_state);
+        }
+        else if (img_state == OtaImgState_None)
+        {
+            /* case where we just downloaded via debugger */
+            status = OTA_UpdateImgState(OtaImgState_Permanent);
+        }
+        else
+        {
+            status = gOtaSuccess_c; /* no state transition : leave as is without error */
+        }
+    } while (false);
+
+    return status;
+}
+otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz)
+{
+    otaResult_t st = gOtaSuccess_c;
+    do
+    {
+        if (posted_ops_storage == NULL)
+        {
+            if (posted_ops_sz == 0u)
+            {
+                /* The implementer has opted for direct operation (no posted transactions) */
+                /* No other initialization is required */
+                if (mHdl.PostedQInitialized)
+                {
+                    /* Should have called OTA_ServiceDeInit beforehand */
+                    RAISE_ERROR(st, gOtaInvalidOperation_c);
+                }
+                if ((mHdl.FwUpdImageState == OtaImgState_Acquiring) ||
+                    (mHdl.FwUpdImageState == OtaImgState_CandidateRdy))
+                {
+                    /* Should have cancelled the OTA beforehand */
+                    RAISE_ERROR(st, gOtaInvalidOperation_c);
+                }
+                mHdl.FwUpdImageState = OtaImgState_None;
+                st                   = OTA_Initialize();
+                break;
+            }
+            else
+            {
+                RAISE_ERROR(st, gOtaInvalidParam_c);
+            }
+        }
+        /* If we have not exit before , the posted operations structure needs to be set */
+        list_status_t         status;
+        list_element_handle_t list_handle;
+
+        /* FLASH_TransactionOpNode_t size shall be multiple of 4 bytes. The reason is to avoid
+         *  doing unaligned access when going through the transaction operation queue, this could lead to
+         *  crash on some toolchain (gcc) when using some instructions not supporting unaligned access*/
+        assert((sizeof(FLASH_TransactionOpNode_t) & 0x3U) == 0U);
+        assert(gOtaTransactionSz_d == sizeof(FLASH_TransactionOpNode_t));
+
         uint8_t                    nbTransactions = (uint8_t)(posted_ops_sz / sizeof(FLASH_TransactionOpNode_t));
         FLASH_TransactionOpNode_t *pOpNode        = (FLASH_TransactionOpNode_t *)posted_ops_storage;
         uint32_t                   posted_ops_storage_32bits;
 
         FLib_MemCpyWord(&posted_ops_storage_32bits, &posted_ops_storage);
         /* Check arguments */
-        if (posted_ops_storage == NULL)
-        {
-            RAISE_ERROR(st, gOtaInvalidParam_c);
-        }
 
         if ((posted_ops_storage_32bits & 0x3U) != 0U)
         {
@@ -199,12 +212,25 @@ otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz)
         }
 
         /* Check state */
-        if (mHdl.LoadOtaImageInProgress || (mHdl.PostedQueue_nb_in_queue != 0U))
+        if (mHdl.PostedQ_nb_in_queue != 0u)
         {
             RAISE_ERROR(st, gOtaInvalidOperation_c);
         }
 
-        mHdl.PostedQueue_storage = posted_ops_storage;
+        if (mHdl.PostedQInitialized)
+        {
+            /* Covers the cases of pending transations in queue,
+             * that could not be pending unless initialized  */
+            RAISE_ERROR(st, gOtaInvalidOperation_c);
+        }
+        if ((mHdl.FwUpdImageState == OtaImgState_Acquiring) || (mHdl.FwUpdImageState == OtaImgState_CandidateRdy))
+        {
+            /* Should have cancelled the OTA beforehand */
+            RAISE_ERROR(st, gOtaInvalidOperation_c);
+        }
+
+        /* Prevent creating mutex multiple times */
+        mHdl.PostedQ_storage = posted_ops_storage;
 
         LIST_Init(&mHdl.transaction_free_list, 0);
 
@@ -217,20 +243,16 @@ otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz)
             assert(status == kLIST_Ok);
             (void)status;
         }
-
-        mHdl.PostedQueue_capacity = nbTransactions;
-        res                       = PLATFORM_OtaClearBootFlags();
-        if (res < 0)
-        {
-            RAISE_ERROR(st, gOtaError_c);
-        }
-
+        mHdl.PostedQ_capacity = nbTransactions;
         if (OSA_MutexCreate((osa_mutex_handle_t)mHdl.msgQueueMutex) != KOSA_StatusSuccess)
         {
             RAISE_ERROR(st, gOtaError_c);
         }
+        mHdl.PostedQInitialized = true;
 
-        mHdl.isInitialized = true;
+        mHdl.FwUpdImageState = OtaImgState_None;
+        st                   = OTA_Initialize();
+
     } while (false);
 
     return st;
@@ -241,14 +263,22 @@ otaResult_t OTA_ServiceDeInit(void)
     otaResult_t st = gOtaSuccess_c;
     do
     {
-        mHdl.PostedQueue_capacity    = 0;
-        mHdl.PostedQueue_nb_in_queue = 0;
+        mHdl.PostedQ_capacity    = 0;
+        mHdl.PostedQ_nb_in_queue = 0;
+        if (!mHdl.PostedQInitialized)
+        {
+            break;
+        }
+        if (mHdl.FwUpdImageState == OtaImgState_Acquiring)
+        {
+            RAISE_ERROR(st, gOtaInvalidOperation_c);
+        }
 
         if (OSA_MutexDestroy((osa_mutex_handle_t)mHdl.msgQueueMutex) != KOSA_StatusSuccess)
         {
             RAISE_ERROR(st, gOtaError_c);
         }
-        mHdl.isInitialized = false;
+        mHdl.PostedQInitialized = false;
     } while (false);
 
     return st;
@@ -282,34 +312,44 @@ otaResult_t OTA_StartImage(uint32_t length)
     otaResult_t status = gOtaSuccess_c;
     do
     {
-        if (NULL == mHdl.SelectedFlash)
+        if (NULL == mHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         /* Check if we already have an operation of writing an OTA image in the OTA Storage
         in progress and if yes, deny the current request */
-        if (mHdl.LoadOtaImageInProgress)
+        /* A new image cannot be started if :
+         *   - a previous image is being acquired (OtaImgState_Acquiring)
+         *   - a candidate image was acquired (OtaImgState_CandidateRdy) and reset is awaiting to have it
+         *     launched by bootloader, self-test it.
+         *   - or if the */
+
+        if (mHdl.FwUpdImageState != OtaImgState_Permanent)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
 
         /* Check if the internal FLASH and the OTA storage have enough room to store
            the image */
-        if ((length > mHdl.MaxImageLength) || (length > (mHdl.SelectedFlash->total_size - mHdl.ImageOffset)))
+        if (length > mHdl.MaxImageLength)
         {
             RAISE_ERROR(status, gOtaImageTooLarge_c);
         }
 
+        /* Mark that we have started loading an OTA image in OTA Storage */
+        if (OTA_UpdateImgState(OtaImgState_Acquiring) != gOtaSuccess_c)
+        {
+            /* the transition is only valid if we are in the right state */
+            RAISE_ERROR(status, gOtaInvalidOperation_c);
+        }
         /* Save the total length of the OTA image */
         mHdl.OtaImageTotalLength = length;
         /* Init the length of the OTA image currently written */
         mHdl.OtaImageCurrentLength = 0;
         /* Init the current OTA Storage write address */
         mHdl.CurrentStorageAddress = mHdl.ImageOffset;
-        /* Mark that we have started loading an OTA image in OTA Storage */
-        mHdl.LoadOtaImageInProgress = TRUE;
-        mHdl.OtaImageLengthWritten  = 0;
-        mHdl.StorageAddressWritten  = mHdl.ImageOffset;
+        mHdl.OtaImageLengthWritten = 0;
+        mHdl.StorageAddressWritten = mHdl.ImageOffset;
 
     } while (false);
     return status;
@@ -336,12 +376,12 @@ otaResult_t OTA_PushImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
     do
     {
         bool posted_pos = OTA_UsePostedOperation();
-        if (mHdl.SelectedFlash == NULL)
+        if (mHdl.FlashOps == NULL)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         /* Cannot add a chunk without a prior call to OTA_StartImage() */
-        if (!mHdl.LoadOtaImageInProgress)
+        if (mHdl.FwUpdImageState != OtaImgState_Acquiring)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -418,7 +458,7 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
 
-        if (mHdl.SelectedFlash == NULL)
+        if (mHdl.FlashOps == NULL)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -453,7 +493,7 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
                     uint16_t lenInFlash = (length - (uint16_t)mHdl.OtaImageLengthWritten);
                     uint16_t lenInRam   = (length - lenInFlash);
                     /* The asked buffer is in Flash and in RAM */
-                    st = mHdl.SelectedFlash->ops.readData(lenInFlash, mAbsoluteOffset, pData);
+                    st = mHdl.FlashOps->readData(lenInFlash, mAbsoluteOffset, pData);
                     if (st != kStatus_OTA_Flash_Success)
                     {
                         RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -466,7 +506,7 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
             }
         }
         /* The asked buffer is in Flash */
-        st = mHdl.SelectedFlash->ops.readData(length, mAbsoluteOffset, pData);
+        st = mHdl.FlashOps->readData(length, mAbsoluteOffset, pData);
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -497,7 +537,7 @@ otaResult_t OTA_CommitImage(uint8_t *pBitmap)
         OtaLoaderInfo_t ota_load_info;
 
         /* Cannot commit a image without a prior call to OTA_StartImage() */
-        if (!mHdl.LoadOtaImageInProgress)
+        if (mHdl.FwUpdImageState != OtaImgState_Acquiring)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -514,55 +554,258 @@ otaResult_t OTA_CommitImage(uint8_t *pBitmap)
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         ota_load_info.image_sz   = mHdl.OtaImageTotalLength;
-        ota_load_info.image_addr = mHdl.CurrentStorageAddress;
-        ota_load_info.pBitMap    = pBitmap;
-        int res;
-        res = PLATFORM_OtaBootDataUpdateOnCommit(&ota_load_info);
-        if (0 != res)
+        ota_load_info.image_addr = mHdl.ota_partition->start_offset + mHdl.ImageOffset;
+
+        ota_load_info.pBitMap = pBitmap;
+
+        if (0 != PLATFORM_OtaBootDataUpdateOnCommit(&ota_load_info))
         {
-            break;
+            RAISE_ERROR(status, gOtaImageInvalid_c);
         }
-        /* Flash flags will be write in next instance of idle task */
-        mHdl.NewImageReady = TRUE;
+        /* Flash flags will be written in next idle task execution */
+        status = OTA_UpdateImgState(OtaImgState_CandidateRdy);
+
         /* End the load of OTA image in OTA storage process */
-        mHdl.LoadOtaImageInProgress = FALSE;
     } while (false);
     return status;
 }
 
 /*! *********************************************************************************
  * \brief  Set the boot flags, to trigger the Bootloader at the next CPU reset.
+ * Must be invoked after the completion of the image download (after OTA_CommitImage).
+ * and after the connection with the OTA server has been closed, if required. Specify
+ * offset to be used to determine the exact image location in case it's not located
+ * at the start of OTA partition.
+ *
+ * \param[in] offset specify an offset to determine image address
  *
  ********************************************************************************** */
-void OTA_SetNewImageFlag(void)
+void OTA_SetNewImageFlagWithOffset(uint32_t offset)
 {
     /* OTA image successfully written into the non-volatile storage.
        Set the boot flag to trigger the Bootloader at the next CPU Reset. */
 
     int st;
 
-    if (mHdl.NewImageReady)
+    if (mHdl.FwUpdImageState == OtaImgState_CandidateRdy)
     {
-        OtaLoaderInfo_t loader_info;
-        loader_info.image_addr = mHdl.SelectedFlash->base_offset + mHdl.ImageOffset;
-        loader_info.image_sz   = mHdl.OtaImageTotalLength;
-        loader_info.pBitMap    = NULL;
-        if (mHdl.SelectedFlash->use_internal_storage != 0U)
+        if (offset < mHdl.OtaImageTotalLength)
         {
-            loader_info.sb_arch_in_ext_flash = false;
-            loader_info.spi_baudrate         = 0;
-        }
-        else
-        {
-            loader_info.sb_arch_in_ext_flash = true;
-            loader_info.spi_baudrate         = 4000000U; // TODO pass the right value
-        }
-        st = PLATFORM_OtaUpdateBootFlags(&loader_info);
-        if (st >= 0)
-        {
-            mHdl.NewImageReady = FALSE;
+            OtaLoaderInfo_t loader_info;
+            loader_info.image_addr     = mHdl.ota_partition->start_offset + mHdl.ImageOffset + offset;
+            loader_info.image_sz       = mHdl.OtaImageTotalLength - offset;
+            loader_info.pBitMap        = NULL;
+            loader_info.partition_desc = mHdl.ota_partition;
+
+            st = PLATFORM_OtaNotifyNewImageReady(&loader_info);
+            if (st != 0)
+            {
+                mHdl.FwUpdImageState = OtaImgState_Fail;
+            }
         }
     }
+}
+
+/*! *********************************************************************************
+ * \brief  Set the boot flags, to trigger the Bootloader at the next CPU reset.
+ * Must be invoked after the completion of the image download (after OTA_CommitImage).
+ * and after the connection with the OTA server has been closed, if required.
+ *
+ ********************************************************************************** */
+void OTA_SetNewImageFlag(void)
+{
+    OTA_SetNewImageFlagWithOffset(0U);
+}
+
+OtaImgState_t OTA_GetImgState(void)
+{
+    OtaImgState_t ret       = OtaImgState_Fail;
+    uint8_t       img_state = (uint8_t)mHdl.FwUpdImageState;
+    int           val       = -1;
+    val                     = PLATFORM_OtaGetImageState(&img_state);
+    if (val == 0)
+    {
+        /* The actual Ota state is retrived from the PLATFORM dependent function  */
+        mHdl.FwUpdImageState = (OtaImgState_t)img_state;
+    }
+    /* if 1 was returned the PLATFORM_OtaGetImageState does not know */
+    if (val >= 0)
+    {
+        ret = mHdl.FwUpdImageState;
+    }
+    return ret;
+}
+
+static int OtaGoToNoneState(void)
+{
+    int st = -1;
+    switch (mHdl.FwUpdImageState)
+    {
+        /* Full re-initialization : forget previously received OTA image */
+        case OtaImgState_Acquiring:
+        case OtaImgState_CandidateRdy:
+        case OtaImgState_RunCandidate:
+        case OtaImgState_Fail:
+        {
+            if (mHdl.OtaImageTotalLength != 0u)
+            {
+                OTA_CancelImage();
+            }
+            st = 0;
+        }
+        break;
+        case OtaImgState_Permanent:
+        case OtaImgState_None:
+            st = 0;
+            break;
+        /* Once we have determined we are in RunCandidate state, should go to Permanent or fail and reboot  */
+        default:; /* Nothing to do */
+            break;
+    }
+    return st;
+}
+
+static int OtaGoToPermanentState(void)
+{
+    int st = -1;
+    switch (mHdl.FwUpdImageState)
+    {
+        case OtaImgState_None: /* not initialized yet */
+        case OtaImgState_Fail: /* forget previous error */
+            st = 0;
+            break;
+        case OtaImgState_Permanent:
+            st = 1;
+            break;
+        case OtaImgState_RunCandidate:
+            /* go to permanent */
+            st = PLATFORM_OtaUpdateImageState((uint8_t)OtaImgState_Permanent);
+            break;
+        case OtaImgState_Acquiring:
+        case OtaImgState_CandidateRdy:
+        {
+            if (mHdl.OtaImageTotalLength != 0u)
+            {
+                OTA_CancelImage();
+            }
+            st = 0;
+        }
+        break;
+        default:; /* Nothing to do */
+            break;
+    }
+
+    return st;
+}
+
+static int OtaGoToCandidateRdyState(void)
+{
+    int st = -1;
+    switch (mHdl.FwUpdImageState)
+    {
+        case OtaImgState_Acquiring:
+        {
+            if (mHdl.OtaImageTotalLength == mHdl.OtaImageCurrentLength)
+            {
+                OtaLoaderInfo_t loader_info;
+                loader_info.image_addr     = mHdl.ota_partition->start_offset + mHdl.ImageOffset;
+                loader_info.image_sz       = mHdl.OtaImageTotalLength;
+                loader_info.pBitMap        = NULL;
+                loader_info.partition_desc = mHdl.ota_partition;
+
+                st = PLATFORM_OtaNotifyNewImageReady(&loader_info);
+            }
+            else
+            {
+                st = -1;
+            }
+        }
+        break;
+        case OtaImgState_CandidateRdy:
+            st = 1; /* do nothing */
+            break;
+        case OtaImgState_Permanent:
+        case OtaImgState_RunCandidate:
+        case OtaImgState_None:
+        case OtaImgState_Fail:
+        default:; /* Nothing to do */
+            break;
+    }
+
+    return st;
+}
+
+static int OtaGoToAcquiringState(void)
+{
+    int st = -1;
+    switch (mHdl.FwUpdImageState)
+    {
+        case OtaImgState_Acquiring:
+        case OtaImgState_CandidateRdy:
+        {
+            if (mHdl.OtaImageTotalLength != 0u)
+            {
+                OTA_CancelImage();
+            }
+            st = 0;
+        }
+        break;
+        case OtaImgState_Permanent:
+            st = 0;
+            break;
+        /* We can go from RunCandidate state to Permanent but not acquire a new FW directly  */
+        case OtaImgState_RunCandidate:
+        case OtaImgState_Fail:
+        case OtaImgState_None:
+        default:; /* Nothing to do */
+            break;
+    }
+
+    return st;
+}
+
+otaResult_t OTA_UpdateImgState(OtaImgState_t new_state)
+{
+    int         st     = -1;
+    otaResult_t status = gOtaError_c;
+
+    switch (new_state)
+    {
+        case OtaImgState_None:
+            st = OtaGoToNoneState();
+            break;
+        case OtaImgState_Permanent:
+            st = OtaGoToPermanentState();
+            break;
+
+        case OtaImgState_CandidateRdy:
+            st = OtaGoToCandidateRdyState();
+            break;
+
+        case OtaImgState_Acquiring:
+            st = OtaGoToAcquiringState();
+            break;
+        case OtaImgState_RunCandidate:
+            assert(new_state != OtaImgState_RunCandidate);
+            st = -1; /* transition not allowed */
+            break;
+
+        default:; /* Nothing to do */
+            break;
+    }
+
+    if (st >= 0)
+    {
+        mHdl.FwUpdImageState = new_state;
+        status               = gOtaSuccess_c;
+    }
+    else
+    {
+        mHdl.FwUpdImageState = OtaImgState_Fail;
+        status               = gOtaError_c;
+    }
+
+    return status;
 }
 
 /*! *********************************************************************************
@@ -571,11 +814,20 @@ void OTA_SetNewImageFlag(void)
  ********************************************************************************** */
 void OTA_CancelImage(void)
 {
-    mHdl.LoadOtaImageInProgress = FALSE;
+    if ((mHdl.FwUpdImageState == OtaImgState_Acquiring) || (mHdl.FwUpdImageState == OtaImgState_CandidateRdy) ||
+        (mHdl.FwUpdImageState == OtaImgState_Fail))
+    {
+        if (OTA_UsePostedOperation())
+        {
+            (void)OTA_TransactionQueuePurge();
+        }
+    }
+    mHdl.FwUpdImageState = OtaImgState_Permanent;
 }
 
 /*! *********************************************************************************
  * \brief  Compute CRC over a data chunk.
+ * This CRC computation is the CCITT CRC16 (polynomial X^16 + X^12+ X^5 + 1).
  *
  * \param[in] pData        pointer to the data chunk
  * \param[in] length       the length of the data chunk
@@ -620,11 +872,11 @@ otaResult_t OTA_EraseStorageMemory(void)
     {
         ota_flash_status_t st;
 
-        if (NULL == mHdl.SelectedFlash)
+        if (NULL == mHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
-        st = mHdl.SelectedFlash->ops.format_storage();
+        st = mHdl.FlashOps->format_storage();
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -650,12 +902,12 @@ otaResult_t OTA_ReadStorageMemory(uint8_t *pData, uint16_t length, uint32_t addr
     do
     {
         ota_flash_status_t st;
-        if (NULL == mHdl.SelectedFlash)
+        if (NULL == mHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
 
-        st = mHdl.SelectedFlash->ops.readData(length, address, pData);
+        st = mHdl.FlashOps->readData(length, address, pData);
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -672,7 +924,7 @@ otaResult_t OTA_ReadStorageMemory(uint8_t *pData, uint16_t length, uint32_t addr
  *
  * \param[in] pData    pointer to the data chunk
  * \param[in] length   the length of the data chunk
- * \param[in] address  image storage address
+ * \param[in] address  image storage offset relative to OTA partition start
  *
  * \return  error code.
  *
@@ -682,23 +934,11 @@ otaResult_t OTA_WriteStorageMemory(uint8_t *pData, uint16_t length, uint32_t add
     otaResult_t status;
     do
     {
-        ota_flash_status_t st;
-
-        if (NULL == mHdl.SelectedFlash)
+        if (NULL == mHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
-        st = mHdl.SelectedFlash->ops.writeData(length, address, pData);
-        if (st != kStatus_OTA_Flash_Success)
-        {
-            RAISE_ERROR(status, gOtaExternalFlashError_c);
-        }
-
-#if gOtaVerifyWrite_d
-        status = OTA_CheckVerifyFlash(pData, address, length);
-#else
-        status = gOtaSuccess_c;
-#endif
+        status = OTA_WriteToFlash(length, address, pData);
 
     } while (false);
     return status;
@@ -716,7 +956,7 @@ int OTA_TransactionResume(void)
     int                nb_treated = 0;
     ota_flash_status_t st         = kStatus_OTA_Flash_Success;
 
-    if (mHdl.isInitialized)
+    if (mHdl.PostedQInitialized)
     {
         /* Mutex to lock transaction processing */
         osa_status_t status = OSA_MutexLock(mHdl.msgQueueMutex, osaWaitForever_c);
@@ -729,7 +969,7 @@ int OTA_TransactionResume(void)
                && (nb_treated <
                    mHdl.config->maxConsecutiveTransactions)) /* ... but do not schedule too many in a same pass */
         {
-            if (mHdl.SelectedFlash->ops.isBusy() != 0U)
+            if (mHdl.FlashOps->isBusy() != 0U)
             {
                 /* There were transactions pending but we consumed none */
                 mHdl.cnt_idle_op++;
@@ -754,12 +994,13 @@ int OTA_TransactionResume(void)
                     st = OTA_TreatFlashOpWrite(pMsg);
                 }
                 break;
-
+#if defined DeprecatedOtaHasPostedEraseArea && (DeprecatedOtaHasPostedEraseArea > 0)
                 case FLASH_OP_ERASE_AREA:
                 {
                     st = OTA_TreatFlashOpEraseArea(pMsg);
                 }
                 break;
+#endif
                 case FLASH_OP_ERASE_NEXT_BLOCK:
                 {
                     st = OTA_TreatFlashOpEraseNextBlock(pMsg);
@@ -770,12 +1011,14 @@ int OTA_TransactionResume(void)
                     st = OTA_TreatFlashOpEraseNextBlockComplete(pMsg);
                 }
                 break;
+#if defined DeprecatedOtaHasPostedEraseSector && (DeprecatedOtaHasPostedEraseSector > 0)
                 case FLASH_OP_ERASE_BLOCK:
                 case FLASH_OP_ERASE_SECTOR:
                 {
                     st = OTA_TreatFlashOpEraseSector(pMsg);
                 }
                 break;
+#endif
                 default:
                 {
                     /*MISRA rule 16.4*/
@@ -789,11 +1032,13 @@ int OTA_TransactionResume(void)
         if (st != kStatus_OTA_Flash_Success)
         {
             OTA_CancelImage();
-            (void)OTA_TransactionQueuePurge();
         }
         /* Unlock Mutex to be accessed by other tasks */
         status = OSA_MutexUnlock(mHdl.msgQueueMutex);
         assert(status == KOSA_StatusSuccess);
+
+        /* Fix MISRA in release mode when assert() is stubbed*/
+        NOT_USED(status);
     }
     return nb_treated;
 }
@@ -814,7 +1059,7 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
 
     do
     {
-        if (NULL == mHdl.SelectedFlash)
+        if (NULL == mHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -832,7 +1077,7 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
                 RAISE_ERROR(status, gOtaError_c);
             }
 
-            pMsg->flash_addr = mHdl.ErasedUntilAddress;
+            pMsg->flash_addr = mHdl.ErasedUntilOffset;
             pMsg->sz         = (int32_t)size;
             pMsg->op_type    = FLASH_OP_ERASE_NEXT_BLOCK;
 
@@ -851,12 +1096,11 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
         {
             /* Make Headroom for the synchronous execution case */
             ota_flash_status_t st;
-            uint32_t           erase_addr = mHdl.ErasedUntilAddress;
-            int32_t            remain_sz  = (int32_t)size;
-            st                            = mHdl.SelectedFlash->ops.eraseArea(&erase_addr, &remain_sz, false);
+            uint32_t *         p_erase_addr = &mHdl.ErasedUntilOffset;
+            int32_t            remain_sz    = (int32_t)size;
+            st                              = mHdl.FlashOps->eraseArea(p_erase_addr, &remain_sz, false);
             if (kStatus_OTA_Flash_Success == st)
             {
-                mHdl.ErasedUntilAddress = erase_addr;
                 if (callback.func != NULL)
                 {
                     callback.func(param);
@@ -864,7 +1108,8 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
             }
             else
             {
-                status = gOtaError_c;
+                mHdl.ErasedUntilOffset = 0;
+                status                 = gOtaError_c;
             }
         }
     } while (false);
@@ -875,89 +1120,22 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
 /*****************************************************************************
  *  OTA_GetSelectedFlashAvailableSpace
  *
- *  return SelectedFlash->total_size if selected 0 otherwise.
+ *  return ota_partition->size if selected 0 otherwise.
  *
  *****************************************************************************/
 uint32_t OTA_GetSelectedFlashAvailableSpace(void)
 {
     uint32_t sz = 0;
-    if (mHdl.SelectedFlash != NULL)
+    if (mHdl.ota_partition != NULL)
     {
-        sz = mHdl.SelectedFlash->total_size;
+        sz = mHdl.ota_partition->size;
     }
     return sz;
 }
 
-otaResult_t OTA_SelectInternalStoragePartition(void)
-{
-    otaResult_t status = gOtaInternalFlashError_c;
-    do
-    {
-        hal_flash_status_t flashInitStatus;
-
-        if (mHdl.LoadOtaImageInProgress)
-        {
-            RAISE_ERROR(status, gOtaInvalidOperation_c);
-        }
-
-        flashInitStatus = HAL_FlashInit();
-
-        if (flashInitStatus != kStatus_HAL_Flash_Success)
-        {
-            RAISE_ERROR(status, gOtaError_c);
-        }
-
-        /* This might happen if target is not generated with gUseInternalStorageLink_d=1 */
-        assert(0UL != int_storage.total_size && 0UL != int_storage.sector_size);
-        OTA_DEBUG_TRACE("Select Internal flash\r\n");
-
-        mHdl.SelectedFlash      = &int_storage;
-        mHdl.ImageOffset        = PLATFORM_OtaGetImageOffset(true, 0);
-        mHdl.MaxImageLength     = PLATFORM_OtaGetMaxImageSize(true);
-        mHdl.ErasedUntilAddress = 0U;
-        status                  = gOtaSuccess_c;
-        /* Try to initialize the OTA Storage */
-        if (mHdl.SelectedFlash->ops.init() != kStatus_OTA_Flash_Success)
-        {
-            RAISE_ERROR(status, gOtaInternalFlashError_c);
-        }
-
-    } while (false);
-
-    return status;
-}
-
-otaResult_t OTA_SelectExternalStoragePartition(uint32_t partition_offset, uint32_t partition_sz)
-{
-    otaResult_t status = gOtaExternalFlashError_c;
-    do
-    {
-        OTA_DEBUG_TRACE("Select External flash\r\n");
-
-        if (mHdl.LoadOtaImageInProgress)
-        {
-            RAISE_ERROR(status, gOtaInvalidOperation_c);
-        }
-
-        mHdl.SelectedFlash  = &ext_storage;
-        mHdl.ImageOffset    = PLATFORM_OtaGetImageOffset(false, partition_offset);
-        mHdl.MaxImageLength = PLATFORM_OtaGetMaxImageSize(false);
-
-        /* Define the start of the erase process */
-        mHdl.ErasedUntilAddress = mHdl.ImageOffset;
-
-        if (mHdl.SelectedFlash->ops.init() != kStatus_OTA_Flash_Success)
-        {
-            RAISE_ERROR(status, gOtaExternalFlashError_c);
-        }
-        status = gOtaSuccess_c;
-    } while (false);
-
-    return status;
-}
-
 bool OTA_IsTransactionPending(void)
 {
+    /* When the op_queue size is 0 the list of pending operations is empty*/
     return LIST_GetSize(&mHdl.op_queue) != 0U ? true : false;
 }
 
@@ -988,7 +1166,7 @@ static void OTA_WritePendingData(void)
                 OTA_MsgQueue(pMsg);
             }
 
-            while (mHdl.SelectedFlash->ops.isBusy() != 0U)
+            while (mHdl.FlashOps->isBusy() != 0U)
             {
             }
 
@@ -996,7 +1174,7 @@ static void OTA_WritePendingData(void)
             while (OTA_IsTransactionPending())
             {
                 (void)OTA_TransactionResume();
-                while (mHdl.SelectedFlash->ops.isBusy() != 0U)
+                while (mHdl.FlashOps->isBusy() != 0U)
                 {
                 }
             }
@@ -1005,7 +1183,7 @@ static void OTA_WritePendingData(void)
     }
     else
     {
-        status = mHdl.SelectedFlash->ops.flushWriteBuf();
+        status = mHdl.FlashOps->flushWriteBuf();
         assert(status == kStatus_OTA_Flash_Success);
         (void)status;
     }
@@ -1021,7 +1199,7 @@ static void OTA_WritePendingData(void)
  *****************************************************************************/
 static bool OTA_UsePostedOperation(void)
 {
-    return (mHdl.PostedQueue_capacity != 0U);
+    return (mHdl.PostedQ_capacity != 0U);
 }
 
 static otaResult_t OTA_PostWriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *pData)
@@ -1113,7 +1291,7 @@ static FLASH_TransactionOp_t *OTA_FlashTransactionAlloc(void)
     if (flash_transaction != NULL)
     {
         pTr = &flash_transaction->flash_transac;
-        mHdl.PostedQueue_nb_in_queue++;
+        mHdl.PostedQ_nb_in_queue++;
     }
     OSA_EnableIRQGlobal();
 
@@ -1127,7 +1305,7 @@ static void OTA_FlashTransactionFree(FLASH_TransactionOp_t *pTr)
     list_element_handle_t list_handle;
     OSA_DisableIRQGlobal();
     flash_transaction = ((uint8_t *)pTr - offsetof(FLASH_TransactionOpNode_t, flash_transac));
-    mHdl.PostedQueue_nb_in_queue--;
+    mHdl.PostedQ_nb_in_queue--;
     list_handle = (list_element_handle_t)((uint32_t)flash_transaction);
     status      = LIST_AddTail(&mHdl.transaction_free_list, list_handle);
     assert(status == kLIST_Ok);
@@ -1192,7 +1370,6 @@ static int OTA_TransactionQueuePurge(void)
  *  Maybe be called when data are still held in accumulation write buffer.
  *
  *****************************************************************************/
-#if (gOtaVerifyWrite_d > 0)
 static otaResult_t OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flash_addr, uint16_t length)
 {
     otaResult_t status                                = gOtaSuccess_c;
@@ -1212,7 +1389,7 @@ static otaResult_t OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flash_addr, uin
         {
             readLen = (uint16_t)sizeof(readData);
         }
-        st = mHdl.SelectedFlash->ops.readData(readLen, flash_addr + i, readData);
+        st = mHdl.FlashOps->readData(readLen, flash_addr + i, readData);
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -1228,7 +1405,6 @@ static otaResult_t OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flash_addr, uin
     assert(status == gOtaSuccess_c);
     return status;
 }
-#endif /* gOtaVerifyWrite_d */
 
 static otaResult_t OTA_WriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *outbuf)
 {
@@ -1236,15 +1412,16 @@ static otaResult_t OTA_WriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *
     do
     {
         /* Try to write the data chunk into the image storage */
-        if (mHdl.SelectedFlash->ops.writeData(NoOfBytes, Addr, outbuf) != kStatus_OTA_Flash_Success)
+        if (mHdl.FlashOps->writeData(NoOfBytes, Addr, outbuf) != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
         }
         /* If Flash programming operation requires verification do it now
          */
-#if (gOtaVerifyWrite_d > 0)
-        status = OTA_CheckVerifyFlash(outbuf, Addr, NoOfBytes);
-#endif /* gOtaVerifyWrite_d */
+        if (mHdl.VerifyWrites == true)
+        {
+            status = OTA_CheckVerifyFlash(outbuf, Addr, NoOfBytes);
+        }
     } while (false);
     return status;
 }
@@ -1277,13 +1454,14 @@ static ota_flash_status_t OTA_TreatFlashOpWrite(FLASH_TransactionOp_t *pMsg)
     return st;
 }
 
+#if defined               DeprecatedOtaHasPostedEraseArea && (DeprecatedOtaHasPostedEraseArea > 0)
 static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg)
 {
     ota_flash_status_t st;
     int32_t            remain_sz  = (int32_t)pMsg->sz;
     uint32_t           erase_addr = pMsg->flash_addr;
 
-    st = mHdl.SelectedFlash->ops.eraseArea(&erase_addr, &remain_sz, true);
+    st = mHdl.FlashOps->eraseArea(&erase_addr, &remain_sz, true);
     if (kStatus_OTA_Flash_Success == st)
     {
         if (remain_sz <= 0)
@@ -1305,16 +1483,17 @@ static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg)
     }
     return st;
 }
+#endif
 
 static ota_flash_status_t OTA_TreatFlashOpEraseNextBlock(FLASH_TransactionOp_t *pMsg)
 {
     ota_flash_status_t st;
     int32_t            remain_sz = (int32_t)pMsg->sz;
-    st                           = mHdl.SelectedFlash->ops.eraseArea(&pMsg->flash_addr, &remain_sz, false);
+    st                           = mHdl.FlashOps->eraseArea(&pMsg->flash_addr, &remain_sz, false);
     if (kStatus_OTA_Flash_Success == st)
     {
-        pMsg->op_type           = FLASH_OP_ERASE_NEXT_BLOCK_COMPLETE;
-        mHdl.ErasedUntilAddress = pMsg->flash_addr;
+        pMsg->op_type          = FLASH_OP_ERASE_NEXT_BLOCK_COMPLETE;
+        mHdl.ErasedUntilOffset = pMsg->flash_addr;
     }
     else
     {
@@ -1342,13 +1521,14 @@ static ota_flash_status_t OTA_TreatFlashOpEraseNextBlockComplete(FLASH_Transacti
     return kStatus_OTA_Flash_Success;
 }
 
+#if defined               DeprecatedOtaHasPostedEraseSector && (DeprecatedOtaHasPostedEraseSector > 0)
 static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMsg)
 {
     ota_flash_status_t st;
     OTA_DEBUG_TRACE("Erase block @%08x sz=%d\r\n", pMsg->flash_addr, pMsg->sz);
 
     int32_t remain_sz = (int32_t)pMsg->sz;
-    st                = mHdl.SelectedFlash->ops.eraseArea(&pMsg->flash_addr, &remain_sz, true);
+    st                = mHdl.FlashOps->eraseArea(&pMsg->flash_addr, &remain_sz, true);
     if (kStatus_OTA_Flash_Success == st)
     {
         OTA_MsgDequeue();
@@ -1361,3 +1541,4 @@ static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMs
     }
     return st;
 }
+#endif

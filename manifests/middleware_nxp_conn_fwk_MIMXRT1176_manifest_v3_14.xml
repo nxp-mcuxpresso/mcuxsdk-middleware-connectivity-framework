@@ -1,0 +1,1236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ksdk:manifest xmlns:ksdk="http://nxp.com/ksdk/2.0/ksdk_manifest_v3.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="SDK_2.x_middleware_nxp_conn_fwk_MIMXRT1176_manifest_v3_14" name="Wireless Connectivity Framework" brief="Wireless Connectivity Framework" format_version="3.14" api_version="2.0.0" xsi:schemaLocation="http://nxp.com/ksdk/2.0/ksdk_manifest_v3.0.xsd http://nxp.com/mcuxpresso/sdk/sdk_manifest_v3.14.xsd">
+
+  <externalDefinitions>
+    <definition extID="MIMXRT1176xxxxx"/>
+    <definition extID="armgcc"/>
+    <definition extID="mcuxpresso"/>
+    <definition extID="middleware.freertos-kernel.MIMXRT1176"/>
+    <definition extID="middleware.baremetal.MIMXRT1176"/>
+  </externalDefinitions>
+  <ksdk id="MCUXpressoSDK2150_middleware_nxp_conn_fwk_MIMXRT1176_manifest_v3_14" name="MCUXpressoSDK2150_middleware_nxp_conn_fwk_MIMXRT1176_manifest_v3_14" version="2.15.0" revision="2.15.0"/>
+  <components>
+    <component id="middleware.wireless.framework.sec_lib.MIMXRT1176" name="wireless framework Sec_lib" brief="Middleware wireless framework_sec_lib" version="1.0.0" full_name="wireless framework Sec_lib" category="wireless/framework_sec_lib" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="./SecLib" project_relative_path="SecLib" type="c_include">
+        <files mask="SecLib.h"/>
+        <files mask="CryptoLibSW.h"/>
+        <files mask="AesManager.h"/>
+        <files mask="SecLib_ecp256.h"/>
+      </source>
+      <source relative_path="./SecLib" project_relative_path="SecLib" type="src">
+        <files mask="SecLib.c"/>
+      </source>
+      <source toolchain="armgcc mcuxpresso" relative_path="./SecLib" project_relative_path="SecLib" type="lib">
+        <files mask="lib_crypto_m7.a"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_sec_lib.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="./SecLib" project_relative_path="SecLib" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_common.MIMXRT1176" name="wireless framework Platform Common" brief="Middleware wireless framework_platform_common" version="1.0.0" full_name="wireless framework Platform Common" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/platform/include" project_relative_path="Platform/configs" type="c_include">
+        <files mask="fwk_platform_hdlc.h"/>
+      </source>
+      <source relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_coex.h"/>
+        <files mask="fwk_platform_ot.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_common_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_coex.MIMXRT1176" name="wireless framework Platform coex" brief="Middleware wireless framework_platform_coex" version="1.0.0" full_name="wireless framework Platform coex" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_coex.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_coex_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_lp.MIMXRT1176" name="wireless framework board_lp" brief="Middleware wireless framework_board_lp" version="1.0.0" full_name="wireless framework board_lp" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="board/lowpower">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_lp_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_dcdc.MIMXRT1176" name="wireless framework board_dcdc" brief="Middleware wireless framework_board_dcdc" version="1.0.0" full_name="wireless framework board_dcdc" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="board/dcdc">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_dcdc_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_platform.MIMXRT1176" name="wireless framework board_platform" brief="Middleware wireless framework_board_platform" version="1.0.0" full_name="wireless framework board_platform" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="board/platform">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_platform_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_comp.MIMXRT1176" name="wireless framework board_comp" brief="Middleware wireless framework_board_comp" version="1.0.0" full_name="wireless framework board_comp" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="board/components">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_comp_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_extflash.MIMXRT1176" name="wireless framework board_extflash" brief="Middleware wireless framework_board_extflash" version="1.0.0" full_name="wireless framework board_extflash" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="board/extflash">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_extflash_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.lfs_config.MIMXRT1176" name="wireless framework lfs_config" brief="Middleware wireless framework_lfs_config" version="1.0.0" full_name="wireless framework lfs_config" category="wireless/rt1170" user_visible="true" type="middleware" package_base_path="../../" project_base_path="framework">
+      <defines>
+        <define name="LFS_CONFIG" value="fwk_lfs_config.h"/>
+      </defines>
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_lfs_config_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170/configs" project_relative_path="Platform/configs" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.matter.config.MIMXRT1176" name="wireless framework matter config" brief="Middleware wireless framework matter config" version="1.0.0" full_name="wireless framework matter config" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_matter_config_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="framework/boards/MIMXRT1176" type="c_include"/>
+        <include_path relative_path="../framework/Common/devices/MIMXRT1176/gcc" project_relative_path="framework/Common/devices/MIMXRT1176/gcc" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.init.config.MIMXRT1176" name="wireless framework init config" brief="Middleware wireless framework init config" version="1.0.0" full_name="wireless framework init config" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_init_config_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/boards/MIMXRT1176" project_relative_path="framework/boards/MIMXRT1176" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.rpmsg_config.MIMXRT1176" name="wireless framework rpmsg_config" brief="Middleware wireless framework_rpmsg_config" version="1.0.0" full_name="wireless framework rpmsg_config" category="wireless/framework_rpmsg_config" user_visible="true" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_rpmsg_config.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170/configs" project_relative_path="Platform/configs" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.framework_platform_rt_ot_coex.MIMXRT1176" name="wireless framework platform rt ot coex file" brief="Middleware wireless framework platform ot coex" version="1.0.0" full_name="wireless framework platform rt ot coex file" category="wireless/framework_platform_rt_ot_coex" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/platform/imx_rt" project_relative_path="platform/imx_rt" type="src">
+        <files mask="fwk_platform_ot.c"/>
+        <files mask="fwk_platform_hdlc.c"/>
+      </source>
+      <source relative_path="../framework/platform/imx_rt/k32w0" project_relative_path="platform/imx_rt/k32w0" type="src">
+        <files mask="fwk_platform_coex.c"/>
+      </source>
+      <source relative_path="../framework/platform/imx_rt/iw612" project_relative_path="platform/imx_rt/iw612" type="src">
+        <files mask="fwk_platform_coex.c"/>
+      </source>
+      <source relative_path="../framework/platform/imx_rt" project_relative_path="platform/imx_rt" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/platform/imx_rt/configs" project_relative_path="platform/imx_rt/configs" type="src">
+        <files mask="fwk_lfs_config.c"/>
+      </source>
+      <source relative_path="../framework/platform/imx_rt/configs" project_relative_path="platform/imx_rt/configs" type="c_include">
+        <files mask="fwk_lfs_config.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_rt_ot_coex.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/imx_rt/configs" project_relative_path="framework/platform/imx_rt/configs" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.cmake.MIMXRT1176" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework" project_relative_path="framework" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/cmake" project_relative_path="framework/cmake" type="script">
+        <files mask="utils.cmake"/>
+      </source>
+      <source relative_path="../framework/cmake/toolchains" project_relative_path="framework/cmake/toolchains" type="script">
+        <files mask="armgcc.cmake"/>
+        <files mask="iar.cmake"/>
+      </source>
+      <source relative_path="../framework/boards" project_relative_path="framework/boards" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/FunctionLib" project_relative_path="framework/FunctionLib" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/FileSystem" project_relative_path="framework/FileSystem" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/LowPower" project_relative_path="framework/LowPower" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/OtaSupport" project_relative_path="framework/OtaSupport" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/platform" project_relative_path="framework/platform" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="framework/platform" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/RNG" project_relative_path="framework/RNG" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/SecLib" project_relative_path="framework/SecLib" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/Sensors" project_relative_path="framework/Sensors" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/third_party" project_relative_path="framework" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="../framework/third_party/freertos-kernel" project_relative_path="framework" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_CMake_rt1170.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.fsci.MIMXRT1176" name="wireless framework FSCI" brief="Middleware wireless framework_fsci" version="1.0.0" full_name="wireless framework FSCI" category="wireless/framework_FSCI" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/FSCI/Interface" project_relative_path="FSCI/interface" type="c_include">
+        <files mask="FsciInterface.h"/>
+      </source>
+      <source relative_path="../framework/FSCI/Source" project_relative_path="FSCI/source" type="src">
+        <files mask="FsciCommands.c"/>
+        <files mask="FsciCommunication.c"/>
+        <files mask="FsciLogging.c"/>
+        <files mask="FsciMain.c"/>
+      </source>
+      <source relative_path="../framework/FSCI/Source" project_relative_path="FSCI/source" type="c_include">
+        <files mask="FsciCommands.h"/>
+        <files mask="FsciCommunication.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_FSCI.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FSCI/Interface" project_relative_path="FSCI/interface" type="c_include"/>
+        <include_path relative_path="../framework/FSCI/Source" project_relative_path="FSCI/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.HWParameter.MIMXRT1176" name="wireless HWParameter" brief="Middleware wireless HWParameter" version="1.0.0" full_name="wireless HWParameter" category="wireless/HWParameter" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/HWParameter" project_relative_path="HWParameter" type="c_include">
+        <files mask="HWParameter.h"/>
+      </source>
+      <source relative_path="../framework/HWParameter" project_relative_path="HWParameter" type="src">
+        <files mask="HWParameter.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_HWParameter.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/HWParameter" project_relative_path="HWParameter" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.common.MIMXRT1176" name="wireless framework Common" brief="Middleware wireless framework_common" version="1.0.0" full_name="wireless framework Common" category="wireless/framework_Common" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/Common" project_relative_path="Common" type="c_include">
+        <files mask="EmbeddedTypes.h"/>
+        <files mask="fwk_hal_macros.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_Common.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/Common" project_relative_path="Common" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.rng.MIMXRT1176" name="wireless framework RNG" brief="Middleware wireless framework_rng" version="1.0.0" full_name="wireless framework RNG" category="wireless/framework_RNG" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/RNG" project_relative_path="RNG" type="c_include">
+        <files mask="RNG_Interface.h"/>
+      </source>
+      <source relative_path="../framework/RNG" project_relative_path="RNG" type="src">
+        <files mask="RNG.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_RNG.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/RNG" project_relative_path="RNG" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.rng_mbedtls.MIMXRT1176" name="wireless framework RNG Mbedtls" brief="Middleware wireless framework_rng_mbedtls" version="1.0.0" full_name="wireless framework RNG Mbedtls" category="wireless/framework_RNG_mbedtls" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/RNG" project_relative_path="RNG" type="c_include">
+        <files mask="RNG_Interface.h"/>
+      </source>
+      <source relative_path="../framework/RNG" project_relative_path="RNG" type="src">
+        <files mask="RNG_mbedTLS.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_RNG_mbedtls.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/RNG" project_relative_path="RNG" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.sec_lib_cryptolib_src.MIMXRT1176" name="wireless framework Sec_lib_CryptoLib" brief="Middleware wireless framework_sec_lib_cryptolib_src" version="1.0.0" full_name="wireless framework Sec_lib_CryptoLib" category="wireless/framework_sec_lib_cryptolib_src" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/SecLib" project_relative_path="SecLib/interface" type="c_include">
+        <files mask="SecLib.h"/>
+        <files mask="CryptoLibSW.h"/>
+      </source>
+      <source relative_path="../framework/SecLib" project_relative_path="SecLib/source" type="src">
+        <files mask="SecLib.c"/>
+      </source>
+      <source relative_path="../framework/SecLib/build/CryptoLib/src" project_relative_path="SecLib/CryptoLib" type="src">
+        <files mask="SW_AES128.c"/>
+        <files mask="SW_RNG.c"/>
+        <files mask="SW_SHA1.c"/>
+        <files mask="SW_SHA256.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_sec_lib_cryptolib_src.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/SecLib" project_relative_path="SecLib/interface" type="c_include"/>
+        <include_path relative_path="../framework/SecLib/build/CryptoLib/src" project_relative_path="SecLib/CryptoLib" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.function_lib.MIMXRT1176" name="wireless framework Function Lib" brief="Middleware wireless framework_function_lib" version="1.0.0" full_name="wireless framework Function Lib" category="wireless/framework_function_lib" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/FunctionLib" project_relative_path="FunctionLib" type="src">
+        <files mask="FunctionLib.c"/>
+      </source>
+      <source relative_path="../framework/FunctionLib" project_relative_path="FunctionLib" type="c_include">
+        <files mask="FunctionLib.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_function_lib.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FunctionLib" project_relative_path="FunctionLib" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.module_info.MIMXRT1176" name="wireless framework Module Info" brief="Middleware wireless framework_module_info" version="1.0.0" full_name="wireless framework Module Info" category="wireless/framework_module_info" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/ModuleInfo" project_relative_path="ModuleInfo" type="c_include">
+        <files mask="ModuleInfo.h"/>
+      </source>
+      <source relative_path="../framework/ModuleInfo" project_relative_path="ModuleInfo" type="src">
+        <files mask="ModuleInfo.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_module_info.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/ModuleInfo" project_relative_path="ModuleInfo" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.nvm.MIMXRT1176" name="wireless framework NVM" brief="Middleware wireless framework_nvm" version="1.0.0" full_name="wireless framework NVM" category="wireless/framework_NVM" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/NVM/Interface" project_relative_path="NVM/interface" type="c_include">
+        <files mask="NVM_Interface.h"/>
+      </source>
+      <source relative_path="../framework/NVM/Source" project_relative_path="NVM/source" type="src">
+        <files mask="NV_Flash.c"/>
+      </source>
+      <source relative_path="../framework/NVM/Source" project_relative_path="NVM/source" type="c_include">
+        <files mask="NV_Flash.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_NVM.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/NVM/Interface" project_relative_path="NVM/interface" type="c_include"/>
+        <include_path relative_path="../framework/NVM/Source" project_relative_path="NVM/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.nv_fsci.MIMXRT1176" name="wireless framework NV_FSCI" brief="Middleware wireless framework_nv_fsci" version="1.0.0" full_name="wireless framework NV_FSCI" category="wireless/framework_NV_FSCI" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/NVM/Source" project_relative_path="NVM/source" type="src">
+        <files mask="NV_FsciCommands.c"/>
+      </source>
+      <source relative_path="../framework/NVM/Source" project_relative_path="NVM/source" type="c_include">
+        <files mask="NV_FsciCommands.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_NV_FSCI.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/NVM/Source" project_relative_path="NVM/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.otaServer.MIMXRT1176" name="wireless framework OtaServerSupport" brief="Middleware wireless framework_otaServerSupport" version="1.0.0" full_name="wireless framework OtaServerSupport" category="wireless/framework_OtaServerSupport" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/OtaSupport/Interface" project_relative_path="OtaSupport/interface" type="c_include">
+        <files mask="OtaServerSupport.h"/>
+      </source>
+      <source relative_path="../framework/OtaSupport/Source" project_relative_path="OtaSupport/source" type="src">
+        <files mask="OtaServerSupport.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_OtaServerSupport.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/OtaSupport/Interface" project_relative_path="OtaSupport/interface" type="c_include"/>
+        <include_path relative_path="../framework/OtaSupport/Source" project_relative_path="OtaSupport/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.sbtsnoop_ethermind_port.MIMXRT1176" name="wireless framework sbtsnoop_ethermind_port" brief="Middleware wireless framework_sbtsnoop_ethermind_port" version="1.0.0" full_name="wireless framework sbtsnoop_ethermind_port" category="wireless/framework_sbtsnoop_ethermind_por" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <defines>
+        <define name="SBTSNOOP_PORT_FILE" value="sbtsnoop_port_ethermind.h"/>
+        <define name="SERIAL_BTSNOOP" value=""/>
+      </defines>
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="c_include">
+        <files mask="sbtsnoop_port_ethermind.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_sbtsnoop_ethermind_port.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.sbtsnoop_nxp_ble_port.MIMXRT1176" name="wireless framework sbtsnoop_nxp_ble_port" brief="Middleware wireless framework_sbtsnoop_nxp_ble_port" version="1.0.0" full_name="wireless framework sbtsnoop_nxp_ble_port" category="wireless/framework_sbtsnoop_nxp_ble_port" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <defines>
+        <define name="SBTSNOOP_PORT_FILE" value="sbtsnoop_port_nxp_ble.h"/>
+        <define name="TM_ENABLE_TIME_STAMP" value="1"/>
+        <define name="SERIAL_BTSNOOP" value=""/>
+      </defines>
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="c_include">
+        <files mask="sbtsnoop_port_nxp_ble.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_sbtsnoop_nxp_ble_port.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.fwk_debug.MIMXRT1176" name="wireless framework fwk_debug" brief="Middleware wireless framework_fwk_debug" version="1.0.0" full_name="wireless framework fwk_debug" category="wireless/framework_fwk_debug" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/DBG" project_relative_path="DBG" type="c_include">
+        <files mask="fwk_debug.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_fwk_debug.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/DBG" project_relative_path="DBG" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.linkscripts_kw45.MIMXRT1176" name="wireless framework linkscripts_kw45" brief="Middleware wireless framework_linkscripts_kw45" version="1.0.0" full_name="wireless framework linkscripts_kw45" category="wireless/framework_linkscripts_kw45" user_visible="false" type="middleware" package_base_path="../../" project_base_path="linkscripts">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="mcuxpresso" relative_path="../framework/Common/devices/kw45_k32w1/mcux/linkscript" project_relative_path="./" type="src">
+        <files mask="end_text.ldt"/>
+        <files mask="main_text.ldt"/>
+        <files mask="symbols.ldt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_linkscripts_kw45.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.linkscripts_mcxw34xevk.MIMXRT1176" name="wireless framework linkscripts_mcxw34xevk" brief="Middleware wireless framework_linkscripts_mcxw34xevk" version="1.0.0" full_name="wireless framework linkscripts_mcxw34xevk" category="wireless/framework_linkscripts_mcxw34xevk" user_visible="false" type="middleware" package_base_path="../../" project_base_path="linkscripts">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="mcuxpresso" relative_path="../framework/Common/devices/MCXW345/mcux/linkscript" project_relative_path="./" type="src">
+        <files mask="end_text.ldt"/>
+        <files mask="main_text.ldt"/>
+        <files mask="symbols.ldt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_linkscripts_mcxw34xevk.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.linkscript_bootloader_kw45.MIMXRT1176" name="wireless framework linkscript_bootloader_kw45" brief="Middleware wireless framework_linkscript_bootloader_kw45" version="1.0.0" full_name="wireless framework linkscript_bootloader_kw45" category="wireless/framework_linkscript_bootloader_" user_visible="false" type="middleware" package_base_path="../../" project_base_path="linkscripts">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="mcuxpresso" relative_path="../framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader" project_relative_path="./" type="src">
+        <files mask="end_text.ldt"/>
+        <files mask="main_text.ldt"/>
+        <files mask="main_text_section.ldt"/>
+        <files mask="symbols.ldt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_linkscript_bootloader_kw45.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.linkscript_warmboot_kw45.MIMXRT1176" name="wireless framework linkscript_warmboot_kw45" brief="Middleware wireless framework_linkscript_warmboot_kw45" version="1.0.0" full_name="wireless framework linkscript_warmboot_kw45" category="wireless/framework_linkscript_warmboot_kw" user_visible="false" type="middleware" package_base_path="../../" project_base_path="linkscripts">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source toolchain="mcuxpresso" relative_path="../framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot" project_relative_path="./" type="src">
+        <files mask="end_text.ldt"/>
+        <files mask="main_text.ldt"/>
+        <files mask="symbols.ldt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_linkscript_warmboot_kw45.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.HDI.MIMXRT1176" name="wireless framework HDI" brief="Middleware wireless HDI" version="1.0.0" full_name="wireless framework HDI" category="wireless/HDI" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/HDI" project_relative_path="HDI" type="c_include">
+        <files mask="hdi.h"/>
+      </source>
+      <source relative_path="../framework/HDI" project_relative_path="HDI" type="src">
+        <files mask="hdi.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_HDI.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/HDI" project_relative_path="HDI" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.IPC.MIMXRT1176" name="wireless framework IPC" brief="Middleware wireless IPC" version="1.0.0" full_name="wireless framework IPC" category="wireless/IPC" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/IPC" project_relative_path="IPC" type="c_include">
+        <files mask="ipc.h"/>
+      </source>
+      <source relative_path="../framework/IPC" project_relative_path="IPC" type="src">
+        <files mask="ipc.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_IPC.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/IPC" project_relative_path="IPC" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.PDM.MIMXRT1176" name="wireless framework PDM" brief="Middleware wireless framework_PDM" version="1.0.0" full_name="wireless framework PDM" category="wireless/framework_PDM" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/PDM/Include" project_relative_path="PDM/Include" type="c_include">
+        <files mask="PDM.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_PDM.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/PDM/Include" project_relative_path="PDM/Include" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.PDUM.MIMXRT1176" name="wireless framework PDUM" brief="Middleware wireless framework_PDUM" version="1.0.0" full_name="wireless framework PDUM" category="wireless/framework_PDUM" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/PDUM/Include" project_relative_path="PDUM/Include" type="c_include">
+        <files mask="pdum_apl.h"/>
+        <files mask="pdum_common.h"/>
+        <files mask="pdum_nwk.h"/>
+      </source>
+      <source relative_path="../framework/PDUM/Library" project_relative_path="PDUM/Library" type="lib">
+        <files mask="libPDUM.a"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_PDUM.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/PDUM/Include" project_relative_path="PDUM/Include" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.markdown.MIMXRT1176" name="wireless framework markdown" brief="Middleware wireless framework_markdown" version="1.0.0" full_name="wireless framework markdown" category="wireless/framework_markdown" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/NVM" project_relative_path="NVM" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/NVM/pics" project_relative_path="NVM" type="other">
+        <files mask="NVM_MIT_structure.PNG"/>
+        <files mask="NVM_Page_copy_and_defragmentation.PNG"/>
+        <files mask="NVM_entry_example.PNG"/>
+        <files mask="NVM_table_entry_list_example.PNG"/>
+        <files mask="NVM_virtual_page_getting_full_example.PNG"/>
+        <files mask="flash_active_page_layout.PNG"/>
+        <files mask="flash_copy_of_ram_table_entry_structure.PNG"/>
+      </source>
+      <source relative_path="../framework/FSCI" project_relative_path="FSCI" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/FSCI/pics" project_relative_path="FSCI" type="other">
+        <files mask="FSCI_packet_structure.PNG"/>
+        <files mask="FSCI_packet_structure_fields.PNG"/>
+        <files mask="FSCI_packet_structure_virtual_interface.PNG"/>
+      </source>
+      <source relative_path="../framework/HWParameter" project_relative_path="HWParameter" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/RNG" project_relative_path="RNG" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/SecLib" project_relative_path="SecLib" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/FunctionLib" project_relative_path="FunctionLib" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/ModuleInfo" project_relative_path="ModuleInfo" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/OtaSupport" project_relative_path="OtaSupport" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/Sensors" project_relative_path="Sensors" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source relative_path="../framework/SFC" project_relative_path="SFC" type="doc">
+        <files mask="README.md"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_markdown.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.SFC.MIMXRT1176" name="wireless framework SFC" brief="Middleware wireless framework_SFC" version="1.0.0" full_name="wireless framework SFC" category="wireless/framework_SFC" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/SFC" project_relative_path="SFC/" type="c_include">
+        <files mask="fwk_sfc.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_SFC.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/SFC" project_relative_path="SFC" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.rf_SFC.MIMXRT1176" name="wireless framework RF_SFC" brief="Middleware wireless framework_RF_SFC" version="1.0.0" full_name="wireless framework RF_SFC" category="wireless/framework_RF_SFC" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/SFC" project_relative_path="SFC/" type="c_include">
+        <files mask="fwk_rf_sfc.h"/>
+      </source>
+      <source relative_path="../framework/SFC" project_relative_path="SFC/" type="src">
+        <files mask="fwk_rf_sfc.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_RF_SFC.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/SFC" project_relative_path="SFC" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.OTW.MIMXRT1176" name="wireless framework OTW" brief="Middleware wireless framework_OTW" version="1.0.0" full_name="wireless framework OTW" category="wireless/framework_OTW" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/OTW/Interface" project_relative_path="OTW/Interface/" type="c_include">
+        <files mask="fwk_otw.h"/>
+      </source>
+      <source relative_path="../framework/OTW/k32w0_transceiver" project_relative_path="OTW/k32w0_transceiver/" type="src">
+        <files mask="fwk_otw.c"/>
+      </source>
+      <source relative_path="../framework/OTW" project_relative_path="framework/OTW/" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_OTW.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/OTW/Interface" project_relative_path="OTW/Interface" type="c_include"/>
+        <include_path relative_path="../framework/OTW/k32w0_transceiver" project_relative_path="OTW/k32w0_transceiver" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.FactoryDataProvider.MIMXRT1176" name="wireless framework FactoryDataProvider" brief="Middleware wireless framework_FactoryDataProvider" version="1.0.0" full_name="wireless framework FactoryDataProvider" category="wireless/framework_FactoryDataProvider" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/FactoryDataProvider" project_relative_path="FactoryDataProvider" type="c_include">
+        <files mask="fwk_factory_data_provider.h"/>
+      </source>
+      <source relative_path="../framework/FactoryDataProvider" project_relative_path="FactoryDataProvider" type="src">
+        <files mask="fwk_factory_data_provider.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_FactoryDataProvider.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FactoryDataProvider" project_relative_path="FactoryDataProvider" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.filesystem.MIMXRT1176" name="wireless framework FileSystem" brief="Middleware wireless framework_filesytem" version="1.0.0" full_name="wireless framework FileSystem" category="wireless/framework_filesystem" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/FileSystem" project_relative_path="FileSystem" type="c_include">
+        <files mask="fwk_filesystem.h"/>
+      </source>
+      <source relative_path="../framework/FileSystem" project_relative_path="FileSystem" type="src">
+        <files mask="fwk_filesystem.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_filesystem.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FileSystem" project_relative_path="FileSystem" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.framework_fsabstraction_littlefs.MIMXRT1176" name="wireless framework fwk_lfs_mflash" brief="Middleware wireless fwk_lfs_mflash" version="1.0.0" full_name="wireless framework fwk_lfs_mflash" category="wireless/framework_fsabstraction_littlefs" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="MIMXRT1176xxxxx"/>
+      </dependencies>
+      <source relative_path="../framework/FSAbstraction" project_relative_path="FSAbstraction" type="c_include">
+        <files mask="fwk_lfs_mflash.h"/>
+      </source>
+      <source relative_path="../framework/FSAbstraction" project_relative_path="FSAbstraction" type="src">
+        <files mask="fwk_lfs_mflash.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_fsabstraction_littlefs.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FSAbstraction" project_relative_path="FSAbstraction" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform.MIMXRT1176" name="wireless framework Platform" brief="Middleware wireless framework_platform" version="1.0.0" full_name="wireless framework Platform" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.fwk_debug.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/platform/rt1170/configs" project_relative_path="Platform/configs" type="c_include">
+        <files mask="fwk_config.h"/>
+      </source>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_definitions.h"/>
+        <files mask="fwk_platform.h"/>
+      </source>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include"/>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+        <include_path relative_path="../framework/platform/rt1170/configs" project_relative_path="Platform/configs" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_flash.MIMXRT1176" name="wireless framework Platform flash" brief="Middleware wireless framework_platform_flash" version="1.0.0" full_name="wireless framework Platform flash" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/platform/Common" project_relative_path="Platform" type="other">
+        <files mask="fwk_platform_mflash.ch"/>
+      </source>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_flash.c"/>
+        <files mask="fwk_platform_extflash.c"/>
+      </source>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_flash.h"/>
+      </source>
+      <source relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_extflash.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_flash_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+        <include_path relative_path="../framework/platform/Common" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_extflash.MIMXRT1176" name="wireless framework Platform Extflash" brief="Middleware wireless framework_platform_extflash" version="1.0.0" full_name="wireless framework Platform Extflash" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_extflash.c"/>
+      </source>
+      <source relative_path="../framework/platform/Common" project_relative_path="Platform" type="other">
+        <files mask="fwk_platform_mflash.ch"/>
+      </source>
+      <source relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_extflash.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_extflash_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+        <include_path relative_path="../framework/platform/Common" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_sensors.MIMXRT1176" name="wireless framework Platform sensors" brief="Middleware wireless framework_platform_sensors" version="1.0.0" full_name="wireless framework Platform sensors" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_sensors_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_ota.MIMXRT1176" name="wireless framework Platform OTA" brief="Middleware wireless framework_platform_ota" version="1.0.0" full_name="wireless framework Platform OTA" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_ota.c"/>
+      </source>
+      <source relative_path="../framework/platform/Common" project_relative_path="Platform" type="other">
+        <files mask="fwk_platform_mcuboot_ota.ch"/>
+      </source>
+      <source relative_path="../framework/platform/include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_ota.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_ota_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_mws.MIMXRT1176" name="wireless framework platform_mws" brief="Middleware wireless framework_platform_mws" version="1.0.0" full_name="wireless framework platform_mws" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_mws_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_ble.MIMXRT1176" name="wireless framework platform_ble" brief="Middleware wireless framework_platform_ble" version="1.0.0" full_name="wireless framework platform_ble" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <component_dependency value="middleware.wireless.framework.platform_coex.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_ble_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_genfsk.MIMXRT1176" name="wireless framework platform_genfsk" brief="Middleware wireless framework_platform_genfsk" version="1.0.0" full_name="wireless framework platform_genfsk" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_genfsk_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_ot.MIMXRT1176" name="wireless framework platform_ot" brief="Middleware wireless framework_platform_ot" version="1.0.0" full_name="wireless framework platform_ot" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_ot_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_lowpower.MIMXRT1176" name="wireless framework platform_lowpower" brief="Middleware wireless framework_platform_lowpower" version="1.0.0" full_name="wireless framework platform_lowpower" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_lowpower_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_lowpower_timer.MIMXRT1176" name="wireless framework platform_lowpower_timer" brief="Middleware wireless framework_platform_lowpower_timer" version="1.0.0" full_name="wireless framework platform_lowpower_timer" category="wireless/rt1170" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_lowpower_timer_rt1170.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/platform/rt1170" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.sec_lib_sss.MIMXRT1176" name="wireless framework Sec_lib_sss" brief="Middleware wireless framework_sec_lib_sss" version="1.0.0" full_name="wireless framework Sec_lib_sss" category="wireless/m7" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/SecLib" project_relative_path="SecLib" type="c_include">
+        <files mask="SecLib.h"/>
+        <files mask="CryptoLibSW.h"/>
+        <files mask="SecLib_ecp256.h"/>
+      </source>
+      <source relative_path="../framework/SecLib" project_relative_path="SecLib" type="src">
+        <files mask="SecLib_sss.c"/>
+      </source>
+      <source toolchain="armgcc mcuxpresso" relative_path="../framework/SecLib" project_relative_path="framework/SecLib" type="lib">
+        <files mask="lib_crypto_m7.a"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_sec_lib_sss_m7.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/SecLib" project_relative_path="SecLib" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.ota.MIMXRT1176" name="wireless framework OtaSupport" brief="Middleware wireless framework_otaSupport" version="1.0.0" full_name="wireless framework OtaSupport" category="wireless/framework_OtaSupport" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform_ota.MIMXRT1176"/>
+          <component_dependency value="middleware.wireless.framework.platform_extflash.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/OtaSupport/Interface" project_relative_path="OtaSupport/interface" type="c_include">
+        <files mask="OtaSupport.h"/>
+      </source>
+      <source relative_path="../framework/OtaSupport/Source" project_relative_path="OtaSupport/source" type="src">
+        <files mask="OtaSupport.c"/>
+        <files mask="OtaInternalFlash.c"/>
+        <files mask="OtaExternalFlash.c"/>
+      </source>
+      <source relative_path="../framework/OtaSupport/Source" project_relative_path="OtaSupport/source" type="c_include">
+        <files mask="OtaPrivate.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_OtaSupport.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/OtaSupport/Interface" project_relative_path="OtaSupport/interface" type="c_include"/>
+        <include_path relative_path="../framework/OtaSupport/Source" project_relative_path="OtaSupport/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.sbtsnoop.MIMXRT1176" name="wireless framework sbtsnoop" brief="Middleware wireless framework_sbtsnoop" version="1.0.0" full_name="wireless framework sbtsnoop" category="wireless/framework_sbtsnoop" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <any_of>
+            <component_dependency value="middleware.wireless.framework.sbtsnoop_ethermind_port.MIMXRT1176"/>
+            <component_dependency value="middleware.wireless.framework.sbtsnoop_nxp_ble_port.MIMXRT1176"/>
+          </any_of>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="c_include">
+        <files mask="sbtsnoop.h"/>
+        <files mask="sbtsnoop_port.h"/>
+      </source>
+      <source relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="src">
+        <files mask="sbtsnoop.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_sbtsnoop.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/DBG/sbtsnoop" project_relative_path="DBG/sbtsnoop" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.freertos_heap.MIMXRT1176" name="FreeRTOS heap for framework mem_manager" brief="FreeRTOS heap for framework mem_manager" version="1.0.0" full_name="FreeRTOS heap for framework mem_manager" category="wireless/freertos_heap" user_visible="false" type="middleware" package_base_path="../../" project_base_path="freertos">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.freertos-kernel.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/Common/rtos/freertos" project_relative_path="freertos_kernel/portable/MemMang/" type="src">
+        <files mask="heap_mem_manager.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_freertos_heap.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework_freertos_utils.MIMXRT1176" name="Framework FreeRTOS utilities" brief="Framework FreeRTOS utilities" version="1.0.0" full_name="Framework FreeRTOS utilities" category="wireless/framework_freertos_utils" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.freertos-kernel.MIMXRT1176"/>
+          <component_dependency value="middleware.wireless.framework.platform.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/Common/rtos/freertos" project_relative_path="framework/freertos" type="src">
+        <files mask="fwk_freertos_utils.c"/>
+      </source>
+      <source relative_path="../framework/Common/rtos/freertos" project_relative_path="framework/freertos" type="c_include">
+        <files mask="fwk_freertos_utils.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_freertos_utils.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/Common/rtos/freertos" project_relative_path="framework/freertos" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.lpm_MIMXRT1176.MIMXRT1176" name="wireless framework LowPower" brief="Middleware wireless framework_lpm" version="1.0.0" full_name="wireless framework LowPower" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <defines>
+        <define name="HAL_UART_ADAPTER_LOWPOWER" value="1"/>
+      </defines>
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower.MIMXRT1176"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower/" type="c_include">
+        <files mask="PWR_Interface.h"/>
+      </source>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower/" type="src">
+        <files mask="PWR.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_LPM_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/LowPower" project_relative_path="LowPower/" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.lpm_MIMXRT1176_systicks.MIMXRT1176" name="wireless framework LowPower" brief="Middleware wireless framework_lpm_systicks" version="1.0.0" full_name="wireless framework LowPower" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <defines>
+        <define name="HAL_UART_ADAPTER_LOWPOWER" value="1"/>
+      </defines>
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower.MIMXRT1176"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower/" type="c_include">
+        <files mask="PWR_Interface.h"/>
+      </source>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower/" type="src">
+        <files mask="PWR.c"/>
+      </source>
+      <source condition="middleware.freertos-kernel.MIMXRT1176" relative_path="../framework/LowPower" project_relative_path="LowPower/" type="src">
+        <files mask="PWR_systicks.c"/>
+      </source>
+      <source condition="middleware.baremetal.MIMXRT1176" relative_path="../framework/LowPower" project_relative_path="LowPower/" type="src">
+        <files mask="PWR_systicks_bm.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_LPM_systicks_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/LowPower" project_relative_path="LowPower/" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.lpm_MIMXRT1176_cli.MIMXRT1176" name="wireless framework LowPower CLI" brief="Middleware wireless framework_lpm_cli" version="1.0.0" full_name="wireless framework LowPower CLI" category="wireless/MIMXRT1176" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.lpm_MIMXRT1176.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower/" type="src">
+        <files mask="PWR_cli.c"/>
+      </source>
+      <source relative_path="../framework/LowPower" project_relative_path="LowPower/" type="c_include">
+        <files mask="PWR_cli.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_LPM_cli_MIMXRT1176.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/LowPower" project_relative_path="LowPower/" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.fsabstraction.MIMXRT1176" name="wireless framework FSAbstraction" brief="Middleware wireless fsabstraction" version="1.0.0" full_name="wireless framework FSAbstraction" category="wireless/framework_fsabstraction" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.framework_fsabstraction_littlefs.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/FSAbstraction" project_relative_path="FSAbstraction" type="c_include">
+        <files mask="fwk_fs_abstraction.h"/>
+      </source>
+      <source relative_path="../framework/FSAbstraction" project_relative_path="FSAbstraction" type="src">
+        <files mask="fwk_fs_abstraction.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_fsabstraction.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FSAbstraction" project_relative_path="FSAbstraction" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.filecache.MIMXRT1176" name="wireless framework FileCache" brief="Middleware wireless FileCache" version="1.0.0" full_name="wireless framework FileCache" category="wireless/framework_filecache" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.fsabstraction.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/FileCache" project_relative_path="FileCache" type="c_include">
+        <files mask="fwk_file_cache.h"/>
+      </source>
+      <source relative_path="../framework/FileCache" project_relative_path="FileCache" type="src">
+        <files mask="fwk_file_cache.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_filecache.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/FileCache" project_relative_path="FileCache" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.keystorage.MIMXRT1176" name="wireless framework KeyStorage" brief="Middleware wireless KeyStorage" version="1.0.0" full_name="wireless framework KeyStorage" category="wireless/framework_keystorage" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.filecache.MIMXRT1176"/>
+          <device_dependency value="MIMXRT1176xxxxx"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/KeyStorage" project_relative_path="KeyStorage" type="c_include">
+        <files mask="fwk_key_storage.h"/>
+      </source>
+      <source relative_path="../framework/KeyStorage" project_relative_path="KeyStorage" type="src">
+        <files mask="fwk_key_storage.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_keystorage.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/KeyStorage" project_relative_path="KeyStorage" type="c_include"/>
+      </include_paths>
+    </component>
+  </components>
+</ksdk:manifest>

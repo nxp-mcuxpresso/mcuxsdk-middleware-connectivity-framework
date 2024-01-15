@@ -48,6 +48,7 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
+#include <stdbool.h>
 
 #include "fwk_otw.h"
 #include "fsl_adapter_gpio.h"
@@ -418,7 +419,7 @@ eOtwStatus Otw_FirmwareDownload(const uint8_t *firmwareData, uint32_t firmwareDa
                 OTW_LOG("firmware len = %d - verify OK", firmwareDataLen);
             }
         }
-    } while (0);
+    } while (false);
 
     /* Always Deinit the module */
     Otw_DeInit();
@@ -457,7 +458,7 @@ eOtwStatus Otw_Init(void)
 
         otwIsInitialized = true;
 
-    } while (0);
+    } while (false);
 
     return otwStatus;
 }
@@ -496,7 +497,7 @@ eOtwStatus Otw_DeInit(void)
             break;
         }
         otwIsInitialized = false;
-    } while (0);
+    } while (false);
 
     return otwStatus;
 }
@@ -534,7 +535,7 @@ eOtwStatus Otw_Reset(void)
         }
         OSA_TimeDelay(OTW_CONFIG_DEFAULT_RESET_DELAY_MS);
 
-    } while (0);
+    } while (false);
 
     return otwStatus;
 }
@@ -572,7 +573,7 @@ eOtwStatus Otw_EraseAllFlashProcedure(void)
         if (status != E_OTW_OK)
             break;
 
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -604,7 +605,7 @@ eOtwStatus Otw_WriteToFlash(const uint8_t *pData, uint32_t dataLen, uint32_t off
             i += blockSizeToWrite;
         }
 
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -646,7 +647,7 @@ eOtwStatus Otw_ReadFromFlashAndCompare(const uint8_t *pData, uint32_t dataLen, u
             i += blockSizeToRead;
         }
 
-    } while (0);
+    } while (false);
 
     if (readBufferChunk != NULL)
         OSA_MemoryFree(readBufferChunk);
@@ -682,7 +683,7 @@ eOtwStatus Otw_IsUpdateRequired(const uint8_t *firmwareData, uint32_t firmwareDa
             status = E_OTW_FIRMWARE_UPDATE_NOT_REQUIRED;
         }
 
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -709,7 +710,7 @@ static eOtwStatus Otw_InitUartLink(uint32_t baudRate)
             kStatus_HAL_UartDmaSuccess)
             break;
         otwStatus = E_OTW_OK;
-    } while (0);
+    } while (false);
 
     return otwStatus;
 }
@@ -729,7 +730,7 @@ static eOtwStatus Otw_DeInitUartLink(void)
         if (HAL_UartDMADeinit((hal_uart_handle_t)g_uartHandle) != kStatus_HAL_UartDmaSuccess)
             break;
         otwStatus = E_OTW_OK;
-    } while (0);
+    } while (false);
 
     OSA_InterruptEnable();
     return otwStatus;
@@ -755,7 +756,7 @@ static eOtwStatus Otw_SetUartBaudRate(uint32_t uartBaudRate)
         if (status != E_OTW_OK)
             break;
 
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -833,7 +834,7 @@ static eOtwStatus Otw_WriteMessageAndGetResponse(teBL_MessageType eType,
                     *responseBufferSize);
             status = E_OTW_FAILURE;
         }
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -883,7 +884,7 @@ static eOtwStatus Otw_TryReadRxIspMsg(uint8_t * responseStatus,
                 break;
             }
         }
-    } while (1);
+    } while (true);
 
     return status;
 }
@@ -922,7 +923,7 @@ static eOtwStatus Otw_ParseIspResponse(uint8_t * responseStatus,
             OTW_DUMP_BUFFER(otwRxMsgBuffer, otwRxMsgBufferReadIndex, "RX RES: msgLen = %d", ispMsgLen);
         }
 
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -975,7 +976,7 @@ static eOtwStatus Otw_SwitchToIspMode(void)
             break;
         }
         OSA_TimeDelay(OTW_CONFIG_DEFAULT_RESET_DELAY_MS);
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -1029,7 +1030,7 @@ static eOtwStatus Otw_WriteChunkToFlash(uint32_t writeDstAddr, const uint8_t *bu
         if (status != E_OTW_OK)
             break;
 
-    } while (0);
+    } while (false);
 
     // OTW_LOG("status = %d", status);
 
@@ -1066,7 +1067,7 @@ static eOtwStatus Otw_ReadChunkFromFlash(uint32_t readAddr, uint8_t *readBuffer,
         if (status != E_OTW_OK)
             break;
 
-    } while (0);
+    } while (false);
 
     // OTW_LOG("status = %d", status);
 
@@ -1091,7 +1092,7 @@ static eOtwStatus Otw_OpenMemoryRequest(void)
                                                 &responseStatus, (uint8_t *)&responseType, NULL, &rxResponseSize);
         if (status != E_OTW_OK)
             break;
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -1113,7 +1114,7 @@ static eOtwStatus Otw_CloseMemoryRequest(void)
                                        &responseStatus, (uint8_t *)&responseType, NULL, &rxResponseSize);
         if (status != E_OTW_OK)
             break;
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -1163,7 +1164,7 @@ static eOtwStatus Otw_RunUnlockProcedure(void)
         /* Put a delay here to let some time to switch to the new UART baud rate */
         OSA_TimeDelay(5);
 #endif
-    } while (0);
+    } while (false);
 
     return status;
 }
@@ -1195,7 +1196,7 @@ static eOtwStatus Otw_InitMemoryFlashInfo(void)
         OTW_LOG("u8Index = %d, baseAddr = 0x%x, size = %d, blockSize = %d access = 0x%x", otwK32w0MemFlashInfo.u8Index,
                 otwK32w0MemFlashInfo.u32BaseAddress, otwK32w0MemFlashInfo.u32Size, otwK32w0MemFlashInfo.u32BlockSize,
                 otwK32w0MemFlashInfo.u8Access);
-    } while (0);
+    } while (false);
 
     if (rxResponseBuffer != NULL)
         OSA_MemoryFree(rxResponseBuffer);

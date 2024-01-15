@@ -7,15 +7,15 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
-
 #include <stdint.h>
 #include "fwk_platform_coex.h"
 #include "fsl_adapter_gpio.h"
 #include "fsl_common.h"
 #include "wifi-decl.h"
-#include "sduart_nw61x.h"
+#include "sduart_nw61x_se.h"
 #include "firmware_dnld.h"
-#include "sdio.h"
+#include "fwdnld_intf_abs.h"
+#include "fsl_os_abstraction.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -32,6 +32,24 @@
 #ifndef PLATFORM_RESET_PIN_NUM
 #define PLATFORM_RESET_PIN_NUM 9
 #endif
+
+#ifndef PLATFORM_RESET_PIN_LVL_ON
+#define PLATFORM_RESET_PIN_LVL_ON 1U
+#endif
+
+#ifndef PLATFORM_RESET_PIN_LVL_OFF
+#define PLATFORM_RESET_PIN_LVL_OFF 0U
+#endif
+
+/* Weak function. */
+#if defined(__GNUC__)
+#define __WEAK_FUNC __attribute__((weak))
+#elif defined(__ICCARM__)
+#define __WEAK_FUNC __weak
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
+#define __WEAK_FUNC __attribute__((weak))
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                                Private types                               */
 /* -------------------------------------------------------------------------- */
@@ -44,7 +62,7 @@ static GPIO_HANDLE_DEFINE(otGpioResetHandle);
 
 static const hal_gpio_pin_config_t resetPinConfig = {
     .direction = kHAL_GpioDirectionOut,
-    .level     = 0U,
+    .level     = PLATFORM_RESET_PIN_LVL_OFF,
     .port      = PLATFORM_RESET_PIN_PORT,
     .pin       = PLATFORM_RESET_PIN_NUM,
 };
@@ -60,6 +78,8 @@ static int PLATFORM_ResetController(void);
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
+extern int wlan_init(const uint8_t *fw_start_addr, const size_t size);
 
 int PLATFORM_InitControllers(uint8_t controllersMask)
 {
@@ -89,22 +109,37 @@ int PLATFORM_InitControllers(uint8_t controllersMask)
                 break;
             }
 
-            /* Download firmware */
-            ret = sdio_init();
-            assert(WM_SUCCESS == ret);
-            ret = sdio_ioport_init();
-            assert(WM_SUCCESS == ret);
-            ret = firmware_download(wlan_fw_bin, wlan_fw_bin_len);
-            assert(WM_SUCCESS == ret);
+            /* check if Wi-Fi is supported */
+            if ((controllersMask & connWlan_c) != 0)
+            {
+                ret = wlan_init(wlan_fw_bin, wlan_fw_bin_len);
+                assert(WM_SUCCESS == ret);
+            }
+            else
+            {
+                /* Download firmware */
+                fwdnld_intf_t *intf;
+                intf = fwdnld_intf_init(FWDNLD_INTF_SDIO, NULL);
+                ret  = firmware_download(wlan_fw_bin, wlan_fw_bin_len, intf, 0);
+                assert(WM_SUCCESS == ret);
+            }
 
             /* Waiting for the RCP chip starts up */
             OSA_TimeDelay(PLATFORM_CONFIG_DEFAULT_RESET_DELAY_MS);
 
             isOtControllerUp = true;
-        } while (0);
+        } while (false);
     }
 
     return ret;
+}
+
+/*
+ * Empty wlan function that could be redefined if Wi-Fi is supported
+ */
+__WEAK_FUNC int wlan_init(const uint8_t *fw_start_addr, const size_t size)
+{
+    return WM_SUCCESS;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -118,7 +153,7 @@ static int PLATFORM_ResetController(void)
     do
     {
         // Set Reset pin to low level.
-        status = HAL_GpioSetOutput((hal_gpio_handle_t)otGpioResetHandle, 0);
+        status = HAL_GpioSetOutput((hal_gpio_handle_t)otGpioResetHandle, PLATFORM_RESET_PIN_LVL_OFF);
         if (status != kStatus_HAL_GpioSuccess)
         {
             ret = -1;
@@ -128,13 +163,13 @@ static int PLATFORM_ResetController(void)
         OSA_TimeDelay(PLATFORM_CONFIG_DEFAULT_RESET_DELAY_MS);
 
         // Set Reset pin to high level.
-        status = HAL_GpioSetOutput((hal_gpio_handle_t)otGpioResetHandle, 1);
+        status = HAL_GpioSetOutput((hal_gpio_handle_t)otGpioResetHandle, PLATFORM_RESET_PIN_LVL_ON);
         if (status != kStatus_HAL_GpioSuccess)
         {
             ret = -2;
             break;
         }
-    } while (0);
+    } while (false);
 
     return ret;
 }
