@@ -129,6 +129,9 @@ endif()
 
 if(CONNFWK_NVS)
     add_subdirectory(NVS)
+    if(CONNFWK_SETTINGS)
+        add_subdirectory(Settings)
+    endif()
 endif()
 
 

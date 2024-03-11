@@ -1340,6 +1340,9 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
     ecdh_ctx.keepSharedSecret = keepBlobDhKey;
     do
     {
+        ecdhPoint_t EcdhPubKey = {0U};
+        size_t      wrk_buf_sz;
+
         if (pOutDhKey == NULL)
         {
             ret = gSecError_c;
@@ -1371,16 +1374,16 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
             }
             IsSecLibEcdhContextInit = true;
         }
-        size_t wrk_buf_sz = 3u * ECP256_COORDINATE_LEN;
-        wrk_buf           = MEM_BufferAlloc(wrk_buf_sz);
+        wrk_buf_sz = 3u * ECP256_COORDINATE_LEN;
+        wrk_buf    = MEM_BufferAlloc(wrk_buf_sz);
         if (wrk_buf == NULL)
         {
             RAISE_ERROR(ret, gSecAllocError_c);
         }
         ecdh_ctx.ecdh_key_pair = pECPKeyPair;
-        ecdhPoint_t EcdhPubKey;
 
-        ECP256_PointCopy_and_change_endianness(&EcdhPubKey.raw[0], (const uint8_t *)&pInPeerPublicKey->raw[0]);
+        uint8_t *pubkey = &EcdhPubKey.raw[0];
+        ECP256_PointCopy_and_change_endianness(pubkey, (const uint8_t *)&pInPeerPublicKey->raw[0]);
 
         FLib_MemCpy(&ecdh_ctx.Qp, &EcdhPubKey, sizeof(ecdhPoint_t));
 

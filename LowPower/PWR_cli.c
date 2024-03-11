@@ -172,7 +172,7 @@ static void PWRCli_ConfigureNextLowPowerMode(PWR_LowpowerMode_t nextMode, uint32
 
     const char *ModeName[5] = {"WFI", "Sleep", "DeepSleep", "PowerDown", "DeepPowerDown"};
 
-    if ((currentMode >= PWR_WFI) && (currentMode <= PWR_DeepPowerDown))
+    if (currentMode <= PWR_DeepPowerDown)
     {
         CLI_PRINTF("%s  mode selected\r\n", ModeName[currentMode]); /* MISRA CID 26556642 */
     }

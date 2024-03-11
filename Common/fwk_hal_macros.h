@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  * All rights reserved.
  *
  * \file
@@ -136,12 +136,88 @@ static inline uint32_t __hal_ctz(uint32_t x)
 #define LOG_4(n) (((n) >= (1 << 4)) ? (4 + LOG_2((n) >> 4)) : LOG_2(n))
 #define LOG_8(n) (((n) >= (1 << 8)) ? (8 + LOG_4((n) >> 8)) : LOG_4(n))
 /*
- * Macro to compute log2 of a constant at compile time.
+ * Macro to compute log2 (logarithm) of a constant at compile time.
  * Does not make sense for runtime log2 calculation.
  * Computation should be based on __builtin_clz.
  * For in
  *
  */
 #define LOG(n) (((n) >= (1 << 16)) ? (16 + LOG_8((n) >> 16)) : LOG_8(n))
+
+#if !defined(__IAR_SYSTEMS_ICC__)
+#undef BUILD_ASSERT /* clear out common version */
+/* C++11 has static_assert built in */
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
+#define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+
+/*
+ * GCC 4.6 and higher have the C11 _Static_assert built in and its
+ * output is easier to understand than the common BUILD_ASSERT macros.
+ * Don't use this in C++98 mode though (which we can hit, as
+ * static_assert() is not available)
+ */
+#elif !defined(__cplusplus) && \
+    ((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) || (__STDC_VERSION__) >= 201100)
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#else
+#define BUILD_ASSERT(EXPR, MSG...)
+#endif
+
+/**
+ * @brief Validate if two entities have a compatible type
+ *
+ * @param a the first entity to be compared
+ * @param b the second entity to be compared
+ * @return 1 if the two elements are compatible, 0 if they are not
+ */
+#define SAME_TYPE(a, b) __builtin_types_compatible_p(__typeof__(a), __typeof__(b))
+
+/**
+ * @brief Validate CONTAINER_OF parameters, only applies to C mode.
+ */
+#ifndef __cplusplus
+#define CONTAINER_OF_VALIDATE(ptr, type, field)                                    \
+    BUILD_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->field) || SAME_TYPE(*(ptr), void), \
+                 "pointer type mismatch in CONTAINER_OF");
+#else /* __cplusplus */
+#define CONTAINER_OF_VALIDATE(ptr, type, field)
+#endif /* __cplusplus */
+#else  /* __IAR_SYSTEMS_ICC__ */
+/* No CONTAINER_OF_VALIDATE macros for IAR */
+#define CONTAINER_OF_VALIDATE(ptr, type, field)
+/* Neither BUILD_ASSERT nor  SAME_TYPE defined for IAR */
+#endif /* __IAR_SYSTEMS_ICC__ */
+
+#define _DO_CONCAT(x, y) x##y
+#define _CONCAT(x, y)    _DO_CONCAT(x, y)
+
+#define DECL_ALIGN(type) __aligned(__alignof(type)) type
+
+/**
+ * @brief Get a pointer to a structure containing the element
+ *
+ * Example:
+ *
+ *	struct foo {
+ *		int bar;
+ *	};
+ *
+ *	struct foo my_foo;
+ *	int *ptr = &my_foo.bar;
+ *
+ *	struct foo *container = CONTAINER_OF(ptr, struct foo, bar);
+ *
+ * Above, @p container points at @p my_foo.
+ *
+ * @param ptr pointer to a structure element
+ * @param type name of the type that @p ptr is an element of
+ * @param field the name of the field within the struct @p ptr points to
+ * @return a pointer to the structure that contains @p ptr
+ */
+#define CONTAINER_OF(_PTR_, _TYPE_, _FIELD_)                         \
+    ({                                                               \
+        CONTAINER_OF_VALIDATE(_PTR_, _TYPE_, _FIELD_)                \
+        ((_TYPE_ *)(((char *)(_PTR_)) - offsetof(_TYPE_, _FIELD_))); \
+    })
 
 #endif

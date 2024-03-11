@@ -126,8 +126,9 @@ extern void PhyGetRandomNo(uint32_t *pRandomNo);
 static void TRNG_ISR(void);
 static void TRNG_GoToSleep(void);
 #endif
-static uint8_t RNG_Specific_Init(uint32_t *pSeed);
-static uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes);
+
+static int RNG_Specific_Init(uint32_t *pSeed);
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes);
 
 #if defined     gRngUseSecureSubSystem_d && (gRngUseSecureSubSystem_d > 0)
 static uint16_t _RNG_SSS_Get_RndBytes(uint8_t *pOut, uint16_t outBytes);
@@ -136,6 +137,13 @@ static uint16_t _RNG_SSS_Get_RndBytes(uint8_t *pOut, uint16_t outBytes);
 #if defined(gRngSeedHwParamStorage_d) || defined(gRngSeedStorageAddr_d)
 static uint32_t Rng_read_seed_from_flash(void);
 static void     Rng_save_seed_to_flash(uint32_t seed);
+#endif
+
+#if !defined(FWK_RNG_DEPRECATED_API)
+static int RNG_GetPseudoRandomDataWithContext(void *ctx_data, unsigned char *output, size_t len);
+#if (!defined(gRngUseSecureSubSystem_d) || (gRngUseSecureSubSystem_d == 0))
+static void RNG_SetSeed(void);
+#endif
 #endif
 
 /*! *********************************************************************************
@@ -151,11 +159,11 @@ static void     Rng_save_seed_to_flash(uint32_t seed);
  *
  ********************************************************************************** */
 
-uint8_t RNG_Init(void)
+int RNG_Init(void)
 {
     uint32_t seed = 0U;
 
-    uint8_t status = gRngSuccess_d;
+    int status = gRngSuccess_d;
     do
     {
         /* Check if RNG is already initialized */
@@ -197,14 +205,15 @@ uint8_t RNG_Init(void)
     return status;
 }
 
-void RNG_ReInit(void)
+int RNG_ReInit(void)
 {
+    int status = gRngSuccess_d;
 #if gRngUseSecureSubSystem_d
-    (void)CRYPTO_ReinitHardware();
+    status = CRYPTO_ReinitHardware();
 #endif
-    return;
+    return status;
 }
-
+#ifdef FWK_RNG_DEPRECATED_API
 /*! *********************************************************************************
  * \brief  Read a random number from the HW RNG module.
  *
@@ -422,6 +431,167 @@ fpRngPrng_t RNG_GetPrngFunc(void)
     return PRNG_GetRandomData;
 }
 
+#else
+int RNG_GetTrueRandomNumber(uint32_t *pRandomNo)
+{
+    int status;
+#if !defined gRngUseSecureSubSystem_d || (gRngUseSecureSubSystem_d == 0)
+    /* If there is no hardware module we cannot have true RNG */
+    status = -1;
+#else
+    (void)_RNG_SSS_Get_RndBytes((uint8_t *)pRandomNo, (uint16_t)sizeof(uint32_t));
+    status = 0;
+#endif
+    return status;
+}
+
+/*! *********************************************************************************
+ * \brief  Pseudo Random Number Generator (PRNG) implementation
+ *         according to NIST FIPS Publication 186-2, APPENDIX 3
+ *
+ *         Let x be the signer's private key.
+ *         The following may be used to generate m values of x:
+ *           Step 1. Choose a new, secret value for the seed-key, XKEY.
+ *           Step 2. In hexadecimal notation let
+ *             t = 67452301 EFCDAB89 98BADCFE 10325476 C3D2E1F0.
+ *             This is the initial value for H0 || H1 || H2 || H3 || H4 in the SHS.
+ *           Step 3. For j = 0 to m - 1 do
+ *             a. XSEEDj = optional user input.
+ *             b. XVAL = (XKEY + XSEEDj) mod 2^b
+ *             c. xj = G(t,XVAL) mod q
+ *             d. XKEY = (1 + XKEY + xj) mod 2^b
+ *
+ * \param[out]    pOut - pointer to the output buffer
+ * \param[in]     outBytes - the number of bytes to be copied (1-20)
+ * \param[in]     pSeed - optional user SEED. Should be NULL if not used.
+ *
+ * \return  The number of bytes copied or -1 if reseed is needed
+ *
+ ********************************************************************************** */
+int RNG_GetPseudoRandomData(uint8_t *pOut, uint8_t outBytes, uint8_t *pSeed)
+{
+    uint16_t outputBytes = outBytes;
+
+#if !defined gRngUseSecureSubSystem_d || (gRngUseSecureSubSystem_d == 0)
+    uint32_t i;
+    /* PRNG buffer used for both input and output */
+    uint32_t prngBuffer[mPRNG_NoOfLongWords_c] = {0};
+
+    if (pSeed != NULL)
+    {
+        rng_ctx.mPRNG_Requests = 1U;
+    }
+
+    if (rng_ctx.mPRNG_Requests == gRngMaxRequests_d)
+    {
+        RNG_SetSeed();
+    }
+    else
+    {
+        rng_ctx.mPRNG_Requests++;
+
+        /* a. XSEEDj = optional user input. */
+        if (pSeed != NULL)
+        {
+            /* b. XVAL = (XKEY + XSEEDj) mod 2^b */
+            for (i = 0; i < mPRNG_NoOfBytes_c; i++)
+            {
+                ((uint8_t *)prngBuffer)[i] = ((uint8_t *)rng_ctx.XKEY)[i] + pSeed[i];
+            }
+        }
+        else
+        {
+            for (i = 0; i < mPRNG_NoOfBytes_c; i++)
+            {
+                ((uint8_t *)prngBuffer)[i] = ((uint8_t *)rng_ctx.XKEY)[i];
+            }
+        }
+
+        /* c. xj = G(t,XVAL) mod q
+        ***************************/
+        SHA256_Hash((uint8_t *)prngBuffer, mPRNG_NoOfBytes_c, (uint8_t *)prngBuffer);
+
+        /* d. XKEY = (1 + XKEY + xj) mod 2^b */
+        rng_ctx.XKEY[0] += 1U;
+        for (i = 0; i < mPRNG_NoOfLongWords_c; i++)
+        {
+            rng_ctx.XKEY[i] += prngBuffer[i];
+        }
+
+        /* Check if the length provided exceeds the output data size */
+        if (outputBytes > mPRNG_NoOfBytes_c)
+        {
+            outputBytes = mPRNG_NoOfBytes_c;
+        }
+        /* Copy the generated number */
+
+        for (i = 0; i < (uint32_t)outputBytes; i++)
+        {
+            pOut[i] = ((uint8_t *)prngBuffer)[i];
+        }
+    }
+#else
+    if (outputBytes > mPRNG_NoOfBytes_c)
+    {
+        outputBytes = mPRNG_NoOfBytes_c;
+    }
+    else
+    {
+        outputBytes = _RNG_SSS_Get_RndBytes(pOut, outBytes);
+    }
+#endif
+
+    return (int16_t)outputBytes;
+}
+
+static int RNG_GetPseudoRandomDataWithContext(void *ctx_data, unsigned char *output, size_t len)
+{
+    NOT_USED(ctx_data);
+    int     st = -1;
+    int16_t nb_produced;
+
+    nb_produced = RNG_GetPseudoRandomData(output, (uint8_t)len, NULL);
+
+    if (nb_produced == (int16_t)len)
+    {
+        st = 0;
+    }
+    return st;
+}
+#if !defined gRngUseSecureSubSystem_d || (gRngUseSecureSubSystem_d == 0)
+/*! *********************************************************************************
+ * \brief  Initialize seed for the PRNG algorithm.
+ *         If this function is called again, the PRNG will be reseeded.
+ *
+ ********************************************************************************** */
+static void RNG_SetSeed(void)
+{
+    uint8_t  pseudoRNGSeed[mPRNG_NoOfBytes_c] = {0U};
+    uint32_t i;
+
+    rng_ctx.mPRNG_Requests = 1U;
+
+    for (i = 0; i < mPRNG_NoOfBytes_c; i += 4U)
+    {
+        RNG_GetTrueRandomNumber((uint32_t *)(void *)(&(pseudoRNGSeed[i])));
+    }
+    FLib_MemCpy(rng_ctx.XKEY, pseudoRNGSeed, mPRNG_NoOfBytes_c);
+}
+#endif
+/*! *********************************************************************************
+ * \brief  Returns a pointer to the general PRNG function
+ *         Call RNG_SetPseudoRandomNoSeed() before calling this function.
+ *
+ * \return  Function pointer to the general PRNG function or NULL if it
+ *          was not seeded.
+ *
+ ********************************************************************************** */
+fpRngPrng_t RNG_GetPrngFunc(void)
+{
+    return RNG_GetPseudoRandomDataWithContext;
+}
+#endif
+
 /*! *********************************************************************************
  * \brief  Returns a pointer to the general PRNG context
  *         Call RNG_SetPseudoRandomNoSeed() before calling this function.
@@ -513,9 +683,9 @@ static void TRNG_ISR(void)
 #endif /* FSL_FEATURE_SOC_TRNG_COUNT  */
 
 #if ((defined(FSL_FEATURE_SOC_RNG_COUNT)) && (FSL_FEATURE_SOC_RNG_COUNT > 0U))
-uint8_t RNG_Specific_Init(uint32_t *pSeed)
+int RNG_Specific_Init(uint32_t *pSeed)
 {
-    uint8_t status = gRngSuccess_d;
+    int status = gRngSuccess_d;
 #ifndef CPU_QN908X
     RNGA_Init(RNG);
 
@@ -537,9 +707,9 @@ uint8_t RNG_Specific_Init(uint32_t *pSeed)
     return status;
 }
 
-uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
-    uint8_t status;
+    int status;
     *returned_bytes = 0;
 #ifndef CPU_QN908X
     status = RNGA_GetRandomData(RNG, pRandomNo, (size_t)sizeof(uint32_t));
@@ -564,9 +734,9 @@ uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 }
 
 #elif ((defined(FSL_FEATURE_SOC_TRNG_COUNT)) && (FSL_FEATURE_SOC_TRNG_COUNT > 0U))
-uint8_t RNG_Specific_Init(uint32_t *pSeed)
+int RNG_Specific_Init(uint32_t *pSeed)
 {
-    uint8_t status = gRngSuccess_d;
+    int           status = gRngSuccess_d;
     trng_config_t config;
 
     (void)TRNG_GetDefaultConfig(&config);
@@ -603,9 +773,9 @@ uint8_t RNG_Specific_Init(uint32_t *pSeed)
 
     return status;
 }
-uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
-    uint8_t status;
+    int status;
     *returned_bytes = 0;
 
     if ((TRNG0->MCTL & TRNG_MCTL_ENT_VAL_MASK) == 0U)
@@ -624,28 +794,28 @@ uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
     return status;
 }
 #elif gRNG_UsePhyRngForInitialSeed_d
-uint8_t RNG_Specific_Init(uint32_t *pSeed)
+int RNG_Specific_Init(uint32_t *pSeed)
 {
     PhyGetRandomNo(pSeed);
     return gRngSuccess_d;
 }
-uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     PhyGetRandomNo(pRandomNo);
     *returned_bytes = sizeof(uint32_t);
     return gRngSuccess_d;
 }
 #elif defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 1)
-uint8_t RNG_Specific_Init(uint32_t *pSeed)
+int RNG_Specific_Init(uint32_t *pSeed)
 {
     /* Lousy RNG seed based on MCU unique Id */
-    uint8_t status  = gRngSuccess_d;
+    int status      = gRngSuccess_d;
     *pSeed          = SIM->UIDL;
     *returned_bytes = sizeof(uint32_t);
 
     return status;
 }
-uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     return gRngInternalError_d;
 }
@@ -690,9 +860,9 @@ static uint16_t _RNG_SSS_Get_RndBytes(uint8_t *pOut, uint16_t outBytes)
     RNG_MUTEX_UNLOCK();
     return outputBytes;
 }
-static uint8_t RNG_Specific_Init(uint32_t *pSeed)
+static int RNG_Specific_Init(uint32_t *pSeed)
 {
-    uint8_t status;
+    int status;
 
     do
     {
@@ -708,9 +878,9 @@ static uint8_t RNG_Specific_Init(uint32_t *pSeed)
     return status;
 }
 
-static uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
-    uint8_t status;
+    int status;
     *returned_bytes = 0;
     do
     {
@@ -729,21 +899,27 @@ static uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_
 }
 #else
 
-static uint8_t RNG_Specific_Init(uint32_t *pSeed)
+static int RNG_Specific_Init(uint32_t *pSeed)
 {
     /* no HW specific init is required */
     (void)pSeed;
+#ifndef FWK_RNG_DEPRECATED_API
+    RNG_SetSeed();
+#endif
     return gRngSuccess_d;
 }
 
-static uint8_t RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     /* No HW flag defined or supported, falling back to SW RNG */
+#ifndef FWK_RNG_DEPRECATED_API
+    RNG_GetTrueRandomNumber(pRandomNo);
+#else
     RNG_GetRandomNo(pRandomNo);
+#endif
     *returned_bytes = sizeof(uint32_t);
 
     return gRngSuccess_d;
 }
-
 #endif
 /********************************** EOF ***************************************/

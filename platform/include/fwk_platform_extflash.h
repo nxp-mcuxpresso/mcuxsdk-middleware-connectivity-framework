@@ -95,12 +95,14 @@ int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address
 int PLATFORM_IsExternalFlashBusy(bool *isBusy);
 
 /*!
- * \brief Tell whether Flash Sector is blank
+ * \brief Tell whether Flash area is blank
  *
- * \param[in] address
- * \return true if sector containing address is all 0xff
+ * \param[in] address address from which to start check
+ * \param[in] len     length of area
+ *
+ * \return true if area in range [address..address+len[ is containing all 0xff.
  */
-bool PLATFORM_IsExternalFlashSectorBlank(uint32_t address);
+bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len);
 
 /*!
  * \brief Tell whether Flash Page is blank
@@ -110,6 +112,13 @@ bool PLATFORM_IsExternalFlashSectorBlank(uint32_t address);
  */
 bool PLATFORM_IsExternalFlashPageBlank(uint32_t address);
 
+/*!
+ * \brief Tell whether Flash Sector is blank
+ *
+ * \param[in] address
+ * \return true if sector containing address is all 0xff
+ */
+bool PLATFORM_IsExternalFlashSectorBlank(uint32_t address);
 /*!
  * @}  end of FWK_Platform_Flash addtogroup
  */
