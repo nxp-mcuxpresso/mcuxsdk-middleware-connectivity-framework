@@ -33,6 +33,7 @@
 #include "CryptoLibSW.h"
 
 #include "fwk_config.h"
+#include "elemu/fsl_sss_config_elemu.h"
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -71,8 +72,6 @@ extern osa_status_t SecLibMutexUnlock(void);
  * It is likely to be present on all Core M33, Core M7 and Core M4 devices.
  * Nonetheless RW61x was designed without ARM DSP extension, in which case avoid defining
  * gSecLibUseDspExtension_d.
- * __DSP_EXT__ must be defined in the build system (CFLAGS containing -D__DSP_EXT__=1 for instance)
- * gSecLibUseDspExtension_d follows __DSP_PRESENT unless overidden to 0
  */
 
 #ifndef gSecLibUseDspExtension_d
@@ -85,8 +84,8 @@ extern osa_status_t SecLibMutexUnlock(void);
 *************************************************************************************
 ********************************************************************************** */
 
-typedef uint32_t sss_sscp_internal_keyID_t;
-typedef uint32_t sss_sscp_keyObjFree_options_t;
+// typedef uint32_t sss_sscp_internal_keyID_t;
+// typedef uint32_t sss_sscp_keyObjFree_options_t;
 
 /************************************************************************************
 *************************************************************************************
@@ -220,8 +219,7 @@ void SecLib_Init(void)
 void SecLib_ReInit(void)
 {
     IsSecLibEcdhContextInit = false;
-    CRYPTO_ELEMU_reset();
-    (void)CRYPTO_ReinitHardware();
+    PLATFORM_ResetCrypto();
 }
 
 /*! *********************************************************************************
@@ -231,7 +229,7 @@ void SecLib_ReInit(void)
  ********************************************************************************** */
 void SecLib_DeInit(void)
 {
-    CRYPTO_DeinitHardware();
+    PLATFORM_TerminateCrypto();
 }
 
 /*! *********************************************************************************
@@ -1340,6 +1338,9 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
     ecdh_ctx.keepSharedSecret = keepBlobDhKey;
     do
     {
+        ecdhPoint_t EcdhPubKey = {0U};
+        size_t      wrk_buf_sz;
+
         if (pOutDhKey == NULL)
         {
             ret = gSecError_c;
@@ -1371,16 +1372,16 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
             }
             IsSecLibEcdhContextInit = true;
         }
-        size_t wrk_buf_sz = 3u * ECP256_COORDINATE_LEN;
-        wrk_buf           = MEM_BufferAlloc(wrk_buf_sz);
+        wrk_buf_sz = 3u * ECP256_COORDINATE_LEN;
+        wrk_buf    = MEM_BufferAlloc(wrk_buf_sz);
         if (wrk_buf == NULL)
         {
             RAISE_ERROR(ret, gSecAllocError_c);
         }
         ecdh_ctx.ecdh_key_pair = pECPKeyPair;
-        ecdhPoint_t EcdhPubKey;
 
-        ECP256_PointCopy_and_change_endianness(&EcdhPubKey.raw[0], (const uint8_t *)&pInPeerPublicKey->raw[0]);
+        uint8_t *pubkey = &EcdhPubKey.raw[0];
+        ECP256_PointCopy_and_change_endianness(pubkey, (const uint8_t *)&pInPeerPublicKey->raw[0]);
 
         FLib_MemCpy(&ecdh_ctx.Qp, &EcdhPubKey, sizeof(ecdhPoint_t));
 

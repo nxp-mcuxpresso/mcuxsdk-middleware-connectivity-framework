@@ -68,7 +68,7 @@ static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t Ad
 *******************************************************************************
 ******************************************************************************/
 
-union physical_adress
+union physical_address
 {
     uint32_t  value;
     uint32_t *pointer;
@@ -93,13 +93,13 @@ static uint32_t mWriteBuffAddr  = 0U;
 ******************************************************************************/
 
 static const OtaFlashOps_t int_flash_ops = {
-    .init           = InternalFlash_Init,
-    .format_storage = InternalFlash_ChipErase,
-    .writeData      = InternalFlash_WriteData,
-    .readData       = InternalFlash_ReadData,
-    .isBusy         = InternalFlash_isBusy,
-    .eraseArea      = InternalFlash_EraseArea,
-    .flushWriteBuf  = InternalFlash_FlushWriteBuffer,
+    .init           = &InternalFlash_Init,
+    .format_storage = &InternalFlash_ChipErase,
+    .writeData      = &InternalFlash_WriteData,
+    .readData       = &InternalFlash_ReadData,
+    .isBusy         = &InternalFlash_isBusy,
+    .eraseArea      = &InternalFlash_EraseArea,
+    .flushWriteBuf  = &InternalFlash_FlushWriteBuffer,
 };
 
 static const OtaPartition_t *ota_internal_partition;
@@ -322,7 +322,7 @@ static ota_flash_status_t InternalFlash_FlushWriteBuffer(void)
  ***********************************************************************************/
 static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t Addr, uint8_t *inbuf)
 {
-    union physical_adress read_adress;
+    union physical_address read_adress;
     read_adress.value = PHYS_ADDR(Addr);
     FLib_MemCpy(inbuf, read_adress.pointer, NoOfBytes);
 
@@ -447,8 +447,8 @@ static ota_flash_status_t InternalFlash_EraseArea(uint32_t *Addr, int32_t *size,
 #if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
 static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint32_t length)
 {
-    ota_flash_status_t    status = kStatus_OTA_Flash_Success;
-    union physical_adress verify_adress;
+    ota_flash_status_t     status = kStatus_OTA_Flash_Success;
+    union physical_address verify_adress;
     verify_adress.value = PHYS_ADDR(Addr);
     if (!FLib_MemCmp(pData, verify_adress.pointer, length))
     {

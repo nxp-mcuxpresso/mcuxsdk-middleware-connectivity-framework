@@ -95,13 +95,13 @@ static const OtaPartition_t *ota_ext_partition;
 ******************************************************************************/
 
 static const OtaFlashOps_t ext_flash_ops = {
-    .init           = ExternalFlash_Init,
-    .format_storage = ExternalFlash_ChipErase,
-    .writeData      = ExternalFlash_WriteData,
-    .readData       = ExternalFlash_ReadData,
-    .isBusy         = ExternalFlash_isBusy,
-    .eraseArea      = ExternalFlash_EraseArea,
-    .flushWriteBuf  = ExternalFlash_FlushWriteBuffer,
+    .init           = &ExternalFlash_Init,
+    .format_storage = &ExternalFlash_ChipErase,
+    .writeData      = &ExternalFlash_WriteData,
+    .readData       = &ExternalFlash_ReadData,
+    .isBusy         = &ExternalFlash_isBusy,
+    .eraseArea      = &ExternalFlash_EraseArea,
+    .flushWriteBuf  = &ExternalFlash_FlushWriteBuffer,
 };
 
 /******************************************************************************
@@ -164,7 +164,7 @@ static ota_flash_status_t ExternalFlash_ChipErase(void)
         phys_sector_addr = PHYS_ADDR(i * ota_ext_partition->sector_size);
         if (PLATFORM_IsExternalFlashSectorBlank(phys_sector_addr))
         {
-            continue;
+            ; /* let loop continue */
         }
         else
         {
@@ -316,7 +316,7 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
                     }
                 }
 
-                /* Substract copied bytes from the data to be copied, and increase address offset */
+                /* Subtract copied bytes from the data to be copied, and increase address offset */
                 NoOfBytes -= sizeToCopy;
                 Addr += sizeToCopy;
                 Outbuf += sizeToCopy;
@@ -494,7 +494,7 @@ static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t Ad
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
     uint8_t            read_page_buf[PLATFORM_EXTFLASH_PAGE_SIZE];
     uint32_t           endAddr = Addr + length;
-    /* Perform reads page by page becasue it seems to be a reasonable size but
+    /* Perform reads page by page because it seems to be a reasonable size but
      * read buffer size could be different.
      */
     while (Addr < endAddr)

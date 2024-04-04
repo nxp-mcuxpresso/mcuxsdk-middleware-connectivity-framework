@@ -7,17 +7,17 @@ if (CONFIG_USE_middleware_wireless_framework_sec_lib)
 message("middleware_wireless_framework_sec_lib component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/./SecLib/SecLib.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/SecLib.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/./SecLib
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/.
 )
 
 if((CONFIG_TOOLCHAIN STREQUAL armgcc OR CONFIG_TOOLCHAIN STREQUAL mcux))
   target_link_libraries(${MCUX_SDK_PROJECT_NAME} PRIVATE
     -Wl,--start-group
-      ${CMAKE_CURRENT_LIST_DIR}/./SecLib/lib_crypto_m7.a
+      ${CMAKE_CURRENT_LIST_DIR}/SecLib/lib_crypto_m7.a
       -Wl,--end-group
   )
 endif()
@@ -26,104 +26,117 @@ endif()
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_common_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_common_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_common_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_common_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_common_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_common_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/platform/include
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_coex_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_coex_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_coex_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_coex_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_coex_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_coex_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/platform/include
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_internal_flash_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_internal_flash_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_lp_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_internal_flash_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_dcdc_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_board_lp_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1176
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_platform_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_board_dcdc_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1176
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_comp_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_board_platform_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1176
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_extflash_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_board_comp_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1176
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_lfs_config_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_lfs_config_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_lfs_config_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_board_extflash_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060/configs
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1176
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_lfs_config_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_lfs_config_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_lfs_config_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/configs
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -139,27 +152,27 @@ endif()
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_matter_config_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_matter_config_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/MIMXRT1062/gcc
+  ${CMAKE_CURRENT_LIST_DIR}/./boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/./Common/devices/MIMXRT1176/gcc
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1062 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1176)
+# Add set(CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1176 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_init_config_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_init_config_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1176
 )
 
 
@@ -172,7 +185,20 @@ if (CONFIG_USE_middleware_wireless_framework_rpmsg_config)
 message("middleware_wireless_framework_rpmsg_config component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060/configs
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/configs
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_mbedtls_config_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_mbedtls_config_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_mbedtls_config_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/configs
 )
 
 
@@ -185,25 +211,25 @@ if (CONFIG_USE_middleware_wireless_framework_platform_rt_ot_coex)
 message("middleware_wireless_framework_platform_rt_ot_coex component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/imx_rt/fwk_platform_ot.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/imx_rt/fwk_platform_hdlc.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/imx_rt/k32w0/fwk_platform_coex.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/imx_rt/iw612/fwk_platform_coex.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/imx_rt/configs/fwk_lfs_config.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/imx_rt/fwk_platform_ot.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/imx_rt/fwk_platform_hdlc.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/imx_rt/k32w0/fwk_platform_coex.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/imx_rt/iw612/fwk_platform_coex.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/imx_rt/configs/fwk_lfs_config.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/imx_rt/configs
+  ${CMAKE_CURRENT_LIST_DIR}/platform/platform/imx_rt/configs
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_CMake_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_CMake_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_CMake_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_CMake_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_CMake_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_CMake_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 
 endif()
@@ -215,15 +241,15 @@ if (CONFIG_USE_middleware_wireless_framework_FSCI)
 message("middleware_wireless_framework_FSCI component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSCI/Source/FsciCommands.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSCI/Source/FsciCommunication.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSCI/Source/FsciLogging.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSCI/Source/FsciMain.c
+  ${CMAKE_CURRENT_LIST_DIR}/FSCI/Source/FsciCommands.c
+  ${CMAKE_CURRENT_LIST_DIR}/FSCI/Source/FsciCommunication.c
+  ${CMAKE_CURRENT_LIST_DIR}/FSCI/Source/FsciLogging.c
+  ${CMAKE_CURRENT_LIST_DIR}/FSCI/Source/FsciMain.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSCI/Interface
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSCI/Source
+  ${CMAKE_CURRENT_LIST_DIR}/FSCI/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/FSCI/Source
 )
 
 
@@ -236,11 +262,11 @@ if (CONFIG_USE_middleware_wireless_HWParameter)
 message("middleware_wireless_HWParameter component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/HWParameter/HWParameter.c
+  ${CMAKE_CURRENT_LIST_DIR}/HWParameter/HWParameter.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/HWParameter
+  ${CMAKE_CURRENT_LIST_DIR}/HWParameter/.
 )
 
 
@@ -253,7 +279,7 @@ if (CONFIG_USE_middleware_wireless_framework_Common)
 message("middleware_wireless_framework_Common component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common
+  ${CMAKE_CURRENT_LIST_DIR}/Common/.
 )
 
 
@@ -266,11 +292,11 @@ if (CONFIG_USE_middleware_wireless_framework_RNG)
 message("middleware_wireless_framework_RNG component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/RNG/RNG.c
+  ${CMAKE_CURRENT_LIST_DIR}/RNG/RNG.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/RNG
+  ${CMAKE_CURRENT_LIST_DIR}/RNG/.
 )
 
 
@@ -283,11 +309,11 @@ if (CONFIG_USE_middleware_wireless_framework_RNG_mbedtls)
 message("middleware_wireless_framework_RNG_mbedtls component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/RNG/RNG_mbedTLS.c
+  ${CMAKE_CURRENT_LIST_DIR}/RNG/RNG_mbedTLS.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/RNG
+  ${CMAKE_CURRENT_LIST_DIR}/RNG/.
 )
 
 
@@ -300,16 +326,16 @@ if (CONFIG_USE_middleware_wireless_framework_sec_lib_cryptolib_src)
 message("middleware_wireless_framework_sec_lib_cryptolib_src component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/SecLib.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/build/CryptoLib/src/SW_AES128.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/build/CryptoLib/src/SW_RNG.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/build/CryptoLib/src/SW_SHA1.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/build/CryptoLib/src/SW_SHA256.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/SecLib.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/build/CryptoLib/src/SW_AES128.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/build/CryptoLib/src/SW_RNG.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/build/CryptoLib/src/SW_SHA1.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/build/CryptoLib/src/SW_SHA256.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/build/CryptoLib/src
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/.
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/build/CryptoLib/src
 )
 
 
@@ -322,11 +348,11 @@ if (CONFIG_USE_middleware_wireless_framework_function_lib)
 message("middleware_wireless_framework_function_lib component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FunctionLib/FunctionLib.c
+  ${CMAKE_CURRENT_LIST_DIR}/FunctionLib/FunctionLib.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FunctionLib
+  ${CMAKE_CURRENT_LIST_DIR}/FunctionLib/.
 )
 
 
@@ -339,11 +365,11 @@ if (CONFIG_USE_middleware_wireless_framework_module_info)
 message("middleware_wireless_framework_module_info component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/ModuleInfo/ModuleInfo.c
+  ${CMAKE_CURRENT_LIST_DIR}/ModuleInfo/ModuleInfo.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/ModuleInfo
+  ${CMAKE_CURRENT_LIST_DIR}/ModuleInfo/.
 )
 
 
@@ -356,12 +382,12 @@ if (CONFIG_USE_middleware_wireless_framework_NVM)
 message("middleware_wireless_framework_NVM component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVM/Source/NV_Flash.c
+  ${CMAKE_CURRENT_LIST_DIR}/NVM/Source/NV_Flash.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVM/Interface
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVM/Source
+  ${CMAKE_CURRENT_LIST_DIR}/NVM/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/NVM/Source
 )
 
 
@@ -374,11 +400,11 @@ if (CONFIG_USE_middleware_wireless_framework_NV_FSCI)
 message("middleware_wireless_framework_NV_FSCI component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVM/Source/NV_FsciCommands.c
+  ${CMAKE_CURRENT_LIST_DIR}/NVM/Source/NV_FsciCommands.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVM/Source
+  ${CMAKE_CURRENT_LIST_DIR}/NVM/Source
 )
 
 
@@ -391,12 +417,12 @@ if (CONFIG_USE_middleware_wireless_framework_OtaServerSupport)
 message("middleware_wireless_framework_OtaServerSupport component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Source/OtaServerSupport.c
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Source/OtaServerSupport.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Interface
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Source
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Source
 )
 
 
@@ -409,7 +435,7 @@ if (CONFIG_USE_middleware_wireless_framework_sbtsnoop_ethermind_port)
 message("middleware_wireless_framework_sbtsnoop_ethermind_port component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/DBG/sbtsnoop
+  ${CMAKE_CURRENT_LIST_DIR}/DBG/sbtsnoop/.
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -432,7 +458,7 @@ if (CONFIG_USE_middleware_wireless_framework_sbtsnoop_nxp_ble_port)
 message("middleware_wireless_framework_sbtsnoop_nxp_ble_port component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/DBG/sbtsnoop
+  ${CMAKE_CURRENT_LIST_DIR}/sbtsnoop/.
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -450,19 +476,6 @@ endif()
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_fwk_debug)
-# Add set(CONFIG_USE_middleware_wireless_framework_fwk_debug true) in config.cmake to use this component
-
-message("middleware_wireless_framework_fwk_debug component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/DBG
-)
-
-
-endif()
-
-
 if (CONFIG_USE_middleware_wireless_framework_linkscripts_kw45)
 # Add set(CONFIG_USE_middleware_wireless_framework_linkscripts_kw45 true) in config.cmake to use this component
 
@@ -470,9 +483,9 @@ message("middleware_wireless_framework_linkscripts_kw45 component is included fr
 
 if(CONFIG_TOOLCHAIN STREQUAL mcux)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript/end_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript/main_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript/symbols.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript/end_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript/main_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript/symbols.ldt
   )
 endif()
 
@@ -487,9 +500,9 @@ message("middleware_wireless_framework_linkscripts_mcxw34xevk component is inclu
 
 if(CONFIG_TOOLCHAIN STREQUAL mcux)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/MCXW345/mcux/linkscript/end_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/MCXW345/mcux/linkscript/main_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/MCXW345/mcux/linkscript/symbols.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/MCXW345/mcux/linkscript/end_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/MCXW345/mcux/linkscript/main_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/MCXW345/mcux/linkscript/symbols.ldt
   )
 endif()
 
@@ -504,10 +517,10 @@ message("middleware_wireless_framework_linkscript_bootloader_kw45 component is i
 
 if(CONFIG_TOOLCHAIN STREQUAL mcux)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/end_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/main_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/main_text_section.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/symbols.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/end_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/main_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/main_text_section.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_bootloader/symbols.ldt
   )
 endif()
 
@@ -522,9 +535,9 @@ message("middleware_wireless_framework_linkscript_warmboot_kw45 component is inc
 
 if(CONFIG_TOOLCHAIN STREQUAL mcux)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/end_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/main_text.ldt
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/symbols.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/end_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/main_text.ldt
+      ${CMAKE_CURRENT_LIST_DIR}/Common/devices/kw45_k32w1/mcux/linkscript_warmboot/symbols.ldt
   )
 endif()
 
@@ -538,11 +551,11 @@ if (CONFIG_USE_middleware_wireless_HDI)
 message("middleware_wireless_HDI component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/HDI/hdi.c
+  ${CMAKE_CURRENT_LIST_DIR}/HDI/hdi.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/HDI
+  ${CMAKE_CURRENT_LIST_DIR}/HDI/.
 )
 
 
@@ -555,11 +568,11 @@ if (CONFIG_USE_middleware_wireless_IPC)
 message("middleware_wireless_IPC component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/IPC/ipc.c
+  ${CMAKE_CURRENT_LIST_DIR}/IPC/ipc.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/IPC
+  ${CMAKE_CURRENT_LIST_DIR}/IPC/.
 )
 
 
@@ -572,7 +585,7 @@ if (CONFIG_USE_middleware_wireless_framework_PDM)
 message("middleware_wireless_framework_PDM component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/PDM/Include
+  ${CMAKE_CURRENT_LIST_DIR}/PDM/Include
 )
 
 
@@ -585,7 +598,20 @@ if (CONFIG_USE_middleware_wireless_framework_PDUM)
 message("middleware_wireless_framework_PDUM component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/PDUM/Include
+  ${CMAKE_CURRENT_LIST_DIR}/PDUM/Include
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_PDUM_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_PDUM_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_PDUM_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/PDUM/Include
 )
 
 
@@ -607,7 +633,7 @@ if (CONFIG_USE_middleware_wireless_framework_SFC)
 message("middleware_wireless_framework_SFC component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SFC
+  ${CMAKE_CURRENT_LIST_DIR}/SFC/.
 )
 
 
@@ -620,11 +646,11 @@ if (CONFIG_USE_middleware_wireless_framework_RF_SFC)
 message("middleware_wireless_framework_RF_SFC component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SFC/fwk_rf_sfc.c
+  ${CMAKE_CURRENT_LIST_DIR}/SFC/fwk_rf_sfc.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SFC
+  ${CMAKE_CURRENT_LIST_DIR}/SFC/.
 )
 
 
@@ -637,12 +663,12 @@ if (CONFIG_USE_middleware_wireless_framework_OTW)
 message("middleware_wireless_framework_OTW component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OTW/k32w0_transceiver/fwk_otw.c
+  ${CMAKE_CURRENT_LIST_DIR}/OTW/k32w0_transceiver/fwk_otw.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OTW/Interface
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OTW/k32w0_transceiver
+  ${CMAKE_CURRENT_LIST_DIR}/OTW/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/OTW/k32w0_transceiver
 )
 
 
@@ -655,11 +681,11 @@ if (CONFIG_USE_middleware_wireless_framework_FactoryDataProvider)
 message("middleware_wireless_framework_FactoryDataProvider component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FactoryDataProvider/fwk_factory_data_provider.c
+  ${CMAKE_CURRENT_LIST_DIR}/FactoryDataProvider/fwk_factory_data_provider.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FactoryDataProvider
+  ${CMAKE_CURRENT_LIST_DIR}/FactoryDataProvider/.
 )
 
 
@@ -672,11 +698,11 @@ if (CONFIG_USE_middleware_wireless_framework_filesystem)
 message("middleware_wireless_framework_filesystem component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FileSystem/fwk_filesystem.c
+  ${CMAKE_CURRENT_LIST_DIR}/FileSystem/fwk_filesystem.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FileSystem
+  ${CMAKE_CURRENT_LIST_DIR}/FileSystem/.
 )
 
 
@@ -689,115 +715,189 @@ if (CONFIG_USE_middleware_wireless_framework_fsabstraction_littlefs)
 message("middleware_wireless_framework_fsabstraction_littlefs component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSAbstraction/fwk_lfs_mflash.c
+  ${CMAKE_CURRENT_LIST_DIR}/FSAbstraction/fwk_lfs_mflash.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSAbstraction
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_common_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_common_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_common_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/FSAbstraction/.
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_coex_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_coex_rt1170 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_swo_dbg)
+# Add set(CONFIG_USE_middleware_wireless_framework_swo_dbg true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_coex_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_swo_dbg component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/DBG/SWO/fwk_debug_swo.c
+)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/DBG/SWO/.
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1176 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_settings)
+# Add set(CONFIG_USE_middleware_wireless_framework_settings true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_lp_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_settings component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Source/settings.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Source/settings_init.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Source/settings_runtime.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Source/settings_store.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Source/settings_nvs.c
+)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/Settings/Source
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1176 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_NVS)
+# Add set(CONFIG_USE_middleware_wireless_framework_NVS true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_dcdc_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_NVS component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Source/nvs.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Source/fwk_nvs_flash.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Source/fwk_nvs_ExternalFlash.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Source/fwk_nvs_InternalFlash.c
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Source/crc8.c
+)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/../framework/NVS/Source
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1176 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_common_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_common_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_platform_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_common_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/platform/include
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1176 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_coex_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_coex_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_comp_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_coex_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/platform/include
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1176 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_internal_flash_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_internal_flash_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_extflash_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_internal_flash_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_lfs_config_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_lfs_config_rt1170 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT1062 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_lfs_config_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_board_lp_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/configs
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1062
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT1062 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_board_dcdc_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1062
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT1062 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_board_platform_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1062
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT1062 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_board_comp_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1062
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT1062 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_board_extflash_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1062
+)
+
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_lfs_config_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_lfs_config_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_lfs_config_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/configs
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -813,453 +913,423 @@ endif()
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1176 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT1062 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_matter_config_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/MIMXRT1176/gcc
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1176)
-# Add set(CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1176 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_init_config_MIMXRT1176 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_matter_config_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT1176
+  ${CMAKE_CURRENT_LIST_DIR}/./boards/MIMXRT1062
+  ${CMAKE_CURRENT_LIST_DIR}/./Common/devices/MIMXRT1062/gcc
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_CMake_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_CMake_rt1170 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT1062 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_CMake_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_common_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_common_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_common_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_init_config_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/boards/MIMXRT1062
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_coex_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_coex_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_mbedtls_config_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_mbedtls_config_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_coex_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_mbedtls_config_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/configs
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_lp_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_CMake_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_CMake_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_lp_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_CMake_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S/board_lp.c
-)
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_PDUM_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_PDUM_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_PDUM_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
+  ${CMAKE_CURRENT_LIST_DIR}/PDUM/Include
 )
 
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_dcdc_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_board_dcdc_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_platform_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_board_platform_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_comp_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_board_comp_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_board_extflash_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_board_extflash_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_lfs_config_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_lfs_config_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_lfs_config_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S/configs
-)
-
-if(CONFIG_USE_COMPONENT_CONFIGURATION)
-  message("===>Import configuration from ${CMAKE_CURRENT_LIST_FILE}")
-
-  target_compile_definitions(${MCUX_SDK_PROJECT_NAME} PUBLIC
-    -DLFS_CONFIG=fwk_lfs_config.h
-  )
-
-endif()
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_matter_config_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_matter_config_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S/board_lp.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/devices/MIMXRT595S/gcc
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_init_config_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_init_config_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S/app_services_init.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/boards/MIMXRT595S
-)
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_CMake_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_CMake_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_CMake_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_rt1060 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 if(CONFIG_USE_middleware_wireless_framework_fwk_debug)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060/fwk_platform.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/fwk_platform.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060/configs
+  ${CMAKE_CURRENT_LIST_DIR}/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/configs
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_flash_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_flash_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_flash_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_flash_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_flash_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_flash_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060/fwk_platform_flash.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/fwk_platform_flash.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/fwk_platform_extflash.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/Common
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+  ${CMAKE_CURRENT_LIST_DIR}/platform/Common
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_flash_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_flash_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_extflash_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_extflash_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/Common
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_extflash_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1060 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_sensors_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_sensors_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ota_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ota_rt1060 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ota_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060/fwk_platform_ota.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/fwk_platform_extflash.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+  ${CMAKE_CURRENT_LIST_DIR}/platform/Common
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_ota_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_extflash_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_lcl_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lcl_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_lcl_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_sensors_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_driver_trdc AND CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_lcl_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_sensors_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_mws_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_mws_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_ota_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ota_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_mws_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_ota_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170/fwk_platform_ota.c
+)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_mws_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_ota_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_ble_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ble_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_ics_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ics_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_ble_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_ics_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_coex_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170 AND CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1170 AND CONFIG_USE_middleware_wireless_framework_SFC)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_ble_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_ics_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_MWS)
+# Add set(CONFIG_USE_middleware_wireless_framework_MWS true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_genfsk_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_MWS component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_mws_rt1060)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/MWSCoexistence/MWS.c
+)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/MWSCoexistence/.
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_genfsk_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_MWS dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_ot_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ot_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_MWS_Intercore)
+# Add set(CONFIG_USE_middleware_wireless_framework_MWS_Intercore true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_ot_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_MWS_Intercore component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_mws_rt1060)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/MWSCoexistence/MWS_Intercore.c
+)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/MWSCoexistence/.
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_ot_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_MWS_Intercore dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_mws_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_mws_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_lowpower_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_mws_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_mws_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_ble_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ble_rt1170 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_lowpower_timer_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_ble_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170 AND CONFIG_USE_middleware_wireless_framework_platform_coex_rt1170)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_timer_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_ble_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_genfsk_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_genfsk_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_ot_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ot_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_ot_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_ot_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_lowpower_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_lowpower_timer_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_timer_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_reset_rt1170)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_reset_rt1170 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_reset_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1170
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_reset_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_sec_lib_mbedtls_m7)
+# Add set(CONFIG_USE_middleware_wireless_framework_sec_lib_mbedtls_m7 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_sec_lib_mbedtls_m7 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060 AND CONFIG_USE_middleware_wireless_framework_mbedtls_config_rt1060)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/SecLib_mbedTLS.c
+)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/.
+)
+
+if((CONFIG_TOOLCHAIN STREQUAL armgcc OR CONFIG_TOOLCHAIN STREQUAL mcux))
+  target_link_libraries(${MCUX_SDK_PROJECT_NAME} PRIVATE
+    -Wl,--start-group
+      ${CMAKE_CURRENT_LIST_DIR}/SecLib/lib_crypto_m7.a
+      -Wl,--end-group
+  )
+endif()
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_sec_lib_mbedtls_m7 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
@@ -1274,17 +1344,17 @@ message("middleware_wireless_framework_sec_lib_sss_m7 component is included from
 if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/SecLib_sss.c
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/SecLib_sss.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib
+  ${CMAKE_CURRENT_LIST_DIR}/SecLib/.
 )
 
 if((CONFIG_TOOLCHAIN STREQUAL armgcc OR CONFIG_TOOLCHAIN STREQUAL mcux))
   target_link_libraries(${MCUX_SDK_PROJECT_NAME} PRIVATE
     -Wl,--start-group
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/lib_crypto_m7.a
+      ${CMAKE_CURRENT_LIST_DIR}/SecLib/lib_crypto_m7.a
       -Wl,--end-group
   )
 endif()
@@ -1306,14 +1376,14 @@ message("middleware_wireless_framework_OtaSupport component is included from ${C
 if(CONFIG_USE_middleware_wireless_framework_platform_ota_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Source/OtaSupport.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Source/OtaInternalFlash.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Source/OtaExternalFlash.c
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Source/OtaSupport.c
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Source/OtaInternalFlash.c
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Source/OtaExternalFlash.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Interface
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/OtaSupport/Source
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Interface
+  ${CMAKE_CURRENT_LIST_DIR}/OtaSupport/Source
 )
 
 else()
@@ -1333,16 +1403,60 @@ message("middleware_wireless_framework_sbtsnoop component is included from ${CMA
 if(CONFIG_USE_middleware_wireless_framework_sbtsnoop_ethermind_port OR CONFIG_USE_middleware_wireless_framework_sbtsnoop_nxp_ble_port)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/DBG/sbtsnoop/sbtsnoop.c
+  ${CMAKE_CURRENT_LIST_DIR}/DBG/sbtsnoop/sbtsnoop.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/DBG/sbtsnoop
+  ${CMAKE_CURRENT_LIST_DIR}/DBG/sbtsnoop/.
 )
 
 else()
 
 message(SEND_ERROR "middleware_wireless_framework_sbtsnoop dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_fwk_debug)
+# Add set(CONFIG_USE_middleware_wireless_framework_fwk_debug true) in config.cmake to use this component
+
+message("middleware_wireless_framework_fwk_debug component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_swo_dbg)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/DBG/.
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_fwk_debug dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_Sensors)
+# Add set(CONFIG_USE_middleware_wireless_Sensors true) in config.cmake to use this component
+
+message("middleware_wireless_Sensors component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1060)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/Sensors/sensors.c
+)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/Sensors/.
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_Sensors dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
@@ -1357,7 +1471,7 @@ message("middleware_wireless_freertos_heap component is included from ${CMAKE_CU
 if(CONFIG_USE_middleware_freertos-kernel)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/rtos/freertos/heap_mem_manager.c
+  ${CMAKE_CURRENT_LIST_DIR}/Common/rtos/freertos/heap_mem_manager.c
 )
 
 else()
@@ -1377,451 +1491,16 @@ message("middleware_wireless_framework_freertos_utils component is included from
 if(CONFIG_USE_middleware_freertos-kernel AND CONFIG_USE_middleware_wireless_framework_platform_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/rtos/freertos/fwk_freertos_utils.c
+  ${CMAKE_CURRENT_LIST_DIR}/Common/rtos/freertos/fwk_freertos_utils.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/Common/rtos/freertos
+  ${CMAKE_CURRENT_LIST_DIR}/Common/rtos/freertos/.
 )
 
 else()
 
 message(SEND_ERROR "middleware_wireless_framework_freertos_utils dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1062 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_LPM_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
-)
-
-if(CONFIG_USE_COMPONENT_CONFIGURATION)
-  message("===>Import configuration from ${CMAKE_CURRENT_LIST_FILE}")
-
-  target_compile_definitions(${MCUX_SDK_PROJECT_NAME} PUBLIC
-    -DHAL_UART_ADAPTER_LOWPOWER=1
-  )
-
-endif()
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_LPM_MIMXRT1062 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_LPM_systicks_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_LPM_systicks_MIMXRT1062 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_LPM_systicks_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR.c
-)
-
-if(CONFIG_USE_middleware_freertos-kernel)
-  target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_systicks.c
-  )
-endif()
-
-if(CONFIG_USE_middleware_baremetal)
-  target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_systicks_bm.c
-  )
-endif()
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
-)
-
-if(CONFIG_USE_COMPONENT_CONFIGURATION)
-  message("===>Import configuration from ${CMAKE_CURRENT_LIST_FILE}")
-
-  target_compile_definitions(${MCUX_SDK_PROJECT_NAME} PUBLIC
-    -DHAL_UART_ADAPTER_LOWPOWER=1
-  )
-
-endif()
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_LPM_systicks_MIMXRT1062 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_LPM_cli_MIMXRT1062)
-# Add set(CONFIG_USE_middleware_wireless_framework_LPM_cli_MIMXRT1062 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_LPM_cli_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1062)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_cli.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_LPM_cli_MIMXRT1062 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_fsabstraction)
-# Add set(CONFIG_USE_middleware_wireless_framework_fsabstraction true) in config.cmake to use this component
-
-message("middleware_wireless_framework_fsabstraction component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_fsabstraction_littlefs)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSAbstraction/fwk_fs_abstraction.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FSAbstraction
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_fsabstraction dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_filecache)
-# Add set(CONFIG_USE_middleware_wireless_framework_filecache true) in config.cmake to use this component
-
-message("middleware_wireless_framework_filecache component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_fsabstraction)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FileCache/fwk_file_cache.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/FileCache
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_filecache dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_keystorage)
-# Add set(CONFIG_USE_middleware_wireless_framework_keystorage true) in config.cmake to use this component
-
-message("middleware_wireless_framework_keystorage component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_filecache)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/KeyStorage/fwk_key_storage.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/KeyStorage
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_keystorage dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_fwk_debug)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/fwk_platform.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/configs
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_flash_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_flash_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_flash_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/fwk_platform_flash.c
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/fwk_platform_extflash.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/Common
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_flash_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_extflash_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/fwk_platform_extflash.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/Common
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_extflash_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_sensors_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_sensors_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ota_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ota_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ota_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170/fwk_platform_ota.c
-)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_ota_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_lcl_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lcl_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_lcl_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_driver_trdc AND CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_lcl_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_mws_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_mws_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_mws_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_mws_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ble_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ble_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ble_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170 AND CONFIG_USE_middleware_wireless_framework_platform_coex_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_ble_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_genfsk_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_genfsk_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ot_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ot_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ot_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_ot_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_lowpower_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1170)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1170 true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_lowpower_timer_rt1170 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_rt1170)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/rt1170
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_timer_rt1170 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
@@ -1836,11 +1515,11 @@ message("middleware_wireless_framework_LPM_MIMXRT1176 component is included from
 if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1170 AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1170)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR.c
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/.
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -1869,23 +1548,23 @@ message("middleware_wireless_framework_LPM_systicks_MIMXRT1176 component is incl
 if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1170 AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1170)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR.c
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR.c
 )
 
 if(CONFIG_USE_middleware_freertos-kernel)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_systicks.c
+      ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR_systicks.c
   )
 endif()
 
 if(CONFIG_USE_middleware_baremetal)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_systicks_bm.c
+      ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR_systicks_bm.c
   )
 endif()
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/.
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -1914,11 +1593,11 @@ message("middleware_wireless_framework_LPM_cli_MIMXRT1176 component is included 
 if(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1176)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_cli.c
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR_cli.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/.
 )
 
 else()
@@ -1930,303 +1609,367 @@ endif()
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_fsabstraction)
+# Add set(CONFIG_USE_middleware_wireless_framework_fsabstraction true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_fsabstraction component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_fsabstraction_littlefs)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/FSAbstraction/fwk_fs_abstraction.c
+)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/FSAbstraction/.
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_fsabstraction dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_filecache)
+# Add set(CONFIG_USE_middleware_wireless_framework_filecache true) in config.cmake to use this component
+
+message("middleware_wireless_framework_filecache component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_fsabstraction)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/FileCache/fwk_file_cache.c
+)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/FileCache/.
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_filecache dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_keystorage)
+# Add set(CONFIG_USE_middleware_wireless_framework_keystorage true) in config.cmake to use this component
+
+message("middleware_wireless_framework_keystorage component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_filecache)
+
+target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/KeyStorage/fwk_key_storage.c
+)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/KeyStorage/.
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_keystorage dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
 if(CONFIG_USE_middleware_wireless_framework_fwk_debug)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S/fwk_platform.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/fwk_platform.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/include
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S/configs
+  ${CMAKE_CURRENT_LIST_DIR}/platform/include
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/configs
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_flash_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_flash_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_flash_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_flash_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_flash_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_flash_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/Common
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_flash_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_extflash_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_extflash_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_extflash_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/Common
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_extflash_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_sensors_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_sensors_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_sensors_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_sensors_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ota_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ota_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ota_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_ota_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_lcl_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lcl_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_lcl_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_driver_trdc AND CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_lcl_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_mws_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_mws_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_mws_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_mws_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ble_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ble_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ble_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S AND CONFIG_USE_middleware_wireless_framework_platform_coex_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_ble_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_genfsk_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_genfsk_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_genfsk_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_genfsk_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_ot_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_ot_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_ot_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
-
-target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
-)
-
-else()
-
-message(SEND_ERROR "middleware_wireless_framework_platform_ot_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
-
-endif()
-
-endif()
-
-
-if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_MIMXRT595S true) in config.cmake to use this component
-
-message("middleware_wireless_framework_platform_lowpower_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
-
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S/fwk_platform_lowpower.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/fwk_platform_flash.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/Common
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_flash_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_extflash_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_extflash_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/platform/MIMXRT595S
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+  ${CMAKE_CURRENT_LIST_DIR}/platform/Common
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_extflash_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_sec_lib_sss_m33)
-# Add set(CONFIG_USE_middleware_wireless_framework_sec_lib_sss_m33 true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_sec_lib_sss_m33 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_sensors_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_MIMXRT595S)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_sensors_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_ota_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ota_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_ota_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/SecLib_sss.c
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060/fwk_platform_ota.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
 )
-
-if((CONFIG_TOOLCHAIN STREQUAL armgcc OR CONFIG_TOOLCHAIN STREQUAL mcux))
-  target_link_libraries(${MCUX_SDK_PROJECT_NAME} PRIVATE
-    -Wl,--start-group
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/SecLib/lib_crypto_m33.a
-      -Wl,--end-group
-  )
-endif()
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_sec_lib_sss_m33 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_platform_ota_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_platform_ics_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ics_rt1060 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_LPM_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_platform_ics_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_MIMXRT595S AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S)
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_sensors_rt1060 AND CONFIG_USE_middleware_wireless_framework_SFC)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_ics_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_mws_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_mws_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_mws_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_mws_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_ble_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ble_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_ble_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_coex_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_ble_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_genfsk_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_genfsk_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_genfsk_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_ot_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_ot_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_ot_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_ot_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_lowpower_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_lowpower_timer_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_lowpower_timer_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_platform_reset_rt1060)
+# Add set(CONFIG_USE_middleware_wireless_framework_platform_reset_rt1060 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_platform_reset_rt1060 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_rt1060)
+
+target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/platform/rt1060
+)
+
+else()
+
+message(SEND_ERROR "middleware_wireless_framework_platform_reset_rt1060 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+
+endif()
+
+endif()
+
+
+if (CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1062 true) in config.cmake to use this component
+
+message("middleware_wireless_framework_LPM_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+
+if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR.c
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/.
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -2240,38 +1983,38 @@ endif()
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_LPM_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_LPM_MIMXRT1062 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_LPM_systicks_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_LPM_systicks_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_LPM_systicks_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_LPM_systicks_MIMXRT1062 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_LPM_systicks_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_LPM_systicks_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_MIMXRT595S AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_MIMXRT595S)
+if(CONFIG_USE_middleware_wireless_framework_platform_lowpower_rt1060 AND CONFIG_USE_middleware_wireless_framework_platform_lowpower_timer_rt1060)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR.c
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR.c
 )
 
 if(CONFIG_USE_middleware_freertos-kernel)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_systicks.c
+      ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR_systicks.c
   )
 endif()
 
 if(CONFIG_USE_middleware_baremetal)
   target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-      ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_systicks_bm.c
+      ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR_systicks_bm.c
   )
 endif()
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/.
 )
 
 if(CONFIG_USE_COMPONENT_CONFIGURATION)
@@ -2285,31 +2028,31 @@ endif()
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_LPM_systicks_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_LPM_systicks_MIMXRT1062 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 
 endif()
 
 
-if (CONFIG_USE_middleware_wireless_framework_LPM_cli_MIMXRT595S)
-# Add set(CONFIG_USE_middleware_wireless_framework_LPM_cli_MIMXRT595S true) in config.cmake to use this component
+if (CONFIG_USE_middleware_wireless_framework_LPM_cli_MIMXRT1062)
+# Add set(CONFIG_USE_middleware_wireless_framework_LPM_cli_MIMXRT1062 true) in config.cmake to use this component
 
-message("middleware_wireless_framework_LPM_cli_MIMXRT595S component is included from ${CMAKE_CURRENT_LIST_FILE}.")
+message("middleware_wireless_framework_LPM_cli_MIMXRT1062 component is included from ${CMAKE_CURRENT_LIST_FILE}.")
 
-if(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT595S)
+if(CONFIG_USE_middleware_wireless_framework_LPM_MIMXRT1062)
 
 target_sources(${MCUX_SDK_PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower/PWR_cli.c
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/PWR_cli.c
 )
 
 target_include_directories(${MCUX_SDK_PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/../framework/LowPower
+  ${CMAKE_CURRENT_LIST_DIR}/LowPower/.
 )
 
 else()
 
-message(SEND_ERROR "middleware_wireless_framework_LPM_cli_MIMXRT595S dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
+message(SEND_ERROR "middleware_wireless_framework_LPM_cli_MIMXRT1062 dependency does not meet, please check ${CMAKE_CURRENT_LIST_FILE}.")
 
 endif()
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -25,8 +25,26 @@
 #define MFLASH_PAGE_SIZE 256u
 #endif
 
+#define PLATFORM_EXTFLASH_START_ADDR  0x30000000UL
 #define PLATFORM_EXTFLASH_SECTOR_SIZE MFLASH_SECTOR_SIZE
 #define PLATFORM_EXTFLASH_PAGE_SIZE   MFLASH_PAGE_SIZE
 #define PLATFORM_EXTFLASH_TOTAL_SIZE  FLASH_SIZE
+
+/*
+ *  NV_STORAGE_START_ADDRESS is defined by linker script.
+ */
+#define NV_STORAGE_EXTFLASH_START_OFFSET ((uint32_t)NV_STORAGE_START_ADDRESS - PLATFORM_EXTFLASH_START_ADDR)
+
+#define NV_STORAGE_START_OFFSET NV_STORAGE_EXTFLASH_START_OFFSET
+
+/*
+ * Convert offset relative to start of NV storage partition to physical address.
+ */
+#define NV_EXTFLASH_PHYS_ADDR(offset) ((uint32_t)NV_STORAGE_START_ADDRESS + (offset))
+
+/*
+ * Convert offset relative to start of flash device to physical address.
+ */
+#define EXTFLASH_PHYS_ADDR(offset) ((uint32_t)PLATFORM_EXTFLASH_START_ADDR + (offset))
 
 #endif /* _FWK_PLAT_DEFS_H_ */

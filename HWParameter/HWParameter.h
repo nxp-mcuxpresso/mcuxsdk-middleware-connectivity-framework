@@ -66,8 +66,8 @@
      2U * sizeof(uint8_t))
 
 #define LEGACY_PROD_DATA_PADDING_SZ 63U
-#define LEGACY_PROD_DATA_LEN                                                                 \
-    (PROD_DATA_ID_STRING_SZ + BLE_MAC_ADDR_SZ + IEEE_802_15_4_SZ + +(2U * sizeof(uint8_t)) + \
+#define LEGACY_PROD_DATA_LEN                                                                \
+    (PROD_DATA_ID_STRING_SZ + BLE_MAC_ADDR_SZ + IEEE_802_15_4_SZ + (2U * sizeof(uint8_t)) + \
      LEGACY_PROD_DATA_PADDING_SZ + sizeof(uint16_t))
 
 /*

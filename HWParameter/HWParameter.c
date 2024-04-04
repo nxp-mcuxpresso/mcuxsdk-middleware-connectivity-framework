@@ -64,6 +64,7 @@ static uint16_t NV_ComputeCrcOverHWParameters(hardwareParameters_t *pHwParams);
 #if (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacy2IfrMode_c)
 /* Doomed to be removed after interim phase to convert legacy position and size to new one */
 static uint16_t NV_ComputeCrcOverHWParametersLegacy(hardwareParameters_t *pHwParams);
+static uint8_t  NV_VerifyCrcOverHWParametersLegacy(hardwareParameters_t *pHwParams);
 #endif
 static uint8_t NV_VerifyCrcOverHWParameters(hardwareParameters_t *pHwParams);
 static uint8_t NvWriteProdData(void *src_data, uint32_t size);
@@ -75,8 +76,8 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size);
 ********************************************************************************** */
 
 /* Hardware parameters */
-static uint8_t               gHardwareParameters[PROD_DATA_LEN];
-static hardwareParameters_t *gHardwareParameters_p = NULL;
+static uint8_t               gHardwareParameters[PROD_DATA_LEN] = {[0 ... PROD_DATA_LEN - 1] = 0xFF};
+static hardwareParameters_t *gHardwareParameters_p              = NULL;
 
 static const uint8_t mProdDataIdentifier[PROD_DATA_ID_STRING_SZ] = {"PROD_DATA:"};
 #if gHwParamsAppFactoryDataExtension_d
@@ -133,7 +134,24 @@ static uint16_t NV_ComputeCrcOverHWParametersLegacy(hardwareParameters_t *pHwPar
 {
     uint8_t *ptr = ((uint8_t *)pHwParams) + PROD_DATA_ID_STRING_SZ;
     uint32_t len = HW_PARAM_LEGACY_CRC_OFFSET - PROD_DATA_ID_STRING_SZ;
+
     return NV_ComputeCrc(ptr, len);
+}
+
+static uint8_t NV_VerifyCrcOverHWParametersLegacy(hardwareParameters_t *pHwParams)
+{
+    uint16_t hw_param_crc;
+    uint8_t  status = gHWParameterSuccess_c;
+    uint8_t *p_crc  = (uint8_t *)pHwParams + HW_PARAM_LEGACY_CRC_OFFSET;
+
+    hw_param_crc = ((uint16_t)p_crc[1] << 8u) + (uint16_t)p_crc[0];
+
+    if (NV_ComputeCrcOverHWParametersLegacy(pHwParams) != hw_param_crc)
+    {
+        status = gHWParameterCrcError_c;
+    }
+
+    return status;
 }
 #endif
 
@@ -363,7 +381,7 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
             hardwareParameters_t *pLegacyParams             = (hardwareParameters_t *)legacy_prod_data_location;
             if ((FLib_MemCmp(pLegacyParams->identificationWord, (const void *)mProdDataIdentifier,
                              sizeof(mProdDataIdentifier)) == TRUE) &&
-                (NV_ComputeCrcOverHWParametersLegacy(pLegacyParams) == gHWParameterSuccess_c))
+                (NV_VerifyCrcOverHWParametersLegacy(pLegacyParams) == gHWParameterSuccess_c))
             {
                 uint8_t *p_crc;
                 uint16_t crc;

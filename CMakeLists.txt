@@ -129,6 +129,9 @@ endif()
 
 if(CONNFWK_NVS)
     add_subdirectory(NVS)
+    if(CONNFWK_SETTINGS)
+        add_subdirectory(Settings)
+    endif()
 endif()
 
 
@@ -138,6 +141,10 @@ endif()
 
 if(CONNFWK_OTW)
     add_subdirectory(OTW)
+endif()
+
+if(CONNFWK_PDUM)
+    add_subdirectory(PDUM)
 endif()
 
 if(CONNFWK_IPC)
