@@ -25,6 +25,7 @@ target_link_libraries(connfwk-RNG
         connfwk-config
         connfwk-FunctionLib
         connfwk-SecLib
+        ${CONNFWK_PLATFORM_LIB}
         ${CONNFWK_MCUX_SDK_LIB}
 )
 

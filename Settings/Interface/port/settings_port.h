@@ -33,15 +33,15 @@ extern "C" {
 
 #if defined gAppNvsExternalFlash_c && (gAppNvsExternalFlash_c > 0)
 #define SETTINGS_PARTITION NVS_EXTFLASH_AREA_ID
+#define CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT (gPlatNvsSectorSize_c/PLATFORM_EXTFLASH_SECTOR_SIZE)
 #elif defined gAppNvsInternalFlash_c && (gAppNvsInternalFlash_c > 0)
 #define SETTINGS_PARTITION NVS_INTFLASH_AREA_ID
+#define CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT (gPlatNvsSectorSize_c/PLATFORM_INTFLASH_SECTOR_SIZE)
 #else
 #error "Must define a non volatile storage NVS partition for settings"
 #endif
 
 #define CONFIG_SETTINGS_NVS_SECTOR_COUNT ((uint32_t)NV_STORAGE_SIZE / gPlatNvsSectorSize_c)
-
-#define CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT (gPlatNvsSectorSize_c/PLATFORM_EXTFLASH_SECTOR_SIZE)
 
 /* Iterable sections imported from Zephyr iterable_sections.h*/
 /**

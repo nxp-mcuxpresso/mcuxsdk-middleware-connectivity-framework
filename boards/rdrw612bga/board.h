@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 NXP
+ * Copyright 2021-2024 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -8,7 +8,6 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
-#include "clock_config.h"
 #include "fsl_common.h"
 #include "fsl_gpio.h"
 
@@ -136,7 +135,8 @@ extern "C" {
 void     BOARD_InitDebugConsole(void);
 status_t BOARD_InitPsRam(void);
 void     BOARD_InitSleepPinConfig(void);
-void     BOARD_FlexspiClockSafeConfig(void);
+void     BOARD_ClockPreConfig(void);
+void     BOARD_ClockPostConfig(void);
 AT_QUICKACCESS_SECTION_CODE(void BOARD_SetFlexspiClock(FLEXSPI_Type *base, uint32_t src, uint32_t divider));
 AT_QUICKACCESS_SECTION_CODE(void BOARD_DeinitFlash(FLEXSPI_Type *base));
 AT_QUICKACCESS_SECTION_CODE(void BOARD_InitFlash(FLEXSPI_Type *base));

@@ -95,13 +95,13 @@ static const OtaPartition_t *ota_ext_partition;
 ******************************************************************************/
 
 static const OtaFlashOps_t ext_flash_ops = {
-    .init           = ExternalFlash_Init,
-    .format_storage = ExternalFlash_ChipErase,
-    .writeData      = ExternalFlash_WriteData,
-    .readData       = ExternalFlash_ReadData,
-    .isBusy         = ExternalFlash_isBusy,
-    .eraseArea      = ExternalFlash_EraseArea,
-    .flushWriteBuf  = ExternalFlash_FlushWriteBuffer,
+    .init           = &ExternalFlash_Init,
+    .format_storage = &ExternalFlash_ChipErase,
+    .writeData      = &ExternalFlash_WriteData,
+    .readData       = &ExternalFlash_ReadData,
+    .isBusy         = &ExternalFlash_isBusy,
+    .eraseArea      = &ExternalFlash_EraseArea,
+    .flushWriteBuf  = &ExternalFlash_FlushWriteBuffer,
 };
 
 /******************************************************************************
@@ -164,7 +164,7 @@ static ota_flash_status_t ExternalFlash_ChipErase(void)
         phys_sector_addr = PHYS_ADDR(i * ota_ext_partition->sector_size);
         if (PLATFORM_IsExternalFlashSectorBlank(phys_sector_addr))
         {
-            continue;
+            ; /* let loop continue */
         }
         else
         {

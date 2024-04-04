@@ -33,12 +33,12 @@ static int extflash_blank_check(const struct device *dev, off_t offset, size_t l
 static int extflash_init(void);
 static const struct flash_parameters *extflash_get_parameters(const struct device *dev);
 
-const struct flash_driver_api ext_flash_ops = {.init           = extflash_init,
-                                               .read           = extflash_read,
-                                               .write          = extflash_write,
-                                               .erase          = extflash_erase,
-                                               .blank_check    = extflash_blank_check,
-                                               .get_parameters = extflash_get_parameters};
+const struct flash_driver_api ext_flash_ops = {.init           = &extflash_init,
+                                               .read           = &extflash_read,
+                                               .write          = &extflash_write,
+                                               .erase          = &extflash_erase,
+                                               .blank_check    = &extflash_blank_check,
+                                               .get_parameters = &extflash_get_parameters};
 
 const struct device extflash_dev = {.api = &ext_flash_ops};
 

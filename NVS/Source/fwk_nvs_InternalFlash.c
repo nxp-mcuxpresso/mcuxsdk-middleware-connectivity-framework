@@ -30,12 +30,12 @@ static int intflash_blank_check(const struct device *dev, off_t offset, size_t l
 static int intflash_init(void);
 static const struct flash_parameters *intflash_get_parameters(const struct device *dev);
 
-const struct flash_driver_api int_flash_ops = {.init           = intflash_init,
-                                               .read           = intflash_read,
-                                               .write          = intflash_write,
-                                               .erase          = intflash_erase,
-                                               .blank_check    = intflash_blank_check,
-                                               .get_parameters = intflash_get_parameters};
+const struct flash_driver_api int_flash_ops = {.init           = &intflash_init,
+                                               .read           = &intflash_read,
+                                               .write          = &intflash_write,
+                                               .erase          = &intflash_erase,
+                                               .blank_check    = &intflash_blank_check,
+                                               .get_parameters = &intflash_get_parameters};
 
 const struct device intflash_dev = {.api = &int_flash_ops};
 

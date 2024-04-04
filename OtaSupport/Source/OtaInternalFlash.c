@@ -93,13 +93,13 @@ static uint32_t mWriteBuffAddr  = 0U;
 ******************************************************************************/
 
 static const OtaFlashOps_t int_flash_ops = {
-    .init           = InternalFlash_Init,
-    .format_storage = InternalFlash_ChipErase,
-    .writeData      = InternalFlash_WriteData,
-    .readData       = InternalFlash_ReadData,
-    .isBusy         = InternalFlash_isBusy,
-    .eraseArea      = InternalFlash_EraseArea,
-    .flushWriteBuf  = InternalFlash_FlushWriteBuffer,
+    .init           = &InternalFlash_Init,
+    .format_storage = &InternalFlash_ChipErase,
+    .writeData      = &InternalFlash_WriteData,
+    .readData       = &InternalFlash_ReadData,
+    .isBusy         = &InternalFlash_isBusy,
+    .eraseArea      = &InternalFlash_EraseArea,
+    .flushWriteBuf  = &InternalFlash_FlushWriteBuffer,
 };
 
 static const OtaPartition_t *ota_internal_partition;

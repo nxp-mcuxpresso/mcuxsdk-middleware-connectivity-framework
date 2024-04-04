@@ -8,10 +8,12 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "fwk_platform.h"
 #include "fsl_adapter_time_stamp.h"
+#include "els_pkc_mbedtls.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
@@ -23,6 +25,11 @@ static bool timestampInitialized = false;
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
+int PLATFORM_InitTimerManager(void)
+{
+    return 0;
+}
 
 void PLATFORM_InitTimeStamp(void)
 {
@@ -72,4 +79,19 @@ void PLATFORM_TimeStampExitPowerDown(void)
         CLOCK_AttachClk(kCLK32K_to_OSTIMER_CLK);
         HAL_TimeStampExitLowpower(timestampHandle);
     }
+}
+
+void PLATFORM_InitCrypto(void)
+{
+    CRYPTO_InitHardware();
+}
+
+void PLATFORM_TerminateCrypto(void)
+{
+    ;
+}
+
+void PLATFORM_ResetCrypto(void)
+{
+    PLATFORM_InitCrypto();
 }

@@ -143,6 +143,10 @@ if(CONNFWK_OTW)
     add_subdirectory(OTW)
 endif()
 
+if(CONNFWK_PDUM)
+    add_subdirectory(PDUM)
+endif()
+
 if(CONNFWK_IPC)
     add_subdirectory(IPC)
 endif()

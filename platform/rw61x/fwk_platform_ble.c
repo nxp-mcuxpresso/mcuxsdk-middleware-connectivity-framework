@@ -248,7 +248,7 @@ static int PLATFORM_BleSetHostSleepConfig(void);
 
 void BLE_MCI_WAKEUP_DONE0_DriverIRQHandler(void);
 
-static void PLATFORM_FillInHciCmdMsg(uint8_t *pbuf, uint16_t opcode, uint8_t msg_sz, const uint8_t *msg_payload);
+static void PLATFORM_FillInHciCmdMsg(uint8_t *pmsg, uint16_t opcode, uint8_t msg_sz, const uint8_t *msg_payload);
 
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
@@ -259,7 +259,7 @@ static hal_rpmsg_config_t hci_rpmsg_config = {
     .local_addr  = 30,
     .remote_addr = 40,
     .imuLink     = (uint8_t)kIMU_LinkCpu2Cpu3,
-    .callback    = PLATFORM_HciRpmsgRxCallback,
+    .callback    = &PLATFORM_HciRpmsgRxCallback,
     .param       = NULL,
 };
 
@@ -465,6 +465,12 @@ int PLATFORM_TerminateBle(void)
             break;
         }
 
+        if (OSA_MutexDestroy((osa_mutex_handle_t)bleMutexHandle) != KOSA_StatusSuccess)
+        {
+            ret = -4;
+            break;
+        }
+
         initialized = false;
         /* after re-init cpu2, Reset hciInitialized to false. */
         hciInitialized = false;
@@ -482,7 +488,7 @@ int PLATFORM_ResetBle(void)
         if ((PLATFORM_GetRunningControllers() & conn802_15_4_c) != 0U)
         {
             /* Currently the CPU2 is running the combo firmware, so we should reset using this firmware */
-            PLATFORM_ResetOt();
+            ret = PLATFORM_ResetOt();
         }
         else
         {
@@ -890,6 +896,7 @@ static int PLATFORM_HandleBlePowerStateEvent(ble_ps_event_t psEvent)
                     break;
 
                 default:
+                    /* nothing to do */
                     break;
             }
         }
@@ -904,6 +911,7 @@ static int PLATFORM_HandleBlePowerStateEvent(ble_ps_event_t psEvent)
                     break;
 
                 default:
+                    /* nothing to do */
                     break;
             }
         }
@@ -940,11 +948,11 @@ static int PLATFORM_BleSetHostSleepConfig(void)
     return ret;
 }
 
-static void PLATFORM_FillInHciCmdMsg(uint8_t *pbuf, uint16_t opcode, uint8_t msg_sz, const uint8_t *msg_payload)
+static void PLATFORM_FillInHciCmdMsg(uint8_t *pmsg, uint16_t opcode, uint8_t msg_sz, const uint8_t *msg_payload)
 {
-    pbuf[0] = HCI_COMMAND_PACKET;
-    pbuf[1] = (uint8_t)(opcode & 0xff);
-    pbuf[2] = (uint8_t)((uint32_t)(opcode >> 8) & 0xff);
-    pbuf[3] = msg_sz;
-    (void)memcpy(&pbuf[4], msg_payload, msg_sz);
+    pmsg[0] = HCI_COMMAND_PACKET;
+    pmsg[1] = (uint8_t)(opcode & 0xffu);
+    pmsg[2] = (uint8_t)((opcode >> 8) & 0xffu);
+    pmsg[3] = msg_sz;
+    (void)memcpy(&pmsg[4], msg_payload, msg_sz);
 }

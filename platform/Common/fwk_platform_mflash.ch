@@ -319,11 +319,11 @@ int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address
 
 int PLATFORM_IsExternalFlashBusy(bool *isBusy)
 {
-    uint32_t dummy;
-    status_t st;
-    st      = mflash_drv_read(0U, (void *)&dummy, sizeof(uint32_t));
-    *isBusy = (kStatus_Busy == st) ? 1U : 0U;
-    return (int)st;
+    /* return false as program and erase flash operations are blocking, so it cannot be busy */
+    /* no need to attempt any data read */
+    *isBusy = 0U;
+    
+    return 0;
 }
 
 bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)

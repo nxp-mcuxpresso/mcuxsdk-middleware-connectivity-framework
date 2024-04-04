@@ -23,17 +23,27 @@ target_include_directories(connfwk-SecLib
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_compile_definitions(connfwk-SecLib
+    PUBLIC
+        CONNFWK_SECLIB_${CONNFWK_SECLIB}
+)
+
 # Get common configs from the connfwk-config interface
 target_link_libraries(connfwk-SecLib
-    PUBLIC
     PRIVATE
         connfwk-config
         connfwk-FunctionLib
         connfwk-RNG
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib_crypto_${CONNFWK_LIB_CRYPTO_SUFFIX}.a
         ${CONNFWK_PLATFORM_LIB}
         ${CONNFWK_MCUX_SDK_LIB}
 )
+
+if(CONNFWK_SECLIB MATCHES "SSS" OR CONNFWK_SECLIB MATCHES "SW")
+    target_link_libraries(connfwk-SecLib
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/lib_crypto_${CONNFWK_LIB_CRYPTO_SUFFIX}.a
+    )
+endif()
 
 # If the selected build type is for coverage, we build the same lib but with coverage instrumentation
 if(${CMAKE_BUILD_TYPE} MATCHES "Coverage")

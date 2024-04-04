@@ -94,8 +94,8 @@ static RPMSG_HANDLE_DEFINE(hdlcRpmsgHandle);
 static const hal_rpmsg_config_t hdlcRpmsgConfig = {
     .local_addr  = PLATFORM_HDLC_RPMSG_LOCAL_ADDR,
     .remote_addr = PLATFORM_HDLC_RPMSG_REMOTE_ADDR,
-    .imuLink     = kIMU_LinkCpu2Cpu3,
-    .callback    = PLATFORM_HdlcRpmsgRxCallback,
+    .imuLink     = (uint8_t)kIMU_LinkCpu2Cpu3,
+    .callback    = &PLATFORM_HdlcRpmsgRxCallback,
     .param       = NULL,
 };
 
@@ -162,7 +162,7 @@ int PLATFORM_TerminateHdlcInterface(void)
             break;
         }
 
-        if (PLATFORM_TerminateControllers((uint32_t)conn802_15_4_c) != 0)
+        if (PLATFORM_TerminateControllers(conn802_15_4_c) != 0)
         {
             ret = -4;
             break;
@@ -225,7 +225,7 @@ int PLATFORM_SendHdlcMessage(uint8_t *msg, uint32_t len)
 
         /* Send HDLC Packet through RPMSG channel
          * If the size if larger than the maximum RPMSG buffer size, we have to send chunks of the packet */
-        while (remainingBytes > 0)
+        while (remainingBytes > 0u)
         {
             uint32_t sizeToSend;
 
@@ -275,11 +275,13 @@ static int PLATFORM_InitHdlcRpmsg(void)
 {
     hal_rpmsg_status_t rpmsgStatus;
     int                ret = 0;
+    hal_rpmsg_config_t hci_rpmsg_config;
 
+    hci_rpmsg_config = hdlcRpmsgConfig;
     do
     {
         /* Init RPMSG/IMU Channel */
-        rpmsgStatus = HAL_RpmsgInit((hal_rpmsg_handle_t)hdlcRpmsgHandle, (hal_rpmsg_config_t *)&hdlcRpmsgConfig);
+        rpmsgStatus = HAL_RpmsgInit((hal_rpmsg_handle_t)hdlcRpmsgHandle, &hci_rpmsg_config);
         if (rpmsgStatus != kStatus_HAL_RpmsgSuccess)
         {
             ret = -1;

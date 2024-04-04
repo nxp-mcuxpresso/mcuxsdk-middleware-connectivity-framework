@@ -220,8 +220,7 @@ void SecLib_Init(void)
 void SecLib_ReInit(void)
 {
     IsSecLibEcdhContextInit = false;
-    CRYPTO_ELEMU_reset();
-    (void)CRYPTO_ReinitHardware();
+    PLATFORM_ResetCrypto();
 }
 
 /*! *********************************************************************************
@@ -231,7 +230,7 @@ void SecLib_ReInit(void)
  ********************************************************************************** */
 void SecLib_DeInit(void)
 {
-    CRYPTO_DeinitHardware();
+    PLATFORM_TerminateCrypto();
 }
 
 /*! *********************************************************************************

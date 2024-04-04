@@ -38,7 +38,7 @@
  *
  * \param[in] timer timer handle
  */
-static void PWRCli_TimerCallback(TimerHandle_t timer);
+static void PWRCli_TimerCallback(TimerHandle_t timer_h);
 
 /*!
  * \brief Updates low power constraints to apply a low power mode during a specific amount of time
@@ -99,51 +99,51 @@ void PWRCli_Menu(void)
     {
         /* Create FreeRTOS timer which will be used to disable low power after a specific time */
         lpTimer = xTimerCreate("LP timer", (TickType_t)(LOWPOWER_DEFAULT_ENABLE_DURATION_MS / portTICK_PERIOD_MS),
-                               pdFALSE, NULL, PWRCli_TimerCallback);
+                               pdFALSE, NULL, &PWRCli_TimerCallback);
         assert(lpTimer != NULL);
         once = true;
     }
 
     while (true)
     {
-        CLI_PRINTF("%s \r\n", pwrCliMenu);
+        CLI_PRINTF("%s\r\n", pwrCliMenu);
         CLI_PRINTF("Enter your choice : ");
-        SCANF((char *)"%u", &choice);
+        SCANF("%u", &choice);
         CLI_PRINTF("\r\n");
 
         switch (choice)
         {
-            case 0:
+            case 0u:
                 break;
 
-            case 1:
+            case 1u:
                 break;
 
-            case 2:
+            case 2u:
             {
                 PWR_LowpowerMode_t nextMode;
                 CLI_PRINTF("%s \r\n", pwrCliModeMenu);
                 CLI_PRINTF("Enter your choice : ");
-                SCANF((char *)"%u", &choice);
+                SCANF("%u", &choice);
                 CLI_PRINTF("\r\n");
                 nextMode = (PWR_LowpowerMode_t)choice;
                 CLI_PRINTF("How much time do you want to apply this mode ? (in msec) : ");
-                SCANF((char *)"%u", &choice);
+                SCANF("%u", &choice);
                 CLI_PRINTF("\r\n");
                 timeMs = choice;
                 PWRCli_ConfigureNextLowPowerMode(nextMode, timeMs);
             }
             break;
 
-            case 3:
-                CLI_PRINTF("%s \r\n", pwrCliHelp);
+            case 3u:
+                CLI_PRINTF("%s\r\n", pwrCliHelp);
                 break;
 
             default:
                 CLI_PRINTF("Invalid Choice\r\n");
                 break;
         }
-        if (choice == 0)
+        if (choice == 0u)
         {
             /* exit the CLI menu */
             break;

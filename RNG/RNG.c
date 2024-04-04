@@ -13,13 +13,7 @@
 #include "fsl_device_registers.h"
 #include "fsl_os_abstraction.h"
 #include "fsl_common.h"
-
-#if defined ELEMU_VER_FEATURE
-/* TODO move to platform config file */
-#ifndef gRngUseSecureSubSystem_d
-#define gRngUseSecureSubSystem_d 1
-#endif
-#endif
+#include "fwk_config.h"
 
 #if defined(CPU_MCXW345CHNA)
 #define TRNG0      TRNG
@@ -683,7 +677,7 @@ static void TRNG_ISR(void)
 #endif /* FSL_FEATURE_SOC_TRNG_COUNT  */
 
 #if ((defined(FSL_FEATURE_SOC_RNG_COUNT)) && (FSL_FEATURE_SOC_RNG_COUNT > 0U))
-int RNG_Specific_Init(uint32_t *pSeed)
+static int RNG_Specific_Init(uint32_t *pSeed)
 {
     int status = gRngSuccess_d;
 #ifndef CPU_QN908X
@@ -707,7 +701,7 @@ int RNG_Specific_Init(uint32_t *pSeed)
     return status;
 }
 
-int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     int status;
     *returned_bytes = 0;
@@ -734,7 +728,7 @@ int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 }
 
 #elif ((defined(FSL_FEATURE_SOC_TRNG_COUNT)) && (FSL_FEATURE_SOC_TRNG_COUNT > 0U))
-int RNG_Specific_Init(uint32_t *pSeed)
+static int RNG_Specific_Init(uint32_t *pSeed)
 {
     int           status = gRngSuccess_d;
     trng_config_t config;
@@ -773,7 +767,8 @@ int RNG_Specific_Init(uint32_t *pSeed)
 
     return status;
 }
-int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     int status;
     *returned_bytes = 0;
@@ -794,19 +789,20 @@ int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
     return status;
 }
 #elif gRNG_UsePhyRngForInitialSeed_d
-int RNG_Specific_Init(uint32_t *pSeed)
+static int RNG_Specific_Init(uint32_t *pSeed)
 {
     PhyGetRandomNo(pSeed);
     return gRngSuccess_d;
 }
-int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     PhyGetRandomNo(pRandomNo);
     *returned_bytes = sizeof(uint32_t);
     return gRngSuccess_d;
 }
 #elif defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 1)
-int RNG_Specific_Init(uint32_t *pSeed)
+static int RNG_Specific_Init(uint32_t *pSeed)
 {
     /* Lousy RNG seed based on MCU unique Id */
     int status      = gRngSuccess_d;
@@ -815,7 +811,8 @@ int RNG_Specific_Init(uint32_t *pSeed)
 
     return status;
 }
-int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
+
+static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
 {
     return gRngInternalError_d;
 }

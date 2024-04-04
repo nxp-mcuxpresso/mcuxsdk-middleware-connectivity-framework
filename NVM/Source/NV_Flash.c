@@ -892,6 +892,10 @@ NVM_STATIC NVM_ErasePageCmdStatus_t mNvErasePgCmdStatus;
  */
 NVM_STATIC bool_t mNvFlashConfigInitialised = FALSE;
 
+#if (defined gNvSalvageFromEccFault_d) && (gNvSalvageFromEccFault_d > 0)
+NVM_STATIC NVM_EccFaultNotifyCb_t nv_fault_report_cb = NULL;
+#endif
+
 /*
  * Name: maNvRecordsCpyIdx
  * Description: An array that stores the indexes of the records already copied;
@@ -6691,6 +6695,30 @@ NVM_STATIC void __NvShutdown(void)
     }
 }
 
+int NvRegisterEccFaultNotificationCb(NVM_EccFaultNotifyCb_t cb)
+{
+#if defined gNvSalvageFromEccFault_d && (gNvSalvageFromEccFault_d > 0)
+    nv_fault_report_cb = cb;
+    return gNVM_OK_c;
+#else
+    NOT_USED(cb);
+    return gNVM_Error_c;
+#endif
+}
+
+void Nv_ReportEccFault(uint32_t fault_address, int rNw)
+{
+#if defined gNvSalvageFromEccFault_d && (gNvSalvageFromEccFault_d > 0)
+    if (nv_fault_report_cb != NULL)
+    {
+        (*nv_fault_report_cb)(fault_address, rNw);
+    }
+#else
+    NOT_USED(fault_address);
+    NOT_USED(rNw);
+#endif
+}
+
 /******************************************************************************
  * Name: NvCompletePendingOperationsUnsafe
  * Description: The function attemps to complete all the NVM related pending
@@ -6728,6 +6756,7 @@ NVM_STATIC NVM_Status_t NV_FlashRead(uint32_t flash_addr, uint8_t *ram_buf, size
     {
         if (HAL_FlashReadCheckEccFaults(flash_addr, size, ram_buf) == kStatus_HAL_Flash_EccError)
         {
+            Nv_ReportEccFault(flash_addr, 1);
             st = gNVM_EccFault_c;
         }
     }
@@ -6768,6 +6797,7 @@ NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, 
                 /* HAL_FlashRead mays return kStatus_HAL_Flash_EccError */
                 /* It means that the ECC Fault would have fired need to proceed to erase of active page to salvage  */
                 st = gNVM_EccFault_c;
+                Nv_ReportEccFault(addr, 0);
                 break;
             }
         }
@@ -7591,6 +7621,7 @@ NVM_STATIC uint32_t NV_SweepRangeForEccFaults(uint32_t start_addr, uint32_t size
         if (HAL_FlashReadCheckEccFaults(addr, sizeof(uint32_t), (uint8_t *)&read_val) == kStatus_HAL_Flash_EccError)
         {
             ecc_fault_addr = addr;
+            Nv_ReportEccFault(ecc_fault_addr, 1);
             break;
         }
     }
@@ -7613,7 +7644,7 @@ uint32_t NvGetTableSizeInFlash(void)
 #endif
 }
 
-void NvSetFlashTableversion(uint16_t version)
+void NvSetFlashTableVersion(uint16_t version)
 {
 #if gNvUseExtendedFeatureSet_d
     mNvFlashTableVersion = version;
@@ -7645,13 +7676,13 @@ NVM_STATIC void NvFlashDump(uint8_t *ptr, uint16_t data_size)
         }
         if (NV_FlashRead((uint32_t)ptr, ram_buf, size, TRUE) != gNVM_OK_c)
         {
-            lg = sprintf(message, "\r\n[%08x]: xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx", (uint32_t)ptr);
+            lg = sprintf(message, "\r\n[%08lx]: xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx xx", (uint32_t)ptr);
         }
         else
         {
             lg = 0;
         }
-        lg += sprintf(&message[lg], "\r\n[%08x]: %02x", (uint32_t)ptr, ram_buf[0]);
+        lg += sprintf(&message[lg], "\r\n[%08lx]: %02x", (uint32_t)ptr, ram_buf[0]);
         for (cnt = 1; cnt < size; cnt++)
         {
             lg += sprintf(&message[lg], " %02x", ram_buf[cnt]);
@@ -7708,7 +7739,7 @@ NVM_STATIC void NV_ShowPageMetas(NVM_VirtualPageID_t page_id, bool_t ecc_checks)
                            (vpage_prop->has_ecc_faults || ecc_checks));
 
         int lg = 0;
-        lg += sprintf(message, "Meta @ 0x%x:", metaInfoAddress);
+        lg += sprintf(message, "Meta @ 0x%lx:", metaInfoAddress);
         for (uint8_t cnt = 0U; cnt < sizeof(NVM_RecordMetaInfo_t); cnt++)
         {
             lg += sprintf(&message[lg], "%02x ", meta_ptr[cnt]);
@@ -7839,7 +7870,7 @@ void NV_ShowFlashTable(bool_t active_only)
                     PRINTF(message);
                     lg = 0;
                 }
-                lg = sprintf(message, "\r\n[%08x]: %02x", address,
+                lg = sprintf(message, "\r\n[%08lx]: %02x", address,
                              *(uint8_t *)(address + vpage_prop->NvRawSectorStartAddress));
             }
             else
@@ -7869,8 +7900,9 @@ void NV_ShowRamTable(uint16_t end_id)
 
         PRINTF("Entry at index %d:\r\n", cnt);
 
-        sprintf(message, "pData = 0x%08x, EntriesCount = %04x, EntrySize = %04x, Id = %04x, Data type = %s\r\n",
-                pDataEntry->pData, pDataEntry->ElementsCount, pDataEntry->ElementSize, pDataEntry->DataEntryID,
+        sprintf(message, "pData = 0x%08lx, EntriesCount = %04x, EntrySize = %04x, Id = %04x, Data type = %s\r\n",
+                (uint32_t)pDataEntry->pData, pDataEntry->ElementsCount, pDataEntry->ElementSize,
+                pDataEntry->DataEntryID,
                 (pDataEntry->DataEntryType == gNVM_MirroredInRam_c ? "mirrored" : "unmirrored"));
         PRINTF(message);
 

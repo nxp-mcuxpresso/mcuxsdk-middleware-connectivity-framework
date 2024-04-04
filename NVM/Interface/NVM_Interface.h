@@ -508,6 +508,13 @@ typedef struct NVM_Statistics_tag
     uint32_t SecondPageEraseCyclesCount;
 } NVM_Statistics_t;
 
+/*!
+ * \brief ECC fault notification callback function pointer.
+ *  \param [in] fault_addr address where ECC fault was detected
+ *  \param [in] operation 0: write (programming flash), 1: read operation
+ */
+typedef void (*NVM_EccFaultNotifyCb_t)(uint32_t fault_addr, int operation);
+
 /*****************************************************************************
 ******************************************************************************
 * Public memory declarations
@@ -1043,7 +1050,17 @@ uint32_t NvGetTableSizeInFlash(void);
  *
  * \param[in] version version number to set in flash table.
  ********************************************************************************* */
-void NvSetFlashTableversion(uint16_t version);
+void NvSetFlashTableVersion(uint16_t version);
+
+/*! *********************************************************************************
+ *  \brief Register callback for NVM to notify application when ECC fault is detected.
+ *
+ * \param[in] version version number to set in flash table.
+ *
+ * \return: gNVM_Ok_c if gNvSalvageFromEccFault_d is set, gNVM_Error_c otherwise.
+
+ ********************************************************************************* */
+int NvRegisterEccFaultNotificationCb(NVM_EccFaultNotifyCb_t cb);
 
 /*! *********************************************************************************
  *  \brief Get address of last MIT meta address. Used in tests or debug only.

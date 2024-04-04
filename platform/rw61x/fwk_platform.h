@@ -18,6 +18,15 @@
 /* -------------------------------------------------------------------------- */
 
 /*!
+ * \brief  Initialize Timer Manager
+ *
+ *    This API will initialize the Timer Manager and the required clocks
+ *
+ * \return int 0 if success, 1 if already initialized, negative value if error.
+ */
+int PLATFORM_InitTimerManager(void);
+
+/*!
  * \brief Initializes timestamp module
  *
  */
@@ -49,5 +58,23 @@ void PLATFORM_TimeStampEnterLowPower(void);
  *
  */
 void PLATFORM_TimeStampExitPowerDown(void);
+
+/*!
+ * \brief  Initialize Security subsystem
+ *
+ */
+void PLATFORM_InitCrypto(void);
+
+/*!
+ * \brief Close Security subsystem (if applicable)
+ *
+ */
+void PLATFORM_TerminateCrypto(void);
+
+/*!
+ * \brief Reset Security subsystem (if applicable)
+ *
+ */
+void PLATFORM_ResetCrypto(void);
 
 #endif /* _FWK_PLATFORM_H_ */

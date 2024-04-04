@@ -1,17 +1,20 @@
 /*
- * Copyright 2021-2022 NXP
+ * Copyright 2021-2024 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "board.h"
-#include "fsl_cache.h"
-#include "fsl_clock.h"
 #include "fsl_common.h"
 #include "fsl_debug_console.h"
+#include "fsl_clock.h"
+#include "board.h"
 #include "fsl_flexspi.h"
+#include "fsl_cache.h"
 #include "fsl_io_mux.h"
+#include "fsl_power.h"
+#include "fsl_ocotp.h"
+#include "mcuxClEls.h"
 
 /*******************************************************************************
  * Definitions
@@ -53,7 +56,7 @@ static status_t flexspi_hyper_ram_read_id(FLEXSPI_Type *base, uint16_t *buffer)
     flashXfer.cmdType       = kFLEXSPI_Read;
     flashXfer.SeqNumber     = 1;
     flashXfer.seqIndex      = 15;
-    flashXfer.data          = (uint32_t *)buffer;
+    flashXfer.data          = (uint32_t *)(void *)buffer;
     flashXfer.dataSize      = 2;
 
     status = FLEXSPI_TransferBlocking(base, &flashXfer);
@@ -72,7 +75,7 @@ static status_t flexspi_hyper_ram_read_register(FLEXSPI_Type *base, uint32_t add
     flashXfer.cmdType       = kFLEXSPI_Read;
     flashXfer.SeqNumber     = 1;
     flashXfer.seqIndex      = 13;
-    flashXfer.data          = (uint32_t *)buffer;
+    flashXfer.data          = (uint32_t *)(void *)buffer;
     flashXfer.dataSize      = 2;
 
     status = FLEXSPI_TransferBlocking(base, &flashXfer);
@@ -91,7 +94,7 @@ static status_t flexspi_hyper_ram_write_register(FLEXSPI_Type *base, uint32_t ad
     flashXfer.cmdType       = kFLEXSPI_Write;
     flashXfer.SeqNumber     = 1;
     flashXfer.seqIndex      = 14;
-    flashXfer.data          = (uint32_t *)buffer;
+    flashXfer.data          = (uint32_t *)(void *)buffer;
     flashXfer.dataSize      = 2;
 
     status = FLEXSPI_TransferBlocking(base, &flashXfer);
@@ -102,7 +105,7 @@ static status_t flexspi_hyper_ram_write_register(FLEXSPI_Type *base, uint32_t ad
 /* Initialize psram. */
 status_t BOARD_InitPsRam(void)
 {
-    flexspi_device_config_t deviceconfig = {
+    flexspi_device_config_t psramConfig = {
         .flexspiRootClk       = 320000000, /* 320MHZ SPI serial clock, DDR serial clock 160M */
         .isSck2Enabled        = false,
         .flashSize            = 0x1000, /* 32Mb/KByte */
@@ -123,7 +126,7 @@ status_t BOARD_InitPsRam(void)
         .enableWriteMask      = true,
     };
 
-    uint32_t customLUT[20] = {
+    uint32_t psramLUT[20] = {
         /* Read Data */
         [0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_4PAD, 0xAA, kFLEXSPI_Command_DDR, kFLEXSPI_4PAD, 0x00),
         [1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_4PAD, 16, kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_4PAD,
@@ -165,7 +168,9 @@ status_t BOARD_InitPsRam(void)
 #if BOARD_ENABLE_PSRAM_CACHE
     cache64_config_t cacheCfg;
 #endif
-    status_t status = kStatus_Success;
+    status_t status         = kStatus_Success;
+    uint16_t identification = 0x00U;
+    uint16_t registerVal    = 0x00U;
 
     if (!BOARD_IS_XIP()) /* FlexSPI not initialized */
     {
@@ -205,63 +210,69 @@ status_t BOARD_InitPsRam(void)
     }
 
     /* Configure flash settings according to serial flash feature. */
-    FLEXSPI_SetFlashConfig(BOARD_FLEXSPI_PSRAM, &deviceconfig, kFLEXSPI_PortB1);
+    FLEXSPI_SetFlashConfig(BOARD_FLEXSPI_PSRAM, &psramConfig, kFLEXSPI_PortB1);
 
     /* Update bottom LUT table (44-63). */
-    FLEXSPI_UpdateLUT(BOARD_FLEXSPI_PSRAM, 44U, customLUT, ARRAY_SIZE(customLUT));
+    FLEXSPI_UpdateLUT(BOARD_FLEXSPI_PSRAM, 44U, psramLUT, ARRAY_SIZE(psramLUT));
 
     /* Do software reset. */
     FLEXSPI_SoftwareReset(BOARD_FLEXSPI_PSRAM);
 
     /* Read identification: the Manufacturer ID of ISSI's PSRAM(IS66/67WVQ8M4DALL) is 0x03U  */
-    uint16_t identification = 0x00U;
-    uint16_t registerVal    = 0x00U;
-    status                  = flexspi_hyper_ram_read_id(BOARD_FLEXSPI_PSRAM, &identification);
-    if ((status != kStatus_Success) || (identification & 0x03U) != 0x03U)
+    do
     {
-        status = kStatus_Fail;
-    }
+        status = flexspi_hyper_ram_read_id(BOARD_FLEXSPI_PSRAM, &identification);
+        if ((status != kStatus_Success) || (identification & 0x03U) != 0x03U)
+        {
+            status = kStatus_Fail;
+            break;
+        }
 
-    /* Read configuration register: the default setting is 0xF052(see table 6.1 Configuration Register in
-       PSRAM's(IS66/67WVQ8M4DALL) datasheet), which Latency code(CR[7:4]) is 0101b, which supported max frequency is
-       200MHz.*/
-    status = flexspi_hyper_ram_read_register(BOARD_FLEXSPI_PSRAM, 0x04U << 9, &registerVal);
-    if ((status != kStatus_Success) || registerVal != 0xF052)
-    {
-        status = kStatus_Fail;
-    }
+        /* Read configuration register: the default setting is 0xF052(see table 6.1 Configuration Register in
+           PSRAM's(IS66/67WVQ8M4DALL) datasheet), which Latency code(CR[7:4]) is 0101b, which supported max frequency
+           is 200MHz.*/
+        status = flexspi_hyper_ram_read_register(BOARD_FLEXSPI_PSRAM, 0x04UL << 9, &registerVal);
+        if ((status != kStatus_Success) || ((registerVal & 0xF1F3U) != 0xF052U))
+        {
+            /* Read register failure or register value unexpected */
+            status = kStatus_Fail;
+            break;
+        }
 
-    /* Initial access latency configuration, which is located in bit3 of CR. */
-    registerVal |= 0x01UL << 3;
+        /* Initial access latency configuration, which is located in bit3 of CR. */
+        registerVal |= (uint16_t)(0x01UL << 3);
 
-    /* Write configuration register: */
-    status = flexspi_hyper_ram_write_register(BOARD_FLEXSPI_PSRAM, 0x04U << 9, &registerVal);
-    if ((status != kStatus_Success) || registerVal != 0xF05A)
-    {
-        status = kStatus_Fail;
-    }
+        /* Write configuration register: */
+        status = flexspi_hyper_ram_write_register(BOARD_FLEXSPI_PSRAM, 0x04UL << 9, &registerVal);
+        if ((status != kStatus_Success) || registerVal != 0xF05AU)
+        {
+            status = kStatus_Fail;
+            break;
+        }
 
-    /* Reset */
-    registerVal = 0x00U;
+        /* Reset */
+        registerVal = 0x00U;
 
-    /* Read configuration register: changes default Variable Latency into Fixed Latency: 0xF05A.
-       Note: FlexSPI only supports fixed latency mode for ISSI's psram. */
-    status = flexspi_hyper_ram_read_register(BOARD_FLEXSPI_PSRAM, 0x04U << 9, &registerVal);
-    if ((status != kStatus_Success) || registerVal != 0xF05A)
-    {
-        status = kStatus_Fail;
-    }
+        /* Read configuration register: changes default Variable Latency into Fixed Latency: 0xF05A.
+           Note: FlexSPI only supports fixed latency mode for ISSI's psram. */
+        status = flexspi_hyper_ram_read_register(BOARD_FLEXSPI_PSRAM, 0x04UL << 9, &registerVal);
+        if ((status != kStatus_Success) || registerVal != 0xF05AU)
+        {
+            status = kStatus_Fail;
+            break;
+        }
 
 #if BOARD_ENABLE_PSRAM_CACHE
-    CACHE64_GetDefaultConfig(&cacheCfg);
-    /* Suppose:
-       Flash on PC bus starting from 0x08000000, controlled by cache 0.
-       PSRAM on PS bus starting from 0x28000000, controlled by cache 1.
-     */
-    CACHE64_Init(CACHE64_POLSEL1, &cacheCfg);
-    CACHE64_EnableWriteBuffer(CACHE64_CTRL1, true);
-    CACHE64_EnableCache(CACHE64_CTRL1);
+        CACHE64_GetDefaultConfig(&cacheCfg);
+        /* Suppose:
+           Flash on PC bus starting from 0x08000000, controlled by cache 0.
+           PSRAM on PS bus starting from 0x28000000, controlled by cache 1.
+         */
+        CACHE64_Init(CACHE64_POLSEL1, &cacheCfg);
+        CACHE64_EnableWriteBuffer(CACHE64_CTRL1, true);
+        CACHE64_EnableCache(CACHE64_CTRL1);
 #endif
+    } while (false);
 
     return status;
 }
@@ -388,12 +399,132 @@ void BOARD_SetFlexspiClock(FLEXSPI_Type *base, uint32_t src, uint32_t divider)
     }
 }
 
-/* This function is used to change FlexSPI clock to a stable source before clock sources(Such as PLL and Main clock)
- * updating in case XIP(execute code on FLEXSPI memory.) */
-void BOARD_FlexspiClockSafeConfig(void)
+static bool LoadGdetCfg(power_gdet_data_t *data)
 {
-    /* Move FLEXSPI clock source to T3 256m / 2 to avoid instruction/data fetch issue in XIP when
-     * updating PLL and main clock.
-     */
-    BOARD_SetFlexspiClock(FLEXSPI, 6U, 2U);
+    bool retval = true;
+
+    /* If T3 256M clock is disabled, GDET cannot work. */
+    if ((SYSCTL2->SOURCE_CLK_GATE & SYSCTL2_SOURCE_CLK_GATE_T3PLL_MCI_256M_CG_MASK) != 0U)
+    {
+        retval = false;
+    }
+    else
+    {
+        /* GDET clock has been characterzed to 64MHz */
+        CLKCTL0->ELS_GDET_CLK_SEL = CLKCTL0_ELS_GDET_CLK_SEL_SEL(2);
+    }
+
+    if (retval)
+    {
+        /* LOAD command */
+        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_GlitchDetector_LoadConfig_Async((uint8_t *)data));
+        if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_GlitchDetector_LoadConfig_Async) != token) ||
+            (MCUXCLELS_STATUS_OK_WAIT != result))
+        {
+            retval = false;
+        }
+        MCUX_CSSL_FP_FUNCTION_CALL_END();
+    }
+
+    if (retval)
+    {
+        /* Wait for the mcuxClEls_GlitchDetector_LoadConfig_Async operation to complete. */
+        MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token, mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
+        if ((MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation) != token) || (MCUXCLELS_STATUS_OK != result))
+        {
+            retval = false;
+        }
+        MCUX_CSSL_FP_FUNCTION_CALL_END();
+    }
+
+    return retval;
+}
+
+static void ConfigSvcSensor(void)
+{
+    uint64_t          svc;
+    uint32_t          pack;
+    status_t          status;
+    power_gdet_data_t gdetData = {0U};
+    uint32_t          rev      = SOCCTRL->CHIP_INFO & SOCCIU_CHIP_INFO_REV_NUM_MASK;
+
+    status = OCOTP_ReadSVC(&svc);
+    if (status == kStatus_Success)
+    { /* CES */
+        status = OCOTP_ReadPackage(&pack);
+        if (status == kStatus_Success)
+        {
+            /*
+               A2 CES: Use SVC voltage.
+               A1 CES: Keep boot voltage 1.11V.
+             */
+            POWER_InitVoltage((rev == 2U) ? ((uint32_t)svc >> 16) : 0U, pack);
+        }
+
+        /* SVC GDET config */
+        status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(149, &gdetData.CFG[0]) : status;
+        status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(150, &gdetData.CFG[1]) : status;
+        status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(151, &gdetData.CFG[2]) : status;
+        /* A2 CES load fuse 155 for trim calculation. A1 CES directly use the default trim value in fuse 152. */
+        status = (status == kStatus_Success) ? OCOTP_OtpFuseRead((rev == 2U) ? 155 : 152, &gdetData.CFG[3]) : status;
+        status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(153, &gdetData.CFG[4]) : status;
+        status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(154, &gdetData.CFG[5]) : status;
+        assert(status == kStatus_Success);
+
+        /* Must configure GDET load function for POWER_EnableGDetVSensors(). */
+        Power_InitLoadGdetCfg(LoadGdetCfg, &gdetData, pack);
+    }
+    else
+    {
+        /* A1/A2 non-CES */
+        SystemCoreClockUpdate();
+
+        /* LPBG trim */
+        BUCK11->BUCK_CTRL_EIGHTEEN_REG = 0x6U;
+        /* Change buck level */
+        PMU->PMIP_BUCK_LVL = PMU_PMIP_BUCK_LVL_SLEEP_BUCK18_SEL(0x60U) |  /* 1.8V */
+                             PMU_PMIP_BUCK_LVL_SLEEP_BUCK11_SEL(0x22U) |  /* 0.8V */
+                             PMU_PMIP_BUCK_LVL_NORMAL_BUCK18_SEL(0x60U) | /* 1.8V */
+                             PMU_PMIP_BUCK_LVL_NORMAL_BUCK11_SEL(0x54U);  /* 1.05V */
+        /* Delay 600us */
+        SDK_DelayAtLeastUs(600, SystemCoreClock);
+    }
+}
+
+/* This function is used to configure static voltage compansation and sensors, and in XIP case, change FlexSPI clock
+   to a stable source before clock tree(Such as PLL and Main clock) update */
+void BOARD_ClockPreConfig(void)
+{
+    OCOTP_OtpInit();
+    ConfigSvcSensor();
+    OCOTP_OtpDeinit();
+
+    if (BOARD_IS_XIP())
+    {
+        /* Move FLEXSPI clock source to T3 256m / 4 to avoid instruction/data fetch issue in XIP when
+         * updating PLL and main clock.
+         */
+        BOARD_SetFlexspiClock(FLEXSPI, 6U, 4U);
+    }
+    else
+    {
+        RESET_ClearPeripheralReset(kFLEXSPI_RST_SHIFT_RSTn);
+        BOARD_DeinitFlash(FLEXSPI);
+        CLOCK_AttachClk(kNONE_to_FLEXSPI_CLK);
+        CLOCK_DisableClock(kCLOCK_Flexspi);
+        RESET_SetPeripheralReset(kFLEXSPI_RST_SHIFT_RSTn);
+    }
+}
+
+/* Update FlexSPI clock source and set flash to full speed */
+void BOARD_ClockPostConfig(void)
+{
+    if (BOARD_IS_XIP())
+    {
+        /* Call function BOARD_SetFlexspiClock() to set clock source to aux0_pll_clk. */
+        BOARD_SetFlexspiClock(FLEXSPI, 2U, 2U);
+    }
+    else
+    {
+    }
 }

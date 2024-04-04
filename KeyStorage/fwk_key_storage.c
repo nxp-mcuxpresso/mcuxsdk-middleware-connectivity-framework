@@ -470,8 +470,8 @@ void *KS_Init(ks_config_t *ks_config_p)
     {
         fc_config_p                 = (fc_config_t *)(ks_ctx_p + 1);
         fc_config_p->folder_name    = ks_config_p->KS_name;
-        fc_config_p->scracth_ram_p  = (void *)(fc_config_p + 1);
-        fc_config_p->scracth_ram_sz = ks_config_p->size;
+        fc_config_p->scratch_ram_p  = (void *)(fc_config_p + 1);
+        fc_config_p->scratch_ram_sz = ks_config_p->size;
 
         ret = FC_InitConfig(fc_config_p);
         if (ret != NULL)

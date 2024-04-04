@@ -39,7 +39,6 @@
 #include "mbedtls/sha256.h"
 #include "mbedtls/md.h"
 #include "mbedtls/ecdh.h"
-#include "sss_crypto.h"
 
 #include "fwk_config.h"
 
@@ -202,7 +201,7 @@ void SecLib_Init(void)
 void SecLib_ReInit(void)
 {
     /* Initialize cryptographic hardware.*/
-    (void)CRYPTO_ReinitHardware();
+    PLATFORM_ResetCrypto();
 }
 
 /*! *********************************************************************************
@@ -212,7 +211,7 @@ void SecLib_ReInit(void)
  ********************************************************************************** */
 void SecLib_DeInit(void)
 {
-    CRYPTO_DeinitHardware();
+    PLATFORM_TerminateCrypto();
 }
 
 /*! *********************************************************************************
@@ -429,7 +428,7 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
 
     SECLIB_MUTEX_LOCK();
 
-    result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_ENCRYPT, inputLen, pInitVector, pInput, pOutput);
+    result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_ENCRYPT, newLen, pInitVector, pInput, pOutput);
     if (result != 0)
     {
         assert(0);
@@ -1613,13 +1612,22 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
         ECP256_PointCopy_and_change_endianness(&EcdhPubKey.raw[0], (const uint8_t *)&pInPeerPublicKey->raw[0]);
 #endif /* mRevertEcdhKeys_d */
 
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+        result = mbedtls_mpi_read_binary(&gEcdhCtx.Qp.X, &EcdhPubKey.raw[0], sizeof(ec_p256_coordinate));
+#else
         result = mbedtls_mpi_read_binary(&gEcdhCtx.ctx.mbed_ecdh.Qp.X, &EcdhPubKey.raw[0], sizeof(ec_p256_coordinate));
+#endif
         if (result != 0)
         {
             break;
         }
+
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+        result = mbedtls_mpi_read_binary(&gEcdhCtx.Qp.X, &EcdhPubKey.raw[0], sizeof(ec_p256_coordinate));
+#else
         result = mbedtls_mpi_read_binary(&gEcdhCtx.ctx.mbed_ecdh.Qp.Y, &EcdhPubKey.raw[SEC_ECP256_COORDINATE_LEN],
                                          sizeof(ec_p256_coordinate));
+#endif
         if (result != 0)
         {
             break;
@@ -1943,75 +1951,3 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
     NOT_USED(pR);
     return gSecError_c;
 }
-
-#if defined(ECDH_SELF_TEST) && (ECDH_SELF_TEST == 2)
-
-#include "fsl_debug_console.h"
-sss_ecdh_context_t ecdhClient;
-sss_ecdh_context_t ecdhServer;
-#define TRACE(...)       \
-    {                    \
-        if (verbose)     \
-            PRINTF(...); \
-    }
-int seclib_self_test(bool verbose)
-{
-    int      ret     = -1;
-    uint8_t *wrk_buf = NULL;
-
-    do
-    {
-        FLib_MemSet(&ecdhClient, 0, sizeof(ecdhClient));
-        FLib_MemSet(&ecdhServer, 0, sizeof(ecdhServer));
-
-        if (EC_P256_GenerateKeys(&ecdhServer.OwnPublicKey, &ecdhServer.PrivateKey) != 0)
-        {
-            TRACE("Server: Error generating SW ECDH Key Pair\n");
-            break;
-        }
-        size_t wrk_buf_sz = 3 * SEC_ECP256_COORDINATE_LEN;
-        wrk_buf           = MEM_BufferAlloc(wrk_buf_sz);
-        if (wrk_buf == NULL)
-        {
-            TRACE("Allocation failure\n");
-            break;
-        }
-        FLib_MemSet(wrk_buf, 0, sizeof(wrk_buf_sz));
-        ecdhPublicKey_t OwnPublicKey = {0);
-        ecdhPrivateKey_t *OwnPrivateKey = {0};
-        ECDH_P256_GenerateKeys(&OwnPublicKey, &OwnPrivateKey);
-
-        /* At this stage ecdhServer key pair is stored in LE format but ecdhClient in BE
-            We have no visibility on the ecdhClient private key.
-          */
-        ECP256_PointCopy(&ecdhServer.Qp, (const uint8_t *)&ecdhClient.OwnPublicKey.raw[0]);
-        ECP256_PointCopy_and_change_endianness(&ecdhClient.Qp, (const uint8_t *)&ecdhServer.OwnPublicKey.raw[0]);
-
-        FLib_MemSet(wrk_buf, 0, sizeof(wrk_buf_sz));
-
-        if (sss_ecdh_calc_secret(&ecdhClient, wrk_buf, 3 * SEC_ECP256_COORDINATE_LEN, &ecdhClient.z) !=
-            kStatus_SSS_Success)
-        {
-            TRACE("Client: Error computing DH secret\n");
-            break;
-        }
-
-        if (EC_P256_ComputeDhKey(&ecdhServer.PrivateKey, &ecdhServer.Qp, &ecdhServer.z) != 0)
-        {
-            TRACE("Server: Error computing DH secret\n");
-            break;
-        }
-        ECP256_coordinate_change_endianness(&ecdhServer.z.coord.X);
-
-        if (FLib_MemCmp(&ecdhClient.z.coord.X, &ecdhServer.z.coord.X, SEC_ECP256_COORDINATE_LEN) != TRUE)
-        {
-            TRACE("DH failure\n");
-            break;
-        }
-
-        TRACE("passed\n");
-        ret = 0;
-    } while (false);
-    return ret;
-}
-#endif /* MBEDTLS_SELF_TEST == 1 */

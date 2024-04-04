@@ -100,22 +100,33 @@ int FSA_Format(void)
     int res;
 
     /* FSA shall be initialized first for mutex creation */
-    FSA_Init();
+    do
+    {
+        res = FSA_Init();
+        if (res >= 0)
+        {
+            res = 0;
+        }
+        else
+        {
+            /* there was an error at mount time */
+            break;
+        }
 
-    /* get pointer to const default config structure from peripherals.c,
-        if config structure needs to be changed, update peripherals.c directly for your application */
-    lfs_get_default_config(&cfg_p);
+        /* get pointer to const default config structure from peripherals.c,
+           if config structure needs to be changed, update peripherals.c directly for your application */
+        lfs_get_default_config(&cfg_p);
 
 #if FWK_FSABSTRACTION_THREADSAFE
-    /* prevent simultaneous mount/format at same time */
-    (void)OSA_MutexLock((osa_mutex_handle_t)mLfsMutexId, osaWaitForever_c);
+        /* prevent simultaneous mount/format at same time */
+        (void)OSA_MutexLock((osa_mutex_handle_t)mLfsMutexId, osaWaitForever_c);
 #endif
-    res = lfs_format(&lfs_ctx, cfg_p);
+        res = lfs_format(&lfs_ctx, cfg_p);
 
 #if FWK_FSABSTRACTION_THREADSAFE
-    (void)OSA_MutexUnlock((osa_mutex_handle_t)mLfsMutexId);
+        (void)OSA_MutexUnlock((osa_mutex_handle_t)mLfsMutexId);
 #endif
-
+    } while (false);
     return res;
 }
 
@@ -232,6 +243,7 @@ int FSA_DeInit(void)
 #if FWK_FSABSTRACTION_THREADSAFE
         /* Take mutex so ensure it is free when destroying it */
         (void)OSA_MutexLock((osa_mutex_handle_t)mLfsMutexId, osaWaitForever_c);
+
         (void)OSA_MutexUnlock((osa_mutex_handle_t)mLfsMutexId);
 
         (void)OSA_MutexDestroy(mLfsMutexId);
@@ -289,7 +301,7 @@ int FSA_ReadBufferFromFileLocation(const char *file_name, uint8_t *buffer, uint1
 
             if (offset != 0U)
             {
-                res = lfs_file_seek(&lfs_ctx, &file, (int)offset, LFS_SEEK_SET);
+                res = lfs_file_seek(&lfs_ctx, &file, (int)offset, (int)LFS_SEEK_SET);
             }
 
             if (res < 0)
@@ -324,7 +336,11 @@ int FSA_ReadBufferFromFileLocation(const char *file_name, uint8_t *buffer, uint1
         (void)OSA_MutexUnlock((osa_mutex_handle_t)mLfsMutexId);
 #endif
     }
-
+    else
+    {
+        /* Not mounted */
+        res = -255;
+    }
     return res;
 }
 
@@ -400,6 +416,10 @@ int FSA_WriteBufferToFile(const char *file_name, const uint8_t *buffer, uint16_t
         (void)OSA_MutexUnlock((osa_mutex_handle_t)mLfsMutexId);
 #endif
     }
+    else
+    {
+        /* do nothing */
+    }
 
     return res;
 }
@@ -408,7 +428,7 @@ int FSA_DeleteFile(const char *file_name)
 {
     int        res;
     lfs_file_t file;
-
+    (void)res; /* res status only used in debug code */
 #if FWK_FSABSTRACTION_THREADSAFE
     /* Emptying file content shall be atomic */
     (void)OSA_MutexLock((osa_mutex_handle_t)mLfsMutexId, osaWaitForever_c);
@@ -436,7 +456,7 @@ int FSA_CheckFileSize(const char *file_name)
     struct lfs_info info = {0};
 
     res = lfs_stat(&lfs_ctx, file_name, &info);
-    if (res == LFS_ERR_OK)
+    if (res == (int)LFS_ERR_OK)
     {
         res = (int)info.size;
     }

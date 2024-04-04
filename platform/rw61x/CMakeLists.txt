@@ -8,6 +8,7 @@ set(SOURCES
     fwk_platform_coex.c
     fwk_platform_extflash.c
     fwk_platform_ota.c
+    fwk_platform_zb.c
     configs/fwk_lfs_config.c
 )
 
@@ -45,6 +46,10 @@ endif()
 
 if(CONNFWK_IGNORE_PLATFORM_OTA)
     list(REMOVE_ITEM SOURCES fwk_platform_ota.c)
+endif()
+
+if(CONNFWK_IGNORE_PLATFORM_ZB)
+    list(REMOVE_ITEM SOURCES fwk_platform_zb.c)
 endif()
 
 add_library(${CONNFWK_PLATFORM_LIB} ${SOURCES})
