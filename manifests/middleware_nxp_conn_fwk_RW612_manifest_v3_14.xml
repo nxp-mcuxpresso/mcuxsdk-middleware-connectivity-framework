@@ -530,27 +530,6 @@
         <include_path relative_path="./" project_relative_path="SFC" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.OTW.RW612" name="wireless framework OTW" brief="Middleware wireless framework_OTW" version="1.0.0" full_name="wireless framework OTW" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././OTW" project_base_path="framework">
-      <dependencies>
-        <device_dependency value="RW612"/>
-      </dependencies>
-      <source relative_path="../Interface" project_relative_path="OTW/Interface/" type="c_include">
-        <files mask="fwk_otw.h"/>
-      </source>
-      <source relative_path="../k32w0_transceiver" project_relative_path="OTW/k32w0_transceiver/" type="src">
-        <files mask="fwk_otw.c"/>
-      </source>
-      <source relative_path="./" project_relative_path="framework/OTW/" type="doc">
-        <files mask="CMakeLists.txt"/>
-      </source>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_OTW.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="../Interface" project_relative_path="OTW/Interface" type="c_include"/>
-        <include_path relative_path="../k32w0_transceiver" project_relative_path="OTW/k32w0_transceiver" type="c_include"/>
-      </include_paths>
-    </component>
     <component id="middleware.wireless.framework.FactoryDataProvider.RW612" name="wireless framework FactoryDataProvider" brief="Middleware wireless framework_FactoryDataProvider" version="1.0.0" full_name="wireless framework FactoryDataProvider" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././FactoryDataProvider" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>

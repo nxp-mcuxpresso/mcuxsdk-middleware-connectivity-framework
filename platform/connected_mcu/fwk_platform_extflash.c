@@ -190,7 +190,7 @@ bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
             if (!MemCmpToEraseValue((uint8_t *)address, read_sz))
             {
                 ret = false;
-                /* Can stop at once if */
+                /* Can stop at once if one byte differ */
                 break;
             }
         }

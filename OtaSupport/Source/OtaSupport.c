@@ -63,6 +63,7 @@ static void                   OTA_FlashTransactionFree(FLASH_TransactionOp_t *pT
 static FLASH_TransactionOp_t *OTA_FlashTransactionAlloc(void);
 static otaResult_t            OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flash_addr, uint16_t length);
 static otaResult_t            OTA_WriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *outbuf);
+static void                   OTA_InitContext(void);
 
 static ota_flash_status_t OTA_TreatFlashOpWrite(FLASH_TransactionOp_t *pMsg);
 static ota_flash_status_t OTA_TreatFlashOpEraseNextBlock(FLASH_TransactionOp_t *pMsg);
@@ -85,20 +86,20 @@ static ota_config_t configuration = {
 };
 
 OtaStateCtx_t mHdl = {
-    .OtaImageTotalLength   = 0,
-    .OtaImageCurrentLength = 0,
-    .CurrentStorageAddress = 0,
-    .ErasedUntilOffset     = 0,
+    .OtaImageTotalLength   = 0u,
+    .OtaImageCurrentLength = 0u,
+    .CurrentStorageAddress = 0u,
+    .ErasedUntilOffset     = 0u,
     .FwUpdImageState       = OtaImgState_None,
     .FlashOps              = NULL,
     .ota_partition         = NULL,
-    .ImageOffset           = 0,
-    .MaxImageLength        = 0,
+    .ImageOffset           = 0u,
+    .MaxImageLength        = 0u,
 
     .q_sz                  = 0,
     .q_max                 = 0,
-    .StorageAddressWritten = 0,
-    .OtaImageLengthWritten = 0,
+    .StorageAddressWritten = 0u,
+    .OtaImageLengthWritten = 0u,
     .PostedQ_storage       = NULL,
     .PostedQ_capacity      = 0,
     .PostedQInitialized    = false,
@@ -118,7 +119,6 @@ otaResult_t OTA_Initialize(void)
     do
     {
         OtaImgState_t img_state;
-
         if (mHdl.FwUpdImageState != OtaImgState_None)
         {
             OTA_CancelImage();
@@ -821,6 +821,7 @@ void OTA_CancelImage(void)
         {
             (void)OTA_TransactionQueuePurge();
         }
+        OTA_InitContext();
     }
     mHdl.FwUpdImageState = OtaImgState_Permanent;
 }
@@ -1076,10 +1077,19 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
                 assert(pMsg == NULL);
                 RAISE_ERROR(status, gOtaError_c);
             }
-
             pMsg->flash_addr = mHdl.ErasedUntilOffset;
-            pMsg->sz         = (int32_t)size;
-            pMsg->op_type    = FLASH_OP_ERASE_NEXT_BLOCK;
+            if (mHdl.ErasedUntilOffset + size >= mHdl.MaxImageLength)
+            {
+                /* Even if size is 0, produce a fake FLASH_OP_ERASE_NEXT_BLOCK so that
+                 * callback gets called on completion in the IdleHook context */
+                pMsg->sz = (int32_t)(mHdl.MaxImageLength - mHdl.ErasedUntilOffset);
+            }
+            else
+            {
+                pMsg->sz = (int32_t)size;
+            }
+
+            pMsg->op_type = FLASH_OP_ERASE_NEXT_BLOCK;
 
             FLib_MemCpyWord(&pMsg->buf[0], &callback.pf);
             FLib_MemCpyWord(&pMsg->buf[4], &param);
@@ -1542,3 +1552,15 @@ static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMs
     return st;
 }
 #endif
+
+static void OTA_InitContext(void)
+{
+    mHdl.ErasedUntilOffset     = 0u;
+    mHdl.OtaImageTotalLength   = 0u;
+    mHdl.OtaImageCurrentLength = 0u;
+    mHdl.StorageAddressWritten = 0u;
+    mHdl.OtaImageLengthWritten = 0u;
+    mHdl.CurrentStorageAddress = 0u;
+    mHdl.StorageAddressWritten = 0u;
+    mHdl.ImageOffset           = 0u;
+}

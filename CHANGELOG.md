@@ -28,6 +28,7 @@ Experimental Features only:
 - [Platform]
     - PLATFORM_GetTimeStamp(0 has an important fix for reading the Timestamp in TSTMR0
     - New API PLATFORM_TerminateCrypto(), PLATFORM_ResetCrypto() called from SecLib for lowpower exit
+    - Fix when enable fro debug callback on nbu
 - [DBG]
   - SWO
     - Add new files fwk_debug_swo.c/h to use SWO for debug purpose
@@ -61,6 +62,7 @@ Experimental Features only:
   - Fix on if condition when gHwParamsProdDataPlacementLegacy2IfrMode_c mode is selected
 - [OTA]
   - Enable gOtaCheckEccFaults_d by default to avoid bus in case of ECC error during OTA
+  - Fix OTA partition overflow during OTA stop and resume transfer
 - [BOARD]
   - Place code button or led specific under correct defines in board_comp.c/h
   - Bring back MACROs BOARD_INITRFSWITCHCONTROLPINS in pin_mux header file of the loc board
@@ -79,6 +81,8 @@ Experimental Features only:
 - [MISRA] fixes
   - board_lp.c BOARD_UninitDebugConsole() and BOARD_ReinitDebugConsole()
   - fwk_platform_ble.c: Various fixes
+- [OTA]
+  - Fix OTA partition overflow during OTA stop and resume transfer
 
 #### 6.2.0: RT1060/RT1170 SDK2.15 Major
 

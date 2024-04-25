@@ -483,6 +483,7 @@ uint8_t Nv_WriteAppFactoryData(extendedAppFactoryData_t *src_data, uint32_t exte
     uint32_t       input_total_len =
         extended_data_len + offsetof(extendedAppFactoryData_t, app_factory_data) + sizeof(uint16_t);
     uint32_t regPrimask = 0U;
+    bool     is_masked  = false;
 
     do
     {
@@ -509,7 +510,7 @@ uint8_t Nv_WriteAppFactoryData(extendedAppFactoryData_t *src_data, uint32_t exte
                 break;
             }
             /* If we reached here a sector erase is required */
-            /* If the PROD DATA field was programmed priorily, need to stash it away so that we can regrogram it */
+            /* If the PROD DATA field was programmed priorly, need to stash it away so that we can reprogram it */
             status = HAL_FlashVerifyErase(prgm_prod_data_addr, PROD_DATA_LEN, kHAL_Flash_MarginValueNormal);
             if (kStatus_HAL_Flash_Success != status)
             {
@@ -536,6 +537,7 @@ uint8_t Nv_WriteAppFactoryData(extendedAppFactoryData_t *src_data, uint32_t exte
         }
 
         regPrimask = DisableGlobalIRQ();
+        is_masked  = true;
         /*Re-calculate the Crc*/
         crc            = NV_ComputeCrc((uint8_t *)&src_data->app_factory_data, extended_data_len);
         uint8_t *p_crc = &src_data->app_factory_data[extended_data_len];
@@ -565,7 +567,7 @@ uint8_t Nv_WriteAppFactoryData(extendedAppFactoryData_t *src_data, uint32_t exte
             st = gHWParameterError_c;
         }
     }
-    if (regPrimask != 0U)
+    if (is_masked)
     {
         EnableGlobalIRQ(regPrimask);
     }

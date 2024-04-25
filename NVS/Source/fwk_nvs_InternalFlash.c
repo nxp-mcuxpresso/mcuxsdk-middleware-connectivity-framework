@@ -106,6 +106,7 @@ static int intflash_blank_check(const struct device *dev, off_t offset, size_t l
 
         if (HAL_FlashVerifyErase(chk_address.value, len, (hal_flash_margin_value_t)0u) != kStatus_HAL_Flash_Success)
         {
+            st = 1;
             break;
         }
         st = 0;

@@ -12,6 +12,7 @@
 #include "OtaPrivate.h"
 #include "fsl_adapter_flash.h"
 #include "fwk_platform_ota.h"
+#include <stdbool.h>
 
 /******************************************************************************
 *******************************************************************************
@@ -49,18 +50,18 @@
 * Private Prototypes
 *******************************************************************************
 ******************************************************************************/
-static ota_flash_status_t InternalFlash_PrepareForWrite(uint32_t NoOfBytes, uint32_t Addr);
+static ota_flash_status_t InternalFlash_PrepareForWrite(uint32_t NoOfBytes, uint32_t offs);
 static ota_flash_status_t InternalFlash_EraseBlockBySectorNumber(uint32_t blk_nb);
 
 static ota_flash_status_t InternalFlash_Init(void);
-static ota_flash_status_t InternalFlash_ChipErase(void);
-static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t Addr, uint8_t *Outbuf);
+static ota_flash_status_t InternalFlash_PartitionErase(void);
+static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf);
 static ota_flash_status_t InternalFlash_FlushWriteBuffer(void);
-static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t Addr, uint8_t *inbuf);
-static ota_flash_status_t InternalFlash_EraseArea(uint32_t *Addr, int32_t *size, bool non_blocking);
+static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf);
+static ota_flash_status_t InternalFlash_EraseArea(uint32_t *pOffs, int32_t *size, bool non_blocking);
 static uint8_t            InternalFlash_isBusy(void);
 #if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
-static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint32_t length);
+static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length);
 #endif
 /******************************************************************************
 *******************************************************************************
@@ -83,7 +84,7 @@ static uint32_t mEepromEraseBitmap[StorageBitmapSize];
 #if (gEepromParams_WriteAlignment_c > 1)
 static uint8_t  mWriteBuff[gEepromParams_WriteAlignment_c];
 static uint8_t  mWriteBuffLevel = 0U;
-static uint32_t mWriteBuffAddr  = 0U;
+static uint32_t mWriteBuffOffs  = 0U;
 #endif
 
 /******************************************************************************
@@ -94,7 +95,7 @@ static uint32_t mWriteBuffAddr  = 0U;
 
 static const OtaFlashOps_t int_flash_ops = {
     .init           = &InternalFlash_Init,
-    .format_storage = &InternalFlash_ChipErase,
+    .format_storage = &InternalFlash_PartitionErase,
     .writeData      = &InternalFlash_WriteData,
     .readData       = &InternalFlash_ReadData,
     .isBusy         = &InternalFlash_isBusy,
@@ -109,6 +110,17 @@ static const OtaPartition_t *ota_internal_partition;
 * Private Functions
 *******************************************************************************
 ******************************************************************************/
+
+/*! *********************************************************************************
+ * \brief  Initialize External storage for OTA.
+ *
+ * \return   true range belongs to OTA partition false otherwise.
+ *
+ ***********************************************************************************/
+static bool OtaCheckRangeBelongsToPartition(uint32_t offset, uint32_t range_sz)
+{
+    return ((offset + range_sz) <= ota_internal_partition->size);
+}
 
 /*! *********************************************************************************
  * \brief  Initialize internal storage for OTA.
@@ -130,8 +142,9 @@ static ota_flash_status_t InternalFlash_Init(void)
 #if (gEepromParams_WriteAlignment_c > 1)
         FLib_MemSet(mWriteBuff, 0xff, gEepromParams_WriteAlignment_c);
         mWriteBuffLevel = 0;
-        mWriteBuffAddr  = 0;
+        mWriteBuffOffs  = 0;
 #endif
+
         status = (ota_flash_status_t)HAL_FlashInit();
     }
     return status;
@@ -143,14 +156,12 @@ static ota_flash_status_t InternalFlash_Init(void)
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  *
  ***********************************************************************************/
-static ota_flash_status_t InternalFlash_ChipErase(void)
+static ota_flash_status_t InternalFlash_PartitionErase(void)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
-    uint32_t           i, endBlk;
+    uint32_t           i;
 
-    endBlk = ota_internal_partition->size / ota_internal_partition->sector_size;
-
-    for (i = 0; i < endBlk; i++)
+    for (i = 0; i < (ota_internal_partition->size / ota_internal_partition->sector_size); i++)
     {
         status = InternalFlash_EraseBlockBySectorNumber(i);
         if (kStatus_OTA_Flash_Success != status)
@@ -166,18 +177,18 @@ static ota_flash_status_t InternalFlash_ChipErase(void)
  * \brief  Writes a data buffer into internal storage, at a given address
  *
  * \param[in] NoOfBytes   Number of bytes to be written
- * \param[in] Addr        offset address relative to start of Internal Storage
+ * \param[in] offs        offset address relative to start of Internal Storage
  * \param[in] Outbuf      pointer on buffer to be written
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t Addr, uint8_t *Outbuf)
+static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Fail;
     do
     {
         hal_flash_status_t st;
-        if (Addr > ota_internal_partition->size)
+        if (!OtaCheckRangeBelongsToPartition(offs, NoOfBytes))
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
@@ -185,11 +196,8 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
-        if (NoOfBytes >= (uint32_t)(ota_internal_partition->size - Addr))
-        {
-            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
-        }
-        status = InternalFlash_PrepareForWrite(NoOfBytes, Addr);
+
+        status = InternalFlash_PrepareForWrite(NoOfBytes, offs);
         if (kStatus_OTA_Flash_Success != status)
         {
             break;
@@ -197,13 +205,13 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
 #if (gEepromParams_WriteAlignment_c > 1)
         if (mWriteBuffLevel != 0U)
         {
-            if (Addr >= mWriteBuffAddr && Addr < mWriteBuffAddr + gEepromParams_WriteAlignment_c)
+            if ((offs >= mWriteBuffOffs) && (offs < mWriteBuffOffs + gEepromParams_WriteAlignment_c))
             {
-                uint32_t offset = Addr - mWriteBuffAddr;
+                uint32_t offset = offs - mWriteBuffOffs;
                 uint32_t size   = gEepromParams_WriteAlignment_c - offset;
 
                 FLib_MemCpy(&mWriteBuff[offset], Outbuf, size);
-                Addr += size;
+                offs += size;
                 Outbuf += size;
                 if (NoOfBytes > size)
                 {
@@ -220,7 +228,7 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
                 FLib_MemSet(&mWriteBuff[mWriteBuffLevel], 0xFF, (uint32_t)size);
             }
 
-            st = HAL_FlashProgramUnaligned(PHYS_ADDR(mWriteBuffAddr), sizeof(mWriteBuff), mWriteBuff);
+            st = HAL_FlashProgramUnaligned(PHYS_ADDR(mWriteBuffOffs), sizeof(mWriteBuff), mWriteBuff);
             if (kStatus_HAL_Flash_Success != st)
             {
                 RAISE_ERROR(status, kStatus_OTA_Flash_Fail);
@@ -228,7 +236,7 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
 
 #if defined OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
             /* Do flash program verification where we best know what we did write */
-            status = InternalVerifyFlashProgram(mWriteBuff, mWriteBuffAddr, (uint32_t)sizeof(mWriteBuff));
+            status = InternalVerifyFlashProgram(mWriteBuff, mWriteBuffOffs, (uint32_t)sizeof(mWriteBuff));
             if (kStatus_OTA_Flash_Success != status)
             {
                 break;
@@ -237,26 +245,26 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t A
             mWriteBuffLevel = 0U;
         }
 
-        if ((Addr & (gEepromParams_WriteAlignment_c - 1U)) != 0U)
+        if ((offs & (gEepromParams_WriteAlignment_c - 1U)) != 0U)
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_AlignmentError);
         }
         /* Store unaligned bytes for later processing */
         mWriteBuffLevel = (uint8_t)NoOfBytes % gEepromParams_WriteAlignment_c;
         NoOfBytes -= mWriteBuffLevel;
-        mWriteBuffAddr = Addr + NoOfBytes;
+        mWriteBuffOffs = offs + NoOfBytes;
         FLib_MemCpy(mWriteBuff, &Outbuf[NoOfBytes], mWriteBuffLevel);
 #endif
 
         /* Write data to FLASH */
-        st = HAL_FlashProgramUnaligned(PHYS_ADDR(Addr), NoOfBytes, Outbuf);
+        st = HAL_FlashProgramUnaligned(PHYS_ADDR(offs), NoOfBytes, Outbuf);
         if (kStatus_HAL_Flash_Success != st)
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_Fail);
         }
 
 #if defined OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
-        status = InternalVerifyFlashProgram(Outbuf, Addr, NoOfBytes);
+        status = InternalVerifyFlashProgram(Outbuf, offs, NoOfBytes);
         if (kStatus_OTA_Flash_Success != status)
         {
             break;
@@ -290,14 +298,14 @@ static ota_flash_status_t InternalFlash_FlushWriteBuffer(void)
         /* Pad the remainder of write buffer with 0xff fill */
         FLib_MemSet(&mWriteBuff[mWriteBuffLevel], 0xffu, (uint32_t)size);
         /* the write RAM Write Buffer to FLASH */
-        st = HAL_FlashProgramUnaligned(PHYS_ADDR(mWriteBuffAddr), sizeof(mWriteBuff), mWriteBuff);
+        st = HAL_FlashProgramUnaligned(PHYS_ADDR(mWriteBuffOffs), sizeof(mWriteBuff), mWriteBuff);
         if (kStatus_HAL_Flash_Success != st)
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_Fail);
         }
 #if defined OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
         /* Do flash program verification where we best know what we did write */
-        status = InternalVerifyFlashProgram(mWriteBuff, mWriteBuffAddr, (uint32_t)sizeof(mWriteBuff));
+        status = InternalVerifyFlashProgram(mWriteBuff, mWriteBuffOffs, (uint32_t)sizeof(mWriteBuff));
         if (kStatus_OTA_Flash_Success != status)
         {
             break;
@@ -315,29 +323,38 @@ static ota_flash_status_t InternalFlash_FlushWriteBuffer(void)
  * \brief  Read data from an address pointing to internal flash to a RAM buffer
  *
  * \param[in] NoOfBytes   Number of bytes to be read
- * \param[in] Addr        offset address relative to start of Internal Storage
+ * \param[in] offs        offset address relative to start of Internal Storage
  * \param[in] Outbuf      pointer on buffer to be write to
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t Addr, uint8_t *inbuf)
+static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf)
 {
-    union physical_address read_adress;
-    read_adress.value = PHYS_ADDR(Addr);
-    FLib_MemCpy(inbuf, read_adress.pointer, NoOfBytes);
+    union physical_address read_address;
+    ota_flash_status_t     status = kStatus_OTA_Flash_Success;
+
+    if (!OtaCheckRangeBelongsToPartition(offs, NoOfBytes))
+    {
+        status = kStatus_OTA_Flash_InvalidArgument;
+    }
+    else
+    {
+        read_address.value = PHYS_ADDR(offs);
+        FLib_MemCpy(inbuf, read_address.pointer, NoOfBytes);
 
 #if (gEepromParams_WriteAlignment_c > 1)
-    /* Copy data from write buffer if needed */
-    for (uint32_t i = 0; i < mWriteBuffLevel; i++)
-    {
-        if ((mWriteBuffAddr + i) >= Addr && (mWriteBuffAddr + i) < (Addr + NoOfBytes))
+        /* Copy data from write buffer if needed */
+        for (uint32_t i = 0; i < mWriteBuffLevel; i++)
         {
-            inbuf[mWriteBuffAddr - Addr + i] = mWriteBuff[i];
+            if ((mWriteBuffOffs + i) >= offs && (mWriteBuffOffs + i) < (offs + NoOfBytes))
+            {
+                inbuf[mWriteBuffOffs - offs + i] = mWriteBuff[i];
+            }
         }
-    }
 #endif
+    }
 
-    return kStatus_OTA_Flash_Success;
+    return status;
 }
 
 /*! *********************************************************************************
@@ -350,49 +367,59 @@ static uint8_t InternalFlash_isBusy(void)
     return 0U;
 }
 
+/*! *********************************************************************************
+ * \brief  Erase sector identified by its number in OTA partition.
+ *
+ * \return    kStatus_OTA_Flash_Success if operation successful,
+              kStatus_OTA_Flash_Error  otherwise.
+
+ ***********************************************************************************/
 static ota_flash_status_t InternalFlash_EraseBlockBySectorNumber(uint32_t blk_nb)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Error;
     hal_flash_status_t st;
+    assert(blk_nb < (ota_internal_partition->size / ota_internal_partition->sector_size));
     st = HAL_FlashEraseSector(PHYS_ADDR(blk_nb * ota_internal_partition->sector_size),
                               ota_internal_partition->sector_size);
     if (kStatus_HAL_Flash_Success == st)
     {
         /* mark each erased sector as such in the erase bit map */
-        /* If blocks are 8kBytes large, one byte of bitmap is requried per 64kByte tranche */
+        /* If blocks are 8kBytes large, one byte of bitmap is required per 64kByte tranche */
         mEepromEraseBitmap[blk_nb / 32U] |= ((uint32_t)1U << (blk_nb % 32U));
         status = kStatus_OTA_Flash_Success;
     }
+
     return status;
 }
 
 /*! *********************************************************************************
- * \brief  Erase number of sectors required for an upcomingprogram operation
+ * \brief  Erase number of sectors required for an upcoming program operation
  *
  * \param[in] NoOfBytes   Number of bytes of area to be cleared already checked to be non 0
  *            will be rounded to a multiple of flash sectors
- * \param[in] Addr        offset address relative to start of Internal Storage from which
+ * \param[in] offs        offset address relative to start of Internal Storage from which
  *            erase operation is required
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t InternalFlash_PrepareForWrite(uint32_t NoOfBytes, uint32_t Addr)
+static ota_flash_status_t InternalFlash_PrepareForWrite(uint32_t NoOfBytes, uint32_t offs)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
     uint32_t           i;
-    uint32_t           startBlk, endBlk;
+    uint32_t           endBlk;
+    uint32_t           end_offs;
 
     /* Obtain the first and last block that need to be erased */
-    startBlk = Addr / ota_internal_partition->sector_size;
-
-    uint32_t end_addr = (Addr + NoOfBytes);
-    endBlk            = end_addr / ota_internal_partition->sector_size;
-    if ((end_addr & (ota_internal_partition->sector_size - 1U)) == 0U)
+    end_offs = (offs + NoOfBytes);
+    if ((end_offs & (ota_internal_partition->sector_size - 1U)) != 0U)
     {
-        /* end_addr is at a multiple of sector size boundary */
-        endBlk--;
+        /* If the address is in the middle of a block, round up to the next block
+         * This gives the upper block limit, every blocks before this one will be erased but not this block
+         * as it is outside the erase range */
+        end_offs = ((end_offs / ota_internal_partition->sector_size) + 1U) * ota_internal_partition->sector_size;
     }
+    endBlk = end_offs / ota_internal_partition->sector_size;
 
-    for (i = startBlk; i <= endBlk; i++)
+    for (i = offs / ota_internal_partition->sector_size; i < endBlk; i++)
     {
         /* Check if the block was previously erased */
         if ((mEepromEraseBitmap[i / 32U] & ((uint32_t)1U << (i % 32U))) == 0U)
@@ -408,49 +435,53 @@ static ota_flash_status_t InternalFlash_PrepareForWrite(uint32_t NoOfBytes, uint
     return status;
 }
 
-static ota_flash_status_t InternalFlash_EraseArea(uint32_t *Addr, int32_t *size, bool non_blocking)
+static ota_flash_status_t InternalFlash_EraseArea(uint32_t *pOffs, int32_t *size, bool non_blocking)
 {
     ota_flash_status_t status;
-    uint32_t           remain_sz  = (uint32_t)*size;
-    uint32_t           erase_addr = *Addr;
 
     /* The erase operation in internal flash is necessarily blocking */
     NOT_USED(non_blocking);
 
     do
     {
-        if (!IS_SECTOR_ALIGNED(erase_addr))
+        uint32_t remain_sz  = (uint32_t)*size;
+        uint32_t erase_offs = *pOffs;
+        if (!IS_SECTOR_ALIGNED(erase_offs))
         {
             RAISE_ERROR(status, kStatus_OTA_Flash_AlignmentError);
         }
+        if (!OtaCheckRangeBelongsToPartition(erase_offs, remain_sz))
+        {
+            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
+        }
+
         if (remain_sz != 0U)
         {
-            status = InternalFlash_PrepareForWrite(remain_sz, erase_addr);
+            status = InternalFlash_PrepareForWrite(remain_sz, erase_offs);
             if (status != kStatus_OTA_Flash_Success)
             {
                 break;
             }
-            erase_addr += remain_sz;
+            erase_offs += remain_sz;
             /* In the case of internal flash the entire erase operation must
              * complete till the end
              */
             remain_sz = 0U;
         }
+        *pOffs = NEXT_SECTOR_ADDR(erase_offs);
+        *size  = (int32_t)remain_sz;
         status = kStatus_OTA_Flash_Success;
     } while (false);
-
-    *Addr = NEXT_SECTOR_ADDR(erase_addr);
-    *size = (int32_t)remain_sz;
 
     return status;
 }
 #if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
-static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t Addr, uint32_t length)
+static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length)
 {
     ota_flash_status_t     status = kStatus_OTA_Flash_Success;
-    union physical_address verify_adress;
-    verify_adress.value = PHYS_ADDR(Addr);
-    if (!FLib_MemCmp(pData, verify_adress.pointer, length))
+    union physical_address verify_address;
+    verify_address.value = PHYS_ADDR(offs);
+    if (!FLib_MemCmp(pData, verify_address.pointer, length))
     {
         status = kStatus_OTA_Flash_Fail;
     }

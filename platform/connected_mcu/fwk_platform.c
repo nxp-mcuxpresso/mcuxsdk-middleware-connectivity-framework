@@ -73,7 +73,7 @@
 
 /*! @brief Delay from the 32MHz wake up of the LL to wake up the radio domain in number of 30.5us period */
 #if !defined(BOARD_RADIO_DOMAIN_WAKE_UP_DELAY)
-#define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x0FU
+#define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x10U
 #endif
 
 #if !defined(FSL_FEATURE_TSTMR_CLOCK_FREQUENCY_1MHZ) || !FSL_FEATURE_TSTMR_CLOCK_FREQUENCY_1MHZ
