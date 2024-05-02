@@ -111,9 +111,13 @@ PUBLIC void ExceptionUnwindStack(uint32_t * pt)
     PRINTF("BBC_TXCTL    0x400b11c0 = 0x%x\r\n",(*(volatile uint32 *)0x400b11c0));
     PRINTF("BBC_RXCTL    0x400b12c0 = 0x%x\r\n",(*(volatile uint32 *)0x400b12c0));
     PRINTF("PHY_MCTRL    0x400b0018 = 0x%x\r\n",(*(volatile uint32 *)0x400b0018));
-    PRINTF("APP: Watchdog halted device !\n");
+#if defined(WDOG_RESETS_DEVICE) && (WDOG_RESETS_DEVICE == 1)
+    PRINTF("APP: Watchdog RESETS device !\n");
+#else
+    PRINTF("APP: Device Halted !\n");
     RESET_PeripheralReset(kWWDT_RST_SHIFT_RSTn);
     WWDT_Deinit(WWDT);
+#endif
     while (1);
 }
 #if (defined(__MCUXPRESSO) && defined(__SEMIHOST_HARDFAULT_DISABLE)) || (!defined(__MCUXPRESSO))

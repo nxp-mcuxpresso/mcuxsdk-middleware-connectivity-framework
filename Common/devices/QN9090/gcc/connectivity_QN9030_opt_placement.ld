@@ -109,7 +109,7 @@ m_text_start            = m_app_start;
 /****************************************************
  *****        Flash Regions, high to low       ******
  ****************************************************/
-NV_STORAGE_START_ADDRESS = m_update_page_address - 1;
+NV_STORAGE_START_ADDRESS = m_flash_end;
 NV_STORAGE_END_ADDRESS  = NV_STORAGE_START_ADDRESS - NV_STORAGE_SIZE + 1;
 INT_STORAGE_START       = NV_STORAGE_END_ADDRESS - 1;
 INT_STORAGE_END         = (UseInternalStorageLink) ? m_int_start_addr : INT_STORAGE_START;

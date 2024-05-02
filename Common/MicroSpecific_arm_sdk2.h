@@ -231,12 +231,34 @@ static inline uint32_t __ffs(uint32_t x)
 /* GCC builtin */
 #define _CTZ(x)             __builtin_ctz(x)
 
-#define _FFS(x)                                     \
-({   register uint32_t __u32Reg, __ret;             \
-   __u32Reg = _CTZ(x);                              \
-   __ret = __u32Reg == 32 ? 0 : __u32Reg + 1U;      \
-   __ret;                                           \
-})
+#define _FFS(x)             __builtin_ffs(x)
+/* Former implementation : deprecated since GCC builtin equivalent exist.
+ * Note: the former implementation is anyhow wrong: __builtin_ctz(0) has undefined behavior,
+ *       as per https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fctz
+ *       For GCC < 11, the `undefined` meant that CTZ returned 32. This is no longer the case.
+ *       So the quick'n'dirty fix would be:
+ *
+ * diff --git a/Common/MicroSpecific_arm_sdk2.h b/Common/MicroSpecific_arm_sdk2.h
+ * index 1639803c4..c7da21395 100644
+ * --- a/Common/MicroSpecific_arm_sdk2.h
+ * +++ b/Common/MicroSpecific_arm_sdk2.h
+ * @@ -233,7 +233,7 @@ static inline uint32_t __ffs(uint32_t x)
+ *       -   __u32Reg = _CTZ(x);                        \
+ *       +   __u32Reg = x == 0 ? 32 : _CTZ(x);          \
+ *
+ * It is preferable to use directly the builtin rather than add another `if`,
+ * taking into account the fact  that as per
+ * https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fffs,
+ * __builtin_ffs(x) will return 0 if x is 0, removing all the overhead.
+ *
+ * #define _FFS(x)                                     \
+ * ({   register uint32_t __u32Reg, __ret;             \
+ *  __u32Reg = _CTZ(x);                                \
+ *  __ret = __u32Reg == 32 ? 0 : __u32Reg + 1U;        \
+ *  __ret;                                             \
+ * })
+ */
+
 #endif  /* __IAR_SYSTEMS_ICC__ */
 
 /* Bit Scan Reverse */
