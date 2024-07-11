@@ -68,8 +68,7 @@ extern osa_status_t SecLibMutexUnlock(void);
  * It is likely to be present on all Core M33, Core M7 and Core M4 devices.
  * Nonetheless RW61x was designed without ARM DSP extension, in which case avoid defining
  * gSecLibUseDspExtension_d.
- * __DSP_EXT__ must be defined in the build system (CFLAGS containing -D__DSP_EXT__=1 for instance)
- * gSecLibUseDspExtension_d follows __DSP_PRESENT unless overidden to 0
+ * gSecLibUseDspExtension_d follows __DSP_PRESENT definition unless overridden to 0
  */
 
 #ifndef gSecLibUseDspExtension_d
@@ -105,36 +104,6 @@ extern secLibCallback_t pfSecLibMultCallback;
  * @brief pointer to Callback function used to offload Security steps onto application message queue
  */
 secLibCallback_t pfSecLibMultCallback = ((void *)0);
-
-/*! *********************************************************************************
-*************************************************************************************
-* Private prototypes
-*************************************************************************************
-********************************************************************************** */
-
-/*! *********************************************************************************
-*************************************************************************************
-* Private functions
-*************************************************************************************
-********************************************************************************** */
-
-#if gSecLibUseDspExtension_d
-static bool ECP256_LePointValid(const ecp256Point_t *P)
-{
-    ecp256Point_t tmp;
-    ECP256_PointCopy_and_change_endianness(tmp.raw, P->raw);
-    return ECP256_PointValid(&tmp);
-}
-#else
-
-extern bool_t EcP256_IsPointOnCurve(const uint32_t *X, const uint32_t *Y);
-
-static bool ECP256_LePointValid(const ecp256Point_t *P)
-{
-    return EcP256_IsPointOnCurve((const uint32_t *)&P->components_32bit.x[0],
-                                 (const uint32_t *)&P->components_32bit.y[0]);
-}
-#endif
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -1491,21 +1460,22 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
         {
             break;
         }
-        uint8_t *buf    = NULL;
-        size_t   buf_sz = sizeof(ecdhPublicKey_t); /* 2 * SEC_ECP256_COORDINATE_LEN */
-        buf             = MEM_BufferAlloc(buf_sz);
+        uint8_t *buf = NULL;
+        /* olen byte + format byte + 2 * SEC_ECP256_COORDINATE_LEN */
+        size_t buf_sz = sizeof(ecdhPublicKey_t) + 2;
+        buf           = MEM_BufferAlloc(buf_sz);
 
         if (buf == NULL)
         {
             break;
         }
 
-        result = mbedtls_ecdh_make_public(&gEcdhCtx, &olen, buf, sizeof(buf), pfPrng, pPrngCtx);
+        result = mbedtls_ecdh_make_public(&gEcdhCtx, &olen, buf, buf_sz, pfPrng, pPrngCtx);
 
 #if !mRevertEcdhKeys_d
-        ECP256_PointCopy((ecdhPoint_t *)pOutPublicKey, buf);
+        ECP256_PointLoad((ecp256Point_t *)pOutPublicKey, &buf[1], false);
 #else
-        ECP256_PointCopy_and_change_endianness(pOutPublicKey->raw, buf);
+        ECP256_PointLoad((ecp256Point_t *)pOutPublicKey, &buf[1], true);
 #endif
         (void)MEM_BufferFree(buf);
 
@@ -1623,7 +1593,8 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
         }
 
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-        result = mbedtls_mpi_read_binary(&gEcdhCtx.Qp.X, &EcdhPubKey.raw[0], sizeof(ec_p256_coordinate));
+        result = mbedtls_mpi_read_binary(&gEcdhCtx.Qp.Y, &EcdhPubKey.raw[SEC_ECP256_COORDINATE_LEN],
+                                         sizeof(ec_p256_coordinate));
 #else
         result = mbedtls_mpi_read_binary(&gEcdhCtx.ctx.mbed_ecdh.Qp.Y, &EcdhPubKey.raw[SEC_ECP256_COORDINATE_LEN],
                                          sizeof(ec_p256_coordinate));
@@ -1635,7 +1606,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
 
         size_t olen;
 
-        if ((result = mbedtls_ecdh_calc_secret(&gEcdhCtx, &olen, buf, sizeof(buf), pfPrng, pPrngCtx)) != 0)
+        if ((result = mbedtls_ecdh_calc_secret(&gEcdhCtx, &olen, buf, buf_sz, pfPrng, pPrngCtx)) != 0)
         {
             break;
         }

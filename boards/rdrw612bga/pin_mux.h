@@ -35,9 +35,13 @@ void BOARD_InitBootPins(void);
  * @brief Configures pin routing and optionally pin electrical features.
  *
  */
-void BOARD_InitPins(void); /*!< Function assigned for the core: Cortex-M4[cm4] */
+void BOARD_InitPins(void);
 
-void BOARD_InitQuadSpiFlashPins(void);
+/*!
+ * \brief Configures pin routing for on-board button0
+ *
+ */
+void BOARD_InitPinButton0(void);
 
 #if defined(__cplusplus)
 }

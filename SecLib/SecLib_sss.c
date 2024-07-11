@@ -71,8 +71,6 @@ extern osa_status_t SecLibMutexUnlock(void);
  * It is likely to be present on all Core M33, Core M7 and Core M4 devices.
  * Nonetheless RW61x was designed without ARM DSP extension, in which case avoid defining
  * gSecLibUseDspExtension_d.
- * __DSP_EXT__ must be defined in the build system (CFLAGS containing -D__DSP_EXT__=1 for instance)
- * gSecLibUseDspExtension_d follows __DSP_PRESENT unless overidden to 0
  */
 
 #ifndef gSecLibUseDspExtension_d
@@ -84,9 +82,6 @@ extern osa_status_t SecLibMutexUnlock(void);
 * Private type definitions
 *************************************************************************************
 ********************************************************************************** */
-
-typedef uint32_t sss_sscp_internal_keyID_t;
-typedef uint32_t sss_sscp_keyObjFree_options_t;
 
 /************************************************************************************
 *************************************************************************************

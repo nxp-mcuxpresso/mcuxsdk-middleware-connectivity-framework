@@ -11,8 +11,17 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
-#include "fsl_common.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "fsl_device_registers.h"
 #include "fwk_platform_sensors.h"
+
+/* -------------------------------------------------------------------------- */
+/*                               Private memory                               */
+/* -------------------------------------------------------------------------- */
+
+volatile bool initialized = false;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -20,17 +29,22 @@
 
 bool PLATFORM_IsAdcInitialized(void)
 {
-    return true;
+    return initialized;
 }
 
 void PLATFORM_InitAdc(void)
 {
-    ;
+    if (initialized == false)
+    {
+        SENSOR_CTRL->MISC_CTRL_REG |= SENSOR_CTRL_MISC_CTRL_REG_TIMER_1_ENABLE_MASK;
+        initialized = true;
+    }
 }
 
 void PLATFORM_DeinitAdc(void)
 {
-    ;
+    SENSOR_CTRL->MISC_CTRL_REG &= ~SENSOR_CTRL_MISC_CTRL_REG_TIMER_1_ENABLE_MASK;
+    initialized = false;
 }
 
 void PLATFORM_StartBatteryMonitor(void)
@@ -55,15 +69,6 @@ void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
     temperature = (((SENSOR_CTRL->TSEN_CTRL_1_REG_2) & SENSOR_CTRL_TSEN_CTRL_1_REG_2_TSEN_TEMP_VALUE_MASK) >>
                    SENSOR_CTRL_TSEN_CTRL_1_REG_2_TSEN_TEMP_VALUE_SHIFT);
 
-    if (temperature == 0U)
-    {
-        /* This is a workaround for A1 chips, the temperature sensor seems to return 0 on this revision
-         * So we treat 0 as a wrong value, and simulate a value instead */
-        *temperature_value = 21;
-    }
-    else
-    {
-        /* (temperature * 0.480561F - 220.7074F) */
-        *temperature_value = (int32_t)((temperature * 481U) / 1000U - 221U);
-    }
+    /* (temperature * 0.480561F - 220.7074F) */
+    *temperature_value = (int32_t)((temperature * 481U) / 1000U - 221U);
 }

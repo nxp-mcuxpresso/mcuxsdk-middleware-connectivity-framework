@@ -7,10 +7,17 @@
     <definition extID="mcuxpresso"/>
     <definition extID="middleware.freertos-kernel.RW612"/>
     <definition extID="middleware.baremetal.RW612"/>
+    <definition extID="component.timer_manager.RW612"/>
+    <definition extID="component.ostimer_time_stamp_adapter.RW612"/>
+    <definition extID="component.mrt_adapter.RW612"/>
+    <definition extID="component.ctimer_adapter.RW612"/>
+    <definition extID="component.mflash.rdrw610.RW612"/>
+    <definition extID="component.mflash.frdmrw612.RW612"/>
+    <definition extID="middleware.mbedtls.port.els_pkc.RW612"/>
   </externalDefinitions>
-  <ksdk id="MCUXpressoSDK215000_middleware_nxp_conn_fwk_RW612_manifest_v3_14" name="MCUXpressoSDK215000_middleware_nxp_conn_fwk_RW612_manifest_v3_14" version="2.15.000" revision="2.15.000"/>
+  <ksdk id="MCUXpressoSDK216000_middleware_nxp_conn_fwk_RW612_manifest_v3_14" name="MCUXpressoSDK216000_middleware_nxp_conn_fwk_RW612_manifest_v3_14" version="2.16.000" revision="2.16.000"/>
   <components>
-    <component id="middleware.wireless.framework.cmake.RW612" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+    <component id="middleware.wireless.framework.cmake.rw61x.frdmrw612.RW612" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
@@ -25,6 +32,9 @@
         <files mask="iar.cmake"/>
       </source>
       <source relative_path="./boards" project_relative_path="framework/boards" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./boards/frdmrw612" project_relative_path="framework/boards/frdmrw612" type="doc">
         <files mask="CMakeLists.txt"/>
       </source>
       <source relative_path="./FunctionLib" project_relative_path="framework/FunctionLib" type="doc">
@@ -43,6 +53,9 @@
         <files mask="CMakeLists.txt"/>
       </source>
       <source relative_path="./OtaSupport" project_relative_path="framework/OtaSupport" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./PDM" project_relative_path="framework/PDM" type="doc">
         <files mask="CMakeLists.txt"/>
       </source>
       <source relative_path="./PDUM" project_relative_path="framework/PDUM" type="doc">
@@ -73,7 +86,7 @@
         <files mask="CMakeLists.txt"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_CMake_rw61x.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_CMake_rw61x_frdmrw612.cmake" hidden="true"/>
       </source>
     </component>
     <component id="middleware.wireless.framework.fsci.RW612" name="wireless framework FSCI" brief="Middleware wireless framework_fsci" version="1.0.0" full_name="wireless framework FSCI" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././FSCI" project_base_path="framework">
@@ -133,23 +146,6 @@
         <include_path relative_path="./" project_relative_path="Common" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.rng.RW612" name="wireless framework RNG" brief="Middleware wireless framework_rng" version="1.0.0" full_name="wireless framework RNG" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././RNG" project_base_path="framework">
-      <dependencies>
-        <device_dependency value="RW612"/>
-      </dependencies>
-      <source relative_path="./" project_relative_path="RNG" type="c_include">
-        <files mask="RNG_Interface.h"/>
-      </source>
-      <source relative_path="./" project_relative_path="RNG" type="src">
-        <files mask="RNG.c"/>
-      </source>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_RNG.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="./" project_relative_path="RNG" type="c_include"/>
-      </include_paths>
-    </component>
     <component id="middleware.wireless.framework.rng_mbedtls.RW612" name="wireless framework RNG Mbedtls" brief="Middleware wireless framework_rng_mbedtls" version="1.0.0" full_name="wireless framework RNG Mbedtls" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././RNG" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
@@ -177,6 +173,7 @@
       </source>
       <source relative_path="./" project_relative_path="SecLib/source" type="src">
         <files mask="SecLib.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source relative_path="../build/CryptoLib/src" project_relative_path="SecLib/CryptoLib" type="src">
         <files mask="SW_AES128.c"/>
@@ -598,7 +595,7 @@
         <include_path relative_path="./" project_relative_path="DBG/SWO" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.settings.RW612" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.1" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+    <component id="middleware.wireless.framework.settings.RW612" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.2" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
@@ -628,36 +625,6 @@
         <include_path relative_path="../framework/Settings/Source" project_relative_path="Settings/source" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.NVS.RW612" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.1" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
-      <dependencies>
-        <device_dependency value="RW612"/>
-      </dependencies>
-      <source relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include">
-        <files mask="nvs.h"/>
-      </source>
-      <source relative_path="../framework/NVS/Interface/port" project_relative_path="NVS/interface" type="c_include">
-        <files mask="nvs_port.h"/>
-        <files mask="nvs_errno.h"/>
-      </source>
-      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="src">
-        <files mask="nvs.c"/>
-        <files mask="fwk_nvs_flash.c"/>
-        <files mask="fwk_nvs_ExternalFlash.c"/>
-        <files mask="fwk_nvs_InternalFlash.c"/>
-        <files mask="crc8.c"/>
-      </source>
-      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include">
-        <files mask="nvs_priv.h"/>
-        <files mask="crc.h"/>
-      </source>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_NVS.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include"/>
-        <include_path relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include"/>
-      </include_paths>
-    </component>
     <component id="middleware.wireless.framework.sec_lib.RW612" name="wireless framework Sec_lib" brief="Middleware wireless framework_sec_lib" version="1.0.0" full_name="wireless framework Sec_lib" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././SecLib" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
@@ -670,9 +637,10 @@
       </source>
       <source relative_path="./" type="src">
         <files mask="SecLib.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source toolchain="armgcc mcuxpresso" relative_path="./" type="lib">
-        <files mask="lib_crypto_m33.a"/>
+        <files mask="lib_crypto_m33_nodsp.a"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
         <files mask="middleware_wireless_framework_sec_lib.cmake" hidden="true"/>
@@ -681,31 +649,30 @@
         <include_path relative_path="./" project_relative_path="SecLib" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_all.RW612" name="wireless framework board base" brief="Middleware wireless framework board base" version="1.0.0" full_name="wireless framework board base" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+    <component id="middleware.wireless.framework.board_all.frdmrw612.RW612" name="wireless framework board base" brief="Middleware wireless framework board base" version="1.0.0" full_name="wireless framework board base" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
-      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="c_include">
+      <source relative_path="./boards/frdmrw612" project_relative_path="framework/boards/frdmrw612" type="c_include">
         <files mask="app.h"/>
         <files mask="board.h"/>
         <files mask="clock_config.h"/>
         <files mask="pin_mux.h"/>
       </source>
-      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="src">
-        <files mask="app_services_init.c"/>
+      <source relative_path="./boards/frdmrw612" project_relative_path="framework/boards/frdmrw612" type="src">
         <files mask="board.c"/>
         <files mask="clock_config.c"/>
         <files mask="hardware_init.c"/>
         <files mask="pin_mux.c"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_board_base_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_board_base_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="./boards/rdrw612bga" project_relative_path="boards/rdrw612bga" type="c_include"/>
+        <include_path relative_path="./boards/frdmrw612" project_relative_path="boards/frdmrw612" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_common.RW612" name="wireless framework Platform Common" brief="Middleware wireless framework_platform_common" version="1.0.0" full_name="wireless framework Platform Common" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_common.rw61x.RW612" name="wireless framework Platform Common" brief="Middleware wireless framework_platform_common" version="1.0.0" full_name="wireless framework Platform Common" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
@@ -716,12 +683,10 @@
         <files mask="fwk_platform_hdlc.c"/>
         <files mask="fwk_platform_coex.c"/>
         <files mask="fwk_platform_ot.c"/>
-        <files mask="fwk_platform_zb.c"/>
       </source>
       <source relative_path="../include" project_relative_path="Platform" type="c_include">
         <files mask="fwk_platform_coex.h"/>
         <files mask="fwk_platform_ot.h"/>
-        <files mask="fwk_platform_zb.h"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
         <files mask="middleware_wireless_framework_platform_common_rw61x.cmake" hidden="true"/>
@@ -730,7 +695,7 @@
         <include_path relative_path="../include" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_coex.RW612" name="wireless framework Platform coex" brief="Middleware wireless framework_platform_coex" version="1.0.0" full_name="wireless framework Platform coex" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_coex.rw61x.RW612" name="wireless framework Platform coex" brief="Middleware wireless framework_platform_coex" version="1.0.0" full_name="wireless framework Platform coex" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
@@ -747,7 +712,7 @@
         <include_path relative_path="../include" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_internal_flash.RW612" name="wireless framework Platform internal flash" brief="Middleware wireless framework_platform_internal_flash" version="1.0.0" full_name="wireless framework Platform internal flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_internal_flash.rw61x.RW612" name="wireless framework Platform internal flash" brief="Middleware wireless framework_platform_internal_flash" version="1.0.0" full_name="wireless framework Platform internal flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
@@ -758,68 +723,108 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_lp.RW612" name="wireless framework board_lp" brief="Middleware wireless framework_board_lp" version="1.0.0" full_name="wireless framework board_lp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/lowpower">
+    <component id="middleware.wireless.framework.platform_rng.rw61x.RW612" name="wireless framework Platform RNG" brief="Middleware wireless framework_platform_rng" version="1.0.0" full_name="wireless framework Platform RNG" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
-      <source relative_path="../rdrw612bga" project_relative_path="./" type="src">
+      <source relative_path="../rw61x" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_rng.c"/>
+      </source>
+      <source relative_path="../include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_rng.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_rng_rw61x.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_zb.rw61x.RW612" name="wireless framework Platform Zigbee" brief="Middleware wireless framework_platform_zb" version="1.0.0" full_name="wireless framework Platform Zigbee" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="../rw61x" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_zb.c"/>
+      </source>
+      <source relative_path="../include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_zb.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_zb_rw61x.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../include" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_lp.frdmrw612.RW612" name="wireless framework board_lp" brief="Middleware wireless framework_board_lp" version="1.0.0" full_name="wireless framework board_lp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/lowpower">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="../frdmrw612" project_relative_path="./" type="src">
         <files mask="board_lp.c"/>
       </source>
-      <source relative_path="../rdrw612bga" project_relative_path="./" type="c_include">
+      <source relative_path="../frdmrw612" project_relative_path="./" type="c_include">
         <files mask="board_lp.h"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_board_lp_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_board_lp_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+        <include_path relative_path="../frdmrw612" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_dcdc.RW612" name="wireless framework board_dcdc" brief="Middleware wireless framework_board_dcdc" version="1.0.0" full_name="wireless framework board_dcdc" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/dcdc">
+    <component id="middleware.wireless.framework.board_dcdc.frdmrw612.RW612" name="wireless framework board_dcdc" brief="Middleware wireless framework_board_dcdc" version="1.0.0" full_name="wireless framework board_dcdc" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/dcdc">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_board_dcdc_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_board_dcdc_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+        <include_path relative_path="../frdmrw612" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_platform.RW612" name="wireless framework board_platform" brief="Middleware wireless framework_board_platform" version="1.0.0" full_name="wireless framework board_platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/platform">
+    <component id="middleware.wireless.framework.board_platform.frdmrw612.RW612" name="wireless framework board_platform" brief="Middleware wireless framework_board_platform" version="1.0.0" full_name="wireless framework board_platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/platform">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_board_platform_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_board_platform_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+        <include_path relative_path="../frdmrw612" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_comp.RW612" name="wireless framework board_comp" brief="Middleware wireless framework_board_comp" version="1.0.0" full_name="wireless framework board_comp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/components">
+    <component id="middleware.wireless.framework.board_comp.frdmrw612.RW612" name="wireless framework board_comp" brief="Middleware wireless framework_board_comp" version="1.0.0" full_name="wireless framework board_comp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/components">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="../frdmrw612" project_relative_path="./" type="src">
+        <files mask="board_comp.c"/>
+      </source>
+      <source relative_path="../frdmrw612" project_relative_path="./" type="c_include">
+        <files mask="board_comp.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_comp_frdmrw612.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../frdmrw612" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_extflash.frdmrw612.RW612" name="wireless framework board_extflash" brief="Middleware wireless framework_board_extflash" version="1.0.0" full_name="wireless framework board_extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/extflash">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_board_comp_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_board_extflash_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+        <include_path relative_path="../frdmrw612" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_extflash.RW612" name="wireless framework board_extflash" brief="Middleware wireless framework_board_extflash" version="1.0.0" full_name="wireless framework board_extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/extflash">
-      <dependencies>
-        <device_dependency value="RW612"/>
-      </dependencies>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_board_extflash_rdrw612bga.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
-      </include_paths>
-    </component>
-    <component id="middleware.wireless.framework.lfs_config.RW612" name="wireless framework lfs_config" brief="Middleware wireless framework_lfs_config" version="1.0.0" full_name="wireless framework lfs_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.lfs_config.rw61x.RW612" name="wireless framework lfs_config" brief="Middleware wireless framework_lfs_config" version="1.0.0" full_name="wireless framework lfs_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <defines>
         <define name="LFS_CONFIG" value="fwk_lfs_config.h"/>
       </defines>
@@ -839,54 +844,64 @@
         <include_path relative_path="../rw61x/configs" project_relative_path="Platform/configs" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.matter.config.RW612" name="wireless framework matter config" brief="Middleware wireless framework matter config" version="1.0.0" full_name="wireless framework matter config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_fpga.rw61x.RW612" name="wireless framework Platform fpga" brief="Middleware wireless framework_platform_fpga" version="1.0.0" full_name="wireless framework Platform fpga" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
-      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="c_include">
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_fpga_rw61x.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.matter.config.frdmrw612.RW612" name="wireless framework matter config" brief="Middleware wireless framework matter config" version="1.0.0" full_name="wireless framework matter config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="./Common/devices/rw61x/gcc" project_relative_path="framework/Common/devices/frdmrw612/gcc" type="linker">
+        <files mask="RW61x_flash.ld"/>
+        <files mask="RW61x_flash_ota.ld"/>
+      </source>
+      <source relative_path="./boards/frdmrw612" project_relative_path="framework/boards/frdmrw612" type="c_include">
         <files mask="board.h"/>
+        <files mask="board_comp.h"/>
         <files mask="board_lp.h"/>
         <files mask="app.h"/>
       </source>
-      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="src">
+      <source relative_path="./boards/frdmrw612" project_relative_path="framework/boards/frdmrw612" type="src">
         <files mask="board.c"/>
+        <files mask="board_comp.c"/>
         <files mask="board_lp.c"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_matter_config_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_matter_config_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="./boards/rdrw612bga" project_relative_path="boards/rdrw612bga" type="c_include"/>
-        <include_path relative_path="./Common/devices/rdrw612bga/gcc" project_relative_path="Common/devices/rdrw612bga/gcc" type="c_include"/>
+        <include_path relative_path="./boards/frdmrw612" project_relative_path="boards/frdmrw612" type="c_include"/>
+        <include_path relative_path="./Common/devices/frdmrw612/gcc" project_relative_path="Common/devices/frdmrw612/gcc" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.init.config.RW612" name="wireless framework init config" brief="Middleware wireless framework init config" version="1.0.0" full_name="wireless framework init config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="framework">
+    <component id="middleware.wireless.framework.init.config.frdmrw612.RW612" name="wireless framework init config" brief="Middleware wireless framework init config" version="1.0.0" full_name="wireless framework init config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
-      <source relative_path="../rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="src">
-        <files mask="app_services_init.c"/>
+      <source relative_path="../frdmrw612" project_relative_path="framework/boards/frdmrw612" type="src">
         <files mask="hardware_init.c"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_init_config_rdrw612bga.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_init_config_frdmrw612.cmake" hidden="true"/>
       </source>
       <include_paths>
-        <include_path relative_path="../rdrw612bga" project_relative_path="rdrw612bga" type="c_include"/>
+        <include_path relative_path="../frdmrw612" project_relative_path="frdmrw612" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.rpmsg_config.RW612" name="wireless framework rpmsg_config" brief="Middleware wireless framework_rpmsg_config" version="1.0.0" full_name="wireless framework rpmsg_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.rpmsg_config.RW612" name="wireless framework rpmsg_config" brief="Middleware wireless framework_rpmsg_config" version="1.0.0" full_name="wireless framework rpmsg_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform/rw61x/configs" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_rpmsg_config.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="../rw61x/configs" project_relative_path="Platform/configs" type="c_include"/>
-      </include_paths>
     </component>
-    <component id="middleware.wireless.framework_mbedtls_config.RW612" name="wireless framework Sec_lib_mbedtls" brief="Middleware wireless framework_mbedtls_config" version="1.0.0" full_name="wireless framework mbedtls_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework_mbedtls_config.rw61x.RW612" name="wireless framework Sec_lib_mbedtls" brief="Middleware wireless framework_mbedtls_config" version="1.0.0" full_name="wireless framework mbedtls_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="RW612"/>
       </dependencies>
@@ -927,11 +942,236 @@
         <include_path relative_path="./imx_rt/configs" project_relative_path="platform/imx_rt/configs" type="c_include"/>
       </include_paths>
     </component>
+    <component id="middleware.wireless.framework.cmake.rw61x.rdrw612bga.RW612" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="./" project_relative_path="framework" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./cmake" project_relative_path="framework/cmake" type="script">
+        <files mask="utils.cmake"/>
+      </source>
+      <source relative_path="./cmake/toolchains" project_relative_path="framework/cmake/toolchains" type="script">
+        <files mask="armgcc.cmake"/>
+        <files mask="iar.cmake"/>
+      </source>
+      <source relative_path="./boards" project_relative_path="framework/boards" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./FunctionLib" project_relative_path="framework/FunctionLib" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./FileSystem" project_relative_path="framework/FileSystem" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./FSAbstraction" project_relative_path="FSAbstraction" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./LowPower" project_relative_path="framework/LowPower" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./NVS" project_relative_path="framework/NVS" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./OtaSupport" project_relative_path="framework/OtaSupport" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./PDM" project_relative_path="framework/PDM" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./PDUM" project_relative_path="framework/PDUM" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./platform" project_relative_path="framework/platform" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./platform/rw61x" project_relative_path="framework/platform" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./RNG" project_relative_path="framework/RNG" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./SecLib" project_relative_path="framework/SecLib" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./Sensors" project_relative_path="framework/Sensors" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./Settings" project_relative_path="framework/Settings" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./third_party" project_relative_path="framework" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./third_party/freertos-kernel" project_relative_path="framework" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_CMake_rw61x_rdrw612bga.cmake" hidden="true"/>
+      </source>
+    </component>
+    <component id="middleware.wireless.framework.board_all.rdrw612bga.RW612" name="wireless framework board base" brief="Middleware wireless framework board base" version="1.0.0" full_name="wireless framework board base" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="c_include">
+        <files mask="app.h"/>
+        <files mask="board.h"/>
+        <files mask="clock_config.h"/>
+        <files mask="pin_mux.h"/>
+      </source>
+      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="src">
+        <files mask="app_services_init.c"/>
+        <files mask="board.c"/>
+        <files mask="clock_config.c"/>
+        <files mask="hardware_init.c"/>
+        <files mask="pin_mux.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_base_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="./boards/rdrw612bga" project_relative_path="boards/rdrw612bga" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_lp.rdrw612bga.RW612" name="wireless framework board_lp" brief="Middleware wireless framework_board_lp" version="1.0.0" full_name="wireless framework board_lp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/lowpower">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="../rdrw612bga" project_relative_path="./" type="src">
+        <files mask="board_lp.c"/>
+      </source>
+      <source relative_path="../rdrw612bga" project_relative_path="./" type="c_include">
+        <files mask="board_lp.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_lp_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_dcdc.rdrw612bga.RW612" name="wireless framework board_dcdc" brief="Middleware wireless framework_board_dcdc" version="1.0.0" full_name="wireless framework board_dcdc" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/dcdc">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_dcdc_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_platform.rdrw612bga.RW612" name="wireless framework board_platform" brief="Middleware wireless framework_board_platform" version="1.0.0" full_name="wireless framework board_platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/platform">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_platform_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_comp.rdrw612bga.RW612" name="wireless framework board_comp" brief="Middleware wireless framework_board_comp" version="1.0.0" full_name="wireless framework board_comp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/components">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="../rdrw612bga" project_relative_path="./" type="src">
+        <files mask="board_comp.c"/>
+      </source>
+      <source relative_path="../rdrw612bga" project_relative_path="./" type="c_include">
+        <files mask="board_comp.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_comp_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_extflash.rdrw612bga.RW612" name="wireless framework board_extflash" brief="Middleware wireless framework_board_extflash" version="1.0.0" full_name="wireless framework board_extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/extflash">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_board_extflash_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rdrw612bga" project_relative_path="./" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.matter.config.rdrw612bga.RW612" name="wireless framework matter config" brief="Middleware wireless framework matter config" version="1.0.0" full_name="wireless framework matter config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="./Common/devices/rw61x/gcc" project_relative_path="framework/Common/devices/rdrw612bga/gcc" type="linker">
+        <files mask="RW61x_flash.ld"/>
+        <files mask="RW61x_flash_ota.ld"/>
+      </source>
+      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="c_include">
+        <files mask="board.h"/>
+        <files mask="board_comp.h"/>
+        <files mask="board_lp.h"/>
+        <files mask="app.h"/>
+      </source>
+      <source relative_path="./boards/rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="src">
+        <files mask="board.c"/>
+        <files mask="board_comp.c"/>
+        <files mask="board_lp.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_matter_config_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="./boards/rdrw612bga" project_relative_path="boards/rdrw612bga" type="c_include"/>
+        <include_path relative_path="./Common/devices/rdrw612bga/gcc" project_relative_path="Common/devices/rdrw612bga/gcc" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.init.config.rdrw612bga.RW612" name="wireless framework init config" brief="Middleware wireless framework init config" version="1.0.0" full_name="wireless framework init config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="RW612"/>
+      </dependencies>
+      <source relative_path="../rdrw612bga" project_relative_path="framework/boards/rdrw612bga" type="src">
+        <files mask="app_services_init.c"/>
+        <files mask="hardware_init.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_init_config_rdrw612bga.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../rdrw612bga" project_relative_path="rdrw612bga" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.rng.RW612" name="wireless framework RNG" brief="Middleware wireless framework_rng" version="1.0.0" full_name="wireless framework RNG" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././RNG" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform_rng.rw61x.RW612"/>
+          <device_dependency value="RW612"/>
+        </all>
+      </dependencies>
+      <source relative_path="./" project_relative_path="RNG" type="c_include">
+        <files mask="RNG_Interface.h"/>
+      </source>
+      <source relative_path="./" project_relative_path="RNG" type="src">
+        <files mask="RNG.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_RNG.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="./" project_relative_path="RNG" type="c_include"/>
+      </include_paths>
+    </component>
     <component id="middleware.wireless.framework.ota.RW612" name="wireless framework OtaSupport" brief="Middleware wireless framework_otaSupport" version="1.0.0" full_name="wireless framework OtaSupport" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././OtaSupport" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_ota.RW612"/>
-          <component_dependency value="middleware.wireless.framework.platform_extflash.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_ota.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_extflash.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -940,7 +1180,6 @@
       </source>
       <source relative_path="../Source" project_relative_path="OtaSupport/source" type="src">
         <files mask="OtaSupport.c"/>
-        <files mask="OtaInternalFlash.c"/>
         <files mask="OtaExternalFlash.c"/>
       </source>
       <source relative_path="../Source" project_relative_path="OtaSupport/source" type="c_include">
@@ -998,7 +1237,7 @@
     <component id="middleware.wireless.framework.Sensors.RW612" name="wireless framework Sensors" brief="Middleware wireless sensors" version="1.0.0" full_name="wireless framework Sensors" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././Sensors" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_sensors.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_sensors.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1033,7 +1272,7 @@
       <dependencies>
         <all>
           <component_dependency value="middleware.freertos-kernel.RW612"/>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_sensors.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1056,8 +1295,8 @@
       </defines>
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower.RW612"/>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1080,8 +1319,8 @@
       </defines>
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower.RW612"/>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1184,15 +1423,63 @@
         <include_path relative_path="./" project_relative_path="KeyStorage" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform.RW612" name="wireless framework Platform" brief="Middleware wireless framework_platform" version="1.0.0" full_name="wireless framework Platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.NVS.RW612" name="wireless framework NVS" brief="Middleware wireless framework_NVS" version="6.2.2" full_name="wireless framework NVS" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
       <dependencies>
         <all>
+          <component_dependency value="middleware.wireless.framework.platform_ota.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_extflash.rw61x.RW612"/>
+          <device_dependency value="RW612"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include">
+        <files mask="nvs.h"/>
+        <files mask="fwk_nvs_stats.h"/>
+      </source>
+      <source relative_path="../framework/NVS/Interface/port" project_relative_path="NVS/interface" type="c_include">
+        <files mask="nvs_port.h"/>
+        <files mask="nvs_errno.h"/>
+      </source>
+      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="src">
+        <files mask="nvs.c"/>
+        <files mask="fwk_nvs_flash.c"/>
+        <files mask="fwk_nvs_stats.c"/>
+        <files mask="fwk_nvs_ExternalFlash.c"/>
+        <files mask="crc8.c"/>
+      </source>
+      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include">
+        <files mask="nvs_priv.h"/>
+        <files mask="crc.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_NVS.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include"/>
+        <include_path relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform.rw61x.RW612" name="wireless framework Platform" brief="Middleware wireless framework_platform" version="1.0.0" full_name="wireless framework Platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+      <dependencies>
+        <all>
+          <any_of>
+            <component_dependency value="component.mrt_adapter.RW612"/>
+            <component_dependency value="component.ctimer_adapter.RW612"/>
+          </any_of>
+          <any_of>
+            <component_dependency value="component.mflash.rdrw610.RW612"/>
+            <component_dependency value="component.mflash.frdmrw612.RW612"/>
+          </any_of>
           <component_dependency value="middleware.wireless.framework.fwk_debug.RW612"/>
+          <component_dependency value="component.timer_manager.RW612"/>
+          <component_dependency value="component.ostimer_time_stamp_adapter.RW612"/>
+          <component_dependency value="middleware.mbedtls.port.els_pkc.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
       <source relative_path="../rw61x/configs" project_relative_path="Platform/configs" type="c_include">
         <files mask="fwk_config.h"/>
+        <files mask="fwk_lfs_config.h"/>
+        <files mask="rw61x-mbedtls-config.h"/>
       </source>
       <source relative_path="../rw61x" project_relative_path="Platform" type="c_include">
         <files mask="fwk_platform_definitions.h"/>
@@ -1210,10 +1497,10 @@
         <include_path relative_path="../rw61x/configs" project_relative_path="Platform/configs" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_flash.RW612" name="wireless framework Platform flash" brief="Middleware wireless framework_platform_flash" version="1.0.0" full_name="wireless framework Platform flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_flash.rw61x.RW612" name="wireless framework Platform flash" brief="Middleware wireless framework_platform_flash" version="1.0.0" full_name="wireless framework Platform flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1238,10 +1525,10 @@
         <include_path relative_path="../Common" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_extflash.RW612" name="wireless framework Platform Extflash" brief="Middleware wireless framework_platform_extflash" version="1.0.0" full_name="wireless framework Platform Extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_extflash.rw61x.RW612" name="wireless framework Platform Extflash" brief="Middleware wireless framework_platform_extflash" version="1.0.0" full_name="wireless framework Platform Extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1262,10 +1549,10 @@
         <include_path relative_path="../Common" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_sensors.RW612" name="wireless framework Platform sensors" brief="Middleware wireless framework_platform_sensors" version="1.0.0" full_name="wireless framework Platform sensors" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_sensors.rw61x.RW612" name="wireless framework Platform sensors" brief="Middleware wireless framework_platform_sensors" version="1.0.0" full_name="wireless framework Platform sensors" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1282,10 +1569,10 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ota.RW612" name="wireless framework Platform OTA" brief="Middleware wireless framework_platform_ota" version="1.0.0" full_name="wireless framework Platform OTA" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ota.rw61x.RW612" name="wireless framework Platform OTA" brief="Middleware wireless framework_platform_ota" version="1.0.0" full_name="wireless framework Platform OTA" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1305,11 +1592,11 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ics.RW612" name="wireless framework Platform ICS (InterCore Service)" brief="Middleware wireless framework_platform_ics" version="1.0.0" full_name="wireless framework Platform ICS (InterCore Service)" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ics.rw61x.RW612" name="wireless framework Platform ICS (InterCore Service)" brief="Middleware wireless framework_platform_ics" version="1.0.0" full_name="wireless framework Platform ICS (InterCore Service)" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
-          <component_dependency value="middleware.wireless.framework.platform_sensors.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_sensors.rw61x.RW612"/>
           <component_dependency value="middleware.wireless.framework.SFC.RW612"/>
           <device_dependency value="RW612"/>
         </all>
@@ -1324,7 +1611,7 @@
     <component id="middleware.wireless.framework.coexistence.RW612" name="wireless framework MWS" brief="Middleware wireless framework_mws" version="1.0.0" full_name="wireless framework MWS" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././MWSCoexistence" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_mws.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_mws.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1344,7 +1631,7 @@
     <component id="middleware.wireless.framework.coexistence.intercore.RW612" name="wireless framework MWS intercore" brief="Middleware wireless framework_mws intercore" version="1.0.0" full_name="wireless framework MWS intercore" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././MWSCoexistence" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_mws.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_mws.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1361,10 +1648,10 @@
         <include_path relative_path="./" project_relative_path="MWSCoexistence/Intercore" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_mws.RW612" name="wireless framework platform_mws" brief="Middleware wireless framework_platform_mws" version="1.0.0" full_name="wireless framework platform_mws" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_mws.rw61x.RW612" name="wireless framework platform_mws" brief="Middleware wireless framework_platform_mws" version="1.0.0" full_name="wireless framework platform_mws" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1375,11 +1662,11 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ble.RW612" name="wireless framework platform_ble" brief="Middleware wireless framework_platform_ble" version="1.0.0" full_name="wireless framework platform_ble" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ble.rw61x.RW612" name="wireless framework platform_ble" brief="Middleware wireless framework_platform_ble" version="1.0.0" full_name="wireless framework platform_ble" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
-          <component_dependency value="middleware.wireless.framework.platform_coex.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform_coex.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1396,10 +1683,10 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_genfsk.RW612" name="wireless framework platform_genfsk" brief="Middleware wireless framework_platform_genfsk" version="1.0.0" full_name="wireless framework platform_genfsk" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_genfsk.rw61x.RW612" name="wireless framework platform_genfsk" brief="Middleware wireless framework_platform_genfsk" version="1.0.0" full_name="wireless framework platform_genfsk" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1410,10 +1697,10 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ot.RW612" name="wireless framework platform_ot" brief="Middleware wireless framework_platform_ot" version="1.0.0" full_name="wireless framework platform_ot" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ot.rw61x.RW612" name="wireless framework platform_ot" brief="Middleware wireless framework_platform_ot" version="1.0.0" full_name="wireless framework platform_ot" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1427,10 +1714,10 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_lowpower.RW612" name="wireless framework platform_lowpower" brief="Middleware wireless framework_platform_lowpower" version="1.0.0" full_name="wireless framework platform_lowpower" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_lowpower.rw61x.RW612" name="wireless framework platform_lowpower" brief="Middleware wireless framework_platform_lowpower" version="1.0.0" full_name="wireless framework platform_lowpower" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1447,10 +1734,10 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_lowpower_timer.RW612" name="wireless framework platform_lowpower_timer" brief="Middleware wireless framework_platform_lowpower_timer" version="1.0.0" full_name="wireless framework platform_lowpower_timer" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_lowpower_timer.rw61x.RW612" name="wireless framework platform_lowpower_timer" brief="Middleware wireless framework_platform_lowpower_timer" version="1.0.0" full_name="wireless framework platform_lowpower_timer" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1464,10 +1751,10 @@
         <include_path relative_path="../rw61x" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_reset.RW612" name="wireless framework Platform reset" brief="Middleware wireless framework_platform_reset" version="1.0.0" full_name="wireless framework Platform reset" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_reset.rw61x.RW612" name="wireless framework Platform reset" brief="Middleware wireless framework_platform_reset" version="1.0.0" full_name="wireless framework Platform reset" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1481,8 +1768,8 @@
     <component id="middleware.wireless.framework.sec_lib_mbedtls.RW612" name="wireless framework Sec_lib_mbedtls" brief="Middleware wireless framework_sec_lib_mbedtls" version="1.0.0" full_name="wireless framework Sec_lib_mbedtls" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././SecLib" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
-          <component_dependency value="middleware.wireless.framework_mbedtls_config.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
+          <component_dependency value="middleware.wireless.framework_mbedtls_config.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1494,12 +1781,13 @@
       </source>
       <source relative_path="./" project_relative_path="SecLib" type="src">
         <files mask="SecLib_mbedTLS.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source toolchain="armgcc mcuxpresso" relative_path="./" type="lib">
-        <files mask="lib_crypto_m33.a"/>
+        <files mask="lib_crypto_m33_nodsp.a"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_sec_lib_mbedtls_m33.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_sec_lib_mbedtls_m33_nodsp.cmake" hidden="true"/>
       </source>
       <include_paths>
         <include_path relative_path="./" project_relative_path="SecLib" type="c_include"/>
@@ -1508,7 +1796,7 @@
     <component id="middleware.wireless.framework.sec_lib_sss.RW612" name="wireless framework Sec_lib_sss" brief="Middleware wireless framework_sec_lib_sss" version="1.0.0" full_name="wireless framework Sec_lib_sss" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././SecLib" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.RW612"/>
+          <component_dependency value="middleware.wireless.framework.platform.rw61x.RW612"/>
           <device_dependency value="RW612"/>
         </all>
       </dependencies>
@@ -1519,12 +1807,13 @@
       </source>
       <source relative_path="./" project_relative_path="SecLib" type="src">
         <files mask="SecLib_sss.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source toolchain="armgcc mcuxpresso" relative_path="./" type="lib">
-        <files mask="lib_crypto_m33.a"/>
+        <files mask="lib_crypto_m33_nodsp.a"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_sec_lib_sss_m33.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_sec_lib_sss_m33_nodsp.cmake" hidden="true"/>
       </source>
       <include_paths>
         <include_path relative_path="./" project_relative_path="SecLib" type="c_include"/>

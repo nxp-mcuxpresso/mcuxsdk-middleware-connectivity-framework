@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 NXP
+ * Copyright 2021-2024 NXP
  * All rights reserved.
  *
  *
@@ -42,6 +42,17 @@ static bool                      FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type);
 extern PLATFORM_FroDebugCallback_t pfPlatformDebugCallback;
 PLATFORM_FroDebugCallback_t        pfPlatformDebugCallback = (void *)0;
 
+static void PLATFORM_RxNbuInitDoneService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuVersionIndicationService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuApiIndicationService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuMemFullIndicationService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxHostSetLowPowerConstraintService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxHostReleaseLowPowerConstraintService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxFroNotificationService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len);
+
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
@@ -71,6 +82,26 @@ static nbu_security_event_callback_t nbu_security_event_callback = (nbu_security
 static const FwkSrv_LowPowerConstraintCallbacks_t *pLowPowerConstraintCallbacks =
     (const FwkSrv_LowPowerConstraintCallbacks_t *)NULL;
 
+__attribute__((weak)) void RNG_TriggerReseed(void);
+__attribute__((weak)) void RNG_TriggerReseed(void)
+{
+    ; /* Stub of the RNG_TriggerReseed() function */
+}
+
+/* Array of pointer of function used in PLATFORM_FwkSrv_RxCallBack() */
+static void (*PLATFORM_RxCallbackService[gFwkSrvNbu2HostLast_c - gFwkSrvNbu2HostFirst_c - 1U])(uint8_t *data,
+                                                                                               uint32_t len) = {
+    PLATFORM_RxNbuInitDoneService,
+    PLATFORM_RxNbuVersionIndicationService,
+    PLATFORM_RxNbuApiIndicationService,
+    PLATFORM_RxNbuMemFullIndicationService,
+    PLATFORM_RxHostSetLowPowerConstraintService,
+    PLATFORM_RxHostReleaseLowPowerConstraintService,
+    PLATFORM_RxFroNotificationService,
+    PLATFORM_RxFwkSrvNbuIssueIndicationService,
+    PLATFORM_RxNbuSecurityEventIndicationService,
+    PLATFORM_RxNbuRequestRngSeedService,
+};
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -387,6 +418,7 @@ void PLATFORM_RegisterSecurityEventCb(nbu_security_event_callback_t cb)
 {
     nbu_security_event_callback = cb;
 }
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
@@ -399,102 +431,120 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
 
     if (FwkSrv_MsgTypeInExpectedSet(msg_type))
     {
-        switch (msg_type)
-        {
-            case (uint8_t)gFwkSrvNbuVersionIndication_c:
-                if (g_nbu_info_p != NULL)
-                {
-                    g_nbu_info_resp_received = true;
-                    FLib_MemCpy(g_nbu_info_p, &data[1], sizeof(NbuInfo_t));
-
-#if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
-                    PRINTF("NBU v%d.%d.%d\r\n", g_nbu_info_p->versionNumber[0], g_nbu_info_p->versionNumber[1],
-                           g_nbu_info_p->versionNumber[2]);
-                    PRINTF("NBU SHA %02x%02x%02x%02x\r\n", g_nbu_info_p->repo_digest[0], g_nbu_info_p->repo_digest[1],
-                           g_nbu_info_p->repo_digest[2], g_nbu_info_p->repo_digest[3]);
-#endif
-                    res = kStatus_HAL_RL_RELEASE;
-                    /* no longer required to hold since copy is done in allocated pointer */
-                }
-                break;
-            case (uint8_t)gFwkSrvNbuInitDone_c:
-                g_nbu_init_done = true;
-#if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
-                PRINTF("NBU Init Done\r\n");
-#endif
-                break;
-            case (uint8_t)gFwkSrvNbuMemFullIndication_c:
-                if (nbu_mem_error_callback != NULL)
-                {
-                    NbuDbgMemInfo_t memInfo;
-                    FLib_MemCpy(&memInfo, &data[1], sizeof(NbuDbgMemInfo_t));
-                    (*nbu_mem_error_callback)((void *)&memInfo);
-                }
-                break;
-
-            case (uint8_t)gFwkSrvNbuApiIndication_c:
-            {
-                /* NBU API response received, most of the case 6 bytes */
-                assert(len >= 6U && len <= (uint32_t)(2U + NBU_API_MAX_RETURN_PARAM_LENGTH));
-                m_nbu_api_ind_received = true;
-                m_nbu_api_rpmsg_status = (data[1] == 0U) ? false : true;
-
-                m_nbu_api_return_param_len = len - 2U;
-                FLib_MemCpy((void *)&m_nbu_api_return_param[0U], &data[2U], m_nbu_api_return_param_len);
-                res = kStatus_HAL_RL_RELEASE;
-            }
-            break;
-
-            case (uint8_t)gFwkSrvHostSetLowPowerConstraint_c:
-                if (pLowPowerConstraintCallbacks != NULL)
-                {
-                    if (pLowPowerConstraintCallbacks->fwkSrvSetLowPowerConstraint != NULL)
-                    {
-                        (void)pLowPowerConstraintCallbacks->fwkSrvSetLowPowerConstraint((int32_t)(data[1]));
-                    }
-                }
-                break;
-
-            case (uint8_t)gFwkSrvHostReleaseLowPowerConstraint_c:
-                if (pLowPowerConstraintCallbacks != NULL)
-                {
-                    if (pLowPowerConstraintCallbacks->fwkSrvReleaseLowPowerConstraint != NULL)
-                    {
-                        (void)pLowPowerConstraintCallbacks->fwkSrvReleaseLowPowerConstraint((int32_t)(data[1]));
-                    }
-                }
-                break;
-            case (uint8_t)gFwkSrvFroNotification_c:
-            {
-                uint16_t freq     = (((uint16_t)(data[2]) << 8U) & 0xFF00U) + ((uint16_t)(data[1]) & 0xFFU);
-                uint16_t ppm_mean = (((uint16_t)(data[4]) << 8U) & 0xFF00U) + ((uint16_t)(data[3]) & 0xFFU);
-                uint16_t ppm      = (((uint16_t)(data[6]) << 8U) & 0xFF00U) + ((uint16_t)(data[5]) & 0xFFU);
-                uint16_t fro_trim = (((uint16_t)(data[8]) << 8U) & 0xFF00U) + ((uint16_t)(data[7]) & 0xFFU);
-                pfPlatformDebugCallback(freq, (int16_t)ppm_mean, (int16_t)ppm, fro_trim);
-            }
-            break;
-
-            case (uint8_t)gFwkSrvNbuIssueIndication_c:
-                if (nbu_issue_callback != NULL)
-                {
-                    (*nbu_issue_callback)();
-                }
-                break;
-
-            case (uint8_t)gFwkSrvNbuSecurityEventIndication_c:
-                if (nbu_security_event_callback != NULL)
-                {
-                    uint32_t securityEventBitmask;
-                    FLib_MemCpy(&securityEventBitmask, &data[1], sizeof(uint32_t));
-                    (*nbu_security_event_callback)(securityEventBitmask);
-                }
-                break;
-
-            default:; /* For MISRA compliance */
-                break;
-        }
+        PLATFORM_RxCallbackService[msg_type - 1U](data, len);
     }
     return res;
+}
+
+static void PLATFORM_RxNbuVersionIndicationService(uint8_t *data, uint32_t len)
+{
+    if (g_nbu_info_p != NULL)
+    {
+        g_nbu_info_resp_received = true;
+        FLib_MemCpy(g_nbu_info_p, &data[1], sizeof(NbuInfo_t));
+
+#if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
+        PRINTF("NBU v%d.%d.%d\r\n", g_nbu_info_p->versionNumber[0], g_nbu_info_p->versionNumber[1],
+               g_nbu_info_p->versionNumber[2]);
+        PRINTF("NBU SHA %02x%02x%02x%02x\r\n", g_nbu_info_p->repo_digest[0], g_nbu_info_p->repo_digest[1],
+               g_nbu_info_p->repo_digest[2], g_nbu_info_p->repo_digest[3]);
+#endif
+        /* no longer required to hold since copy is done in allocated pointer */
+    }
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxNbuInitDoneService(uint8_t *data, uint32_t len)
+{
+    g_nbu_init_done = true;
+#if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
+    PRINTF("NBU Init Done\r\n");
+#endif
+    NOT_USED(data);
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxNbuMemFullIndicationService(uint8_t *data, uint32_t len)
+{
+    if (nbu_mem_error_callback != NULL)
+    {
+        NbuDbgMemInfo_t memInfo;
+        FLib_MemCpy(&memInfo, &data[1], sizeof(NbuDbgMemInfo_t));
+        (*nbu_mem_error_callback)((void *)&memInfo);
+    }
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxNbuApiIndicationService(uint8_t *data, uint32_t len)
+{
+    /* NBU API response received, most of the case 6 bytes */
+    assert(len >= 6U && len <= (uint32_t)(2U + NBU_API_MAX_RETURN_PARAM_LENGTH));
+    m_nbu_api_ind_received = true;
+    m_nbu_api_rpmsg_status = (data[1] == 0U) ? false : true;
+
+    m_nbu_api_return_param_len = len - 2U;
+    FLib_MemCpy((void *)&m_nbu_api_return_param[0U], &data[2U], m_nbu_api_return_param_len);
+}
+
+static void PLATFORM_RxHostSetLowPowerConstraintService(uint8_t *data, uint32_t len)
+{
+    if (pLowPowerConstraintCallbacks != NULL)
+    {
+        if (pLowPowerConstraintCallbacks->fwkSrvSetLowPowerConstraint != NULL)
+        {
+            (void)pLowPowerConstraintCallbacks->fwkSrvSetLowPowerConstraint((int32_t)(data[1]));
+        }
+    }
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxHostReleaseLowPowerConstraintService(uint8_t *data, uint32_t len)
+{
+    if (pLowPowerConstraintCallbacks != NULL)
+    {
+        if (pLowPowerConstraintCallbacks->fwkSrvReleaseLowPowerConstraint != NULL)
+        {
+            (void)pLowPowerConstraintCallbacks->fwkSrvReleaseLowPowerConstraint((int32_t)(data[1]));
+        }
+    }
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxFroNotificationService(uint8_t *data, uint32_t len)
+{
+    uint16_t freq     = (((uint16_t)(data[2]) << 8U) & 0xFF00U) + ((uint16_t)(data[1]) & 0xFFU);
+    uint16_t ppm_mean = (((uint16_t)(data[4]) << 8U) & 0xFF00U) + ((uint16_t)(data[3]) & 0xFFU);
+    uint16_t ppm      = (((uint16_t)(data[6]) << 8U) & 0xFF00U) + ((uint16_t)(data[5]) & 0xFFU);
+    uint16_t fro_trim = (((uint16_t)(data[8]) << 8U) & 0xFF00U) + ((uint16_t)(data[7]) & 0xFFU);
+    pfPlatformDebugCallback(freq, (int16_t)ppm_mean, (int16_t)ppm, fro_trim);
+    NOT_USED(len);
+}
+static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t len)
+{
+    if (nbu_issue_callback != NULL)
+    {
+        (*nbu_issue_callback)();
+    }
+    NOT_USED(data);
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t len)
+{
+    if (nbu_security_event_callback != NULL)
+    {
+        uint32_t securityEventBitmask;
+        FLib_MemCpy(&securityEventBitmask, &data[1], sizeof(uint32_t));
+        (*nbu_security_event_callback)(securityEventBitmask);
+    }
+    NOT_USED(len);
+}
+
+static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len)
+{
+    RNG_TriggerReseed();
+    NOT_USED(data);
+    NOT_USED(len);
 }
 
 static bool FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type)

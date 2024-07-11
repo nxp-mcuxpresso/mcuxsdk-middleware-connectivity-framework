@@ -28,7 +28,7 @@
 #define LOWPOWER_DEFAULT_ENABLE_DURATION_MS (10000U)
 
 #define CLI_PRINTF (void)PRINTF
-
+#define CLI_SCANF  (void)SCANF
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -91,8 +91,9 @@ static TimerHandle_t      lpTimer = NULL;
 
 void PWRCli_Menu(void)
 {
-    uint32_t choice;
-    uint32_t timeMs;
+    uint32_t           choice;
+    uint32_t           timeMs;
+    static const char *scan_choice_str = "%u";
 
     static bool once = false;
     if (!once)
@@ -108,7 +109,7 @@ void PWRCli_Menu(void)
     {
         CLI_PRINTF("%s\r\n", pwrCliMenu);
         CLI_PRINTF("Enter your choice : ");
-        SCANF("%u", &choice);
+        CLI_SCANF((char *)scan_choice_str, &choice);
         CLI_PRINTF("\r\n");
 
         switch (choice)
@@ -124,11 +125,11 @@ void PWRCli_Menu(void)
                 PWR_LowpowerMode_t nextMode;
                 CLI_PRINTF("%s \r\n", pwrCliModeMenu);
                 CLI_PRINTF("Enter your choice : ");
-                SCANF("%u", &choice);
+                CLI_SCANF((char *)scan_choice_str, &choice);
                 CLI_PRINTF("\r\n");
                 nextMode = (PWR_LowpowerMode_t)choice;
                 CLI_PRINTF("How much time do you want to apply this mode ? (in msec) : ");
-                SCANF("%u", &choice);
+                CLI_SCANF((char *)scan_choice_str, &choice);
                 CLI_PRINTF("\r\n");
                 timeMs = choice;
                 PWRCli_ConfigureNextLowPowerMode(nextMode, timeMs);

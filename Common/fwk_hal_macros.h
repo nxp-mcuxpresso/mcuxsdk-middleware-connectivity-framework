@@ -32,8 +32,8 @@
  *****************************************************************************************/
 #if defined(__GNUC__)
 
-#define HAL_CLZ(x) __builtin_clz(x)
-#define HAL_CTZ(x) __builtin_ctz(x)
+#define HAL_CLZ(x) ((uint8_t)(__builtin_clz(x) & 0x1fUL))
+#define HAL_CTZ(x) ((uint8_t)(__builtin_ctz(x) & 0x1fUL))
 static inline uint32_t __hal_revb(uint32_t x)
 {
     unsigned int res;
@@ -44,14 +44,14 @@ static inline uint32_t __hal_revb(uint32_t x)
 
 #elif defined(__IAR_SYSTEMS_ICC__)
 
-#define HAL_CLZ(x)  __iar_builtin_CLZ(x)
-#define HAL_RBIT(x) __iar_builtin_RBIT(x)
+#define HAL_CLZ(x)  ((uint8_t)(__iar_builtin_CLZ(x) & 0x1fUL))
+#define HAL_RBIT(x) ((uint32_t)(__iar_builtin_RBIT(x) & 0x1fUL))
 
-static inline uint32_t __hal_ctz(uint32_t x)
+static inline uint8_t __hal_ctz(uint32_t x)
 {
-    uint32_t res;
-    x   = (uint32_t)HAL_RBIT((unsigned int)x);
-    res = (uint32_t)HAL_CLZ((unsigned int)x);
+    uint8_t res;
+    x   = HAL_RBIT((unsigned int)x);
+    res = HAL_CLZ((unsigned int)x);
     return res;
 }
 
@@ -71,9 +71,9 @@ static inline uint32_t __hal_ctz(uint32_t x)
  *
  ****************************************************************************************
  */
-#define HAL_BSR(x) (31 - HAL_CLZ(x))
+#define HAL_BSR(x) ((uint8_t)(31u - HAL_CLZ(x)))
 #define HAL_BSF(x) HAL_CTZ(x)
-#define HAL_FFS(x) (HAL_CTZ(x) + 1)
+#define HAL_FFS(x) (HAL_CTZ(x) + 1U)
 
 /*!
  ****************************************************************************************
@@ -83,13 +83,13 @@ static inline uint32_t __hal_ctz(uint32_t x)
  ****************************************************************************************
  */
 #if defined(__GNUC__)
-#define HAL_REV16(x) __builtin_bswap16(x)
-#define HAL_REV32(x) __builtin_bswap32(x)
+#define HAL_REV16(x) ((uint32_t)__builtin_bswap16(x))
+#define HAL_REV32(x) ((uint32_t)__builtin_bswap32(x))
 
 #elif defined(__IAR_SYSTEMS_ICC__) || defined(__CC_ARM)
 
-#define HAL_REV16(x) __REV16(x)
-#define HAL_REV32(x) __REV(x)
+#define HAL_REV16(x) ((uint32_t)__REV16(x))
+#define HAL_REV32(x) ((uint32_t)__REV(x))
 
 #endif
 
@@ -110,10 +110,10 @@ static inline uint32_t __hal_ctz(uint32_t x)
  ****************************************************************************************
  */
 #ifndef KB
-#define KB(x) (((uint32_t)x) << 10u)
+#define KB(x) (((uint32_t)x) << 10U)
 #endif
 #ifndef MB
-#define MB(x) (((uint32_t)x) << 20u)
+#define MB(x) (((uint32_t)x) << 20U)
 #endif
 
 /*!
@@ -126,15 +126,15 @@ static inline uint32_t __hal_ctz(uint32_t x)
 #define KHz(x) (((uint32_t)x) * 1000U)
 #define MHz(x) (((uint32_t)x) * 1000000U)
 
-#define SET_BIT(bitmap, i) bitmap[((i) >> 5)] |= (1U << ((i)&0x1f))
-#define CLR_BIT(bitmap, i) bitmap[((i) >> 5)] &= ~(1U << ((i)&0x1f))
-#define GET_BIT(bitmap, i) (((bitmap[(i) >> 5] & (1U << ((i)&0x1f))) >> ((i)&0x1f)) != 0U)
+#define SET_BIT(bitmap, i) bitmap[((i) >> 5U)] |= (1U << ((i)&0x1f))
+#define CLR_BIT(bitmap, i) bitmap[((i) >> 5U)] &= ~(1U << ((i)&0x1f))
+#define GET_BIT(bitmap, i) (((bitmap[(i) >> 5U] & (1U << ((i)&0x1f))) >> ((i)&0x1f)) != 0U)
 
 /* LOG_1, LOG_2, LOG_4, LOG_8: used by LOG macro */
-#define LOG_1(n) (((n) >= 2) ? 1 : 0)
-#define LOG_2(n) (((n) >= (1 << 2)) ? (2 + LOG_1((n) >> 2)) : LOG_1(n))
-#define LOG_4(n) (((n) >= (1 << 4)) ? (4 + LOG_2((n) >> 4)) : LOG_2(n))
-#define LOG_8(n) (((n) >= (1 << 8)) ? (8 + LOG_4((n) >> 8)) : LOG_4(n))
+#define LOG_1(n) (((n) >= (1u << 1U)) ? 1U : 0U)
+#define LOG_2(n) (((n) >= (1u << 2U)) ? (2U + LOG_1((n) >> 2U)) : LOG_1(n))
+#define LOG_4(n) (((n) >= (1u << 4U)) ? (4U + LOG_2((n) >> 4U)) : LOG_2(n))
+#define LOG_8(n) (((n) >= (1u << 8U)) ? (8U + LOG_4((n) >> 8U)) : LOG_4(n))
 /*
  * Macro to compute log2 (logarithm) of a constant at compile time.
  * Does not make sense for runtime log2 calculation.
@@ -142,7 +142,7 @@ static inline uint32_t __hal_ctz(uint32_t x)
  * For in
  *
  */
-#define LOG(n) (((n) >= (1 << 16)) ? (16 + LOG_8((n) >> 16)) : LOG_8(n))
+#define LOG(n) (((n) >= (1U << 16U)) ? (16U + LOG_8((n) >> 16U)) : LOG_8(n))
 
 #if !defined(__IAR_SYSTEMS_ICC__)
 #undef BUILD_ASSERT /* clear out common version */

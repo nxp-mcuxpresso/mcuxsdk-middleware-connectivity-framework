@@ -20,6 +20,9 @@
 #include <stddef.h>
 #include "port/nvs_errno.h"
 #include "EmbeddedTypes.h"
+#if (CONFIG_NVS_STATS == 1)
+#include "fwk_nvs_stats.h"
+#endif /* CONFIG_NVS_STATS */
 
 #include "nvs.h"
 #include "crc.h"
@@ -334,6 +337,9 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 
+#if (CONFIG_NVS_STATS == 1)
+	nvs_stats_incr_erase_count(addr);
+#endif /* CONFIG_NVS_STATS */
 
 	if (rc) {
 		return rc;
@@ -944,6 +950,12 @@ end:
 		rc = nvs_add_gc_done_ate(fs);
 	}
 	k_mutex_unlock(&fs->nvs_lock);
+
+#if (CONFIG_NVS_STATS == 1)
+	/* Initialize NVS statistics */
+	nvs_stats_init(fs->sector_count);
+#endif /* CONFIG_NVS_STATS */
+
 	return rc;
 }
 
@@ -1043,10 +1055,11 @@ int nvs_unmount(struct nvs_fs *fs)
 ssize_t nvs_file_stat(struct nvs_fs *fs, uint16_t id)
 {
 	int rc;
-	uint32_t wlk_addr;
-	struct nvs_ate wlk_ate;
 
 	do {
+		bool found = false;
+		uint32_t wlk_addr;
+		struct nvs_ate wlk_ate;
 
 		if (!fs->ready) {
 			LOG_ERR("NVS not initialized");
@@ -1064,24 +1077,24 @@ ssize_t nvs_file_stat(struct nvs_fs *fs, uint16_t id)
 #else
 		wlk_addr = fs->ate_wra;
 #endif
-
-		rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
-		if (rc != 0)
-		{
-			break;
+		while (!found) {
+			rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
+			if (rc) {
+				break;
+			}
+			if ((wlk_ate.id == id) && (nvs_ate_valid(fs, &wlk_ate))) {
+				found = true;
+			}
+			if (wlk_addr == fs->ate_wra) {
+				break;
+			}
 		}
 
-		rc = nvs_flash_ate_rd(fs, wlk_addr,  &wlk_ate);
-		if (rc)
-		{
-			break;
-		}
 		if (((wlk_addr == fs->ate_wra) && (wlk_ate.id != id)) ||
-			(wlk_ate.len == 0U)) {
+	    	(wlk_ate.len == 0U) || (!found)) {
 			rc = -ENOENT;
 			break;
 		}
-
 		rc = wlk_ate.len;
 	} while (false);
 

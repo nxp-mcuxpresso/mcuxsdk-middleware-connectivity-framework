@@ -646,11 +646,7 @@ extern NVM_Status_t NvMoveToRam(void **ppData);
  *
  * \return 0 or flash table version
  ********************************************************************************* */
-#if gNvStorageIncluded_d
-#if gNvUseExtendedFeatureSet_d
 extern uint16_t GetFlashTableVersion(void);
-#endif
-#endif
 
 /*! *********************************************************************************
  * \brief Erase from NVM an unmirrored dataset
@@ -967,6 +963,7 @@ extern void NvCompletePendingOperations(void);
  *          the application should copy the members returned by this function in their
  *          respective RAM entry and allocate pData. The extended functionality must
  *          be enabled if this function is required.
+ *          Does nothing if gNvUseExtendedFeatureSet_d is unset.
  *
  * \param[in] index the ram entry index
  * \param[out] entry the flash entry at the specified index
@@ -975,11 +972,7 @@ extern void NvCompletePendingOperations(void);
            gNVM_AddressOutOfRange_c: if the index is too large\n
            gNVM_Error_c: not supported, NVM table is stored in FLASH
  ********************************************************************************* */
-#if gNvStorageIncluded_d
-#if gNvUseExtendedFeatureSet_d
 extern NVM_Status_t RecoverNvEntry(uint16_t index, NVM_DataEntry_t *entry);
-#endif
-#endif
 
 /*! *********************************************************************************
  *  \brief Tell if there is a pending NVM operation in the queue

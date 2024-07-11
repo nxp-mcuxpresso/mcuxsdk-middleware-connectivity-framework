@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2023 NXP                          */
+/*                           Copyright 2021-2024 NXP                          */
 /*                            All rights reserved.                            */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
@@ -48,12 +48,36 @@
  */
 #define PLATFORM_DEEP_SLEEP_CONSTRAINTS 0
 
-/* TODO: Remove the RAM retention constraints to use selective RAM retention mechanism */
+/*!
+ * RAM retention select for PowerDown (PM3):
+ * 0 -> Full RAM retention(default)
+ * 1 -> 512k RAM retention
+ * >1 -> No RAM retention
+ *
+ */
+#ifndef APP_PM3_RAM_RET_SEL
+#define APP_PM3_RAM_RET_SEL 0
+#endif
+
+#if defined(APP_PM3_RAM_RET_SEL) && (APP_PM3_RAM_RET_SEL == 0)
+/* Full RAM retention for PowerDown (PM3)*/
 #define PLATFORM_POWER_DOWN_CONSTRAINTS                                                                        \
     7, PM_RESC_SRAM_0K_384K_RETENTION, PM_RESC_SRAM_384K_448K_RETENTION, PM_RESC_SRAM_448K_512K_RETENTION,     \
         PM_RESC_SRAM_512K_640K_RETENTION, PM_RESC_SRAM_640K_896K_RETENTION, PM_RESC_SRAM_896K_1216K_RETENTION, \
         PM_RESC_CAU_SOC_SLP_REF_CLK_ON
+#elif defined(APP_PM3_RAM_RET_SEL) && (APP_PM3_RAM_RET_SEL == 1)
+/* 512k RAM retention for PowerDown (PM3) */
+#define PLATFORM_POWER_DOWN_CONSTRAINTS                                                                    \
+    4, PM_RESC_SRAM_0K_384K_RETENTION, PM_RESC_SRAM_384K_448K_RETENTION, PM_RESC_SRAM_448K_512K_RETENTION, \
+        PM_RESC_CAU_SOC_SLP_REF_CLK_ON
+#else
+/* No RAM retention for PowerDown (PM3) */
+#define PLATFORM_POWER_DOWN_CONSTRAINTS 1, PM_RESC_CAU_SOC_SLP_REF_CLK_ON
+#endif
 
+/* No specific constraints necessary for DeepPowerDown (PM4)
+ * All RAM are shutdown in this mode
+ */
 #define PLATFORM_DEEP_POWER_DOWN_CONSTRAINTS 0
 
 /* -------------------------------------------------------------------------- */

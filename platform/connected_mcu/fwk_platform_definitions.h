@@ -65,8 +65,7 @@ extern uint32_t Image$$PROD_DATA_REGION$$Base;
 extern uint32_t PROD_DATA_BASE_ADDR[];
 #endif /* defined(__CC_ARM) */
 
-#define LEGACY_PROD_DATA_ADDR ((uint32_t)PROD_DATA_BASE_ADDR)
-//#define LEGACY_PROD_DATA_LEN  91u
+#define MAIN_FLASH_PROD_DATA_ADDR ((uint32_t)PROD_DATA_BASE_ADDR)
 
 /* Connected MCU uses NOR Flash driver not mflash. NV storage is by default placed in internal flash */
 /* If one means to place NVS instance in external flash, need to define NV_STORAGE_EXTFLASH_START_OFFSET at the right

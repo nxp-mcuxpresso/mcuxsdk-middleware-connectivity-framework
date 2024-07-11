@@ -71,6 +71,16 @@ static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t of
 * Private type definitions
 *******************************************************************************
 ******************************************************************************/
+struct OtaExtFlashCtx_t
+{
+    uint8_t mWriteBuffer[OTA_WRITE_BUFFER_SIZE];
+#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
+    uint32_t eraseBitmap[ERASE_BITMAP_SIZE];
+#endif
+    uint32_t mWriteBufferOffs;
+    uint32_t mWriteBufferIndex;
+    bool     init_done;
+};
 
 /******************************************************************************
 *******************************************************************************
@@ -78,21 +88,17 @@ static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t of
 *******************************************************************************
 ******************************************************************************/
 
-static uint8_t  mWriteBuffer[OTA_WRITE_BUFFER_SIZE];
-static uint32_t mWriteBufferOffs  = 0U;
-static uint32_t mWriteBufferIndex = 0U;
-
+static struct OtaExtFlashCtx_t ctx = {
+    .mWriteBuffer[0 ...(OTA_WRITE_BUFFER_SIZE - 1)] = 0xffU,
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-static uint32_t eraseBitmap[ERASE_BITMAP_SIZE] = {0U};
+    .eraseBitmap[0 ... ERASE_BITMAP_SIZE - 1] = 0U,
 #endif
+    .mWriteBufferOffs  = 0U,
+    .mWriteBufferIndex = 0U,
+    .init_done         = false,
 
+};
 static const OtaPartition_t *ota_ext_partition;
-
-/******************************************************************************
-*******************************************************************************
-* Public Memory
-*******************************************************************************
-******************************************************************************/
 
 static const OtaFlashOps_t ext_flash_ops = {
     .init           = &ExternalFlash_Init,
@@ -103,6 +109,12 @@ static const OtaFlashOps_t ext_flash_ops = {
     .eraseArea      = &ExternalFlash_EraseArea,
     .flushWriteBuf  = &ExternalFlash_FlushWriteBuffer,
 };
+
+/******************************************************************************
+*******************************************************************************
+* Public Memory
+*******************************************************************************
+******************************************************************************/
 
 /******************************************************************************
 *******************************************************************************
@@ -131,10 +143,9 @@ static ota_flash_status_t ExternalFlash_Init(void)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
 
-    static bool init_done = false;
     do
     {
-        if (!init_done)
+        if (!ctx.init_done)
         {
             status = kStatus_OTA_Flash_Error;
             status_t st;
@@ -142,14 +153,14 @@ static ota_flash_status_t ExternalFlash_Init(void)
             st = PLATFORM_InitExternalFlash();
 
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-            FLib_MemSet(eraseBitmap, 0x0U, ERASE_BITMAP_SIZE);
+            FLib_MemSet(ctx.eraseBitmap, 0x0U, ERASE_BITMAP_SIZE);
 #endif
             if (kStatus_Success != st)
             {
                 OTA_DEBUG_TRACE("Init fail %x\r\n", st);
                 break;
             }
-            init_done = true;
+            ctx.init_done = true;
         }
         status = kStatus_OTA_Flash_Success;
     } while (false);
@@ -225,7 +236,7 @@ static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size)
         while (index < endBlock)
         {
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-            if (GET_BIT(eraseBitmap, index))
+            if (GET_BIT(ctx.eraseBitmap, index))
             {
                 /* If the block is already erased, skip */
                 index++;
@@ -247,7 +258,7 @@ static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size)
                 for (uint32_t i = 0U; i < blockCount; i++)
                 {
                     /* Tag all the blocks as erased */
-                    SET_BIT(eraseBitmap, index + i);
+                    SET_BIT(ctx.eraseBitmap, index + i);
                 }
 #endif
 
@@ -303,7 +314,7 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
                 uint32_t offset               = offs - pageOffs;
                 bool     isWriteBufferFull    = false;
 
-                mWriteBufferOffs = pageOffs;
+                ctx.mWriteBufferOffs = pageOffs;
 
                 if (NoOfBytes >= remainingBytesInPage)
                 {
@@ -316,8 +327,8 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
                 }
 
                 /* Copy the data to write in the buffer */
-                FLib_MemCpy(&mWriteBuffer[offset], Outbuf, sizeToCopy);
-                mWriteBufferIndex += sizeToCopy;
+                FLib_MemCpy(&ctx.mWriteBuffer[offset], Outbuf, sizeToCopy);
+                ctx.mWriteBufferIndex += sizeToCopy;
 
                 if (isWriteBufferFull == true)
                 {
@@ -356,7 +367,7 @@ static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
     {
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
         /* Erase the sector if needed */
-        status = ExternalFlash_EraseBlock(mWriteBufferOffs, PLATFORM_EXTFLASH_SECTOR_SIZE);
+        status = ExternalFlash_EraseBlock(ctx.mWriteBufferOffs, PLATFORM_EXTFLASH_SECTOR_SIZE);
         if (kStatus_OTA_Flash_Success != status)
         {
             break;
@@ -364,7 +375,7 @@ static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
 #endif
 
         /* Write the current write buffer to flash */
-        st = PLATFORM_WriteExternalFlash(mWriteBuffer, OTA_WRITE_BUFFER_SIZE, PHYS_ADDR(mWriteBufferOffs));
+        st = PLATFORM_WriteExternalFlash(ctx.mWriteBuffer, OTA_WRITE_BUFFER_SIZE, PHYS_ADDR(ctx.mWriteBufferOffs));
         if (st != kStatus_Success)
         {
             status = kStatus_OTA_Flash_Fail;
@@ -375,8 +386,8 @@ static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
         /* debug - verify the data stored */
         static uint8_t verifyBuffer[PLATFORM_EXTFLASH_SECTOR_SIZE];
 
-        status = ExternalFlash_ReadData(PLATFORM_EXTFLASH_SECTOR_SIZE, mWriteBufferOffs, verifyBuffer);
-        if(memcmp(mWriteBuffer, verifyBuffer, PLATFORM_EXTFLASH_SECTOR_SIZE) != 0)
+        status = ExternalFlash_ReadData(PLATFORM_EXTFLASH_SECTOR_SIZE, ctx.mWriteBufferOffs, verifyBuffer);
+        if(memcmp(ctx.mWriteBuffer, verifyBuffer, PLATFORM_EXTFLASH_SECTOR_SIZE) != 0)
         {
             status = kStatus_OTA_Flash_Fail;
             break;
@@ -384,8 +395,8 @@ static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
 #endif
 
         /* Reset the write buffer for the next sector */
-        FLib_MemSet(mWriteBuffer, 0xFFU, OTA_WRITE_BUFFER_SIZE);
-        mWriteBufferIndex = 0U;
+        FLib_MemSet(ctx.mWriteBuffer, 0xFFU, OTA_WRITE_BUFFER_SIZE);
+        ctx.mWriteBufferIndex = 0U;
 
     } while (false);
 
@@ -420,11 +431,11 @@ static ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t of
 
         if (status == kStatus_OTA_Flash_Success)
         {
-            for (uint32_t i = 0U; i < mWriteBufferIndex; i++)
+            for (uint32_t i = 0U; i < ctx.mWriteBufferIndex; i++)
             {
-                if ((mWriteBufferOffs + i) >= offs && (mWriteBufferOffs + i) < (offs + NoOfBytes))
+                if ((ctx.mWriteBufferOffs + i) >= offs && (ctx.mWriteBufferOffs + i) < (offs + NoOfBytes))
                 {
-                    inbuf[mWriteBufferOffs - offs + i] = mWriteBuffer[i];
+                    inbuf[ctx.mWriteBufferOffs - offs + i] = ctx.mWriteBuffer[i];
                 }
             }
         }
@@ -544,7 +555,7 @@ static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t of
 otaResult_t OTA_SelectExternalStoragePartition(void)
 {
     otaResult_t    status = gOtaExternalFlashError_c;
-    OtaStateCtx_t *hdl    = &mHdl;
+    OtaStateCtx_t *hdl    = &mOtaHdl;
 
     do
     {

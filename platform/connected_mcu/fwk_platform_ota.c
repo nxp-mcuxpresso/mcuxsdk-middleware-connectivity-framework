@@ -113,6 +113,11 @@ int PLATFORM_OtaBootDataUpdateOnCommit(const OtaLoaderInfo_t *ota_loader_info)
     return 0;
 }
 
+int PLATFORM_OtaClearBootInterface(void)
+{
+    return (int)HAL_FlashEraseSector((uint32_t)IFR_OTACFG_DATA, sizeof(ifr0_otacfg_data_t));
+}
+
 int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
 {
     int st = -1;
@@ -146,7 +151,7 @@ int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
         {
             break;
         }
-        status = HAL_FlashEraseSector((uint32_t)IFR_OTACFG_DATA, sizeof(ifr0_otacfg_data_t));
+        status = (hal_flash_status_t)PLATFORM_OtaClearBootInterface();
         if (kStatus_HAL_Flash_Success != status)
         {
             break;

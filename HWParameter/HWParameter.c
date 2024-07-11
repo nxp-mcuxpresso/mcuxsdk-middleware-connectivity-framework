@@ -21,8 +21,23 @@
 
 #include "HWParameter.h"
 #include "fwk_config.h"
+#include "fwk_platform_definitions.h"
 
-#if gHwParamsAppFactoryDataPreserveOnHwParamUpdate_d
+/*
+ * If gHwParamsProdDataPlacement_c  is Ifr (gHwParamsProdDataIfrMode_c) or transitioning from MainFlash to Ifr
+ * (gHwParamsProdDataMainFlash2IfrMode_c), if present (i.e. IFR_RSVD_SZ > 0), the reserved area at the start of IFR1
+ * sector must be preserved.
+ */
+#if (defined IFR_RSVD_SZ) && (IFR_RSVD_SZ > 0)
+#define gHwParamsPreserveReservedArea_c (gHwParamsProdDataPlacement_c != gHwParamsProdDataMainFlashMode_c)
+#else
+#define gHwParamsPreserveReservedArea_c 0
+#endif
+
+#define gHwParamRequireTemporaryCopies_c \
+    (gHwParamsAppFactoryDataPreserveOnHwParamUpdate_d || gHwParamsPreserveReservedArea_c)
+
+#if gHwParamRequireTemporaryCopies_c
 #include "fsl_component_mem_manager.h"
 #endif
 
@@ -37,7 +52,7 @@
 
 #define HW_PARAM_LEGACY_CRC_OFFSET (offsetof(hardwareParameters_t, reserved) + LEGACY_PROD_DATA_PADDING_SZ)
 
-#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacyMode_c)
+#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlashMode_c)
 #define HW_PARAM_CRC_OFFSET HW_PARAM_LEGACY_CRC_OFFSET
 #else
 #define HW_PARAM_CRC_OFFSET (offsetof(hardwareParameters_t, reserved) + PROD_DATA_PADDING_SZ)
@@ -61,7 +76,7 @@
 ********************************************************************************** */
 static uint16_t NV_ComputeCrc(uint8_t *ptr, uint32_t len);
 static uint16_t NV_ComputeCrcOverHWParameters(hardwareParameters_t *pHwParams);
-#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacy2IfrMode_c)
+#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c)
 /* Doomed to be removed after interim phase to convert legacy position and size to new one */
 static uint16_t NV_ComputeCrcOverHWParametersLegacy(hardwareParameters_t *pHwParams);
 static uint8_t  NV_VerifyCrcOverHWParametersLegacy(hardwareParameters_t *pHwParams);
@@ -129,7 +144,7 @@ static uint16_t NV_ComputeCrcOverHWParameters(hardwareParameters_t *pHwParams)
     return NV_ComputeCrc(ptr, CRC_PROD_DATA_LEN);
 }
 
-#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacy2IfrMode_c)
+#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c)
 static uint16_t NV_ComputeCrcOverHWParametersLegacy(hardwareParameters_t *pHwParams)
 {
     uint8_t *ptr = ((uint8_t *)pHwParams) + PROD_DATA_ID_STRING_SZ;
@@ -224,12 +239,14 @@ static uint8_t NvExtendedFactoryDataValid(extendedAppFactoryData_t *p_ext_app_fa
 
 static uint8_t NvWriteProdData(void *src_data, uint32_t size)
 {
-    uint8_t  st                  = gHWParameterError_c;
-    uint32_t prgm_prod_data_addr = PROD_DATA_FLASH_ADDR;
+    uint8_t st = gHWParameterError_c;
 #if gHwParamsAppFactoryDataPreserveOnHwParamUpdate_d
     uint32_t prgm_app_factory_data_addr = APP_FACTORY_DATA_FLASH_ADDR;
     uint8_t *save_app_factory_data      = NULL;
     uint32_t total_length               = 0;
+#endif
+#if gHwParamsPreserveReservedArea_c
+    uint8_t *save_rsvd_area = NULL;
 #endif
 
     do
@@ -245,16 +262,31 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size)
         {
             break;
         }
-        if (FLib_MemCmp((uint8_t *)prgm_prod_data_addr, src_data, PROD_DATA_LEN))
+        if (FLib_MemCmp((uint8_t *)PROD_DATA_FLASH_ADDR, src_data, PROD_DATA_LEN))
         {
             /* Return without error if there are no differences between data to program and PROD DATA in flash*/
             st = gHWParameterSuccess_c;
             break;
         }
 
-        status = HAL_FlashVerifyErase(prgm_prod_data_addr, size, kHAL_Flash_MarginValueNormal);
+        /* If area to be programmed is still blank no erase will be required */
+        status = HAL_FlashVerifyErase(PROD_DATA_FLASH_ADDR, size, kHAL_Flash_MarginValueNormal);
         if (kStatus_HAL_Flash_Success != status)
         {
+#if gHwParamsPreserveReservedArea_c
+            /* If something is programmed in the reserved area, need to spare it before erase */
+            status = HAL_FlashVerifyErase(IFR_USER_ADDR, IFR_RSVD_SZ, kHAL_Flash_MarginValueNormal);
+            if (kStatus_HAL_Flash_Success != status)
+            {
+                save_rsvd_area = MEM_BufferAlloc(IFR_RSVD_SZ);
+                if (save_rsvd_area == NULL)
+                {
+                    /* Allocation failure */
+                    break;
+                }
+                FLib_MemCpy(save_rsvd_area, (uint8_t *)IFR_USER_ADDR, IFR_RSVD_SZ);
+            }
+#endif
 #if gHwParamsAppFactoryDataPreserveOnHwParamUpdate_d
             status = HAL_FlashVerifyErase(prgm_app_factory_data_addr, APP_FACTORY_DATA_MAX_LEN,
                                           kHAL_Flash_MarginValueNormal);
@@ -283,7 +315,7 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size)
             }
         }
 
-        status = HAL_FlashProgramUnaligned(prgm_prod_data_addr, size, (uint8_t *)src_data);
+        status = HAL_FlashProgramUnaligned(PROD_DATA_FLASH_ADDR, size, (uint8_t *)src_data);
         if (kStatus_HAL_Flash_Success != status)
         {
             break;
@@ -292,6 +324,16 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size)
         st = gHWParameterSuccess_c;
 
     } while (false);
+#if gHwParamsPreserveReservedArea_c
+    if (save_rsvd_area != NULL)
+    {
+        if (kStatus_HAL_Flash_Success != HAL_FlashProgram(IFR_USER_ADDR, IFR_RSVD_SZ, (uint8_t *)save_rsvd_area))
+        {
+            st = gHWParameterError_c;
+        }
+        (void)MEM_BufferFree(save_rsvd_area);
+    }
+#endif
 #if gHwParamsAppFactoryDataPreserveOnHwParamUpdate_d
     if (save_app_factory_data != NULL)
     {
@@ -299,7 +341,7 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size)
         /* There might have been an error while programming PROD_DATA, yet attempt to reprogram FDP otherwise it would
          * be lost  */
         if (kStatus_HAL_Flash_Success !=
-            HAL_FlashProgram(prgm_app_factory_data_addr, total_length, (uint8_t *)save_app_factory_data))
+            HAL_FlashProgram(APP_FACTORY_DATA_FLASH_ADDR, total_length, (uint8_t *)save_app_factory_data))
         {
             st = gHWParameterError_c;
         }
@@ -330,8 +372,8 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
     uint32_t status = gHWParameterSuccess_c;
     assert(*pHwParams == NULL);
     uint32_t hw_param_sz;
-#if ((gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementIfrMode_c) || \
-     (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacy2IfrMode_c))
+#if ((gHwParamsProdDataPlacement_c == gHwParamsProdDataIfrMode_c) || \
+     (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c))
     hw_param_sz = PROD_DATA_LEN;
 #else
     hw_param_sz = LEGACY_PROD_DATA_LEN;
@@ -354,40 +396,23 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
         st = HAL_FlashVerifyErase(PROD_DATA_FLASH_ADDR, hw_param_sz, kHAL_Flash_MarginValueNormal);
         if (kStatus_HAL_Flash_Success == st)
         {
-            status = gHWParameterBlank_c;
-            FLib_MemSet(&gHardwareParameters[0], 0xffu, hw_param_sz);
-            gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
-            break;
-        }
-
-        /*Load the hardware parameters in Flash to RAM */
-        hardwareParameters_t *pLocalParams = (hardwareParameters_t *)PROD_DATA_FLASH_ADDR;
-        if (FLib_MemCmp(pLocalParams->identificationWord, (const void *)mProdDataIdentifier,
-                        sizeof(mProdDataIdentifier)) &&
-            (NV_VerifyCrcOverHWParameters(pLocalParams) == gHWParameterSuccess_c))
-        {
-            /*Copy the local value in our static structure*/
-            FLib_MemCpy(&gHardwareParameters[0], (void *)pLocalParams, hw_param_sz);
-            gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
-        }
-        else
-        {
-#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacy2IfrMode_c)
-            /* Check if there are prod data at legacy position
+#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c)
+            /* Check if there are prod data at legacy position. The IFR sector was not programmed
+             * with HWParams yet. Attempt read from legacy position and transfer to IFR.
              * In the interim period while migration phase is not complete need to keep the sector at
              * top of flash.
              */
-            uint32_t              legacy_prod_data_location = (uint32_t)LEGACY_PROD_DATA_ADDR;
-            hardwareParameters_t *pLegacyParams             = (hardwareParameters_t *)legacy_prod_data_location;
-            if ((FLib_MemCmp(pLegacyParams->identificationWord, (const void *)mProdDataIdentifier,
+            uint32_t              mainflash_prod_data_location = (uint32_t)MAIN_FLASH_PROD_DATA_ADDR;
+            hardwareParameters_t *pParamsToCopy                = (hardwareParameters_t *)mainflash_prod_data_location;
+            if ((FLib_MemCmp(pParamsToCopy->identificationWord, (const void *)mProdDataIdentifier,
                              sizeof(mProdDataIdentifier)) == TRUE) &&
-                (NV_VerifyCrcOverHWParametersLegacy(pLegacyParams) == gHWParameterSuccess_c))
+                (NV_VerifyCrcOverHWParametersLegacy(pParamsToCopy) == gHWParameterSuccess_c))
             {
                 uint8_t *p_crc;
                 uint16_t crc;
-                /* There is a valid version of PROD DATA at the legacy location : allocate a RAM buffer to copy it to
+                /* There is a valid version of PROD DATA at the Main Flash location: allocate a RAM buffer to copy it to
                  * IFR */
-                FLib_MemCpy(&gHardwareParameters[0], (uint8_t *)pLegacyParams, sizeof(hardwareParameters_t) - 1u);
+                FLib_MemCpy(&gHardwareParameters[0], (uint8_t *)pParamsToCopy, sizeof(hardwareParameters_t) - 1u);
                 FLib_MemSet(&gHardwareParameters[offsetof(hardwareParameters_t, reserved)], 0xffU,
                             PROD_DATA_PADDING_SZ);
                 crc      = NV_ComputeCrcOverHWParameters((hardwareParameters_t *)(void *)&gHardwareParameters[0]);
@@ -409,6 +434,26 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
             }
             else
 #endif
+            {
+                status = gHWParameterBlank_c;
+                FLib_MemSet(&gHardwareParameters[0], 0xffu, hw_param_sz);
+            }
+            gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
+        }
+        else
+        {
+            /*Load the hardware parameters in Flash to RAM */
+            hardwareParameters_t *pLocalParams = (hardwareParameters_t *)PROD_DATA_FLASH_ADDR;
+            if (FLib_MemCmp(pLocalParams->identificationWord, (const void *)mProdDataIdentifier,
+                            sizeof(mProdDataIdentifier)) &&
+                (NV_VerifyCrcOverHWParameters(pLocalParams) == gHWParameterSuccess_c))
+            {
+                /*Copy the local value in our static structure*/
+                FLib_MemCpy(&gHardwareParameters[0], (void *)pLocalParams, hw_param_sz);
+                gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
+                status                = gHWParameterSuccess_c;
+            }
+            else
             {
                 gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
                 status                = gHWParameterError_c;
@@ -463,7 +508,7 @@ uint32_t NV_WriteHWParameters(void)
         FLib_MemCpy(gHardwareParameters_p->identificationWord, (const void *)mProdDataIdentifier,
                     sizeof(mProdDataIdentifier));
 
-        /*Re-writting the hardware parameters in Flash*/
+        /*Re-writing the hardware parameters in Flash*/
         status = NvWriteProdData(gHardwareParameters_p, HW_PARAM_CRC_OFFSET + sizeof(uint16_t));
 
         EnableGlobalIRQ(regPrimask);
@@ -594,5 +639,14 @@ extendedAppFactoryData_t *Nv_GetAppFactoryData(void)
 void HWParametersReset(void)
 {
     gHardwareParameters_p = NULL;
-    FLib_MemSet(gHardwareParameters, 0U, sizeof(gHardwareParameters) + PROD_DATA_PADDING_SZ + sizeof(uint16_t) - 1u);
+    FLib_MemSet(gHardwareParameters, 0xffU, sizeof(gHardwareParameters));
+}
+
+void HWParametersErase(void)
+{
+    FLib_MemSet(gHardwareParameters, 0xffU, sizeof(gHardwareParameters));
+    gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
+
+    /*Re-writing the hardware parameters in Flash*/
+    (void)NvWriteProdData(gHardwareParameters_p, HW_PARAM_CRC_OFFSET + sizeof(uint16_t));
 }

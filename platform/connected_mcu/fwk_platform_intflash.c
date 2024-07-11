@@ -62,7 +62,7 @@ void PLATFORM_EnableBusFault(void)
  * proper handling of erased sector when mounting the NV storage firmware : NVM, NVS or
  * LittleFS
  */
-void PLATFORM_TreatEccFault(uint32_t ecc_fault_addr)
+WEAK void PLATFORM_TreatEccFault(uint32_t ecc_fault_addr)
 {
 /* alternatively may erase just the only sector containing the fault, or the whole NV storage */
 #if 1
@@ -121,7 +121,7 @@ void FaultRecovery(void)
         }
     }
     /* Potentially add other handlers for other BusFault causes */
-    /* Only a suggestion to reset. Aternate possibilities exist, such as log some information to notify
+    /* Only a suggestion to reset. Alternate possibilities exist, such as log some information to notify
      * application of the loss  */
     NVIC_SystemReset();
 }

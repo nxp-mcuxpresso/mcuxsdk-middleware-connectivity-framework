@@ -1,8 +1,11 @@
-/* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2023 NXP                          */
-/*                            All rights reserved.                            */
-/*                    SPDX-License-Identifier: BSD-3-Clause                   */
-/* -------------------------------------------------------------------------- */
+/*!
+ * Copyright 2021-2024 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * \file fwk_platform.c
+ * \brief PLATFORM abstraction for general purpose use
+ *
+ */
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -12,15 +15,51 @@
 #include <stdbool.h>
 
 #include "fwk_platform.h"
+#include "fsl_clock.h"
+#include "fsl_component_timer_manager.h"
 #include "fsl_adapter_time_stamp.h"
 #include "els_pkc_mbedtls.h"
+
+/* -------------------------------------------------------------------------- */
+/*                               Private macros                               */
+/* -------------------------------------------------------------------------- */
+
+#if !defined(TIMER_PORT_TYPE_MRT) && !defined(TIMER_PORT_TYPE_CTIMER)
+#define TIMER_PORT_TYPE_MRT    1
+#define TIMER_PORT_TYPE_CTIMER 0
+#endif
+
+/* -------------------------------------------------------------------------- */
+/*                               Private macros                               */
+/* -------------------------------------------------------------------------- */
+
+#if defined(TIMER_PORT_TYPE_MRT) && (TIMER_PORT_TYPE_MRT > 0)
+#elif defined(TIMER_PORT_TYPE_CTIMER) && (TIMER_PORT_TYPE_CTIMER > 0)
+#if (PLATFORM_TM_INSTANCE == 0)
+#define PLATFORM_CTIMER_CLOCK_SRC kLPOSC_to_CTIMER0
+#define PLATFORM_IRQ_HANDLER
+#elif (PLATFORM_TM_INSTANCE == 1)
+#define PLATFORM_CTIMER_CLOCK_SRC kLPOSC_to_CTIMER1
+#elif (PLATFORM_TM_INSTANCE == 2)
+#define PLATFORM_CTIMER_CLOCK_SRC kLPOSC_to_CTIMER2
+#elif (PLATFORM_TM_INSTANCE == 3)
+#define PLATFORM_CTIMER_CLOCK_SRC kLPOSC_to_CTIMER3
+#else
+#error "PLATFORM_TM_INSTANCE: unsupported value."
+#endif /* PLATFORM_TM_INSTANCE */
+#endif /* TIMER_PORT_TYPE_MRT TIMER_PORT_TYPE_CTIMER */
 
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
 
 static TIME_STAMP_HANDLE_DEFINE(timestampHandle);
-static bool timestampInitialized = false;
+static bool timestampInitialized    = false;
+static bool timerManagerInitialized = false;
+
+#if defined(TIMER_PORT_TYPE_CTIMER) && (TIMER_PORT_TYPE_CTIMER > 0)
+static const IRQn_Type s_ctimerIRQ[] = CTIMER_IRQS;
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -28,7 +67,38 @@ static bool timestampInitialized = false;
 
 int PLATFORM_InitTimerManager(void)
 {
-    return 0;
+    int            ret = 0;
+    timer_config_t config;
+
+    do
+    {
+        if (timerManagerInitialized == true)
+        {
+            break;
+        }
+
+        config.instance = PLATFORM_TM_INSTANCE;
+#if defined(TIMER_PORT_TYPE_MRT) && (TIMER_PORT_TYPE_MRT > 0)
+        config.srcClock_Hz    = SystemCoreClock;
+        config.clockSrcSelect = 2U;
+#elif defined(TIMER_PORT_TYPE_CTIMER) && (TIMER_PORT_TYPE_CTIMER > 0)
+        CLOCK_AttachClk(PLATFORM_CTIMER_CLOCK_SRC);
+        config.srcClock_Hz = CLOCK_GetCTimerClkFreq(PLATFORM_TM_INSTANCE);
+        NVIC_SetPriority(s_ctimerIRQ[PLATFORM_TM_INSTANCE], ((1U << (__NVIC_PRIO_BITS)) - 1));
+#endif
+
+        if (TM_Init(&config) != kStatus_TimerSuccess)
+        {
+            ret = -1;
+            break;
+        }
+
+        PLATFORM_InitTimeStamp();
+
+        timerManagerInitialized = true;
+    } while (false);
+
+    return ret;
 }
 
 void PLATFORM_InitTimeStamp(void)
@@ -43,7 +113,7 @@ void PLATFORM_InitTimeStamp(void)
         config.srcClock_Hz    = CLOCK_GetOSTimerClkFreq();
         config.clockSrcSelect = 1;
 
-        HAL_TimeStampInit(timestampHandle, &config);
+        HAL_TimeStampInit((hal_time_stamp_handle_t)timestampHandle, &config);
 
         timestampInitialized = true;
     }
@@ -83,7 +153,7 @@ void PLATFORM_TimeStampExitPowerDown(void)
 
 void PLATFORM_InitCrypto(void)
 {
-    CRYPTO_InitHardware();
+    (void)CRYPTO_InitHardware();
 }
 
 void PLATFORM_TerminateCrypto(void)

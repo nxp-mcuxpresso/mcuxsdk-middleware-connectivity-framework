@@ -17,8 +17,7 @@
 
 #include "fsl_loader.h"
 #include "fsl_power.h"
-#include "fsl_adapter_rpmsg.h"
-#include "fsl_adapter_rfimu.h"
+#include "fsl_adapter_imu.h"
 #include "fsl_os_abstraction.h"
 
 #include "fwk_config.h"
@@ -59,6 +58,9 @@
 
 #define HCI_CMD_BT_HOST_SLEEP_CONFIG_OCF          0x59U
 #define HCI_CMD_BT_HOST_SLEEP_CONFIG_PARAM_LENGTH 2U
+
+#define HCI_CMD_BT_DISABLE_LEPC_TIMER_OCF           0x9FU
+#define HCI_CMD_BT_DISABLE_LEPC_CONFIG_PARAM_LENGTH 0
 
 #define HCI_EVT_PS_SLEEP_OCF 0x20U
 
@@ -194,14 +196,14 @@ static bool PLATFORM_IsHciLinkReady(void);
 static bool PLATFORM_IsBleAwake(void);
 
 /*!
- * \brief RPMSG Rx callback used to receive HCI messages from Controller
+ * \brief IMUMC Rx callback used to receive HCI messages from Controller
  *
  * \param[in] param Usually NULL
  * \param[in] data pointer to data buffer
  * \param[in] len size of the data
- * \return hal_rpmsg_return_status_t tells RPMSG to free or hold the buffer
+ * \return hal_imumc_return_status_t tells IMUMC to free or hold the buffer
  */
-static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len);
+static hal_imumc_return_status_t PLATFORM_HciImumcRxCallback(void *param, uint8_t *data, uint32_t len);
 
 /*!
  * \brief Set BT Cal Data to Controller
@@ -246,6 +248,15 @@ static int PLATFORM_HandleBlePowerStateEvent(ble_ps_event_t psEvent);
  */
 static int PLATFORM_BleSetHostSleepConfig(void);
 
+#if defined(gPlatformDisableLEPCTimer_d) && (gPlatformDisableLEPCTimer_d > 0)
+/*!
+ * \brief Disable Controller LE Power Control timer and the supported feature bits
+ *
+ * \return int return status: >=0 for success, <0 for errors
+ */
+static int PLATFORM_DisableLEPCTimer(void);
+#endif
+
 void BLE_MCI_WAKEUP_DONE0_DriverIRQHandler(void);
 
 static void PLATFORM_FillInHciCmdMsg(uint8_t *pmsg, uint16_t opcode, uint8_t msg_sz, const uint8_t *msg_payload);
@@ -254,12 +265,12 @@ static void PLATFORM_FillInHciCmdMsg(uint8_t *pmsg, uint16_t opcode, uint8_t msg
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
 
-static RPMSG_HANDLE_DEFINE(hci_rpmsg_handle);
-static hal_rpmsg_config_t hci_rpmsg_config = {
+static IMUMC_HANDLE_DEFINE(hci_imumc_handle);
+static hal_imumc_config_t hci_imumc_config = {
     .local_addr  = 30,
     .remote_addr = 40,
     .imuLink     = (uint8_t)kIMU_LinkCpu2Cpu3,
-    .callback    = &PLATFORM_HciRpmsgRxCallback,
+    .callback    = &PLATFORM_HciImumcRxCallback,
     .param       = NULL,
 };
 
@@ -430,6 +441,11 @@ void PLATFORM_VendorSpecificInit(void)
 
     (void)PLATFORM_BleSetHostSleepConfig();
 
+#if defined(gPlatformDisableLEPCTimer_d) && (gPlatformDisableLEPCTimer_d == 1)
+    /* Allow Controller to disable LEPC*/
+    (void)PLATFORM_DisableLEPCTimer();
+#endif
+
 #if !defined(gPlatformDisableBleLowPower_d) || (gPlatformDisableBleLowPower_d == 0)
     /* Allow Controller to enter low power */
     (void)PLATFORM_EnableBleLowPower();
@@ -568,8 +584,8 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
             break;
         }
 
-        /* Send HCI Packet through RPMSG channel */
-        if (HAL_RpmsgSend(hci_rpmsg_handle, msg, len) != kStatus_HAL_RpmsgSuccess)
+        /* Send HCI Packet through IMUMC channel */
+        if (HAL_ImumcSend(hci_imumc_handle, msg, len) != kStatus_HAL_ImumcSuccess)
         {
             ret = -2;
             break;
@@ -714,6 +730,11 @@ int PLATFORM_HandleControllerPowerState(void)
     return ret;
 }
 
+bool PLATFORM_IsControllerActive(void)
+{
+    return ((blePowerState == ble_awake_state) && (hciInitialized == true));
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
@@ -724,8 +745,8 @@ static int PLATFORM_InitHciLink(void)
 
     do
     {
-        /* Init RPMSG/IMU Channel */
-        if (HAL_RpmsgInit((hal_rpmsg_handle_t)hci_rpmsg_handle, &hci_rpmsg_config) != kStatus_HAL_RpmsgSuccess)
+        /* Init IMUMC Channel */
+        if (HAL_ImumcInit((hal_imumc_handle_t)hci_imumc_handle, &hci_imumc_config) != kStatus_HAL_ImumcSuccess)
         {
             ret = -1;
             break;
@@ -745,14 +766,14 @@ static int PLATFORM_TerminateHciLink(void)
         PMU_EnableBleWakeup(0x1U);
 
         /* Deinitialize IMU first
-         * Ignoring return value because kStatus_HAL_RpmsgError means it was already deinitialize */
+         * Ignoring return value because kStatus_HAL_ImumcError means it was already deinitialize */
         (void)HAL_ImuDeinit(kIMU_LinkCpu2Cpu3, 0);
 
         /* Clear CPU2 wake up bit after HAL_ImuDeinit() */
         PMU_DisableBleWakeup(0x1U);
 
-        /* Deinitialize RPMSG first */
-        if (HAL_RpmsgDeinit(hci_rpmsg_handle) != kStatus_HAL_RpmsgSuccess)
+        /* Deinitialize IMUMC first */
+        if (HAL_ImumcDeinit(hci_imumc_handle) != kStatus_HAL_ImumcSuccess)
         {
             ret = -2;
             break;
@@ -764,7 +785,7 @@ static int PLATFORM_TerminateHciLink(void)
 
 static bool PLATFORM_IsHciLinkReady(void)
 {
-    return (HAL_ImuLinkIsUp(hci_rpmsg_config.imuLink) == kStatus_HAL_RpmsgSuccess);
+    return (HAL_ImuLinkIsUp(hci_imumc_config.imuLink) == kStatus_HAL_ImumcSuccess);
 }
 
 static bool PLATFORM_IsBleAwake(void)
@@ -772,7 +793,7 @@ static bool PLATFORM_IsBleAwake(void)
     return (blePowerState != ble_asleep_state);
 }
 
-static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
+static hal_imumc_return_status_t PLATFORM_HciImumcRxCallback(void *param, uint8_t *data, uint32_t len)
 {
     bool    handled    = false;
     uint8_t packetType = data[0];
@@ -947,6 +968,28 @@ static int PLATFORM_BleSetHostSleepConfig(void)
 
     return ret;
 }
+
+#if defined(gPlatformDisableLEPCTimer_d) && (gPlatformDisableLEPCTimer_d == 1)
+static int PLATFORM_DisableLEPCTimer(void)
+{
+    int ret = 0;
+    /* This command must be sent before any LE connection, likely
+     * after HCI init  */
+    uint8_t  buffer[1 + HCI_CMD_PACKET_HEADER_LENGTH + HCI_CMD_BT_DISABLE_LEPC_CONFIG_PARAM_LENGTH];
+    uint16_t opcode = get_opcode(HCI_CMD_VENDOR_OCG, HCI_CMD_BT_DISABLE_LEPC_TIMER_OCF);
+
+    PLATFORM_FillInHciCmdMsg(&buffer[0], opcode, 0, NULL);
+
+    ret = PLATFORM_SendHciMessage(buffer, sizeof(buffer));
+
+    if (ret != 0)
+    {
+        ret = -1;
+    }
+
+    return ret;
+}
+#endif /* gPlatformDisableLEPCTimer_d */
 
 static void PLATFORM_FillInHciCmdMsg(uint8_t *pmsg, uint16_t opcode, uint8_t msg_sz, const uint8_t *msg_payload)
 {

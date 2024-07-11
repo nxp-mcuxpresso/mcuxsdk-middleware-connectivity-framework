@@ -69,7 +69,7 @@ typedef struct
 {
     FLASH_op_type op_type;
     uint32_t      flash_addr;
-    int32_t       sz;
+    uint32_t      sz;
     uint8_t       buf[PROGRAM_PAGE_SZ];
 } FLASH_TransactionOp_t;
 
@@ -118,7 +118,7 @@ typedef struct
     uint8_t      PostedQ_capacity;
     uint8_t      PostedQ_nb_in_queue;
     list_label_t transaction_free_list;
-    bool         PostedQInitialized;
+    bool         Initialized;
     bool         VerifyWrites; /*!< Defines requested behaviour regarding read back of programmed buffer */
 
     ota_config_t *config;
@@ -127,7 +127,7 @@ typedef struct
 
 } OtaStateCtx_t;
 
-extern OtaStateCtx_t mHdl;
+extern OtaStateCtx_t mOtaHdl;
 
 #define DBG_LEVEL_NONE    0
 #define DBG_LEVEL_WARNING 1

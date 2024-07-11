@@ -15,7 +15,6 @@
 
 #include "fwk_platform.h"
 #include "fsl_component_generic_list.h"
-#include "fwk_hal_macros.h"
 
 /*!
  * @addtogroup OTA_module

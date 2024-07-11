@@ -5,7 +5,8 @@
  */
 
 #include "fsl_device_registers.h"
-
+#include <stdint.h>
+#include "fwk_debug_swo.h"
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -25,8 +26,9 @@ void DBG_InitSWO(int funnel)
      * The FUNNEL registers are located on the PPB bus at 0xE0044000.
      * Configure CTRL_REG FUNNEL register to enable port 0 (application core) or port 1 (NBU). Ports are controlled
      * via ENS0/ENS1 bits. */
-    (*(unsigned int *)0xE0044000U) &= 0xFFFFFFFCU; // first, clear ENS0 & ENS1
-
+    volatile unsigned int reg_val = *(unsigned int *)0xE0044000U;
+    reg_val &= 0xFFFFFFFCU; /* first, clear ENS0 & ENS1 */
+    reg_val |= (unsigned int)funnel;
     /* Chose funnel depending on which core you want the SWO to apply on */
-    (*(unsigned int *)0xE0044000U) |= funnel;
+    *(unsigned int *)0xE0044000U = reg_val;
 }

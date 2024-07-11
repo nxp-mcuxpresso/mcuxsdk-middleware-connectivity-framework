@@ -28,14 +28,8 @@
 #define _SZ_MULTIPLE_OF_ACCESS_UNIT(sz)           (((sz)&PLATFORM_ACCESS_UNIT_MSK) == 0u)
 #define _ROUND_UP_MULTIPLE_OF_ACCESS_UNIT(length) ((length + PLATFORM_ACCESS_UNIT_MSK) & ~PLATFORM_ACCESS_UNIT_MSK)
 
-/*
- * EXTFLASH_ALLOW_DIRECT_AHB_ACCESS is defined by default because performing direct AHB read is faster than
- * the explicit FlexSPI command method.
- * However keeping alternate code undefined because it may turn out useful when using remap feature for instance.
- */
-#define EXTFLASH_ALLOW_DIRECT_AHB_ACCESS 1
 /* -------------------------------------------------------------------------- */
-/*                               Private functions                               */
+/*                               Private functions                            */
 /* -------------------------------------------------------------------------- */
 
 static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
@@ -44,7 +38,7 @@ static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
     uint32_t remaining_blen = blen;
     do
     {
-        uint8_t *p_8 = ptr;
+        uint8_t * p_8             = ptr;
         uint32_t  unaligned_bytes = (uint32_t)ptr % 4;
         uint32_t *p_32;
         /* Compare byte by byte to 0xff till alignment */
@@ -93,9 +87,32 @@ static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
     return ret;
 }
 
+static bool _IsActiveApplicationRemapped(void)
+{
+#if defined gPlatformMcuBootUseRemap_d && (gPlatformMcuBootUseRemap_d > 0)
+    return (MFLASH_FLEXSPI->HADDROFFSET != 0UL);
+#else
+    return false;
+#endif
+}
+
+#if defined     gPlatformMcuBootUseRemap_d && (gPlatformMcuBootUseRemap_d > 0)
+static uint32_t _ActiveApplicationRemapOffset(void)
+{
+    return (MFLASH_FLEXSPI->HADDROFFSET);
+}
+#endif
 /*******************************************************************************
  * Public functions
  ******************************************************************************/
+/*
+ *  Public API exists because it is used from other modules than current one.
+ * Internally use _IsActiveApplicationRemapped because generated code is better optimized.
+ */
+bool PLATFORM_IsActiveApplicationRemapped(void)
+{
+    return _IsActiveApplicationRemapped();
+}
 
 int PLATFORM_InitExternalFlash(void)
 {
@@ -150,89 +167,93 @@ int PLATFORM_EraseExternalFlash(uint32_t address, uint32_t size)
  * \dest[in/out] pointer of RAM destination to copy flash contents - arbitrary alignment
  * \param[in] length number of bytes - arbitrary byte length.
  * \param[in] address offset relative to the start of the flash device - not AHB address
+ * \param[in] directRead read from flash offset converting offset to AHB address
  *
  * \return int return status: 0 for success, otherwise an error was raised.
  */
 int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t address, bool requestFastRead)
 {
     status_t st;
-    (void)(requestFastRead);
-#ifdef EXTFLASH_ALLOW_DIRECT_AHB_ACCESS
-    memcpy(dest, (uint8_t *)EXTFLASH_PHYS_ADDR(address), length);
-    st = 0;
-#else
-    do
+    (void)requestFastRead;
+
+    if (!_IsActiveApplicationRemapped())
     {
-        uint8_t *p_dst;
-        uint32_t read_sz;
-        uint8_t  page_buf[PLATFORM_EXTFLASH_PAGE_SIZE + 4u];
-        if ((uint32_t)dest % sizeof(uint32_t) == 0u)
+        /* If remapping is not active, can use direct read */
+        memcpy(dest, (uint8_t *)EXTFLASH_PHYS_ADDR(address), length);
+        st = 0;
+    }
+    else
+        do
         {
-            read_sz = length & ~(sizeof(uint32_t) - 1);
-            p_dst   = dest;
-            st      = mflash_drv_read(address, (uint32_t *)p_dst, read_sz);
-            if (kStatus_Success != st)
+            uint8_t *p_dst;
+            uint32_t read_sz;
+            uint8_t  page_buf[PLATFORM_EXTFLASH_PAGE_SIZE + 4u];
+            if ((uint32_t)dest % sizeof(uint32_t) == 0u)
             {
-                st = -1;
-                break;
-            }
-            length -= read_sz;
-            p_dst += read_sz; /* increased by read_sz that is necessarily a multiple of 4 */
-            address += read_sz;
-            if (length > 0u)
-            {
-                /* we cannot know whether the caller has left space for extra bytes to allow
-                 * rounding size to next multiple of 4, so copy to page_buf and then memcpy the
-                 * trailing bytes to the destination buffer */
-                read_sz = (length + 3u) >> 2u << 2u;
-                st      = mflash_drv_read(address, (uint32_t *)&page_buf[0], read_sz);
+                read_sz = length & ~(sizeof(uint32_t) - 1);
+                p_dst   = dest;
+                st      = mflash_drv_read(address, (uint32_t *)p_dst, read_sz);
                 if (kStatus_Success != st)
                 {
                     st = -1;
                     break;
                 }
-                memcpy(p_dst, &page_buf[0], length);
+                length -= read_sz;
+                p_dst += read_sz; /* increased by read_sz that is necessarily a multiple of 4 */
+                address += read_sz;
+                if (length > 0u)
+                {
+                    /* we cannot know whether the caller has left space for extra bytes to allow
+                     * rounding size to next multiple of 4, so copy to page_buf and then memcpy the
+                     * trailing bytes to the destination buffer */
+                    read_sz = (length + 3u) >> 2u << 2u;
+                    st      = mflash_drv_read(address, (uint32_t *)&page_buf[0], read_sz);
+                    if (kStatus_Success != st)
+                    {
+                        st = -1;
+                        break;
+                    }
+                    memcpy(p_dst, &page_buf[0], length);
+                }
+                st = 0;
+            }
+            else
+            {
+                uint32_t remaining_sz = length;
+
+                while (remaining_sz > PLATFORM_EXTFLASH_PAGE_SIZE)
+                {
+                    read_sz = PLATFORM_EXTFLASH_PAGE_SIZE;
+                    st      = mflash_drv_read(address, (uint32_t *)&page_buf[0], read_sz);
+                    if (kStatus_Success != st)
+                    {
+                        st = -1;
+                        break;
+                    }
+                    remaining_sz -= read_sz;
+                    address += read_sz;
+                    memcpy(dest, &page_buf[0], read_sz);
+                    dest += read_sz;
+                }
+                if (st < 0)
+                {
+                    break;
+                }
+                if (remaining_sz > 0)
+                {
+                    read_sz = (remaining_sz + 3u) >> 2u << 2u;
+                    st      = mflash_drv_read(address, (uint32_t *)&page_buf[0], read_sz);
+                    if (kStatus_Success != st)
+                    {
+                        st = -1;
+                        break;
+                    }
+                    memcpy(dest, &page_buf[0], remaining_sz);
+                }
             }
             st = 0;
-        }
-        else
-        {
-            uint32_t remaining_sz = length;
+        } while (false);
 
-            while (remaining_sz > PLATFORM_EXTFLASH_PAGE_SIZE)
-            {
-                read_sz = PLATFORM_EXTFLASH_PAGE_SIZE;
-                st      = mflash_drv_read(address, (uint32_t *)&page_buf[0], read_sz);
-                if (kStatus_Success != st)
-                {
-                    st = -1;
-                    break;
-                }
-                remaining_sz -= read_sz;
-                address += read_sz;
-                memcpy(dest, &page_buf[0], read_sz);
-                dest += read_sz;
-            }
-            if (st < 0)
-            {
-                break;
-            }
-            if (remaining_sz > 0)
-            {
-                read_sz = (remaining_sz + 3u) >> 2u << 2u;
-                st      = mflash_drv_read(address, (uint32_t *)&page_buf[0], read_sz);
-                if (kStatus_Success != st)
-                {
-                    st = -1;
-                    break;
-                }
-                memcpy(dest, &page_buf[0], remaining_sz);
-            }
-        }
-        st = 0;
-    } while (false);
-
-#endif
     return (int)st;
 }
 
@@ -322,41 +343,46 @@ int PLATFORM_IsExternalFlashBusy(bool *isBusy)
     /* return false as program and erase flash operations are blocking, so it cannot be busy */
     /* no need to attempt any data read */
     *isBusy = 0U;
-    
+
     return 0;
 }
 
 bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
 {
-#ifdef EXTFLASH_ALLOW_DIRECT_AHB_ACCESS
-    /*
-     * Direct access to flash contents requires conversion from offset in flash to AHB address.
-     */
-    return MemCmpToEraseValue((uint8_t *)EXTFLASH_PHYS_ADDR(address), len);
-#else
-    bool     ret = false;
-    uint8_t  page_buf[PLATFORM_EXTFLASH_PAGE_SIZE];
-    uint32_t remaining_len = len;
-    while (remaining_len > 0u)
+    bool ret = false;
+
+    if (!_IsActiveApplicationRemapped())
     {
-        uint32_t read_sz = MIN(PLATFORM_EXTFLASH_PAGE_SIZE, remaining_len);
-        if (0 == PLATFORM_ReadExternalFlash(&page_buf[0], read_sz, address, true))
+        /*
+         * Direct access to flash contents requires conversion from offset in flash to AHB address.
+         */
+        ret = MemCmpToEraseValue((uint8_t *)EXTFLASH_PHYS_ADDR(address), len);
+    }
+    else
+    {
+        /* must read block by block, we chose block to be the size of a page, but could be less */
+        uint8_t  page_buf[PLATFORM_EXTFLASH_PAGE_SIZE];
+        uint32_t remaining_len = len;
+        while (remaining_len > 0u)
         {
-            if (!MemCmpToEraseValue(&page_buf[0], read_sz))
+            uint32_t read_sz = MIN(PLATFORM_EXTFLASH_PAGE_SIZE, remaining_len);
+            if (0 == PLATFORM_ReadExternalFlash(&page_buf[0], read_sz, address, false))
             {
+                if (!MemCmpToEraseValue(&page_buf[0], read_sz))
+                {
+                    break;
+                }
+            }
+            else
+            {
+                assert(0);
                 break;
             }
+            remaining_len -= read_sz;
         }
-        else
-        {
-            assert(0);
-            break;
-        }
-        remaining_len -= read_sz;
+        ret = (remaining_len == 0u);
     }
-    ret = (remaining_len == 0u);
     return ret;
-#endif
 }
 
 bool PLATFORM_IsExternalFlashPageBlank(uint32_t address)

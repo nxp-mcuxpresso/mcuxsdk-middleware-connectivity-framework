@@ -178,7 +178,7 @@ void PLATFORM_EnterLowPower(void)
 void PLATFORM_ExitLowPower(void)
 {
     /* Placeholder RFU */ /* MISRA CID 28201050 */
-    ;
+    __NOP();
 }
 
 void PLATFORM_EnterPowerDown(void)
@@ -264,7 +264,8 @@ static status_t PLATFORM_LowPowerCallback(pm_event_type_t eventType, uint8_t pow
         }
         else
         {
-            if (powerState >= PLATFORM_POWER_DOWN_STATE)
+            /* Perform recovery context when enter PM3 successfully */
+            if ((powerState >= PLATFORM_POWER_DOWN_STATE) && (POWER_GetWakenMode() >= PLATFORM_POWER_DOWN_STATE))
             {
                 /* Power gated low power modes often require specific
                  * entry/exit low power procedures, those should be implemented
@@ -286,13 +287,6 @@ static void PLATFORM_InitRtc(void)
     (void)DisableIRQ(RTC_IRQn); /* MISRA CID 28201062 */
     POWER_ClearWakeupStatus(RTC_IRQn);
     POWER_DisableWakeup(RTC_IRQn);
-
-#if defined(gBoardUseFro32k_d) && (gBoardUseFro32k_d > 0)
-    CLOCK_AttachClk(kRC32K_to_CLK32K);
-#else
-    CLOCK_EnableXtal32K(true);
-    CLOCK_AttachClk(kXTAL32K_to_CLK32K);
-#endif
 
     RTC_Init(RTC);
     RTC_Reset(RTC);

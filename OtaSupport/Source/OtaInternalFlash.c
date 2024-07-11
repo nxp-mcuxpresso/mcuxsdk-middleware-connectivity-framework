@@ -492,7 +492,7 @@ static ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t of
 otaResult_t OTA_SelectInternalStoragePartition(void)
 {
     otaResult_t    status = gOtaInternalFlashError_c;
-    OtaStateCtx_t *hdl    = &mHdl;
+    OtaStateCtx_t *hdl    = &mOtaHdl;
     do
     {
         hal_flash_status_t flashInitStatus;

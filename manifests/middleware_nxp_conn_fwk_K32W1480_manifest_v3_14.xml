@@ -9,9 +9,9 @@
     <definition extID="middleware.baremetal.K32W1480"/>
     <definition extID="platform.drivers.trdc.K32W1480"/>
   </externalDefinitions>
-  <ksdk id="MCUXpressoSDK215000_middleware_nxp_conn_fwk_K32W1480_manifest_v3_14" name="MCUXpressoSDK215000_middleware_nxp_conn_fwk_K32W1480_manifest_v3_14" version="2.15.000" revision="2.15.000"/>
+  <ksdk id="MCUXpressoSDK216000_middleware_nxp_conn_fwk_K32W1480_manifest_v3_14" name="MCUXpressoSDK216000_middleware_nxp_conn_fwk_K32W1480_manifest_v3_14" version="2.16.000" revision="2.16.000"/>
   <components>
-    <component id="middleware.wireless.framework.cmake.K32W1480" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+    <component id="middleware.wireless.framework.cmake.connected_mcu.kw45_k32w1.K32W1480" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -26,6 +26,9 @@
         <files mask="iar.cmake"/>
       </source>
       <source relative_path="./boards" project_relative_path="framework/boards" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./boards/kw45_k32w1" project_relative_path="framework/boards/kw45_k32w1" type="doc">
         <files mask="CMakeLists.txt"/>
       </source>
       <source relative_path="./FunctionLib" project_relative_path="framework/FunctionLib" type="doc">
@@ -44,6 +47,9 @@
         <files mask="CMakeLists.txt"/>
       </source>
       <source relative_path="./OtaSupport" project_relative_path="framework/OtaSupport" type="doc">
+        <files mask="CMakeLists.txt"/>
+      </source>
+      <source relative_path="./PDM" project_relative_path="framework/PDM" type="doc">
         <files mask="CMakeLists.txt"/>
       </source>
       <source relative_path="./PDUM" project_relative_path="framework/PDUM" type="doc">
@@ -74,7 +80,7 @@
         <files mask="CMakeLists.txt"/>
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_CMake_connected_mcu.cmake" hidden="true"/>
+        <files mask="middleware_wireless_framework_CMake_connected_mcu_kw45_k32w1.cmake" hidden="true"/>
       </source>
     </component>
     <component id="middleware.wireless.framework.fsci.K32W1480" name="wireless framework FSCI" brief="Middleware wireless framework_fsci" version="1.0.0" full_name="wireless framework FSCI" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././FSCI" project_base_path="framework">
@@ -134,23 +140,6 @@
         <include_path relative_path="./" project_relative_path="Common" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.rng.K32W1480" name="wireless framework RNG" brief="Middleware wireless framework_rng" version="1.0.0" full_name="wireless framework RNG" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././RNG" project_base_path="framework">
-      <dependencies>
-        <device_dependency value="K32W1480xxxA"/>
-      </dependencies>
-      <source relative_path="./" project_relative_path="RNG" type="c_include">
-        <files mask="RNG_Interface.h"/>
-      </source>
-      <source relative_path="./" project_relative_path="RNG" type="src">
-        <files mask="RNG.c"/>
-      </source>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_RNG.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="./" project_relative_path="RNG" type="c_include"/>
-      </include_paths>
-    </component>
     <component id="middleware.wireless.framework.rng_mbedtls.K32W1480" name="wireless framework RNG Mbedtls" brief="Middleware wireless framework_rng_mbedtls" version="1.0.0" full_name="wireless framework RNG Mbedtls" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././RNG" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
@@ -178,6 +167,7 @@
       </source>
       <source relative_path="./" project_relative_path="SecLib/source" type="src">
         <files mask="SecLib.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source relative_path="../build/CryptoLib/src" project_relative_path="SecLib/CryptoLib" type="src">
         <files mask="SW_AES128.c"/>
@@ -596,7 +586,7 @@
         <include_path relative_path="./" project_relative_path="DBG/SWO" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.settings.K32W1480" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.1" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+    <component id="middleware.wireless.framework.settings.K32W1480" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.2" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -626,36 +616,6 @@
         <include_path relative_path="../framework/Settings/Source" project_relative_path="Settings/source" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.NVS.K32W1480" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.1" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
-      <dependencies>
-        <device_dependency value="K32W1480xxxA"/>
-      </dependencies>
-      <source relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include">
-        <files mask="nvs.h"/>
-      </source>
-      <source relative_path="../framework/NVS/Interface/port" project_relative_path="NVS/interface" type="c_include">
-        <files mask="nvs_port.h"/>
-        <files mask="nvs_errno.h"/>
-      </source>
-      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="src">
-        <files mask="nvs.c"/>
-        <files mask="fwk_nvs_flash.c"/>
-        <files mask="fwk_nvs_ExternalFlash.c"/>
-        <files mask="fwk_nvs_InternalFlash.c"/>
-        <files mask="crc8.c"/>
-      </source>
-      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include">
-        <files mask="nvs_priv.h"/>
-        <files mask="crc.h"/>
-      </source>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_NVS.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include"/>
-        <include_path relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include"/>
-      </include_paths>
-    </component>
     <component id="middleware.wireless.framework.sec_lib.K32W1480" name="wireless framework Sec_lib" brief="Middleware wireless framework_sec_lib" version="1.0.0" full_name="wireless framework Sec_lib" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././SecLib" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
@@ -668,6 +628,7 @@
       </source>
       <source relative_path="./" type="src">
         <files mask="SecLib.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source toolchain="armgcc mcuxpresso" relative_path="./" type="lib">
         <files mask="lib_crypto_m33.a"/>
@@ -679,7 +640,7 @@
         <include_path relative_path="./" project_relative_path="SecLib" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_all.K32W1480" name="wireless framework board base" brief="Middleware wireless framework board base" version="1.0.0" full_name="wireless framework board base" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+    <component id="middleware.wireless.framework.board_all.kw45_k32w1.K32W1480" name="wireless framework board base" brief="Middleware wireless framework board base" version="1.0.0" full_name="wireless framework board base" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -699,7 +660,7 @@
         <include_path relative_path="./boards/kw45_k32w1" project_relative_path="boards/kw45_k32w1" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_common.K32W1480" name="wireless framework Platform Common" brief="Middleware wireless framework_platform_common" version="1.0.0" full_name="wireless framework Platform Common" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_common.connected_mcu.K32W1480" name="wireless framework Platform Common" brief="Middleware wireless framework_platform_common" version="1.0.0" full_name="wireless framework Platform Common" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -709,7 +670,6 @@
       <source relative_path="../include" project_relative_path="Platform" type="c_include">
         <files mask="fwk_platform_coex.h"/>
         <files mask="fwk_platform_ot.h"/>
-        <files mask="fwk_platform_zb.h"/>
       </source>
       <source relative_path="../connected_mcu" project_relative_path="Platform" type="src">
         <files mask="fwk_platform_ot.c"/>
@@ -721,7 +681,7 @@
         <include_path relative_path="../include" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_coex.K32W1480" name="wireless framework Platform coex" brief="Middleware wireless framework_platform_coex" version="1.0.0" full_name="wireless framework Platform coex" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_coex.connected_mcu.K32W1480" name="wireless framework Platform coex" brief="Middleware wireless framework_platform_coex" version="1.0.0" full_name="wireless framework Platform coex" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -735,7 +695,7 @@
         <include_path relative_path="../include" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_internal_flash.K32W1480" name="wireless framework Platform internal flash" brief="Middleware wireless framework_platform_internal_flash" version="1.0.0" full_name="wireless framework Platform internal flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_internal_flash.connected_mcu.K32W1480" name="wireless framework Platform internal flash" brief="Middleware wireless framework_platform_internal_flash" version="1.0.0" full_name="wireless framework Platform internal flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -752,7 +712,41 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_lp.K32W1480" name="wireless framework board_lp" brief="Middleware wireless framework_board_lp" version="1.0.0" full_name="wireless framework board_lp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/lowpower">
+    <component id="middleware.wireless.framework.platform_rng.connected_mcu.K32W1480" name="wireless framework Platform RNG" brief="Middleware wireless framework_platform_rng" version="1.0.0" full_name="wireless framework Platform RNG" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="K32W1480xxxA"/>
+      </dependencies>
+      <source relative_path="../connected_mcu" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_rng.c"/>
+      </source>
+      <source relative_path="../include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_rng.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_rng_connected_mcu.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform_zb.connected_mcu.K32W1480" name="wireless framework Platform Zigbee" brief="Middleware wireless framework_platform_zb" version="1.0.0" full_name="wireless framework Platform Zigbee" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="K32W1480xxxA"/>
+      </dependencies>
+      <source relative_path="../connected_mcu" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_zb.c"/>
+      </source>
+      <source relative_path="../include" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_zb.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_zb_connected_mcu.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../include" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.board_lp.kw45_k32w1.K32W1480" name="wireless framework board_lp" brief="Middleware wireless framework_board_lp" version="1.0.0" full_name="wireless framework board_lp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/lowpower">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -769,7 +763,7 @@
         <include_path relative_path="../kw45_k32w1" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_dcdc.K32W1480" name="wireless framework board_dcdc" brief="Middleware wireless framework_board_dcdc" version="1.0.0" full_name="wireless framework board_dcdc" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/dcdc">
+    <component id="middleware.wireless.framework.board_dcdc.kw45_k32w1.K32W1480" name="wireless framework board_dcdc" brief="Middleware wireless framework_board_dcdc" version="1.0.0" full_name="wireless framework board_dcdc" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/dcdc">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -786,7 +780,7 @@
         <include_path relative_path="../kw45_k32w1" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_platform.K32W1480" name="wireless framework board_platform" brief="Middleware wireless framework_board_platform" version="1.0.0" full_name="wireless framework board_platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/platform">
+    <component id="middleware.wireless.framework.board_platform.kw45_k32w1.K32W1480" name="wireless framework board_platform" brief="Middleware wireless framework_board_platform" version="1.0.0" full_name="wireless framework board_platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/platform">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -800,7 +794,7 @@
         <include_path relative_path="../kw45_k32w1" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_comp.K32W1480" name="wireless framework board_comp" brief="Middleware wireless framework_board_comp" version="1.0.0" full_name="wireless framework board_comp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/components">
+    <component id="middleware.wireless.framework.board_comp.kw45_k32w1.K32W1480" name="wireless framework board_comp" brief="Middleware wireless framework_board_comp" version="1.0.0" full_name="wireless framework board_comp" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/components">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -817,7 +811,7 @@
         <include_path relative_path="../kw45_k32w1" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.board_extflash.K32W1480" name="wireless framework board_extflash" brief="Middleware wireless framework_board_extflash" version="1.0.0" full_name="wireless framework board_extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/extflash">
+    <component id="middleware.wireless.framework.board_extflash.kw45_k32w1.K32W1480" name="wireless framework board_extflash" brief="Middleware wireless framework_board_extflash" version="1.0.0" full_name="wireless framework board_extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="board/extflash">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -834,7 +828,7 @@
         <include_path relative_path="../kw45_k32w1" project_relative_path="./" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.lfs_config.K32W1480" name="wireless framework lfs_config" brief="Middleware wireless framework_lfs_config" version="1.0.0" full_name="wireless framework lfs_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.lfs_config.connected_mcu.K32W1480" name="wireless framework lfs_config" brief="Middleware wireless framework_lfs_config" version="1.0.0" full_name="wireless framework lfs_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <defines>
         <define name="LFS_CONFIG" value="fwk_lfs_config.h"/>
       </defines>
@@ -848,7 +842,24 @@
         <include_path relative_path="../connected_mcu/configs" project_relative_path="Platform/configs" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.matter.config.K32W1480" name="wireless framework matter config" brief="Middleware wireless framework matter config" version="1.0.0" full_name="wireless framework matter config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_fpga.connected_mcu.K32W1480" name="wireless framework Platform fpga" brief="Middleware wireless framework_platform_fpga" version="1.0.0" full_name="wireless framework Platform fpga" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="K32W1480xxxA"/>
+      </dependencies>
+      <source relative_path="../connected_mcu" project_relative_path="Platform" type="src">
+        <files mask="fwk_platform_fpga.c"/>
+      </source>
+      <source relative_path="../connected_mcu" project_relative_path="Platform" type="c_include">
+        <files mask="fwk_platform_fpga.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_platform_fpga_connected_mcu.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.matter.config.kw45_k32w1.K32W1480" name="wireless framework matter config" brief="Middleware wireless framework matter config" version="1.0.0" full_name="wireless framework matter config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -879,7 +890,7 @@
         <include_path relative_path="./Common/devices/kw45_k32w1/gcc" project_relative_path="Common/devices/kw45_k32w1/gcc" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.init.config.K32W1480" name="wireless framework init config" brief="Middleware wireless framework init config" version="1.0.0" full_name="wireless framework init config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="framework">
+    <component id="middleware.wireless.framework.init.config.kw45_k32w1.K32W1480" name="wireless framework init config" brief="Middleware wireless framework init config" version="1.0.0" full_name="wireless framework init config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././boards" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -894,21 +905,12 @@
         <include_path relative_path="../kw45_k32w1" project_relative_path="kw45_k32w1" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.rpmsg_config.K32W1480" name="wireless framework rpmsg_config" brief="Middleware wireless framework_rpmsg_config" version="1.0.0" full_name="wireless framework rpmsg_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.rpmsg_config.K32W1480" name="wireless framework rpmsg_config" brief="Middleware wireless framework_rpmsg_config" version="1.0.0" full_name="wireless framework rpmsg_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="true" type="middleware" package_base_path=".././platform/connected_mcu/configs" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
-      <source relative_path="../connected_mcu/configs" project_relative_path="Platform/configs" type="c_include">
-        <files mask="rpmsg_config.h"/>
-      </source>
-      <source toolchain="armgcc" relative_path="./" type="workspace">
-        <files mask="middleware_wireless_framework_rpmsg_config.cmake" hidden="true"/>
-      </source>
-      <include_paths>
-        <include_path relative_path="../connected_mcu/configs" project_relative_path="Platform/configs" type="c_include"/>
-      </include_paths>
     </component>
-    <component id="middleware.wireless.framework_mbedtls_config.K32W1480" name="wireless framework Sec_lib_mbedtls" brief="Middleware wireless framework_mbedtls_config" version="1.0.0" full_name="wireless framework mbedtls_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework_mbedtls_config.connected_mcu.K32W1480" name="wireless framework Sec_lib_mbedtls" brief="Middleware wireless framework_mbedtls_config" version="1.0.0" full_name="wireless framework mbedtls_config" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <device_dependency value="K32W1480xxxA"/>
       </dependencies>
@@ -952,11 +954,32 @@
         <include_path relative_path="./imx_rt/configs" project_relative_path="platform/imx_rt/configs" type="c_include"/>
       </include_paths>
     </component>
+    <component id="middleware.wireless.framework.rng.K32W1480" name="wireless framework RNG" brief="Middleware wireless framework_rng" version="1.0.0" full_name="wireless framework RNG" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././RNG" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform_rng.connected_mcu.K32W1480"/>
+          <device_dependency value="K32W1480xxxA"/>
+        </all>
+      </dependencies>
+      <source relative_path="./" project_relative_path="RNG" type="c_include">
+        <files mask="RNG_Interface.h"/>
+      </source>
+      <source relative_path="./" project_relative_path="RNG" type="src">
+        <files mask="RNG.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_RNG.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="./" project_relative_path="RNG" type="c_include"/>
+      </include_paths>
+    </component>
     <component id="middleware.wireless.framework.ota.K32W1480" name="wireless framework OtaSupport" brief="Middleware wireless framework_otaSupport" version="1.0.0" full_name="wireless framework OtaSupport" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././OtaSupport" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_ota.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform_extflash.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_ota.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_extflash.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.ota.internal.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -965,7 +988,6 @@
       </source>
       <source relative_path="../Source" project_relative_path="OtaSupport/source" type="src">
         <files mask="OtaSupport.c"/>
-        <files mask="OtaInternalFlash.c"/>
         <files mask="OtaExternalFlash.c"/>
       </source>
       <source relative_path="../Source" project_relative_path="OtaSupport/source" type="c_include">
@@ -973,6 +995,21 @@
       </source>
       <source toolchain="armgcc" relative_path="./" type="workspace">
         <files mask="middleware_wireless_framework_OtaSupport.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../Interface" project_relative_path="OtaSupport/interface" type="c_include"/>
+        <include_path relative_path="../Source" project_relative_path="OtaSupport/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.ota.internal.K32W1480" name="wireless framework OTA Internal Flash" brief="Middleware wireless framework_otaSupport" version="1.0.0" full_name="wireless framework OTA Support Internal flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././OtaSupport" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="K32W1480xxxA"/>
+      </dependencies>
+      <source relative_path="../Source" project_relative_path="OtaSupport/source" type="src">
+        <files mask="OtaInternalFlash.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_OtaSupport_Internal.cmake" hidden="true"/>
       </source>
       <include_paths>
         <include_path relative_path="../Interface" project_relative_path="OtaSupport/interface" type="c_include"/>
@@ -1023,7 +1060,7 @@
     <component id="middleware.wireless.framework.Sensors.K32W1480" name="wireless framework Sensors" brief="Middleware wireless sensors" version="1.0.0" full_name="wireless framework Sensors" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././Sensors" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_sensors.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_sensors.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1058,7 +1095,7 @@
       <dependencies>
         <all>
           <component_dependency value="middleware.freertos-kernel.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_sensors.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1081,8 +1118,8 @@
       </defines>
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1105,8 +1142,8 @@
       </defines>
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_lowpower_timer.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1209,7 +1246,58 @@
         <include_path relative_path="./" project_relative_path="KeyStorage" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform.K32W1480" name="wireless framework Platform" brief="Middleware wireless framework_platform" version="1.0.0" full_name="wireless framework Platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.NVS.K32W1480" name="wireless framework NVS" brief="Middleware wireless framework_NVS" version="6.2.2" full_name="wireless framework NVS" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+      <dependencies>
+        <all>
+          <component_dependency value="middleware.wireless.framework.platform_ota.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_extflash.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.nvs.internal.K32W1480"/>
+          <device_dependency value="K32W1480xxxA"/>
+        </all>
+      </dependencies>
+      <source relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include">
+        <files mask="nvs.h"/>
+        <files mask="fwk_nvs_stats.h"/>
+      </source>
+      <source relative_path="../framework/NVS/Interface/port" project_relative_path="NVS/interface" type="c_include">
+        <files mask="nvs_port.h"/>
+        <files mask="nvs_errno.h"/>
+      </source>
+      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="src">
+        <files mask="nvs.c"/>
+        <files mask="fwk_nvs_flash.c"/>
+        <files mask="fwk_nvs_stats.c"/>
+        <files mask="fwk_nvs_ExternalFlash.c"/>
+        <files mask="crc8.c"/>
+      </source>
+      <source relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include">
+        <files mask="nvs_priv.h"/>
+        <files mask="crc.h"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_NVS.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../framework/NVS/Interface" project_relative_path="NVS/interface" type="c_include"/>
+        <include_path relative_path="../framework/NVS/Source" project_relative_path="NVS/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.nvs.internal.K32W1480" name="wireless framework NVS Internal Flash" brief="Middleware wireless framework_NVS" version="1.0.0" full_name="wireless framework NVS Internal flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././NVS" project_base_path="framework">
+      <dependencies>
+        <device_dependency value="K32W1480xxxA"/>
+      </dependencies>
+      <source relative_path="../Source" project_relative_path="NVS/source" type="src">
+        <files mask="fwk_nvs_InternalFlash.c"/>
+      </source>
+      <source toolchain="armgcc" relative_path="./" type="workspace">
+        <files mask="middleware_wireless_framework_NVS_Internal.cmake" hidden="true"/>
+      </source>
+      <include_paths>
+        <include_path relative_path="../Interface" project_relative_path="NVS/interface" type="c_include"/>
+        <include_path relative_path="../Source" project_relative_path="NVS/source" type="c_include"/>
+      </include_paths>
+    </component>
+    <component id="middleware.wireless.framework.platform.connected_mcu.K32W1480" name="wireless framework Platform" brief="Middleware wireless framework_platform" version="1.0.0" full_name="wireless framework Platform" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
           <component_dependency value="middleware.wireless.framework.fwk_debug.K32W1480"/>
@@ -1217,7 +1305,9 @@
         </all>
       </dependencies>
       <source relative_path="../connected_mcu/configs" project_relative_path="Platform/configs" type="c_include">
+        <files mask="SecLib_mbedtls_config.h"/>
         <files mask="fwk_config.h"/>
+        <files mask="rpmsg_config.h"/>
       </source>
       <source relative_path="../connected_mcu" project_relative_path="Platform" type="c_include">
         <files mask="fwk_platform_definitions.h"/>
@@ -1235,10 +1325,10 @@
         <include_path relative_path="../connected_mcu/configs" project_relative_path="Platform/configs" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_flash.K32W1480" name="wireless framework Platform flash" brief="Middleware wireless framework_platform_flash" version="1.0.0" full_name="wireless framework Platform flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_flash.connected_mcu.K32W1480" name="wireless framework Platform flash" brief="Middleware wireless framework_platform_flash" version="1.0.0" full_name="wireless framework Platform flash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1259,10 +1349,10 @@
         <include_path relative_path="../Common" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_extflash.K32W1480" name="wireless framework Platform Extflash" brief="Middleware wireless framework_platform_extflash" version="1.0.0" full_name="wireless framework Platform Extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_extflash.connected_mcu.K32W1480" name="wireless framework Platform Extflash" brief="Middleware wireless framework_platform_extflash" version="1.0.0" full_name="wireless framework Platform Extflash" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1283,10 +1373,10 @@
         <include_path relative_path="../Common" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_sensors.K32W1480" name="wireless framework Platform sensors" brief="Middleware wireless framework_platform_sensors" version="1.0.0" full_name="wireless framework Platform sensors" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_sensors.connected_mcu.K32W1480" name="wireless framework Platform sensors" brief="Middleware wireless framework_platform_sensors" version="1.0.0" full_name="wireless framework Platform sensors" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1303,10 +1393,10 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ota.K32W1480" name="wireless framework Platform OTA" brief="Middleware wireless framework_platform_ota" version="1.0.0" full_name="wireless framework Platform OTA" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ota.connected_mcu.K32W1480" name="wireless framework Platform OTA" brief="Middleware wireless framework_platform_ota" version="1.0.0" full_name="wireless framework Platform OTA" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1326,11 +1416,11 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ics.K32W1480" name="wireless framework Platform ICS (InterCore Service)" brief="Middleware wireless framework_platform_ics" version="1.0.0" full_name="wireless framework Platform ICS (InterCore Service)" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ics.connected_mcu.K32W1480" name="wireless framework Platform ICS (InterCore Service)" brief="Middleware wireless framework_platform_ics" version="1.0.0" full_name="wireless framework Platform ICS (InterCore Service)" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform_sensors.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_sensors.connected_mcu.K32W1480"/>
           <component_dependency value="middleware.wireless.framework.SFC.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
@@ -1348,11 +1438,11 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_lcl.K32W1480" name="wireless framework platform localization" brief="Middleware wireless framework_platform_lcl" version="1.0.0" full_name="wireless framework platform localization" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_lcl.connected_mcu.K32W1480" name="wireless framework platform localization" brief="Middleware wireless framework_platform_lcl" version="1.0.0" full_name="wireless framework platform localization" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
           <component_dependency value="platform.drivers.trdc.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1372,7 +1462,7 @@
     <component id="middleware.wireless.framework.coexistence.K32W1480" name="wireless framework MWS" brief="Middleware wireless framework_mws" version="1.0.0" full_name="wireless framework MWS" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././MWSCoexistence" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_mws.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_mws.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1392,7 +1482,7 @@
     <component id="middleware.wireless.framework.coexistence.intercore.K32W1480" name="wireless framework MWS intercore" brief="Middleware wireless framework_mws intercore" version="1.0.0" full_name="wireless framework MWS intercore" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././MWSCoexistence" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform_mws.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_mws.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1409,10 +1499,10 @@
         <include_path relative_path="./" project_relative_path="MWSCoexistence/Intercore" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_mws.K32W1480" name="wireless framework platform_mws" brief="Middleware wireless framework_platform_mws" version="1.0.0" full_name="wireless framework platform_mws" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_mws.connected_mcu.K32W1480" name="wireless framework platform_mws" brief="Middleware wireless framework_platform_mws" version="1.0.0" full_name="wireless framework platform_mws" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1429,11 +1519,11 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ble.K32W1480" name="wireless framework platform_ble" brief="Middleware wireless framework_platform_ble" version="1.0.0" full_name="wireless framework platform_ble" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ble.connected_mcu.K32W1480" name="wireless framework platform_ble" brief="Middleware wireless framework_platform_ble" version="1.0.0" full_name="wireless framework platform_ble" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework.platform_coex.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform_coex.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1450,10 +1540,10 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_genfsk.K32W1480" name="wireless framework platform_genfsk" brief="Middleware wireless framework_platform_genfsk" version="1.0.0" full_name="wireless framework platform_genfsk" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_genfsk.connected_mcu.K32W1480" name="wireless framework platform_genfsk" brief="Middleware wireless framework_platform_genfsk" version="1.0.0" full_name="wireless framework platform_genfsk" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1470,10 +1560,10 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_ot.K32W1480" name="wireless framework platform_ot" brief="Middleware wireless framework_platform_ot" version="1.0.0" full_name="wireless framework platform_ot" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_ot.connected_mcu.K32W1480" name="wireless framework platform_ot" brief="Middleware wireless framework_platform_ot" version="1.0.0" full_name="wireless framework platform_ot" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1490,10 +1580,10 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_lowpower.K32W1480" name="wireless framework platform_lowpower" brief="Middleware wireless framework_platform_lowpower" version="1.0.0" full_name="wireless framework platform_lowpower" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_lowpower.connected_mcu.K32W1480" name="wireless framework platform_lowpower" brief="Middleware wireless framework_platform_lowpower" version="1.0.0" full_name="wireless framework platform_lowpower" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1510,10 +1600,10 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_lowpower_timer.K32W1480" name="wireless framework platform_lowpower_timer" brief="Middleware wireless framework_platform_lowpower_timer" version="1.0.0" full_name="wireless framework platform_lowpower_timer" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_lowpower_timer.connected_mcu.K32W1480" name="wireless framework platform_lowpower_timer" brief="Middleware wireless framework_platform_lowpower_timer" version="1.0.0" full_name="wireless framework platform_lowpower_timer" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1530,10 +1620,10 @@
         <include_path relative_path="../connected_mcu" project_relative_path="Platform" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.platform_reset.K32W1480" name="wireless framework Platform reset" brief="Middleware wireless framework_platform_reset" version="1.0.0" full_name="wireless framework Platform reset" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
+    <component id="middleware.wireless.framework.platform_reset.connected_mcu.K32W1480" name="wireless framework Platform reset" brief="Middleware wireless framework_platform_reset" version="1.0.0" full_name="wireless framework Platform reset" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././platform" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1553,8 +1643,8 @@
     <component id="middleware.wireless.framework.sec_lib_mbedtls.K32W1480" name="wireless framework Sec_lib_mbedtls" brief="Middleware wireless framework_sec_lib_mbedtls" version="1.0.0" full_name="wireless framework Sec_lib_mbedtls" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././SecLib" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
-          <component_dependency value="middleware.wireless.framework_mbedtls_config.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework_mbedtls_config.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1566,6 +1656,7 @@
       </source>
       <source relative_path="./" project_relative_path="SecLib" type="src">
         <files mask="SecLib_mbedTLS.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source toolchain="armgcc mcuxpresso" relative_path="./" type="lib">
         <files mask="lib_crypto_m33.a"/>
@@ -1580,7 +1671,7 @@
     <component id="middleware.wireless.framework.sec_lib_sss.K32W1480" name="wireless framework Sec_lib_sss" brief="Middleware wireless framework_sec_lib_sss" version="1.0.0" full_name="wireless framework Sec_lib_sss" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././SecLib" project_base_path="framework">
       <dependencies>
         <all>
-          <component_dependency value="middleware.wireless.framework.platform.K32W1480"/>
+          <component_dependency value="middleware.wireless.framework.platform.connected_mcu.K32W1480"/>
           <device_dependency value="K32W1480xxxA"/>
         </all>
       </dependencies>
@@ -1591,6 +1682,7 @@
       </source>
       <source relative_path="./" project_relative_path="SecLib" type="src">
         <files mask="SecLib_sss.c"/>
+        <files mask="SecLib_aes_mmo.c"/>
       </source>
       <source toolchain="armgcc mcuxpresso" relative_path="./" type="lib">
         <files mask="lib_crypto_m33.a"/>

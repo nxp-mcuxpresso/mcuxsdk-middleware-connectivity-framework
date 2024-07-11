@@ -165,6 +165,13 @@ int PLATFORM_OtaGetImageState(uint8_t *p_state);
  */
 int PLATFORM_OtaUpdateImageState(uint8_t img_state);
 
+/**
+ * \brief Erase the sector that contains the indication of an OTA FW update in the boot interface.
+ *
+ * \return 0 if no error was detected, error code otherwise.
+ */
+int PLATFORM_OtaClearBootInterface(void);
+
 /*!
  * @}  end of FWK_Platform_OTA
  */

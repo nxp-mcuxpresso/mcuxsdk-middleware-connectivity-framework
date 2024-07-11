@@ -1,3 +1,22 @@
+#### 6.2.2: KW45/K32W1 MR6 SDK 2.16.000
+
+##### Major changes
+
+- [HWparams]
+    - Support for location of HWParameters and Application Factory Data IFR in IFR1.
+- [RNG]: API updates
+  - New APIs RNG_SetSeed(), RNG_SetExternalSeed(), RNG_TriggerReseed(), RNG_IsReseedneeded() to manage seed on both core :
+    - When needed RNG_TriggerReseed() will be called and change the return status of RNG_IsReseedneeded(), the user will have to choose when calling RNG_SetSeed() or RNG_SetExternalSeed() in his application typically Idle
+- [NVS] Wear statistics counters added
+
+#### 6.2.2: RW61x RFP4
+- [OTA]
+  -  Add support for RW61x OTA with remap.
+     - Required modifications to prevent direct access to flash logical addresses when remap is active.
+     - Image trailers expected at different offset with remap enabled (see gPlatformMcuBootUseRemap_d in fwk_config.h)
+     - fixed image state assessment procedure when in RunCandidate.
+- [NVS] Wear statistics counters added
+
 #### 6.2.1: KW45/K32W1 MR5 SDK 2.15.000
 
 Experimental Features only:
@@ -22,7 +41,7 @@ Experimental Features only:
     - BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT  changed from 2 to 3 by default
     - BOARD_RADIO_DOMAIN_WAKE_UP_DELAY  changed from 0x10 to 0x0F
   - [gcc linker]
-    - Exclude k32w1_nbu_ble_15_4_dyn.bin from .data section 
+    - Exclude k32w1_nbu_ble_15_4_dyn.bin from .data section
 
 ###### Minor Changes
 - [Platform]

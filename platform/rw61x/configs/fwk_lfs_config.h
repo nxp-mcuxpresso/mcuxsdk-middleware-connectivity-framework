@@ -75,21 +75,21 @@ static inline uint32_t lfs_alignup(uint32_t a, uint32_t alignment)
 static inline uint32_t lfs_npw2(uint32_t a)
 {
 #if !defined(LFS_NO_INTRINSICS) && (defined(__GNUC__) || defined(__CC_ARM))
-    return (32u - HAL_CLZ(a - 1));
+    return (32u - (uint32_t)HAL_CLZ(a - 1u));
 #else
-    uint32_t r = 0;
+    uint32_t r = 0u;
     uint32_t s;
     a -= 1;
-    s = (a > 0xffff) << 4;
+    s = (a > 0xffffu) << 4;
     a >>= s;
     r |= s;
-    s = (a > 0xff) << 3;
+    s = (a > 0xffu) << 3;
     a >>= s;
     r |= s;
-    s = (a > 0xf) << 2;
+    s = (a > 0xfu) << 2;
     a >>= s;
     r |= s;
-    s = (a > 0x3) << 1;
+    s = (a > 0x3u) << 1;
     a >>= s;
     r |= s;
     return (r | (a >> 1)) + 1;
@@ -103,7 +103,7 @@ static inline uint32_t lfs_ctz(uint32_t a)
 #if !defined(LFS_NO_INTRINSICS) && defined(__GNUC__)
     return (uint32_t)HAL_CTZ(a);
 #else
-    return lfs_npw2((a & -a) + 1) - 1;
+    return lfs_npw2((a & -a) + 1u) - 1u;
 #endif
 }
 
@@ -113,9 +113,9 @@ static inline uint32_t lfs_popc(uint32_t a)
 #if !defined(LFS_NO_INTRINSICS) && (defined(__GNUC__) || defined(__CC_ARM))
     return (uint32_t)__builtin_popcount(a);
 #else
-    a = a - ((a >> 1) & 0x55555555);
-    a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
-    return (((a + (a >> 4)) & 0xf0f0f0f) * 0x1010101) >> 24;
+    a = a - ((a >> 1) & 0x55555555u);
+    a = (a & 0x33333333u) + ((a >> 2) & 0x33333333u);
+    return (((a + (a >> 4)) & 0xf0f0f0fu) * 0x1010101u) >> 24;
 #endif
 }
 

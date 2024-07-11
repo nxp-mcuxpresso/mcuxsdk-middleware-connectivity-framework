@@ -13,6 +13,7 @@ set(SOURCES
     fwk_platform_mws.c
     fwk_platform_lcl.c
     fwk_platform_genfsk.c
+    fwk_platform_rng.c
 )
 
 if(CONNFWK_IGNORE_PLATFORM)
@@ -56,6 +57,10 @@ if(CONNFWK_IGNORE_PLATFORM_MWS)
     list(REMOVE_ITEM SOURCES fwk_platform_mws.c)
 endif()
 
+if(CONNFWK_IGNORE_PLATFORM_RNG)
+    list(REMOVE_ITEM SOURCES fwk_platform_rng.c)
+endif()
+
 add_library(${CONNFWK_PLATFORM_LIB} ${SOURCES})
 
 # Making those includes PUBLIC will share them to the other targets linking this lib
@@ -63,7 +68,9 @@ target_include_directories(${CONNFWK_PLATFORM_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../NVS/Interface
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../SecLib
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../HWParameter
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../RNG
         configs
 )
 
@@ -75,9 +82,9 @@ target_link_libraries(${CONNFWK_PLATFORM_LIB}
         connfwk-SecLib
         connfwk-HWParameter
         connfwk-RNG
-        connfwk-hdi
-        connfwk-ipc
-        connfwk-NVS
+#        connfwk-hdi
+#        connfwk-ipc
+        connfwk-HWParameter
     PUBLIC
         ${CONNFWK_MCUX_SDK_LIB}
 )
@@ -89,4 +96,47 @@ if(PROJECT_IS_TOP_LEVEL)
     # Rebuild executables if the linker script is changed
     set_target_properties(connfwk-config PROPERTIES INTERFACE_LINK_DEPENDS ${CONNFWK_PLATFORM_LINKER_FILE})
     connfwk_target_generate_map_file(${CONNFWK_PLATFORM_LIB} PUBLIC ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<TARGET_PROPERTY:NAME>.map)
+endif()
+
+# If the selected build type is for coverage, we build the same lib but with coverage instrumentation
+if(${CMAKE_BUILD_TYPE} MATCHES "Coverage")
+    add_library(${CONNFWK_PLATFORM_LIB}-coverage ${SOURCES})
+    target_include_directories(${CONNFWK_PLATFORM_LIB}-coverage
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/../include
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../SecLib
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../HWParameter
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../RNG
+            configs
+    )
+
+    # Get common configs from the connfwk-config interface
+    target_link_libraries(${CONNFWK_PLATFORM_LIB}-coverage
+        PRIVATE
+            connfwk-config
+            connfwk-FunctionLib
+            connfwk-SecLib
+            connfwk-HWParameter
+            connfwk-RNG
+    #        connfwk-hdi
+    #        connfwk-ipc
+            connfwk-HWParameter
+        PUBLIC
+            ${CONNFWK_MCUX_SDK_LIB}
+    )
+    connfwk_target_set_link_symbol(${CONNFWK_PLATFORM_LIB}-coverage PUBLIC gLowpowerPowerDownEnable_d=1)
+
+    set(COVERAGE_COMPILE_OPTIONS
+        --cs-on
+        --cs-hit
+        --cs-no-execution-time
+    )
+
+    target_compile_options(${CONNFWK_PLATFORM_LIB}-coverage PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:${COVERAGE_COMPILE_OPTIONS}>
+        $<$<COMPILE_LANGUAGE:CXX>:${COVERAGE_COMPILE_OPTIONS}>
+    )
+#    set_target_properties(${CONNFWK_PLATFORM_LIB}-coverage PROPERTIES LINK_FLAGS ${link_flags})
+    set_target_properties(${CONNFWK_PLATFORM_LIB}-coverage PROPERTIES STATIC_LIBRARY_OPTIONS --cs-on)
 endif()

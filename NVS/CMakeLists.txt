@@ -38,7 +38,13 @@ target_link_libraries(connfwk-NVS
 # If the selected build type is for coverage, we build the same lib but with coverage instrumentation
 if(${CMAKE_BUILD_TYPE} MATCHES "Coverage")
   add_library(connfwk-NVS-coverage ${SOURCES})
-  target_link_libraries(connfwk-NVS-coverage PRIVATE connfwk-config)
+  target_link_libraries(connfwk-NVS-coverage
+    PRIVATE
+      connfwk-config
+      connfwk-FunctionLib
+      ${CONNFWK_MCUX_SDK_LIB}
+      ${CONNFWK_PLATFORM_LIB}
+    )
 
   set(COVERAGE_COMPILE_OPTIONS
       --cs-on

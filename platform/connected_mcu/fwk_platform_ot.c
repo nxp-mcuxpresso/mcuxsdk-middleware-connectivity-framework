@@ -52,6 +52,7 @@ int PLATFORM_InitOT(void)
         status = PLATFORM_InitTimerManager();
         CHECK_AND_RAISE_ERROR(status, -1);
 
+#if USE_NBU
         /* Init NBU domain and configure RFMC module
          * CM3 is still in reset and will be released by MCMGR_StartCore during RPMSG init */
         status = PLATFORM_InitNbu();
@@ -66,14 +67,17 @@ int PLATFORM_InitOT(void)
          */
         status = PLATFORM_FwkSrvInit();
         CHECK_AND_RAISE_ERROR(status, -5);
+#endif
 
 #if defined(gMWS_Enabled_d) && (gMWS_Enabled_d == 1)
         MWS_Init();
 #endif
 
+#if USE_NBU
         /* Send chip revision (A0 or A1) to NBU */
         status = PLATFORM_SendChipRevision();
         CHECK_AND_RAISE_ERROR(status, -6);
+#endif
 
         /* Update 32MHz trim value with the one stored in HW parameters */
         PLATFORM_LoadHwParams();

@@ -142,12 +142,12 @@ int PLATFORM_EraseExternalFlash(uint32_t address, uint32_t size)
     return (int)st;
 }
 
-int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t address, bool requestFastRead)
+int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t offset, bool requestFastRead)
 {
     status_t st;
     (void)requestFastRead;
 
-    st = (int)Nor_Flash_Read(&norHandle, address, dest, length);
+    st = (int)Nor_Flash_Read(&norHandle, offset, dest, length);
     if (st != kStatus_Success)
     {
         assert(0);
@@ -177,7 +177,7 @@ bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
     uint32_t remaining_sz                          = len;
     bool     ret                                   = false;
 
-    while (remaining_sz > 0)
+    while (remaining_sz > 0u)
     {
         uint32_t read_sz;
         read_sz = MIN(remaining_sz, PLATFORM_EXTFLASH_PAGE_SIZE);

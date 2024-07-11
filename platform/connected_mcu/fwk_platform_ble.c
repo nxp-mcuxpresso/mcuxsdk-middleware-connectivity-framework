@@ -445,15 +445,17 @@ static void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
     else
 #endif
     {
-        uint8_t ret;
-        int16_t num;
+        int ret;
 
         ret = RNG_Init();
         assert(ret == 0);
         (void)ret;
+
 #ifndef FWK_RNG_DEPRECATED_API
+        int num;
         num = RNG_GetPseudoRandomData(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
 #else
+        int16_t num;
         RNG_SetPseudoRandomNoSeed(NULL);
         num = RNG_GetPseudoRandomNo(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
 #endif

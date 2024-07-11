@@ -432,15 +432,19 @@ static void FC_RemoveFromWriteQueue(fc_buffer_desc_t *buf_desc_p)
         {
             buf_desc_l = buf_desc_l->next;
         }
-
-        /* should not happen , buf_desc_p shall be in the queue*/
-        assert(buf_desc_l != NULL);
-
-        if (fc_config_top_p->fc_write_buffer_list.list_tail == buf_desc_p)
+        /* If we exited the loop and buf_desc_l is NULL, it means buf_desc_p was not found  */
+        if (buf_desc_l != NULL)
         {
-            fc_config_top_p->fc_write_buffer_list.list_tail = buf_desc_l;
+            if (fc_config_top_p->fc_write_buffer_list.list_tail == buf_desc_p)
+            {
+                fc_config_top_p->fc_write_buffer_list.list_tail = buf_desc_l;
+            }
+            buf_desc_l->next = buf_desc_p->next;
         }
-        buf_desc_l->next = buf_desc_p->next;
+        else
+        {
+            assert(buf_desc_l != NULL); /* should not happen , buf_desc_p shall be in the queue*/
+        }
     }
     buf_desc_p->next = NULL;
 
@@ -713,7 +717,7 @@ void *FC_Open(
     fc_context_t *    fc_context_l = (fc_context_t *)fc_context_p;
     fc_buffer_desc_t *buf_desc_p;
 
-    assert(strlen(buffer_name) <= FC_FILE_NAME_SIZE_MAX);
+    assert(strlen(buffer_name) < FC_FILE_NAME_SIZE_MAX);
 
     /* on return of the FC_CheckBufferInWriteList() call, *buffer_length will provide the available buf length */
     /* The flag removeFromWriteQueue is set to 1 as we want the buffer to be removed from the write list if it is found
@@ -738,7 +742,7 @@ void *FC_Open(
             read_size = FSA_ReadBufferFromFile(buffer_name, *buffer_addr, *buffer_length);
             if (read_size >= 0)
             {
-                *buffer_length = read_size;
+                buf_desc_p->payload_size = read_size;
             }
 
             strncpy(buf_desc_p->file_name, buffer_name, FC_FILE_NAME_SIZE_MAX);
@@ -858,7 +862,12 @@ int FC_Delete(const char *buffer_name)
 
     /* Delete from flash */
     ret = FSA_DeleteFile(buffer_name);
-    if (ret < 0)
+    /* We have to take into consideration that the file may not exist in flash
+     * yet, especially if we have found a buffer in the write list. Considering
+     * FSA_DeleteFile() would return -1 for "file not found" and -2 or less for
+     * unrecoverable I/O errors, we can ignore a -1 error code considering it
+     * normal operation. */
+    if (ret < -1)
     {
         ret = -1;
     }

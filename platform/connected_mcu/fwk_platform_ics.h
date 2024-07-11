@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 NXP
+ * Copyright 2021-2022, 2024 NXP
  * All rights reserved.
  *
  *
@@ -89,7 +89,8 @@ typedef enum
     gFwkSrvFroNotification_c                    = 0x7U,
     gFwkSrvNbuIssueIndication_c                 = 0x8U,
     gFwkSrvNbuSecurityEventIndication_c         = 0x9U,
-    gFwkSrvNbu2HostLast_c                       = 0xAU,
+    gFwkSrvNbuRequestRngSeed_c                  = 0xAU,
+    gFwkSrvNbu2HostLast_c                       = 0xBU,
     gFwkSrvHost2NbuFirst_c                      = 0x80U,
     gFwkSrvNbuVersionRequest_c                  = 0x81U,
     gFwkSrvXtal32MTrimIndication_c              = 0x82U,
@@ -101,7 +102,8 @@ typedef enum
     gFwkSrvNbuUpdateFrequencyConstraintFromHost = 0x88U,
     gFwkSrvNbuSetRfSfcConfig_c                  = 0x89U,
     gFwkSrvFroEnableNotification_c              = 0x8AU,
-    gFwkSrvHost2NbuLast_c                       = 0x8BU,
+    gFwkSrvRngReseed_c                          = 0x8BU,
+    gFwkSrvHost2NbuLast_c                       = 0x8CU,
 } eFwkSrvMsgType;
 
 typedef int32_t (*fwksrv_lowpower_constraint_func_t)(int32_t power_mode);

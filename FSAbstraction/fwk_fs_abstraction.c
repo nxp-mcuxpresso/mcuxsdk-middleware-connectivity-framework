@@ -115,7 +115,7 @@ int FSA_Format(void)
 
         /* get pointer to const default config structure from peripherals.c,
            if config structure needs to be changed, update peripherals.c directly for your application */
-        lfs_get_default_config(&cfg_p);
+        (void)lfs_get_default_config(&cfg_p);
 
 #if FWK_FSABSTRACTION_THREADSAFE
         /* prevent simultaneous mount/format at same time */
@@ -370,8 +370,9 @@ int FSA_WriteBufferToFile(const char *file_name, const uint8_t *buffer, uint16_t
         (void)OSA_MutexLock((osa_mutex_handle_t)mLfsMutexId, osaWaitForever_c);
 #endif
 
-        res = lfs_file_opencfg(&lfs_ctx, &file, file_name, ((int)LFS_O_CREAT | (int)LFS_O_WRONLY | (int)LFS_O_TRUNC),
-                               &file_cfg);
+        res =
+            lfs_file_opencfg(&lfs_ctx, &file, file_name,
+                             (int)((uint32_t)LFS_O_CREAT | (uint32_t)LFS_O_WRONLY | (uint32_t)LFS_O_TRUNC), &file_cfg);
         if (res != 0)
         {
             DBG_PRINTF("\rError opening file: %i\r\n", res);
@@ -426,23 +427,21 @@ int FSA_WriteBufferToFile(const char *file_name, const uint8_t *buffer, uint16_t
 
 int FSA_DeleteFile(const char *file_name)
 {
-    int        res;
-    lfs_file_t file;
+    int res;
     (void)res; /* res status only used in debug code */
 #if FWK_FSABSTRACTION_THREADSAFE
     /* Emptying file content shall be atomic */
     (void)OSA_MutexLock((osa_mutex_handle_t)mLfsMutexId, osaWaitForever_c);
 #endif
-
-    res = lfs_remove(&lfs_ctx, file_name);
-    DBG_PRINTF("\rlfs_remove res=%d\r\n", res);
-
-    res = lfs_file_opencfg(&lfs_ctx, &file, file_name, (int)LFS_O_CREAT, &file_cfg);
-    DBG_PRINTF("\rlfs_remove res=%d\r\n", res);
-
-    res = lfs_file_close(&lfs_ctx, &file);
-    DBG_PRINTF("\rlfs_remove res=%d\r\n", res);
-
+    do
+    {
+        res = lfs_remove(&lfs_ctx, file_name);
+        DBG_PRINTF("\rlfs_remove res=%d\r\n", res);
+        if (res < 0)
+        {
+            break;
+        }
+    } while (false);
 #if FWK_FSABSTRACTION_THREADSAFE
     (void)OSA_MutexUnlock((osa_mutex_handle_t)mLfsMutexId);
 #endif
@@ -459,6 +458,11 @@ int FSA_CheckFileSize(const char *file_name)
     if (res == (int)LFS_ERR_OK)
     {
         res = (int)info.size;
+    }
+    else if (res == (int)LFS_ERR_NOENT)
+    {
+        /* When a file does not exist, the function returns a size of zero */
+        res = 0;
     }
 
     return res;

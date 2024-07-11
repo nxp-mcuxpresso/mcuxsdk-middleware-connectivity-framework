@@ -32,17 +32,17 @@
 #define gPlatformUseHwParameter_d 1
 #endif
 /*
- * gHwParamsProdDataPlacementLegacy_c HWParameters PROD_DATA remain at top of main flash,
+ * gHwParamsProdDataMainFlashMode_c HWParameters PROD_DATA remain at top of main flash,
  * where the linker script defines PROD_DATA_BASE_ADDR.
- * When transiting from LegacyMode to IfrMode, an interim mode Legacy2IfrMode is used to
+ * When transiting from MainFlashMode to IfrMode, an interim mode MainFlash2IfrMode is used to
  * enable the transfer of HWParameters from the main flash to the IFR.
  * After this has been applied the size of the PROD_DATA reserved space in the linker script
  * will be made 0 in order to gain a sector.
  * These modes are used to configure gHwParamsProdDataPlacement_c
  */
-#define gHwParamsProdDataPlacementLegacyMode_c     0
-#define gHwParamsProdDataPlacementLegacy2IfrMode_c 1
-#define gHwParamsProdDataPlacementIfrMode_c        2
+#define gHwParamsProdDataMainFlashMode_c     0
+#define gHwParamsProdDataMainFlash2IfrMode_c 1
+#define gHwParamsProdDataIfrMode_c           2
 
 /*
  * Place Application FactoryData in same sector as ProdData.
@@ -67,32 +67,40 @@
 #endif
 /*
  * Define gHwParamsProdDataPlacement_c as :
- *   - gHwParamsProdDataPlacementLegacy_c if you mean to remain backward compatible.
- *   - gHwParamsProdDataPlacementLegacy2IfrMode_c if you wish to conserve previous
+ *   - gHwParamsProdDataMainFlash_c if you mean to remain backward compatible.
+ *   - gHwParamsProdDataMainFlash2IfrMode_c if you wish to conserve previous
  *     HWParameter setting (MAC addresses, xtal trimming data) during migration phase.
- *   - gHwParamsProdDataPlacementIfrMode_c for new devices or once gHwParamsProdDataPlacementLegacy2IfrMode_c
+ *   - gHwParamsProdDataPlacementIfrMode_c for new devices or once gHwParamsProdDataMainFlash2IfrMode_c
  *     mode has populated the IFR with legacy values. -> after this phase update linker script to remove
  *     flash space reserved for PROD_DATA.
  */
 #ifndef gHwParamsProdDataPlacement_c
-#define gHwParamsProdDataPlacement_c gHwParamsProdDataPlacementLegacyMode_c
-//#define gHwParamsProdDataPlacement_c gHwParamsProdDataPlacementLegacy2IfrMode_c
-//#define gHwParamsProdDataPlacement_c gHwParamsProdDataPlacementIfrMode_c
+#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlashMode_c
+//#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
+//#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
 #endif
 
-#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataPlacementLegacyMode_c)
-#define PROD_DATA_FLASH_ADDR (LEGACY_PROD_DATA_ADDR + PROD_DATA_OFFSET)
+#if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlashMode_c)
+#define PROD_DATA_FLASH_ADDR (MAIN_FLASH_PROD_DATA_ADDR + PROD_DATA_OFFSET)
 #define USER_DATA_SECTOR     PROD_DATA_FLASH_ADDR
 #else
+/*
+ * IFR_RSVD_SZ may be undefined or set to 0 if no reserved space is required.
+ * However keep it as 0x600 during the internal development phase.
+ */
+#define IFR_RSVD_SZ 0x600
+
+#if (defined IFR_RSVD_SZ) && (IFR_RSVD_SZ > 0)
+#define PROD_DATA_FLASH_ADDR (IFR_USER_ADDR + IFR_RSVD_SZ + PROD_DATA_OFFSET)
+#else
 #define PROD_DATA_FLASH_ADDR (IFR_USER_ADDR + PROD_DATA_OFFSET)
-#define USER_DATA_SECTOR     PROD_DATA_FLASH_ADDR
+#endif
+#define USER_DATA_SECTOR PROD_DATA_FLASH_ADDR
 #endif
 
 #ifdef gHwParamsAppFactoryDataExtension_d
 #define APP_FACTORY_DATA_FLASH_ADDR (PROD_DATA_FLASH_ADDR + APP_FACTORY_DATA_OFFSET)
 #endif
-
-#define APP_FACTORY_DATA_MAX_LEN 0x800U
 
 /*********************************************************************
  *        Reset Method

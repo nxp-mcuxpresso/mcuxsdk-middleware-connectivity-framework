@@ -17,8 +17,9 @@
  * Definitions
  ******************************************************************************/
 
-#define KS_SIZE_TMP_KEY    15
-#define KS_MAX_CHAR_NUMBER 15
+#define KS_SIZE_TMP_KEY         15
+#define KS_MAX_CHAR_NUMBER      15
+#define KS_VALUE_SIZE_THRESHOLD 256
 
 /* Indication of the type of the key */
 #define FILE_INT 0
@@ -231,8 +232,16 @@ static void KS_GetFileName(void *ks_handle_p, char *suffix, char *file_name, uin
     strcpy(file_name, prefix);
     strcat(file_name, suffix);
 
+    /* If no key was provided for analysis, just return the file name made of
+     * the prefix and the suffix */
+    if (!key_string)
+    {
+        return;
+    }
+
     /* DIVISION OF FILES:
      * - One file for the integer keys;
+     * - Separate files for custom string keys (not starting with 'f', 'g' or 'w');
      * - One file for the string keys NOT starting with 'f' ('g', 'w');
      * - As many files, for the string keys starting with 'f', as the combination of the number of fabrics the device
      * is commissioned to and the possible third characters the string keys starting with 'f' have.
@@ -300,7 +309,37 @@ static void KS_GetFileName(void *ks_handle_p, char *suffix, char *file_name, uin
             }
         }
     }
-    assert(strlen(file_name) <= FC_FILE_NAME_SIZE_MAX);
+
+    if (file_type == FILE_STR && key_string[0] != 'f' && key_string[0] != 'g' && key_string[0] != 'w')
+    {
+        uint16_t key_size = strlen(key_string);
+        uint16_t i, j;
+
+        /* This seems to be a custom key. For custom keys we will try to use
+         * individual files as much as possible. Because the first letters of
+         * custom keys are most probably the same, we will add the LAST letters
+         * of the key name to the "file_name" for added entropy. This has
+         * higher chances to produce different file names for different keys. */
+
+        /* Add the last characters of the "key_string" to the "file_name" to
+         * create a file name of the maximum length supported by the FileCache.
+         * Skip '/' characters in the key name in this process. */
+        i              = strlen(file_name);
+        file_name[i++] = '_';
+        j              = key_size - (FC_FILE_NAME_SIZE_MAX - 1 - i);
+        while (j < key_size)
+        {
+            if (key_string[j] != '/')
+            {
+                file_name[i++] = key_string[j];
+            }
+
+            j++;
+        }
+        file_name[i] = 0;
+    }
+
+    assert(strlen(file_name) < FC_FILE_NAME_SIZE_MAX);
 }
 
 static void *KS_OpenWaitLoop(
@@ -317,7 +356,7 @@ static void *KS_OpenWaitLoop(
 
     /* Add to the current size, the size of the new value */
     /* Try to allocate more space than needed to have the chance to allocate an other key later */
-    *buf_len += (new_value_space * 2);
+    *buf_len += (new_value_space < KS_VALUE_SIZE_THRESHOLD) ? (new_value_space * 2) : new_value_space;
     req_buf_size = *buf_len; /* Check if there is enough space to open the buffer with the updated size */
     file_hdl     = FC_Open(fc_ctx_p, file_name, buf, buf_len, 0);
 #if (KS_OPEN_WAIT_LOOP_MAX_ITERATIONS_N != 0)
@@ -627,15 +666,22 @@ ks_error_t KS_GetKeyInt(void *ks_handle_p, int key, char *key_namespace, void *v
     else
     {
         value_l = KS_SearchKeyIntoBuffer(buf, buf_payload, key, val_sz, &buf_off);
-        /* The length of the read value should not be greater than the size of the buffer */
-        if (*val_sz > buf_sz)
-        {
-            *val_sz = buf_sz;
-        }
         if (value_l != NULL)
         {
             ret = KS_ERROR_NONE;
-            memcpy(value_p, value_l, *val_sz);
+
+            if (*val_sz > buf_sz)
+            {
+                ret     = KS_ERROR_BUF_TOO_SMALL;
+                *val_sz = buf_sz;
+            }
+
+            /* Copy the data associated with the key only when there is
+             * something to copy. */
+            if (*val_sz > 0)
+            {
+                memcpy(value_p, value_l, *val_sz);
+            }
         }
         FC_Close(file_hdl, 0, FC_CLOSE_ONLY);
     }
@@ -729,15 +775,22 @@ ks_error_t KS_GetKeyString(
     else
     {
         value_l = KS_SearchStringKeyIntoBuffer(buf, buf_payload, key_buf, key_len, val_sz, &buf_off);
-        /* The length of the read value should not be greater than the size of the buffer */
-        if (*val_sz > buf_sz)
-        {
-            *val_sz = buf_sz;
-        }
         if (value_l != NULL)
         {
             ret = KS_ERROR_NONE;
-            memcpy(value_p, value_l, *val_sz);
+
+            if (*val_sz > buf_sz)
+            {
+                ret     = KS_ERROR_BUF_TOO_SMALL;
+                *val_sz = buf_sz;
+            }
+
+            /* Copy the data associated with the key only when there is
+             * something to copy. */
+            if (*val_sz > 0)
+            {
+                memcpy(value_p, value_l, *val_sz);
+            }
         }
         FC_Close(file_hdl, 0, FC_CLOSE_ONLY);
     }

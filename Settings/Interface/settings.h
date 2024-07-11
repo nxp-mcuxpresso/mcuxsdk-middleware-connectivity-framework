@@ -50,7 +50,9 @@ extern "C" {
 #define SETTINGS_MAX_NAME_LEN	(8 * SETTINGS_MAX_DIR_DEPTH)
 #define SETTINGS_MAX_VAL_LEN	256
 #define SETTINGS_NAME_SEPARATOR	'/'
+#ifndef SETTINGS_NAME_END
 #define SETTINGS_NAME_END '='
+#endif
 
 /* place for settings additions:
  * up to 7 separators, '=', '\0'

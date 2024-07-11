@@ -43,6 +43,10 @@ extern "C" {
 
 #define CONFIG_SETTINGS_NVS_SECTOR_COUNT ((uint32_t)NV_STORAGE_SIZE / gPlatNvsSectorSize_c)
 
+/* Reconfigure the Settings component name end character to zero as the '='
+ * (equal) character is a legal character in Matter keys names. */
+#define SETTINGS_NAME_END '\0'
+
 /* Iterable sections imported from Zephyr iterable_sections.h*/
 /**
  * @brief Defines a new element for an iterable section for a generic type.

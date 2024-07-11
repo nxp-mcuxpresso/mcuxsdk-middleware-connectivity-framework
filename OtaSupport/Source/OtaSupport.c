@@ -85,24 +85,24 @@ static ota_config_t configuration = {
     .maxConsecutiveTransactions = 3,
 };
 
-OtaStateCtx_t mHdl = {
-    .OtaImageTotalLength   = 0u,
-    .OtaImageCurrentLength = 0u,
-    .CurrentStorageAddress = 0u,
-    .ErasedUntilOffset     = 0u,
+OtaStateCtx_t mOtaHdl = {
+    .OtaImageTotalLength   = 0U,
+    .OtaImageCurrentLength = 0U,
+    .CurrentStorageAddress = 0U,
+    .ErasedUntilOffset     = 0U,
     .FwUpdImageState       = OtaImgState_None,
     .FlashOps              = NULL,
     .ota_partition         = NULL,
-    .ImageOffset           = 0u,
-    .MaxImageLength        = 0u,
+    .ImageOffset           = 0U,
+    .MaxImageLength        = 0U,
 
     .q_sz                  = 0,
     .q_max                 = 0,
-    .StorageAddressWritten = 0u,
-    .OtaImageLengthWritten = 0u,
+    .StorageAddressWritten = 0UL,
+    .OtaImageLengthWritten = 0UL,
     .PostedQ_storage       = NULL,
-    .PostedQ_capacity      = 0,
-    .PostedQInitialized    = false,
+    .PostedQ_capacity      = 0U,
+    .Initialized           = false,
     .VerifyWrites          = true,
     .config                = &configuration,
 };
@@ -119,7 +119,7 @@ otaResult_t OTA_Initialize(void)
     do
     {
         OtaImgState_t img_state;
-        if (mHdl.FwUpdImageState != OtaImgState_None)
+        if (mOtaHdl.FwUpdImageState != OtaImgState_None)
         {
             OTA_CancelImage();
             break;
@@ -145,8 +145,13 @@ otaResult_t OTA_Initialize(void)
         }
     } while (false);
 
+    if (gOtaSuccess_c == status)
+    {
+        mOtaHdl.Initialized = true;
+    }
     return status;
 }
+
 otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz)
 {
     otaResult_t st = gOtaSuccess_c;
@@ -154,104 +159,106 @@ otaResult_t OTA_ServiceInit(void *posted_ops_storage, size_t posted_ops_sz)
     {
         if (posted_ops_storage == NULL)
         {
-            if (posted_ops_sz == 0u)
+            if (posted_ops_sz == 0U)
             {
                 /* The implementer has opted for direct operation (no posted transactions) */
                 /* No other initialization is required */
-                if (mHdl.PostedQInitialized)
+                if (mOtaHdl.PostedQ_capacity != 0U)
                 {
                     /* Should have called OTA_ServiceDeInit beforehand */
                     RAISE_ERROR(st, gOtaInvalidOperation_c);
                 }
-                if ((mHdl.FwUpdImageState == OtaImgState_Acquiring) ||
-                    (mHdl.FwUpdImageState == OtaImgState_CandidateRdy))
+                if ((mOtaHdl.FwUpdImageState == OtaImgState_Acquiring) ||
+                    (mOtaHdl.FwUpdImageState == OtaImgState_CandidateRdy))
                 {
                     /* Should have cancelled the OTA beforehand */
                     RAISE_ERROR(st, gOtaInvalidOperation_c);
                 }
-                mHdl.FwUpdImageState = OtaImgState_None;
-                st                   = OTA_Initialize();
-                break;
+                mOtaHdl.FwUpdImageState = OtaImgState_Permanent;
             }
             else
             {
                 RAISE_ERROR(st, gOtaInvalidParam_c);
             }
         }
-        /* If we have not exit before , the posted operations structure needs to be set */
-        list_status_t         status;
-        list_element_handle_t list_handle;
-
-        /* FLASH_TransactionOpNode_t size shall be multiple of 4 bytes. The reason is to avoid
-         *  doing unaligned access when going through the transaction operation queue, this could lead to
-         *  crash on some toolchain (gcc) when using some instructions not supporting unaligned access*/
-        assert((sizeof(FLASH_TransactionOpNode_t) & 0x3U) == 0U);
-        assert(gOtaTransactionSz_d == sizeof(FLASH_TransactionOpNode_t));
-
-        uint8_t                    nbTransactions = (uint8_t)(posted_ops_sz / sizeof(FLASH_TransactionOpNode_t));
-        FLASH_TransactionOpNode_t *pOpNode        = (FLASH_TransactionOpNode_t *)posted_ops_storage;
-        uint32_t                   posted_ops_storage_32bits;
-
-        FLib_MemCpyWord(&posted_ops_storage_32bits, &posted_ops_storage);
-        /* Check arguments */
-
-        if ((posted_ops_storage_32bits & 0x3U) != 0U)
+        else
         {
-            /* Avoid unaligned access on operation storage buffer, posted_ops_storage shall be word aligned */
-            RAISE_ERROR(st, gOtaInvalidParam_c);
-        }
-        if ((posted_ops_sz % sizeof(FLASH_TransactionOpNode_t)) != 0U)
-        {
-            /* ops buffer size must be a multiple of transaction node */
-            RAISE_ERROR(st, gOtaInvalidParam_c);
-        }
-        if (nbTransactions < 2U)
-        {
-            /* at least 2 transactions are needed to make use of posted ops */
-            RAISE_ERROR(st, gOtaInvalidParam_c);
+            /* If we have not exit before , the posted operations structure needs to be set */
+            list_status_t         status;
+            list_element_handle_t list_handle;
+
+            /* FLASH_TransactionOpNode_t size shall be multiple of 4 bytes. The reason is to avoid
+             *  doing unaligned access when going through the transaction operation queue, this could lead to
+             *  crash on some toolchain (gcc) when using some instructions not supporting unaligned access*/
+            assert((sizeof(FLASH_TransactionOpNode_t) & 0x3U) == 0U);
+            assert(gOtaTransactionSz_d == sizeof(FLASH_TransactionOpNode_t));
+
+            uint8_t                    nbTransactions = (uint8_t)(posted_ops_sz / sizeof(FLASH_TransactionOpNode_t));
+            FLASH_TransactionOpNode_t *pOpNode        = (FLASH_TransactionOpNode_t *)posted_ops_storage;
+            uint32_t                   posted_ops_storage_32bits;
+
+            FLib_MemCpyWord(&posted_ops_storage_32bits, &posted_ops_storage);
+            /* Check arguments */
+
+            if ((posted_ops_storage_32bits & 0x3U) != 0U)
+            {
+                /* Avoid unaligned access on operation storage buffer, posted_ops_storage shall be word aligned */
+                RAISE_ERROR(st, gOtaInvalidParam_c);
+            }
+            if ((posted_ops_sz % sizeof(FLASH_TransactionOpNode_t)) != 0U)
+            {
+                /* ops buffer size must be a multiple of transaction node */
+                RAISE_ERROR(st, gOtaInvalidParam_c);
+            }
+            if (nbTransactions < 2U)
+            {
+                /* at least 2 transactions are needed to make use of posted ops */
+                RAISE_ERROR(st, gOtaInvalidParam_c);
+            }
+
+            /* Check state */
+            if (mOtaHdl.PostedQ_nb_in_queue != 0U)
+            {
+                RAISE_ERROR(st, gOtaInvalidOperation_c);
+            }
+
+            if (mOtaHdl.PostedQ_capacity != 0U)
+            {
+                /* Covers the cases of pending transactions in queue,
+                 * that could not be pending unless initialized  */
+                RAISE_ERROR(st, gOtaInvalidOperation_c);
+            }
+            if ((mOtaHdl.FwUpdImageState == OtaImgState_Acquiring) ||
+                (mOtaHdl.FwUpdImageState == OtaImgState_CandidateRdy))
+            {
+                /* Should have cancelled the OTA beforehand */
+                RAISE_ERROR(st, gOtaInvalidOperation_c);
+            }
+
+            /* Prevent creating mutex multiple times */
+            mOtaHdl.PostedQ_storage = posted_ops_storage;
+
+            LIST_Init(&mOtaHdl.transaction_free_list, 0);
+
+            for (uint8_t i = 0U; i < nbTransactions; i++)
+            {
+                void *ptr;
+                ptr         = &pOpNode[i];
+                list_handle = (list_element_handle_t)ptr;
+                status      = LIST_AddTail(&mOtaHdl.transaction_free_list, list_handle);
+                assert(status == kLIST_Ok);
+                (void)status;
+            }
+
+            if (OSA_MutexCreate((osa_mutex_handle_t)mOtaHdl.msgQueueMutex) != KOSA_StatusSuccess)
+            {
+                RAISE_ERROR(st, gOtaError_c);
+            }
+            mOtaHdl.PostedQ_capacity = nbTransactions;
         }
 
-        /* Check state */
-        if (mHdl.PostedQ_nb_in_queue != 0u)
-        {
-            RAISE_ERROR(st, gOtaInvalidOperation_c);
-        }
-
-        if (mHdl.PostedQInitialized)
-        {
-            /* Covers the cases of pending transations in queue,
-             * that could not be pending unless initialized  */
-            RAISE_ERROR(st, gOtaInvalidOperation_c);
-        }
-        if ((mHdl.FwUpdImageState == OtaImgState_Acquiring) || (mHdl.FwUpdImageState == OtaImgState_CandidateRdy))
-        {
-            /* Should have cancelled the OTA beforehand */
-            RAISE_ERROR(st, gOtaInvalidOperation_c);
-        }
-
-        /* Prevent creating mutex multiple times */
-        mHdl.PostedQ_storage = posted_ops_storage;
-
-        LIST_Init(&mHdl.transaction_free_list, 0);
-
-        for (uint8_t i = 0U; i < nbTransactions; i++)
-        {
-            void *ptr;
-            ptr         = &pOpNode[i];
-            list_handle = (list_element_handle_t)ptr;
-            status      = LIST_AddTail(&mHdl.transaction_free_list, list_handle);
-            assert(status == kLIST_Ok);
-            (void)status;
-        }
-        mHdl.PostedQ_capacity = nbTransactions;
-        if (OSA_MutexCreate((osa_mutex_handle_t)mHdl.msgQueueMutex) != KOSA_StatusSuccess)
-        {
-            RAISE_ERROR(st, gOtaError_c);
-        }
-        mHdl.PostedQInitialized = true;
-
-        mHdl.FwUpdImageState = OtaImgState_None;
-        st                   = OTA_Initialize();
+        mOtaHdl.FwUpdImageState = OtaImgState_None;
+        st                      = OTA_Initialize();
 
     } while (false);
 
@@ -263,22 +270,25 @@ otaResult_t OTA_ServiceDeInit(void)
     otaResult_t st = gOtaSuccess_c;
     do
     {
-        mHdl.PostedQ_capacity    = 0;
-        mHdl.PostedQ_nb_in_queue = 0;
-        if (!mHdl.PostedQInitialized)
+        if (!mOtaHdl.Initialized)
         {
             break;
         }
-        if (mHdl.FwUpdImageState == OtaImgState_Acquiring)
+        if (mOtaHdl.PostedQ_capacity > 0U)
         {
-            RAISE_ERROR(st, gOtaInvalidOperation_c);
-        }
+            mOtaHdl.PostedQ_capacity    = 0U;
+            mOtaHdl.PostedQ_nb_in_queue = 0U;
+            if (mOtaHdl.FwUpdImageState == OtaImgState_Acquiring)
+            {
+                RAISE_ERROR(st, gOtaInvalidOperation_c);
+            }
 
-        if (OSA_MutexDestroy((osa_mutex_handle_t)mHdl.msgQueueMutex) != KOSA_StatusSuccess)
-        {
-            RAISE_ERROR(st, gOtaError_c);
+            if (OSA_MutexDestroy((osa_mutex_handle_t)mOtaHdl.msgQueueMutex) != KOSA_StatusSuccess)
+            {
+                RAISE_ERROR(st, gOtaError_c);
+            }
         }
-        mHdl.PostedQInitialized = false;
+        mOtaHdl.Initialized = false;
     } while (false);
 
     return st;
@@ -287,13 +297,13 @@ otaResult_t OTA_ServiceDeInit(void)
 void OTA_GetDefaultConfig(ota_config_t *userConfig)
 {
     assert(userConfig != NULL);
-    (void)memcpy(userConfig, mHdl.config, sizeof(ota_config_t));
+    (void)memcpy(userConfig, mOtaHdl.config, sizeof(ota_config_t));
 }
 
 void OTA_SetConfig(ota_config_t *userConfig)
 {
     assert(userConfig != NULL);
-    (void)memcpy(mHdl.config, userConfig, sizeof(ota_config_t));
+    (void)memcpy(mOtaHdl.config, userConfig, sizeof(ota_config_t));
 }
 
 /*! *********************************************************************************
@@ -312,7 +322,11 @@ otaResult_t OTA_StartImage(uint32_t length)
     otaResult_t status = gOtaSuccess_c;
     do
     {
-        if (NULL == mHdl.FlashOps)
+        if (!mOtaHdl.Initialized)
+        {
+            RAISE_ERROR(status, gOtaInvalidOperation_c);
+        }
+        if (NULL == mOtaHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -324,14 +338,14 @@ otaResult_t OTA_StartImage(uint32_t length)
          *     launched by bootloader, self-test it.
          *   - or if the */
 
-        if (mHdl.FwUpdImageState != OtaImgState_Permanent)
+        if (mOtaHdl.FwUpdImageState != OtaImgState_Permanent)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
 
         /* Check if the internal FLASH and the OTA storage have enough room to store
            the image */
-        if (length > mHdl.MaxImageLength)
+        if (length > mOtaHdl.MaxImageLength)
         {
             RAISE_ERROR(status, gOtaImageTooLarge_c);
         }
@@ -343,13 +357,13 @@ otaResult_t OTA_StartImage(uint32_t length)
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         /* Save the total length of the OTA image */
-        mHdl.OtaImageTotalLength = length;
+        mOtaHdl.OtaImageTotalLength = length;
         /* Init the length of the OTA image currently written */
-        mHdl.OtaImageCurrentLength = 0;
+        mOtaHdl.OtaImageCurrentLength = 0U;
         /* Init the current OTA Storage write address */
-        mHdl.CurrentStorageAddress = mHdl.ImageOffset;
-        mHdl.OtaImageLengthWritten = 0;
-        mHdl.StorageAddressWritten = mHdl.ImageOffset;
+        mOtaHdl.CurrentStorageAddress = mOtaHdl.ImageOffset;
+        mOtaHdl.OtaImageLengthWritten = 0U;
+        mOtaHdl.StorageAddressWritten = mOtaHdl.ImageOffset;
 
     } while (false);
     return status;
@@ -376,12 +390,12 @@ otaResult_t OTA_PushImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
     do
     {
         bool posted_pos = OTA_UsePostedOperation();
-        if (mHdl.FlashOps == NULL)
+        if (mOtaHdl.FlashOps == NULL)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         /* Cannot add a chunk without a prior call to OTA_StartImage() */
-        if (mHdl.FwUpdImageState != OtaImgState_Acquiring)
+        if (mOtaHdl.FwUpdImageState != OtaImgState_Acquiring)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -391,7 +405,7 @@ otaResult_t OTA_PushImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
         /* Check if the chunk does not extend over the boundaries of the image */
-        if (mHdl.OtaImageCurrentLength + length > mHdl.OtaImageTotalLength)
+        if (mOtaHdl.OtaImageCurrentLength + length > mOtaHdl.OtaImageTotalLength)
         {
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
@@ -399,17 +413,17 @@ otaResult_t OTA_PushImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
         /* Received a chunk with offset */
         if (NULL != pImageOffset)
         {
-            mHdl.CurrentStorageAddress = mHdl.ImageOffset + *pImageOffset;
+            mOtaHdl.CurrentStorageAddress = mOtaHdl.ImageOffset + *pImageOffset;
         }
         if (posted_pos)
         {
-            OTA_DEBUG_TRACE("storage addr=%x length=%d\r\n", mHdl.CurrentStorageAddress, length);
-            status = OTA_PostWriteToFlash(length, mHdl.CurrentStorageAddress, pData);
+            OTA_DEBUG_TRACE("storage addr=%x length=%d\r\n", mOtaHdl.CurrentStorageAddress, length);
+            status = OTA_PostWriteToFlash(length, mOtaHdl.CurrentStorageAddress, pData);
         }
         else
         {
             /* Try to write the data chunk into the image storage */
-            status = OTA_WriteToFlash(length, mHdl.CurrentStorageAddress, pData);
+            status = OTA_WriteToFlash(length, mOtaHdl.CurrentStorageAddress, pData);
         }
 
         if (status != gOtaSuccess_c)
@@ -418,13 +432,13 @@ otaResult_t OTA_PushImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
         }
         /* Data chunk successfully written into OTA Storage
         Update operation parameters */
-        mHdl.CurrentStorageAddress += length;
-        mHdl.OtaImageCurrentLength += length;
+        mOtaHdl.CurrentStorageAddress += length;
+        mOtaHdl.OtaImageCurrentLength += length;
 
         /* Return the currently written length of the OTA image to the caller */
         if (pImageLength != NULL)
         {
-            *pImageLength = mHdl.OtaImageCurrentLength;
+            *pImageLength = mOtaHdl.OtaImageCurrentLength;
         }
     } while (false);
     return status;
@@ -458,12 +472,12 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
 
-        if (mHdl.FlashOps == NULL)
+        if (mOtaHdl.FlashOps == NULL)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         posted_ops      = OTA_UsePostedOperation();
-        mAbsoluteOffset = mHdl.ImageOffset + *pImageOffset;
+        mAbsoluteOffset = mOtaHdl.ImageOffset + *pImageOffset;
         if (posted_ops)
         {
             /* When posted operations are used, a requested chunk may be partially written to flash
@@ -471,42 +485,42 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
              */
             uint32_t end_of_queried_data;
             end_of_queried_data = mAbsoluteOffset + length;
-            if (mAbsoluteOffset > mHdl.StorageAddressWritten)
+            if (mAbsoluteOffset > mOtaHdl.StorageAddressWritten)
             {
-                if (mAbsoluteOffset <= (mHdl.StorageAddressWritten + PROGRAM_PAGE_SZ) &&
-                    (end_of_queried_data <= (mHdl.StorageAddressWritten + PROGRAM_PAGE_SZ + 1U)))
+                if (mAbsoluteOffset <= (mOtaHdl.StorageAddressWritten + PROGRAM_PAGE_SZ) &&
+                    (end_of_queried_data <= (mOtaHdl.StorageAddressWritten + PROGRAM_PAGE_SZ + 1U)))
                 {
                     /* The asked buffer is still in RAM */
-                    FLib_MemCpy(pData, mHdl.cur_transaction->buf + (mAbsoluteOffset - PROGRAM_PAGE_SZ), length);
+                    FLib_MemCpy(pData, mOtaHdl.cur_transaction->buf + (mAbsoluteOffset - PROGRAM_PAGE_SZ), length);
                     status = gOtaSuccess_c;
                     break;
                 }
             }
             else
             {
-                /* so (mAbsoluteOffset <= mHdl.StorageAddressWritten)
+                /* so (mAbsoluteOffset <= mOtaHdl.StorageAddressWritten)
                  * end_of_queried_data should be positioned inside the selected image partition
                  * taking into consideration the offset at which the image starts in flash */
-                if ((end_of_queried_data > (mHdl.OtaImageLengthWritten + mHdl.ImageOffset)) &&
-                    (end_of_queried_data < (mHdl.StorageAddressWritten + PROGRAM_PAGE_SZ)))
+                if ((end_of_queried_data > (mOtaHdl.OtaImageLengthWritten + mOtaHdl.ImageOffset)) &&
+                    (end_of_queried_data < (mOtaHdl.StorageAddressWritten + PROGRAM_PAGE_SZ)))
                 {
-                    uint16_t lenInFlash = (length - (uint16_t)mHdl.OtaImageLengthWritten);
+                    uint16_t lenInFlash = (length - (uint16_t)mOtaHdl.OtaImageLengthWritten);
                     uint16_t lenInRam   = (length - lenInFlash);
                     /* The asked buffer is in Flash and in RAM */
-                    st = mHdl.FlashOps->readData(lenInFlash, mAbsoluteOffset, pData);
+                    st = mOtaHdl.FlashOps->readData(lenInFlash, mAbsoluteOffset, pData);
                     if (st != kStatus_OTA_Flash_Success)
                     {
                         RAISE_ERROR(status, gOtaExternalFlashError_c);
                     }
                     pData += lenInFlash;
-                    FLib_MemCpy(pData, mHdl.cur_transaction->buf, lenInRam);
+                    FLib_MemCpy(pData, mOtaHdl.cur_transaction->buf, lenInRam);
                     status = gOtaSuccess_c;
                     break;
                 }
             }
         }
         /* The asked buffer is in Flash */
-        st = mHdl.FlashOps->readData(length, mAbsoluteOffset, pData);
+        st = mOtaHdl.FlashOps->readData(length, mAbsoluteOffset, pData);
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -537,24 +551,24 @@ otaResult_t OTA_CommitImage(uint8_t *pBitmap)
         OtaLoaderInfo_t ota_load_info;
 
         /* Cannot commit a image without a prior call to OTA_StartImage() */
-        if (mHdl.FwUpdImageState != OtaImgState_Acquiring)
+        if (mOtaHdl.FwUpdImageState != OtaImgState_Acquiring)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         /* Cannot commit if the image hasn't been completely received */
-        if (mHdl.OtaImageCurrentLength != mHdl.OtaImageTotalLength)
+        if (mOtaHdl.OtaImageCurrentLength != mOtaHdl.OtaImageTotalLength)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
         /* Writes the pending data to flash */
         OTA_WritePendingData();
         /* After flushing the remainder the written length must match the queued length */
-        if (mHdl.OtaImageLengthWritten != mHdl.OtaImageTotalLength)
+        if (mOtaHdl.OtaImageLengthWritten != mOtaHdl.OtaImageTotalLength)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
-        ota_load_info.image_sz   = mHdl.OtaImageTotalLength;
-        ota_load_info.image_addr = mHdl.ota_partition->start_offset + mHdl.ImageOffset;
+        ota_load_info.image_sz   = mOtaHdl.OtaImageTotalLength;
+        ota_load_info.image_addr = mOtaHdl.ota_partition->start_offset + mOtaHdl.ImageOffset;
 
         ota_load_info.pBitMap = pBitmap;
 
@@ -587,20 +601,20 @@ void OTA_SetNewImageFlagWithOffset(uint32_t offset)
 
     int st;
 
-    if (mHdl.FwUpdImageState == OtaImgState_CandidateRdy)
+    if (mOtaHdl.FwUpdImageState == OtaImgState_CandidateRdy)
     {
-        if (offset < mHdl.OtaImageTotalLength)
+        if (offset < mOtaHdl.OtaImageTotalLength)
         {
             OtaLoaderInfo_t loader_info;
-            loader_info.image_addr     = mHdl.ota_partition->start_offset + mHdl.ImageOffset + offset;
-            loader_info.image_sz       = mHdl.OtaImageTotalLength - offset;
+            loader_info.image_addr     = mOtaHdl.ota_partition->start_offset + mOtaHdl.ImageOffset + offset;
+            loader_info.image_sz       = mOtaHdl.OtaImageTotalLength - offset;
             loader_info.pBitMap        = NULL;
-            loader_info.partition_desc = mHdl.ota_partition;
+            loader_info.partition_desc = mOtaHdl.ota_partition;
 
             st = PLATFORM_OtaNotifyNewImageReady(&loader_info);
             if (st != 0)
             {
-                mHdl.FwUpdImageState = OtaImgState_Fail;
+                mOtaHdl.FwUpdImageState = OtaImgState_Fail;
             }
         }
     }
@@ -620,18 +634,18 @@ void OTA_SetNewImageFlag(void)
 OtaImgState_t OTA_GetImgState(void)
 {
     OtaImgState_t ret       = OtaImgState_Fail;
-    uint8_t       img_state = (uint8_t)mHdl.FwUpdImageState;
+    uint8_t       img_state = (uint8_t)mOtaHdl.FwUpdImageState;
     int           val       = -1;
     val                     = PLATFORM_OtaGetImageState(&img_state);
     if (val == 0)
     {
         /* The actual Ota state is retrived from the PLATFORM dependent function  */
-        mHdl.FwUpdImageState = (OtaImgState_t)img_state;
+        mOtaHdl.FwUpdImageState = (OtaImgState_t)img_state;
     }
     /* if 1 was returned the PLATFORM_OtaGetImageState does not know */
     if (val >= 0)
     {
-        ret = mHdl.FwUpdImageState;
+        ret = mOtaHdl.FwUpdImageState;
     }
     return ret;
 }
@@ -639,7 +653,7 @@ OtaImgState_t OTA_GetImgState(void)
 static int OtaGoToNoneState(void)
 {
     int st = -1;
-    switch (mHdl.FwUpdImageState)
+    switch (mOtaHdl.FwUpdImageState)
     {
         /* Full re-initialization : forget previously received OTA image */
         case OtaImgState_Acquiring:
@@ -647,7 +661,7 @@ static int OtaGoToNoneState(void)
         case OtaImgState_RunCandidate:
         case OtaImgState_Fail:
         {
-            if (mHdl.OtaImageTotalLength != 0u)
+            if (mOtaHdl.OtaImageTotalLength != 0U)
             {
                 OTA_CancelImage();
             }
@@ -668,7 +682,7 @@ static int OtaGoToNoneState(void)
 static int OtaGoToPermanentState(void)
 {
     int st = -1;
-    switch (mHdl.FwUpdImageState)
+    switch (mOtaHdl.FwUpdImageState)
     {
         case OtaImgState_None: /* not initialized yet */
         case OtaImgState_Fail: /* forget previous error */
@@ -684,7 +698,7 @@ static int OtaGoToPermanentState(void)
         case OtaImgState_Acquiring:
         case OtaImgState_CandidateRdy:
         {
-            if (mHdl.OtaImageTotalLength != 0u)
+            if (mOtaHdl.OtaImageTotalLength != 0U)
             {
                 OTA_CancelImage();
             }
@@ -701,17 +715,17 @@ static int OtaGoToPermanentState(void)
 static int OtaGoToCandidateRdyState(void)
 {
     int st = -1;
-    switch (mHdl.FwUpdImageState)
+    switch (mOtaHdl.FwUpdImageState)
     {
         case OtaImgState_Acquiring:
         {
-            if (mHdl.OtaImageTotalLength == mHdl.OtaImageCurrentLength)
+            if (mOtaHdl.OtaImageTotalLength == mOtaHdl.OtaImageCurrentLength)
             {
                 OtaLoaderInfo_t loader_info;
-                loader_info.image_addr     = mHdl.ota_partition->start_offset + mHdl.ImageOffset;
-                loader_info.image_sz       = mHdl.OtaImageTotalLength;
+                loader_info.image_addr     = mOtaHdl.ota_partition->start_offset + mOtaHdl.ImageOffset;
+                loader_info.image_sz       = mOtaHdl.OtaImageTotalLength;
                 loader_info.pBitMap        = NULL;
-                loader_info.partition_desc = mHdl.ota_partition;
+                loader_info.partition_desc = mOtaHdl.ota_partition;
 
                 st = PLATFORM_OtaNotifyNewImageReady(&loader_info);
             }
@@ -738,12 +752,12 @@ static int OtaGoToCandidateRdyState(void)
 static int OtaGoToAcquiringState(void)
 {
     int st = -1;
-    switch (mHdl.FwUpdImageState)
+    switch (mOtaHdl.FwUpdImageState)
     {
         case OtaImgState_Acquiring:
         case OtaImgState_CandidateRdy:
         {
-            if (mHdl.OtaImageTotalLength != 0u)
+            if (mOtaHdl.OtaImageTotalLength != 0U)
             {
                 OTA_CancelImage();
             }
@@ -796,13 +810,13 @@ otaResult_t OTA_UpdateImgState(OtaImgState_t new_state)
 
     if (st >= 0)
     {
-        mHdl.FwUpdImageState = new_state;
-        status               = gOtaSuccess_c;
+        mOtaHdl.FwUpdImageState = new_state;
+        status                  = gOtaSuccess_c;
     }
     else
     {
-        mHdl.FwUpdImageState = OtaImgState_Fail;
-        status               = gOtaError_c;
+        mOtaHdl.FwUpdImageState = OtaImgState_Fail;
+        status                  = gOtaError_c;
     }
 
     return status;
@@ -814,8 +828,8 @@ otaResult_t OTA_UpdateImgState(OtaImgState_t new_state)
  ********************************************************************************** */
 void OTA_CancelImage(void)
 {
-    if ((mHdl.FwUpdImageState == OtaImgState_Acquiring) || (mHdl.FwUpdImageState == OtaImgState_CandidateRdy) ||
-        (mHdl.FwUpdImageState == OtaImgState_Fail))
+    if ((mOtaHdl.FwUpdImageState == OtaImgState_Acquiring) || (mOtaHdl.FwUpdImageState == OtaImgState_CandidateRdy) ||
+        (mOtaHdl.FwUpdImageState == OtaImgState_Fail))
     {
         if (OTA_UsePostedOperation())
         {
@@ -823,7 +837,7 @@ void OTA_CancelImage(void)
         }
         OTA_InitContext();
     }
-    mHdl.FwUpdImageState = OtaImgState_Permanent;
+    mOtaHdl.FwUpdImageState = OtaImgState_Permanent;
 }
 
 /*! *********************************************************************************
@@ -844,7 +858,7 @@ uint16_t OTA_CrcCompute(uint8_t *pData, uint16_t lenData, uint16_t crcValueOld)
     while (0U != (lenData--))
     {
         crcValueOld ^= (uint16_t)((uint16_t)*pData++ << 8);
-        for (i = 0; i < 8U; ++i)
+        for (i = 0U; i < 8U; ++i)
         {
             if (0U != (crcValueOld & 0x8000U))
             {
@@ -873,11 +887,11 @@ otaResult_t OTA_EraseStorageMemory(void)
     {
         ota_flash_status_t st;
 
-        if (NULL == mHdl.FlashOps)
+        if (NULL == mOtaHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
-        st = mHdl.FlashOps->format_storage();
+        st = mOtaHdl.FlashOps->format_storage();
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -903,12 +917,12 @@ otaResult_t OTA_ReadStorageMemory(uint8_t *pData, uint16_t length, uint32_t addr
     do
     {
         ota_flash_status_t st;
-        if (NULL == mHdl.FlashOps)
+        if (NULL == mOtaHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
 
-        st = mHdl.FlashOps->readData(length, address, pData);
+        st = mOtaHdl.FlashOps->readData(length, address, pData);
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -935,7 +949,7 @@ otaResult_t OTA_WriteStorageMemory(uint8_t *pData, uint16_t length, uint32_t add
     otaResult_t status;
     do
     {
-        if (NULL == mHdl.FlashOps)
+        if (NULL == mOtaHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -957,33 +971,34 @@ int OTA_TransactionResume(void)
     int                nb_treated = 0;
     ota_flash_status_t st         = kStatus_OTA_Flash_Success;
 
-    if (mHdl.PostedQInitialized)
+    /* Need to check if  PostedQ_capacity has been set in order to make sure mutex was created */
+    if (mOtaHdl.Initialized && (mOtaHdl.PostedQ_capacity > 0u))
     {
         /* Mutex to lock transaction processing */
-        osa_status_t status = OSA_MutexLock(mHdl.msgQueueMutex, osaWaitForever_c);
+        osa_status_t status = OSA_MutexLock(mOtaHdl.msgQueueMutex, osaWaitForever_c);
         assert(status == KOSA_StatusSuccess);
 
         while (OTA_UsePostedOperation() &&
                (kStatus_OTA_Flash_Success == st) /* Stop as soon as there is an error */
-               /* && mHdl.LoadOtaImageInProgress */
+               /* && mOtaHdl.LoadOtaImageInProgress */
                && OTA_IsTransactionPending() /* There are queued flash operations pending in queue */
                && (nb_treated <
-                   mHdl.config->maxConsecutiveTransactions)) /* ... but do not schedule too many in a same pass */
+                   mOtaHdl.config->maxConsecutiveTransactions)) /* ... but do not schedule too many in a same pass */
         {
-            if (mHdl.FlashOps->isBusy() != 0U)
+            if (mOtaHdl.FlashOps->isBusy() != 0U)
             {
                 /* There were transactions pending but we consumed none */
-                mHdl.cnt_idle_op++;
-                if (mHdl.cnt_idle_op > mHdl.max_cnt_idle)
+                mOtaHdl.cnt_idle_op++;
+                if (mOtaHdl.cnt_idle_op > mOtaHdl.max_cnt_idle)
                 {
-                    mHdl.max_cnt_idle = mHdl.cnt_idle_op;
+                    mOtaHdl.max_cnt_idle = mOtaHdl.cnt_idle_op;
                 }
                 break;
             }
             nb_treated++;
             /* Use MSG_GetHead so as to leave Msg in queue so that op_type or sz can be transformed when operation
              * completes (in particular for block erasure) */
-            FLASH_TransactionOp_t *pMsg = MSG_QueueGetHead(&mHdl.op_queue);
+            FLASH_TransactionOp_t *pMsg = MSG_QueueGetHead(&mOtaHdl.op_queue);
             if (pMsg == NULL)
             {
                 break;
@@ -1029,13 +1044,13 @@ int OTA_TransactionResume(void)
             };
         } /* while */
         /* There were transactions pending but we consumed some */
-        mHdl.cnt_idle_op = 0;
+        mOtaHdl.cnt_idle_op = 0;
         if (st != kStatus_OTA_Flash_Success)
         {
             OTA_CancelImage();
         }
         /* Unlock Mutex to be accessed by other tasks */
-        status = OSA_MutexUnlock(mHdl.msgQueueMutex);
+        status = OSA_MutexUnlock(mOtaHdl.msgQueueMutex);
         assert(status == KOSA_StatusSuccess);
 
         /* Fix MISRA in release mode when assert() is stubbed*/
@@ -1060,7 +1075,7 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
 
     do
     {
-        if (NULL == mHdl.FlashOps)
+        if (NULL == mOtaHdl.FlashOps)
         {
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
@@ -1077,16 +1092,16 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
                 assert(pMsg == NULL);
                 RAISE_ERROR(status, gOtaError_c);
             }
-            pMsg->flash_addr = mHdl.ErasedUntilOffset;
-            if (mHdl.ErasedUntilOffset + size >= mHdl.MaxImageLength)
+            pMsg->flash_addr = mOtaHdl.ErasedUntilOffset;
+            if (mOtaHdl.ErasedUntilOffset + size >= mOtaHdl.MaxImageLength)
             {
                 /* Even if size is 0, produce a fake FLASH_OP_ERASE_NEXT_BLOCK so that
                  * callback gets called on completion in the IdleHook context */
-                pMsg->sz = (int32_t)(mHdl.MaxImageLength - mHdl.ErasedUntilOffset);
+                pMsg->sz = (mOtaHdl.MaxImageLength - mOtaHdl.ErasedUntilOffset);
             }
             else
             {
-                pMsg->sz = (int32_t)size;
+                pMsg->sz = size;
             }
 
             pMsg->op_type = FLASH_OP_ERASE_NEXT_BLOCK;
@@ -1096,7 +1111,7 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
 
             OTA_MsgQueue(pMsg);
 
-            if (!mHdl.config->PostedOpInIdleTask)
+            if (!mOtaHdl.config->PostedOpInIdleTask)
             {
                 /* Always take head of queue */
                 (void)OTA_TransactionResume();
@@ -1106,9 +1121,9 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
         {
             /* Make Headroom for the synchronous execution case */
             ota_flash_status_t st;
-            uint32_t *         p_erase_addr = &mHdl.ErasedUntilOffset;
+            uint32_t *         p_erase_addr = &mOtaHdl.ErasedUntilOffset;
             int32_t            remain_sz    = (int32_t)size;
-            st                              = mHdl.FlashOps->eraseArea(p_erase_addr, &remain_sz, false);
+            st                              = mOtaHdl.FlashOps->eraseArea(p_erase_addr, &remain_sz, false);
             if (kStatus_OTA_Flash_Success == st)
             {
                 if (callback.func != NULL)
@@ -1118,8 +1133,8 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
             }
             else
             {
-                mHdl.ErasedUntilOffset = 0;
-                status                 = gOtaError_c;
+                mOtaHdl.ErasedUntilOffset = 0U;
+                status                    = gOtaError_c;
             }
         }
     } while (false);
@@ -1135,10 +1150,10 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
  *****************************************************************************/
 uint32_t OTA_GetSelectedFlashAvailableSpace(void)
 {
-    uint32_t sz = 0;
-    if (mHdl.ota_partition != NULL)
+    uint32_t sz = 0U;
+    if (mOtaHdl.ota_partition != NULL)
     {
-        sz = mHdl.ota_partition->size;
+        sz = mOtaHdl.ota_partition->size;
     }
     return sz;
 }
@@ -1146,7 +1161,7 @@ uint32_t OTA_GetSelectedFlashAvailableSpace(void)
 bool OTA_IsTransactionPending(void)
 {
     /* When the op_queue size is 0 the list of pending operations is empty*/
-    return LIST_GetSize(&mHdl.op_queue) != 0U ? true : false;
+    return LIST_GetSize(&mOtaHdl.op_queue) != 0U ? true : false;
 }
 
 /************************************************************************************
@@ -1166,17 +1181,17 @@ static void OTA_WritePendingData(void)
     ota_flash_status_t status;
     if (OTA_UsePostedOperation())
     {
-        FLASH_TransactionOp_t *pMsg = mHdl.cur_transaction;
+        FLASH_TransactionOp_t *pMsg = mOtaHdl.cur_transaction;
         do
         {
-            if ((pMsg != NULL) && (pMsg->sz != 0))
+            if ((pMsg != NULL) && (pMsg->sz != 0U))
             {
-                mHdl.cur_transaction = NULL;
+                mOtaHdl.cur_transaction = NULL;
                 /* Submit transaction */
                 OTA_MsgQueue(pMsg);
             }
 
-            while (mHdl.FlashOps->isBusy() != 0U)
+            while (mOtaHdl.FlashOps->isBusy() != 0U)
             {
             }
 
@@ -1184,7 +1199,7 @@ static void OTA_WritePendingData(void)
             while (OTA_IsTransactionPending())
             {
                 (void)OTA_TransactionResume();
-                while (mHdl.FlashOps->isBusy() != 0U)
+                while (mOtaHdl.FlashOps->isBusy() != 0U)
                 {
                 }
             }
@@ -1193,12 +1208,12 @@ static void OTA_WritePendingData(void)
     }
     else
     {
-        status = mHdl.FlashOps->flushWriteBuf();
+        status = mOtaHdl.FlashOps->flushWriteBuf();
         assert(status == kStatus_OTA_Flash_Success);
         (void)status;
     }
 
-    mHdl.OtaImageLengthWritten = mHdl.OtaImageCurrentLength;
+    mOtaHdl.OtaImageLengthWritten = mOtaHdl.OtaImageCurrentLength;
 }
 
 /*****************************************************************************
@@ -1209,7 +1224,7 @@ static void OTA_WritePendingData(void)
  *****************************************************************************/
 static bool OTA_UsePostedOperation(void)
 {
-    return (mHdl.PostedQ_capacity != 0U);
+    return (mOtaHdl.PostedQ_capacity != 0U);
 }
 
 static otaResult_t OTA_PostWriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *pData)
@@ -1220,7 +1235,7 @@ static otaResult_t OTA_PostWriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8
     Outbuf = pData;
     do
     {
-        if (mHdl.OtaImageLengthWritten > mHdl.OtaImageCurrentLength)
+        if (mOtaHdl.OtaImageLengthWritten > mOtaHdl.OtaImageCurrentLength)
         {
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
@@ -1231,9 +1246,9 @@ static otaResult_t OTA_PostWriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8
             size_t   remaining_space;
             size_t   nb_bytes_copy;
 
-            if (mHdl.cur_transaction != NULL)
+            if (mOtaHdl.cur_transaction != NULL)
             {
-                pMsg = mHdl.cur_transaction;
+                pMsg = mOtaHdl.cur_transaction;
                 /* Current transaction was ongoing : continue filling it */
                 remaining_space = PROGRAM_PAGE_SZ - (uint32_t)pMsg->sz;
                 Addr += remaining_space;
@@ -1248,22 +1263,22 @@ static otaResult_t OTA_PostWriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8
                 }
                 pMsg->flash_addr = Addr;
                 pMsg->op_type    = FLASH_OP_WRITE;
-                pMsg->sz         = 0;
+                pMsg->sz         = 0U;
                 remaining_space  = PROGRAM_PAGE_SZ;
             }
             p             = &pMsg->buf[pMsg->sz];
             nb_bytes_copy = MIN(remaining_space, NoOfBytes);
             FLib_MemCpy(p, Outbuf, nb_bytes_copy);
             Outbuf += nb_bytes_copy;
-            pMsg->sz += (int16_t)nb_bytes_copy;
-            if (pMsg->sz == (int16_t)PROGRAM_PAGE_SZ)
+            pMsg->sz += nb_bytes_copy;
+            if (pMsg->sz == PROGRAM_PAGE_SZ)
             {
                 assert((pMsg->flash_addr % PROGRAM_PAGE_SZ) == 0);
                 /* Submit transaction */
                 OTA_MsgQueue(pMsg);
-                if (mHdl.cur_transaction != NULL)
+                if (mOtaHdl.cur_transaction != NULL)
                 {
-                    mHdl.cur_transaction = NULL;
+                    mOtaHdl.cur_transaction = NULL;
                 }
                 else
                 {
@@ -1272,12 +1287,12 @@ static otaResult_t OTA_PostWriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8
             }
             else
             {
-                mHdl.cur_transaction = pMsg;
+                mOtaHdl.cur_transaction = pMsg;
             }
             NoOfBytes -= (uint16_t)nb_bytes_copy;
         }
 
-        if ((!mHdl.config->PostedOpInIdleTask) && (OTA_IsTransactionPending()))
+        if ((!mOtaHdl.config->PostedOpInIdleTask) && (OTA_IsTransactionPending()))
         {
             /* Always take head of queue */
             (void)OTA_TransactionResume();
@@ -1294,14 +1309,14 @@ static FLASH_TransactionOp_t *OTA_FlashTransactionAlloc(void)
     void *                     ptr;
     OSA_DisableIRQGlobal();
 
-    list_handle       = LIST_RemoveHead(&mHdl.transaction_free_list);
+    list_handle       = LIST_RemoveHead(&mOtaHdl.transaction_free_list);
     ptr               = list_handle;
     flash_transaction = (FLASH_TransactionOpNode_t *)ptr;
 
     if (flash_transaction != NULL)
     {
         pTr = &flash_transaction->flash_transac;
-        mHdl.PostedQ_nb_in_queue++;
+        mOtaHdl.PostedQ_nb_in_queue++;
     }
     OSA_EnableIRQGlobal();
 
@@ -1315,9 +1330,9 @@ static void OTA_FlashTransactionFree(FLASH_TransactionOp_t *pTr)
     list_element_handle_t list_handle;
     OSA_DisableIRQGlobal();
     flash_transaction = ((uint8_t *)pTr - offsetof(FLASH_TransactionOpNode_t, flash_transac));
-    mHdl.PostedQ_nb_in_queue--;
+    mOtaHdl.PostedQ_nb_in_queue--;
     list_handle = (list_element_handle_t)((uint32_t)flash_transaction);
-    status      = LIST_AddTail(&mHdl.transaction_free_list, list_handle);
+    status      = LIST_AddTail(&mOtaHdl.transaction_free_list, list_handle);
     assert(status == kLIST_Ok);
     (void)status;
     OSA_EnableIRQGlobal();
@@ -1326,11 +1341,11 @@ static void OTA_FlashTransactionFree(FLASH_TransactionOp_t *pTr)
 static void OTA_MsgQueue(FLASH_TransactionOp_t *pMsg)
 {
     OSA_DisableIRQGlobal();
-    (void)MSG_QueueAddTail(&mHdl.op_queue, pMsg);
-    mHdl.q_sz++;
-    if (mHdl.q_sz > mHdl.q_max)
+    (void)MSG_QueueAddTail(&mOtaHdl.op_queue, pMsg);
+    mOtaHdl.q_sz++;
+    if (mOtaHdl.q_sz > mOtaHdl.q_max)
     {
-        mHdl.q_max = mHdl.q_sz;
+        mOtaHdl.q_max = mOtaHdl.q_sz;
     }
     OSA_EnableIRQGlobal();
 }
@@ -1338,8 +1353,8 @@ static void OTA_MsgQueue(FLASH_TransactionOp_t *pMsg)
 static void OTA_MsgDequeue(void)
 {
     OSA_DisableIRQGlobal();
-    (void)MSG_QueueRemoveHead(&mHdl.op_queue);
-    mHdl.q_sz--;
+    (void)MSG_QueueRemoveHead(&mOtaHdl.op_queue);
+    mOtaHdl.q_sz--;
     OSA_EnableIRQGlobal();
 }
 
@@ -1354,7 +1369,7 @@ static int OTA_TransactionQueuePurge(void)
     int nb_purged = 0;
     while (OTA_IsTransactionPending())
     {
-        FLASH_TransactionOp_t *pMsg = MSG_QueueGetHead(&mHdl.op_queue);
+        FLASH_TransactionOp_t *pMsg = MSG_QueueGetHead(&mOtaHdl.op_queue);
         if (pMsg == NULL)
         {
             break;
@@ -1364,10 +1379,10 @@ static int OTA_TransactionQueuePurge(void)
         nb_purged++;
     }
 
-    if (mHdl.cur_transaction != NULL)
+    if (mOtaHdl.cur_transaction != NULL)
     {
-        OTA_FlashTransactionFree(mHdl.cur_transaction);
-        mHdl.cur_transaction = NULL;
+        OTA_FlashTransactionFree(mOtaHdl.cur_transaction);
+        mOtaHdl.cur_transaction = NULL;
     }
 
     return nb_purged;
@@ -1383,9 +1398,9 @@ static int OTA_TransactionQueuePurge(void)
 static otaResult_t OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flash_addr, uint16_t length)
 {
     otaResult_t status                                = gOtaSuccess_c;
-    uint8_t     readData[gOtaVerifyWriteBufferSize_d] = {0};
+    uint8_t     readData[gOtaVerifyWriteBufferSize_d] = {0U};
     uint16_t    readLen;
-    uint16_t    i = 0;
+    uint16_t    i = 0U;
     /* Not very easy to use when writes are partial,
     the actual size written differs : works only for posted operations */
     /* We iterate so as to keep the readData buffer reasonable in size */
@@ -1399,7 +1414,7 @@ static otaResult_t OTA_CheckVerifyFlash(uint8_t *pData, uint32_t flash_addr, uin
         {
             readLen = (uint16_t)sizeof(readData);
         }
-        st = mHdl.FlashOps->readData(readLen, flash_addr + i, readData);
+        st = mOtaHdl.FlashOps->readData(readLen, flash_addr + i, readData);
         if (st != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
@@ -1422,13 +1437,13 @@ static otaResult_t OTA_WriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *
     do
     {
         /* Try to write the data chunk into the image storage */
-        if (mHdl.FlashOps->writeData(NoOfBytes, Addr, outbuf) != kStatus_OTA_Flash_Success)
+        if (mOtaHdl.FlashOps->writeData(NoOfBytes, Addr, outbuf) != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaExternalFlashError_c);
         }
         /* If Flash programming operation requires verification do it now
          */
-        if (mHdl.VerifyWrites == true)
+        if (mOtaHdl.VerifyWrites == true)
         {
             status = OTA_CheckVerifyFlash(outbuf, Addr, NoOfBytes);
         }
@@ -1439,18 +1454,18 @@ static otaResult_t OTA_WriteToFlash(uint16_t NoOfBytes, uint32_t Addr, uint8_t *
 static ota_flash_status_t OTA_TreatFlashOpWrite(FLASH_TransactionOp_t *pMsg)
 {
     ota_flash_status_t st;
-    if (pMsg->sz < (int32_t)PROGRAM_PAGE_SZ) /* Should only happen at last chunk */
+    if (pMsg->sz < PROGRAM_PAGE_SZ) /* Should only happen at last chunk */
     {
-        FLib_MemSet(&pMsg->buf[pMsg->sz], 0, PROGRAM_PAGE_SZ - ((uint32_t)pMsg->sz));
+        FLib_MemSet(&pMsg->buf[pMsg->sz], 0U, PROGRAM_PAGE_SZ - pMsg->sz);
         /* Message buffer completed with 0 from pMsg-sz index to PROGRAM_PAGE_SZ
         new size is PROGRAM_PAGE_SZ */
-        pMsg->sz = (int32_t)PROGRAM_PAGE_SZ;
+        pMsg->sz = PROGRAM_PAGE_SZ;
     }
     if (OTA_WriteStorageMemory(&pMsg->buf[0], (uint16_t)pMsg->sz, pMsg->flash_addr) == gOtaSuccess_c)
     {
-        mHdl.OtaImageLengthWritten += ((uint32_t)pMsg->sz);
-        assert(mHdl.StorageAddressWritten == pMsg->flash_addr);
-        mHdl.StorageAddressWritten += ((uint32_t)pMsg->sz);
+        mOtaHdl.OtaImageLengthWritten += pMsg->sz;
+        assert(mOtaHdl.StorageAddressWritten == pMsg->flash_addr);
+        mOtaHdl.StorageAddressWritten += pMsg->sz;
         st = kStatus_OTA_Flash_Success;
     }
     else
@@ -1471,7 +1486,7 @@ static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg)
     int32_t            remain_sz  = (int32_t)pMsg->sz;
     uint32_t           erase_addr = pMsg->flash_addr;
 
-    st = mHdl.FlashOps->eraseArea(&erase_addr, &remain_sz, true);
+    st = mOtaHdl.FlashOps->eraseArea(&erase_addr, &remain_sz, true);
     if (kStatus_OTA_Flash_Success == st)
     {
         if (remain_sz <= 0)
@@ -1499,11 +1514,11 @@ static ota_flash_status_t OTA_TreatFlashOpEraseNextBlock(FLASH_TransactionOp_t *
 {
     ota_flash_status_t st;
     int32_t            remain_sz = (int32_t)pMsg->sz;
-    st                           = mHdl.FlashOps->eraseArea(&pMsg->flash_addr, &remain_sz, false);
+    st                           = mOtaHdl.FlashOps->eraseArea(&pMsg->flash_addr, &remain_sz, false);
     if (kStatus_OTA_Flash_Success == st)
     {
-        pMsg->op_type          = FLASH_OP_ERASE_NEXT_BLOCK_COMPLETE;
-        mHdl.ErasedUntilOffset = pMsg->flash_addr;
+        pMsg->op_type             = FLASH_OP_ERASE_NEXT_BLOCK_COMPLETE;
+        mOtaHdl.ErasedUntilOffset = pMsg->flash_addr;
     }
     else
     {
@@ -1538,7 +1553,7 @@ static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMs
     OTA_DEBUG_TRACE("Erase block @%08x sz=%d\r\n", pMsg->flash_addr, pMsg->sz);
 
     int32_t remain_sz = (int32_t)pMsg->sz;
-    st                = mHdl.FlashOps->eraseArea(&pMsg->flash_addr, &remain_sz, true);
+    st                = mOtaHdl.FlashOps->eraseArea(&pMsg->flash_addr, &remain_sz, true);
     if (kStatus_OTA_Flash_Success == st)
     {
         OTA_MsgDequeue();
@@ -1555,12 +1570,12 @@ static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMs
 
 static void OTA_InitContext(void)
 {
-    mHdl.ErasedUntilOffset     = 0u;
-    mHdl.OtaImageTotalLength   = 0u;
-    mHdl.OtaImageCurrentLength = 0u;
-    mHdl.StorageAddressWritten = 0u;
-    mHdl.OtaImageLengthWritten = 0u;
-    mHdl.CurrentStorageAddress = 0u;
-    mHdl.StorageAddressWritten = 0u;
-    mHdl.ImageOffset           = 0u;
+    mOtaHdl.ErasedUntilOffset     = 0U;
+    mOtaHdl.OtaImageTotalLength   = 0U;
+    mOtaHdl.OtaImageCurrentLength = 0U;
+    mOtaHdl.StorageAddressWritten = 0U;
+    mOtaHdl.OtaImageLengthWritten = 0U;
+    mOtaHdl.CurrentStorageAddress = 0U;
+    mOtaHdl.StorageAddressWritten = 0U;
+    mOtaHdl.ImageOffset           = 0U;
 }
