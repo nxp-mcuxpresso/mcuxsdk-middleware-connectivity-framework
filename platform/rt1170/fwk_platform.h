@@ -38,4 +38,20 @@ uint64_t PLATFORM_GetTimeStamp(void);
  */
 uint64_t PLATFORM_GetMaxTimeStamp(void);
 
+/*!
+ * \brief Configures IO_Expander to enable SPI interface through M.2 connector
+ *
+ * \param[in] addr I2C 7-bits address
+ * \param[in] reg register to set
+ * \param[in] val register value to set
+ * \return kStatus_Success if IO_Expander configuration succeed otherwise status of failing operation.
+ */
+int PLATFORM_IOEXP_I2C_program(uint8_t addr, uint8_t reg, uint8_t val);
+
+/*!
+ * @}  end of FWK_Platform addtogroup
+ */
+/*!
+ * @}  end of FWK_Platform_module addtogroup
+ */
 #endif /* _FWK_PLATFORM_H_ */

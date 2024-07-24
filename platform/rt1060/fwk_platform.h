@@ -25,8 +25,8 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
-#include "fsl_clock.h"
-#include "fsl_component_timer_manager.h"
+
+#include <stdint.h>
 
 /* -------------------------------------------------------------------------- */
 /*                                 Definitions                                */
@@ -56,7 +56,7 @@ extern "C" {
  *    This API will initialize the Timer Manager and the required clocks
  *
  */
-timer_status_t PLATFORM_InitTimerManager(void);
+int PLATFORM_InitTimerManager(void);
 
 /*!
  * \brief  Deinitialize Timer Manager
@@ -86,6 +86,16 @@ uint64_t PLATFORM_GetTimeStamp(void);
  * \return uint64_t the max timestamp value
  */
 uint64_t PLATFORM_GetMaxTimeStamp(void);
+
+/*!
+ * \brief Configures IO_Expander to enable SPI interface through M.2 connector
+ *
+ * \param[in] addr I2C 7-bits address
+ * \param[in] reg register to set
+ * \param[in] val register value to set
+ * \return kStatus_Success if IO_Expander configuration succeed otherwise status of failing operation.
+ */
+int PLATFORM_IOEXP_I2C_program(uint8_t addr, uint8_t reg, uint8_t val);
 
 #if defined(__cplusplus)
 }
