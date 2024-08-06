@@ -1,5 +1,5 @@
 /*! *********************************************************************************
-* Copyright 2017 NXP
+* Copyright 2017, 2024 NXP
 * All rights reserved.
 *
 * \file
@@ -24,6 +24,10 @@
 * Public macros
 *************************************************************************************
 ********************************************************************************** */
+#if defined(gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d == 1) && \
+    defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d == 1)
+#error "Cannot use both MWS and WCI2 coexistence at the same time"
+#endif
 
 #ifndef gMWS_Enabled_d
 #define gMWS_Enabled_d        0
@@ -157,6 +161,22 @@ extern volatile uint32_t gMWS_CoexRfDenyActiveState_d;
 #define gMWS_RF_PRIORITY_PIN_d     4
 #endif      
 
+#ifndef gWCI2_UseCoexistence_d
+#define gWCI2_UseCoexistence_d 0
+#endif
+
+/* This cannot be changed, it's hard-wired. */
+#define gWCI2_CoexRfDenyActiveState_d   (0) /* Active HI is GRANT, DENY is LO. */
+
+#if defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d == 1)
+#ifndef gWCI2_CoexGrantPinSampleDelay
+#define gWCI2_CoexGrantPinSampleDelay   50  /* usec */
+#endif
+#endif
+
+#ifndef gWCI2_CoexPrioSignalTime_d
+#define gWCI2_CoexPrioSignalTime_d      40 /* usec */
+#endif
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -204,7 +224,7 @@ typedef enum
 }mwsRfSeqPriority_t;
 
 
-#if (gMWS_Coex_Model_d == gMWS_Coex_Prio_Only_d)
+#if gWCI2_UseCoexistence_d || (gMWS_Coex_Model_d == gMWS_Coex_Prio_Only_d)
 typedef enum
 {
   gMWS_PinInterruptFallingEdge_c,
@@ -438,4 +458,94 @@ uint8_t MWS_CoexistenceIsEnabled(void);
 uint8_t MWS_GetCoexStats(mwsCoexStats_t *stats);
 #endif
 #endif
+
+/*! *********************************************************************************
+* \brief  Initialize the WCI2 External Coexistence driver
+*
+* \param[in]  rfReq       - Pointer to the GPIO output pin used to signal RF activity.
+*
+* \param[in]  rfTxDeny    - Pointer to the GPIO input pin used to signal RF TX Grant.
+*
+* \param[in]  rfRxDeny    - Pointer to the GPIO output pin to signal the RF RX Grant.
+*
+* \return  mwsStatus_t
+*
+********************************************************************************** */
+mwsStatus_t WCI2_CoexistenceInit(void *rfReq, void *rfTxDeny, void *rfRxDeny);
+
+/*! *********************************************************************************
+* \brief  Request for permission to access the medium for the specified RF sequence
+*
+* \param[in]  newState - The RF sequence type
+*
+* \return  If RF access is not granted, gMWS_Denied_c is returned.
+*
+********************************************************************************** */
+mwsStatus_t WCI2_CoexistenceRequestAccess(mwsRfState_t);
+
+/*! *********************************************************************************
+* \brief  This function will register a protocol stack into WCI2 Coexistence module
+*
+* \param[in]  protocol - One of the supported WCI2 protocols
+*
+* \param[in]  cb       - The callback function used by the WCI2 Coexistence to signal
+*                        events to the protocol stack
+*
+* \return  mwsStatus_t
+*
+********************************************************************************** */
+mwsStatus_t WCI2_CoexistenceRegister(mwsProtocols_t protocol, pfMwsCallback cb);
+
+/*! *********************************************************************************
+* \brief  This function will signal the change of the RF state, and request for permission
+*
+* \param[in]  newState - The new state in which the XCVR will transition
+*
+* \return  If RF access is not granted, gMWS_Denied_c is returned.
+*
+********************************************************************************** */
+mwsStatus_t WCI2_CoexistenceChangeAccess(mwsRfState_t newState);
+
+/*! *********************************************************************************
+* \brief  Request for permission to access the medium for the specified RF sequence
+*
+* \param[in]  newState - The RF sequence type
+*
+* \return  If RF access is not granted, gMWS_Denied_c is returned.
+*
+********************************************************************************** */
+mwsStatus_t WCI2_CoexistenceRequestAccess(mwsRfState_t newState);
+
+/*! *********************************************************************************
+* \brief  This function will register a protocol stack into WCI2 Coexistence module
+*
+* \param[in]  rxPrio - The priority of the RX sequence
+* \param[in]  txPrio - The priority of the TX sequence
+*
+********************************************************************************** */
+void WCI2_CoexistenceSetPriority(mwsRfSeqPriority_t rxPrio, mwsRfSeqPriority_t txPrio);
+
+/*! *********************************************************************************
+* \brief  Enable Coexistence signals.
+*
+********************************************************************************** */
+void WCI2_CoexistenceEnable(void);
+
+/*! *********************************************************************************
+* \brief  Signal externally that the Radio is not using the medium anymore.
+*
+********************************************************************************** */
+void WCI2_CoexistenceReleaseAccess(void);
+
+/*! *********************************************************************************
+* \brief  This function will notify other protocols that the specified protocol is
+*         Idle and the XCVR is unused.
+*
+* \param[in]  protocol - One of the supported WCI2 protocols
+*
+* \return  mwsStatus_t
+*
+********************************************************************************** */
+mwsStatus_t WCI2_SignalIdle(mwsProtocols_t protocol);
+
 #endif /* _MWS_H_ */

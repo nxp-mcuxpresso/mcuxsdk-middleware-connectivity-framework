@@ -207,6 +207,22 @@ void XCVR_DisableBLEFastTX(void);
 int16_t XCVR_ReadRSSI(data_rate_t rate);
 
 /*!
+   * @brief  RFP sync monitoring
+   *
+   * Call to enable/disable RFP sync monitoring IRQ
+   *
+   */
+void XCVR_EnableRFPSyncIrq(bool_t enable);
+
+/*!
+   * @brief  RFP sync monitoring
+   *
+   * Call to get number of RFP sync's
+   *
+   */
+uint8_t XCVR_GetRFPSyncNumber(void);
+
+/*!
    * @brief  Set LL Exchange Memory Address
    *
    * Call to set LL Exchange memory address in DP_TOP register

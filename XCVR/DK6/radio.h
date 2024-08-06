@@ -46,7 +46,7 @@ extern "C" {
 /****************************************************************************/
 /***    Radio driver version (XYYY): X major version, YYY minor version   ***/
 /****************************************************************************/
-#define RADIO_VERSION (2099)
+#define RADIO_VERSION (2100)
 
 /****************************************************************************/
 /***    Radio calibration data record version                             ***/
@@ -825,6 +825,39 @@ void vRadio_SetBLEdpTopEmAddr(uint32_t em_addr);
  *
  ****************************************************************************/
 void vRadio_RegisterRfActivityCallback(void *pf_callback);
+
+
+/****************************************************************************
+ *
+ * NAME:       vRadio_RFP_SyncMonitor_Enable
+ *
+ * DESCRIPTION:
+ * Enable/Disable RFP RX_SYNC_FOUND and RX_STATE_START interrupts in the radio driver to count sync_found events seen by the RFP.
+ *
+ * PARAMETERS:
+ * bool enable: (false) disables the mechanism, (!false) enables it.
+ *
+ * RETURNS:
+ * None.
+ *
+ ****************************************************************************/
+void vRadio_RFP_SyncMonitor_Enable(bool enable);
+
+/****************************************************************************
+ *
+ * NAME:       u8Radio_Get_RFP_Sync_Number
+ *
+ * DESCRIPTION:
+ * Returns the number of sync events seen by the RFP since last RX start.
+ *
+ * PARAMETERS:
+ * None.
+ *
+ * RETURNS:
+ * number of syncs seen on uint8_t .
+ *
+ ****************************************************************************/
+uint8_t u8Radio_Get_RFP_Sync_Number();
 
 #ifdef __cplusplus
 }

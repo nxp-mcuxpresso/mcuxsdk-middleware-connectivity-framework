@@ -348,6 +348,16 @@ int16_t XCVR_ReadRSSI(data_rate_t rate)
     return i16Radio_GetNbRSSISyncCor(rate);
 }
 
+void XCVR_EnableRFPSyncIrq(bool_t enable)
+{
+    vRadio_RFP_SyncMonitor_Enable(enable);
+}
+
+uint8_t XCVR_GetRFPSyncNumber(void)
+{
+    return u8Radio_Get_RFP_Sync_Number();
+}
+
 void XCVR_SetBLEdpTopEmAddr(uint32_t em_addr)
 {
     vRadio_SetBLEdpTopEmAddr(em_addr);

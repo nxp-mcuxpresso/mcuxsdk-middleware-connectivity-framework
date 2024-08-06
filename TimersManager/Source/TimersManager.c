@@ -26,7 +26,8 @@
 #include "fsl_rtc.h"
 #endif
 
-#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d)
+#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d) || \
+    defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d)
 #include "fsl_ctimer.h"
 #endif
 
@@ -356,7 +357,8 @@ void TMR_RTCAlarmNotify(void)
 }
 
 #if (mTMR_PIT_Timestamp_Enabled_d==0) && (gTimestampUseWtimer_c==0)
-#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d)
+#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d) || \
+    defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d)
 /*! -------------------------------------------------------------------------
  * \brief Initialize timestamp service using CTIMER
  *---------------------------------------------------------------------------*/
@@ -1337,7 +1339,8 @@ void TMR_TimeStampInit(void)
     Timestamp_Init();
 #else
     TMR_RTCInit();
-#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d)
+#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d) || \
+    defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d)
     TMR_CTTimeStampInit();
 #endif
 #endif
@@ -1354,7 +1357,8 @@ uint64_t TMR_GetTimestamp(void)
 #elif  gTimestampUseWtimer_c
     return Timestamp_Get_uSec();
 #else
-#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d)
+#if defined (gMWS_UseCoexistence_d) && (gMWS_UseCoexistence_d) ||\
+    defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d)
     return TMR_CTGetTimestamp();
 #else
     return TMR_RTCGetTimestamp();
