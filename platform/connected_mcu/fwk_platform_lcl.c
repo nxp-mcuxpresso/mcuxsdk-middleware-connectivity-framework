@@ -1,5 +1,5 @@
 /*!
- * Copyright 2021 NXP
+ * Copyright 2021, 2024 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -17,7 +17,6 @@
 #endif
 
 #include "pin_mux.h"
-#include "fsl_trdc.h"
 #include "fsl_port.h"
 #include "fsl_gpio.h"
 
@@ -165,12 +164,7 @@ static void PLATFORM_InitLclDtest(void)
         .outputLogic  = 0,
     };
 
-    /* Allow NBU to access GPIOD */
-    trdc_non_processor_domain_assignment_t domainAssignment;
-    TRDC_SetDacGlobalValid(TRDC);
-    TRDC_GetDefaultNonProcessorDomainAssignment(&domainAssignment);
-    domainAssignment.privilegeAttr = (uint8_t)kTRDC_ForcePrivilege;
-    TRDC_SetNonProcessorDomainAssignment(TRDC, (uint8_t)kTRDC_MasterRadioNBU, &domainAssignment);
+    /* TRDC initialized during NBU initialization */
 
     /* Configure PTD3 and PTD2 as GPIO (may be used for debug purpose by the NBU) */
     PORT_SetPinMux(PORTD, 3U, kPORT_MuxAsGpio);

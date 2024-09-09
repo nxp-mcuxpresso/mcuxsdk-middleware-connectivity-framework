@@ -76,12 +76,13 @@ static uint16_t wakeUpTimerStopCount  = 0U;
 static power_init_config_t initCfg = {
     /* VCORE AVDD18 supplied from iBuck on RD board. */
     .iBuck = true,
-    /* CAU_SOC_SLP_REF_CLK not needed. */
-    .gateCauRefClk = true,
+    /* CAU_SOC_SLP_REF_CLK needed for LPOSC. */
+    .gateCauRefClk = false,
 };
 
 static bool wasPowerDown = false;
 
+static platform_rtc_handle_t *s_platformRtcHandles[PLATFORM_RTC_HANDLE_MAX];
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -210,8 +211,48 @@ void PLATFORM_SetRamBanksRetained(uint8_t bank_mask)
 {
 }
 
+int PLATFORM_RegisterRtcHandle(platform_rtc_handle_t *handle)
+{
+    int ret = 0;
+
+    do
+    {
+        if (handle == NULL)
+        {
+            ret = -1;
+            break;
+        }
+
+        if (handle->index > PLATFORM_RTC_HANDLE_MAX)
+        {
+            ret = -2;
+            break;
+        }
+
+        s_platformRtcHandles[handle->index] = handle;
+    } while (false);
+
+    return ret;
+}
+
 void RTC_IRQHandler(void)
 {
+    uint8_t                index;
+    platform_rtc_handle_t *handle;
+
+    for (index = 0; index < PLATFORM_RTC_HANDLE_MAX; index++)
+    {
+        handle = s_platformRtcHandles[index];
+
+        if (NULL != handle)
+        {
+            if (NULL != handle->callback)
+            {
+                handle->callback(handle);
+            }
+        }
+    }
+
     RTC_ClearStatusFlags(RTC, RTC_GetStatusFlags(RTC));
     POWER_ClearWakeupStatus(RTC_IRQn);
 }

@@ -463,13 +463,14 @@ int PLATFORM_TerminateBle(void)
             break;
         }
 
-        if (PLATFORM_TerminateHciLink() != 0)
+        /* Power off CPU2 first */
+        if (PLATFORM_TerminateControllers((uint8_t)connBle_c) != 0) /* MISRA CID 26829044 */
         {
             ret = -1;
             break;
         }
 
-        if (PLATFORM_TerminateControllers((uint8_t)connBle_c) != 0) /* MISRA CID 26829044 */
+        if (PLATFORM_TerminateHciLink() != 0)
         {
             ret = -2;
             break;
@@ -672,6 +673,12 @@ int PLATFORM_RequestBleWakeUp(void)
          * completely awake and ready to receive a message */
         NVIC_EnableIRQ(BLE_MCI_WAKEUP_DONE0_IRQn);
 
+        /* Make sure to clear wake up event */
+        if (OSA_EventClear((osa_event_handle_t)wakeUpEventGroup, (uint32_t)ble_awake_event) != KOSA_StatusSuccess)
+        {
+            ret = -1;
+        }
+
         /* Wake up BLE core with PMU BLE_WAKEUP bit
          * This bit is maintained until we receive a BLE_MCI_WAKEUP_DONE0
          * interrupt */
@@ -762,15 +769,9 @@ static int PLATFORM_TerminateHciLink(void)
 
     do
     {
-        /* Force wake up CPU2 before send IMU_MSG_CONTROL_SHUTDOWN in HAL_ImuDeinit() */
-        PMU_EnableBleWakeup(0x1U);
-
         /* Deinitialize IMU first
          * Ignoring return value because kStatus_HAL_ImumcError means it was already deinitialize */
-        (void)HAL_ImuDeinit(kIMU_LinkCpu2Cpu3, 0);
-
-        /* Clear CPU2 wake up bit after HAL_ImuDeinit() */
-        PMU_DisableBleWakeup(0x1U);
+        (void)HAL_ImuDeinit(kIMU_LinkCpu2Cpu3, 1);
 
         /* Deinitialize IMUMC first */
         if (HAL_ImumcDeinit(hci_imumc_handle) != kStatus_HAL_ImumcSuccess)
@@ -790,6 +791,14 @@ static bool PLATFORM_IsHciLinkReady(void)
 
 static bool PLATFORM_IsBleAwake(void)
 {
+    /* The power state information of CPU2 is managed by a software state machine.
+     * This is an additional hardware check to make sure of the CPU2 power state
+     * Sending a HCI message while CPU2 is in low power causes message loss
+     */
+    if (BLE_POWER_STATUS() != BLE_POWER_ON)
+    {
+        blePowerState = ble_asleep_state;
+    }
     return (blePowerState != ble_asleep_state);
 }
 
@@ -908,12 +917,6 @@ static int PLATFORM_HandleBlePowerStateEvent(ble_ps_event_t psEvent)
             {
                 case ble_asleep_event:
                     blePowerState = ble_asleep_state;
-                    /* Make sure to clear wake up event */
-                    if (OSA_EventClear((osa_event_handle_t)wakeUpEventGroup, (uint32_t)ble_awake_event) !=
-                        KOSA_StatusSuccess)
-                    {
-                        ret = -1;
-                    }
                     break;
 
                 default:

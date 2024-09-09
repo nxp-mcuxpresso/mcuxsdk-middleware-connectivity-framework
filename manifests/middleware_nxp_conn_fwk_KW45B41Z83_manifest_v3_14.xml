@@ -9,7 +9,7 @@
     <definition extID="middleware.baremetal.KW45B41Z83"/>
     <definition extID="platform.drivers.trdc.KW45B41Z83"/>
   </externalDefinitions>
-  <ksdk id="MCUXpressoSDK216000_middleware_nxp_conn_fwk_KW45B41Z83_manifest_v3_14" name="MCUXpressoSDK216000_middleware_nxp_conn_fwk_KW45B41Z83_manifest_v3_14" version="2.16.000" revision="2.16.000"/>
+  <ksdk id="MCUXpressoSDK216100_middleware_nxp_conn_fwk_KW45B41Z83_manifest_v3_14" name="MCUXpressoSDK216100_middleware_nxp_conn_fwk_KW45B41Z83_manifest_v3_14" version="2.16.100" revision="2.16.100"/>
   <components>
     <component id="middleware.wireless.framework.cmake.connected_mcu.kw45_k32w1.KW45B41Z83" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
@@ -1301,6 +1301,7 @@
       <dependencies>
         <all>
           <component_dependency value="middleware.wireless.framework.fwk_debug.KW45B41Z83"/>
+          <component_dependency value="platform.drivers.trdc.KW45B41Z83"/>
           <device_dependency value="KW45B41Z83xxxA"/>
         </all>
       </dependencies>

@@ -28,6 +28,7 @@
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
 #include "sss_crypto.h"
+#include "fsl_trdc.h"
 
 #include "rpmsg_platform.h"
 
@@ -59,7 +60,7 @@
 #endif
 
 /*! @brief Default coarse adjustement config for 32KHz crystal,
-      can be overidden from board.h,
+      can be overidden from board_platform.h,
       user shall define this flag in board.h file to set an other default value
       Values must be adjusted depending the equivalent series resistance (ESR) of the crystal on the board
 */
@@ -156,6 +157,13 @@ int PLATFORM_InitNbu(void)
     {
         uint32_t rfmc_ctrl;
         int      cnt = 0;
+
+        /* Init TRDC for NBU - Allow NBU to access GPIOD*/
+        trdc_non_processor_domain_assignment_t domainAssignment;
+        TRDC_SetDacGlobalValid(TRDC);
+        TRDC_GetDefaultNonProcessorDomainAssignment(&domainAssignment);
+        domainAssignment.privilegeAttr = (uint8_t)kTRDC_ForcePrivilege;
+        TRDC_SetNonProcessorDomainAssignment(TRDC, (uint8_t)kTRDC_MasterRadioNBU, &domainAssignment);
 
         /* Initialize a memory zone of the shared memory that will be used to transmit a message later */
         extern uint32_t m_lowpower_flag_start[];
@@ -613,16 +621,25 @@ void PLATFORM_RemoteActiveReq(void)
         rfmc_ctrl |= RFMC_RF2P4GHZ_CTRL_LP_WKUP_DLY(0U);
         RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
 
-        /* CM3 writes to WKUP_TIME register to notify CM33 it's going to low
+        /* NBU writes to WKUP_TIME register to notify application core it's going to low
          * power, this is a software protocol to sync both cores */
         while ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) != 0U)
         {
-            /* CM3 started low power entry, to workaround HW issues, we need to
+            /* NBU started low power entry, to workaround HW issues, we need to
              * wait for the radio to fully enter low power before waking it up */
             if ((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_BLE_STATE_MASK) == RFMC_RF2P4GHZ_STAT_BLE_STATE(0x2U))
             {
                 /* Radio is in low power, we can exit the loop and wake it up */
                 remote_in_lp = true;
+                break;
+            }
+            if (((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_BLE_STATE_MASK) == RFMC_RF2P4GHZ_STAT_BLE_STATE(0x3U)) ||
+                /* Radio is currently waking up*/
+                ((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_BLE_WKUP_STAT_MASK) != 0U))
+            /* Radio will exit lowpower or will not be able to enter lowpower because a BLE event will soon expire */
+            {
+                /* We can exit the loop without waiting for the NBU to re-write WKUP_TIME register, as the radio will
+                 * not enter lowpower or is already in the wakeup procedure */
                 break;
             }
             /* Error callback set by PLATFORM_RegisterBleErrorCallback() */

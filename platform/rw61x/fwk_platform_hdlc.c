@@ -143,25 +143,19 @@ int PLATFORM_TerminateHdlcInterface(void)
 
     do
     {
-        /* Force wake up CPU2 before send IMU_MSG_CONTROL_SHUTDOWN in HAL_ImuDeinit() */
-        PMU_EnableBleWakeup(0x1U);
-
-        if (HAL_ImuDeinit(kIMU_LinkCpu2Cpu3, 0) != kStatus_HAL_ImumcSuccess)
+        if (PLATFORM_TerminateControllers(conn802_15_4_c) != 0)
         {
             ret = -1;
             break;
         }
 
-        /* Clear CPU2 wake up bit after HAL_ImuDeinit() */
-        PMU_DisableBleWakeup(0x1U);
-
-        if (PLATFORM_TerminateHdlcImumc() != 0)
+        if (HAL_ImuDeinit(kIMU_LinkCpu2Cpu3, 1) != kStatus_HAL_ImumcSuccess)
         {
             ret = -2;
             break;
         }
 
-        if (PLATFORM_TerminateControllers(conn802_15_4_c) != 0)
+        if (PLATFORM_TerminateHdlcImumc() != 0)
         {
             ret = -3;
             break;

@@ -1,0 +1,25 @@
+
+    /*** littleFS configuration Start ***/
+    EDGEFAST_BT_LITTLEFS_STORAGE_START_ADDRESS = __top_Flash;
+    EDGEFAST_BT_LITTLEFS_STORAGE_SECTOR_SIZE = 0x1000;  /* 4k flash sector size */
+    EDGEFAST_BT_LITTLEFS_STORAGE_MAX_SECTORS = (__top_Flash + 0x200000 - EDGEFAST_BT_LITTLEFS_STORAGE_START_ADDRESS) / EDGEFAST_BT_LITTLEFS_STORAGE_SECTOR_SIZE;
+    /*** littleFS configuration End ***/
+
+/* -------------------------------------------------------------------------- */
+/*                                    RAM                                     */
+/* -------------------------------------------------------------------------- */
+
+__stack_size__       = 0x1000;
+__heap_size__        = 0x1000;
+
+
+__ram_vector_table_size__         =  DEFINED(__ram_vector_table__) ? 0x00000280 : 0;
+__ram_vector_table_offset__       =  DEFINED(__ram_vector_table__) ? 0x0000027F : 0;
+
+m_interrupts_ram_start            = 0x20000000;
+m_interrupts_ram_end              = 0x20000000 + __ram_vector_table_offset__;
+
+m_data_start                      = m_interrupts_ram_start + __ram_vector_table_size__;
+m_data_end                        = 0x2012FFFF;
+
+__HEAP_end__             = m_data_end - __stack_size__;

@@ -80,9 +80,29 @@
  */
 #define PLATFORM_DEEP_POWER_DOWN_CONSTRAINTS 0
 
+/* Macro for Platform RTC handler maximum number */
+#define PLATFORM_RTC_HANDLE_MAX 1U
+
 /* -------------------------------------------------------------------------- */
 /*                              Public type definition                        */
 /* -------------------------------------------------------------------------- */
+/*! \brief The handle for Platform RTC */
+struct _platform_rtc_handle;
+
+/*! \brief Define Callback function for Platform RTC.
+ *
+ * handle: Pointer to the Platform RTC handle.
+ * userData: The userData registered.
+ */
+typedef void (*platform_rtc_callback_t)(struct _platform_rtc_handle *handle);
+
+/*! \brief Platform RTC handle structure */
+typedef struct _platform_rtc_handle
+{
+    uint8_t                 index;    /*!< Platform RTC handler index */
+    platform_rtc_callback_t callback; /*!< Callback function. Invoked interrupt happens. */
+    void *                  userData; /*!< Callback function parameter */
+} platform_rtc_handle_t;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public prototypes                             */
@@ -188,6 +208,15 @@ uint8_t PLATFORM_GetDefaultRamBanksRetained(void);
  * \param[in] uint8_t mask of which bank needs to be retained
  */
 void PLATFORM_SetRamBanksRetained(uint8_t bank_mask);
+
+/*!
+ * \brief  Register a Platform RTC handle.
+ *
+ * \param[in] handle Platform RTC handle pointer.
+ *
+ * \return int 0 if success, negative value if error.
+ */
+int PLATFORM_RegisterRtcHandle(platform_rtc_handle_t *handle);
 
 /*!
  * @}  end of FWK_Platform_LowPower addtogroup

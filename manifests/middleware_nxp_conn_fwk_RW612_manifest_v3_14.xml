@@ -15,7 +15,7 @@
     <definition extID="component.mflash.frdmrw612.RW612"/>
     <definition extID="middleware.mbedtls.port.els_pkc.RW612"/>
   </externalDefinitions>
-  <ksdk id="MCUXpressoSDK216000_middleware_nxp_conn_fwk_RW612_manifest_v3_14" name="MCUXpressoSDK216000_middleware_nxp_conn_fwk_RW612_manifest_v3_14" version="2.16.000" revision="2.16.000"/>
+  <ksdk id="MCUXpressoSDK216100_middleware_nxp_conn_fwk_RW612_manifest_v3_14" name="MCUXpressoSDK216100_middleware_nxp_conn_fwk_RW612_manifest_v3_14" version="2.16.100" revision="2.16.100"/>
   <components>
     <component id="middleware.wireless.framework.cmake.rw61x.frdmrw612.RW612" name="wireless framework CMake" brief="Middleware wireless framework_cmake" version="1.0.0" full_name="wireless framework CMake" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path=".././" project_base_path="framework">
       <dependencies>
