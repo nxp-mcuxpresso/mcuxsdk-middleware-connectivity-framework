@@ -586,7 +586,7 @@
         <include_path relative_path="./" project_relative_path="DBG/SWO" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.settings.KW45B41Z83" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.2" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+    <component id="middleware.wireless.framework.settings.KW45B41Z83" name="wireless framework settings" brief="Middleware wireless framework_settings" version="6.2.4" full_name="wireless framework settings" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
       <dependencies>
         <device_dependency value="KW45B41Z83xxxA"/>
       </dependencies>
@@ -1246,7 +1246,7 @@
         <include_path relative_path="./" project_relative_path="KeyStorage" type="c_include"/>
       </include_paths>
     </component>
-    <component id="middleware.wireless.framework.NVS.KW45B41Z83" name="wireless framework NVS" brief="Middleware wireless framework_NVS" version="6.2.2" full_name="wireless framework NVS" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
+    <component id="middleware.wireless.framework.NVS.KW45B41Z83" name="wireless framework NVS" brief="Middleware wireless framework_NVS" version="6.2.4" full_name="wireless framework NVS" category="Connectivity Framework Class/Connectivity Framework Group" user_visible="false" type="middleware" package_base_path="../../" project_base_path="framework">
       <dependencies>
         <all>
           <component_dependency value="middleware.wireless.framework.platform_ota.connected_mcu.KW45B41Z83"/>

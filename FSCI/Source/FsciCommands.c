@@ -1119,6 +1119,8 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
 
     do
     {
+        uint8_t tag_lg;
+
         /* Pointer on NbuInfo structure received from NBU :
          * potentially to be released when used */
 
@@ -1137,24 +1139,34 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
             FSCI_Error((uint8_t)gFsciOutOfMessages_c, fsciInterface);
             break;
         }
+
         nbu_info.repo_tag[MAX_TAG_SZ - 1] = '\0';
-        uint8_t tag_lg                    = (uint8_t)strlen(&nbu_info.repo_tag[0]);
         size                              = 0;
+
         FLib_MemCpy(&pPkt->structured.payload[0], &nbu_info, 3);
         size += 3;
+
         pPkt->structured.payload[size] = MAX_SHA_SZ;
         size++;
+
         FLib_MemCpy(&pPkt->structured.payload[size], &nbu_info.repo_digest, MAX_SHA_SZ);
         size += MAX_SHA_SZ;
+
+        tag_lg                         = (uint8_t)strlen(&nbu_info.repo_tag[0]);
         pPkt->structured.payload[size] = tag_lg;
+        size++;
         if (tag_lg > 0)
         {
             FLib_MemCpy(&pPkt->structured.payload[size], &nbu_info.repo_tag, tag_lg);
         }
+        size += tag_lg;
+
+        FLib_MemCpy(&pPkt->structured.payload[size], &nbu_info.versionBuildNo, 1);
+        size += 1;
 
         pPkt->structured.header.len = (uint8_t)size;
 
-        /* A new buffer was allocated. Fill with aditional information */
+        /* A new buffer was allocated. Fill with additional information */
         pPkt->structured.header.opGroup = gFSCI_CnfOpcodeGroup_c;
         pPkt->structured.header.opCode  = mFsciGetNbuVersion_c;
         FSCI_transmitFormatedPacket(pPkt, fsciInterface);

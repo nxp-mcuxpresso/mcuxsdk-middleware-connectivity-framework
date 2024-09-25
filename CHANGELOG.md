@@ -1,27 +1,91 @@
+#### 6.2.4: KW45/K32W1x/MCXW71/RX61x SDK 2.16.100
+
+This release does not contain the changes from 6.2.3 release.
+
+This release contains changes from 6.2.2 release.
+Experimental Features only:
+  - Power down on application power domain : Some tests have shown some failure. Power consumption higher than Deep Sleep.
+      => This feature is not fully supported in this release
+  - XTAL32K less board with FRO32K support : Some additional stress tests are under progress.
+  - FRO32K notifications callback is for debug only and shall not be used for production. User shall not execute long processing (such as PRINTF) as it is executed in ISR context.
+Main Change:
+- armgcc support for Cmake sdk2 support and VS code integration
+
+Minor changes:
+- [NBU]
+  - Optimize some critical sections on nbu firmware
+- [Platform]
+  - Optimize ``PLATFORM_RemoteActiveReq()`` execution time.
+
+#### 6.2.3: KW47 EAR1.0
+
+Initial Connectivity Framework enablement for KW47 EAR1.0 support.
+
+New features: OpenNBU feature : nbu_ble project is available and modify and build
+Supported features:
+  - Deep sleep mode
+Unsuported features:
+  - Power down mode
+  - FRO32K support (XTAL32K less boards)
+
+Main changes:
+- [NBU]
+  - LPTMR2 available and TimerManager initialization with Compile Macro: ``gPlatformUseLptmr_d``
+  - NBU can now have access to GPIOD
+  - SW RNG and SW SecLib ported to NBU (Software implementation only)
+- [RNG]
+  - Obsoleted API removed : ``FWK_RNG_DEPRECATED_API``
+  - RNG can be built without SecLib for NBU, using ``gRngUseSecLib_d``  in fwk_config.h
+  - Some API updates:
+    - ``RNG_IsReseedneeded()`` renamed to ``RNG_IsReseedNeeded``,
+    - ``RNG_TriggerReseed()`` renamed to ``RNG_NotifyReseedNeeded()``,
+    - ``RNG_SetSeed()`` and ``RNG_SetExternalSeed()`` return status code.
+  - Optimized Linear Congruential modulus computation to reduce cycle count.
+
+Minor changes:
+- [NVM]
+  - Optimize ``NvIsRecordErased()`` procedure for faster garbage collection
+  - MISRA fix : Remove externs and weaks from NVM module - Make RNG and timer manager dependencies conditional
+- [Platform]
+  - Allow the debugger to wakeup the KW47/MCXW72 target
+
 #### 6.2.2: KW45/K32W1 MR6 SDK 2.16.000
 
-##### Major changes
+Experimental Features only:
+  - Power down on application power domain : Some tests have shown some failure. Power consumption higher than Deep Sleep.
+      => This feature is not fully supported in this release
+  - XTAL32K less board with FRO32K support : Some additional stress tests are under progress.
+  - FRO32K notifications callback is for debug only and shall not be used for production. User shall not execute long processing (such as PRINTF) as it is executed in ISR context.
 
+##### Changes
+- [Board] Support for freedom board FRDM-MCX W7X
 - [HWparams]
-    - Support for location of HWParameters and Application Factory Data IFR in IFR1.
-- [RNG]: API updates
-  - New APIs RNG_SetSeed(), RNG_SetExternalSeed(), RNG_TriggerReseed(), RNG_IsReseedneeded() to manage seed on both core :
-    - When needed RNG_TriggerReseed() will be called and change the return status of RNG_IsReseedneeded(), the user will have to choose when calling RNG_SetSeed() or RNG_SetExternalSeed() in his application typically Idle
-- [NVS] Wear statistics counters added
+  - Support for location of HWParameters and Application Factory Data IFR in IFR1
+  - Default is still to use HWparams in Flash to keep backward compatibility
+- [RNG]: API updates:
+  - New APIS RNG_IsReseedneeded(), RNG_SetSeed() to provide See to PRNG on NBU/App core - See BluetoothLEHost_ProcessIdleTask() in app_conn.c
+  - New APIs RNG_SetExternalSeed() : User can provide external seed. Typically used on NBU firmrware  for App core to set a seed to RNG.
+             RNG_TriggerReseed() : Not required on App core. Used on NBU only.
+- [NVS] Wear statistics counters added - Fix nvs_file_stat() function
+- [NVM] fix Nv_Shutdown() API
+- [SecLib] New feature AES MMO supported for Zigbee
 
-#### 6.2.2: RW61x RFP4
-- [OTA]
-  -  Add support for RW61x OTA with remap.
-     - Required modifications to prevent direct access to flash logical addresses when remap is active.
-     - Image trailers expected at different offset with remap enabled (see gPlatformMcuBootUseRemap_d in fwk_config.h)
-     - fixed image state assessment procedure when in RunCandidate.
+#### 6.2.2: RW61x RFP4 SDK 2.16.000
+
+- [Platform] Support Zigbee stack
+- [OTA] Add support for RW61x OTA with remap feature.
+  - Required modifications to prevent direct access to flash logical addresses when remap is active.
+  - Image trailers expected at different offset with remap enabled (see gPlatformMcuBootUseRemap_d in fwk_config.h)
+  - fixed image state assessment procedure when in RunCandidate.
 - [NVS] Wear statistics counters added
+- [SecLib] New feature AES MMO supported for Zigbee
+- [Misra] various fixes
 
 #### 6.2.1: KW45/K32W1 MR5 SDK 2.15.000
 
 Experimental Features only:
   - Power down on application power domain : Some tests have shown some failure. This feature is not fully supported in this release
-  - XTAL32K less board with FRO32K support : Some additional stress tests are under progress. Timing variation of the timebase are beeing analysed
+  - XTAL32K less board with FRO32K support : Some additional stress tests are under progress. Timing variation of the timebase are being analyzed
 
 ##### Major changes
 - [RNG]: API updates
@@ -37,11 +101,11 @@ Experimental Features only:
     - Rename the framework platform folder from kw45_k32w1 to connected_mcu to support other platform from the same family
   - fwk_platform_intflash
     - Moved from fwk_platform files to the new fwk_platform_intflash files the internal flash dependant API
-  - [NBU]
-    - BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT  changed from 2 to 3 by default
-    - BOARD_RADIO_DOMAIN_WAKE_UP_DELAY  changed from 0x10 to 0x0F
-  - [gcc linker]
-    - Exclude k32w1_nbu_ble_15_4_dyn.bin from .data section
+- [NBU]
+  - BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT  changed from 2 to 3 by default
+  - BOARD_RADIO_DOMAIN_WAKE_UP_DELAY  changed from 0x10 to 0x0F
+- [gcc linker]
+  - Exclude k32w1_nbu_ble_15_4_dyn.bin from .data section
 
 ###### Minor Changes
 - [Platform]
@@ -119,7 +183,7 @@ Experimental Features only:
     - New PLATFORM_EnableEccFaultsAPI_d compile flag: Enable APIs for interception of ECC Fault in bus fault handler
     - New gInterceptEccBusFaults_d compile flag: Provide FaultRecovery() demo code for bus fault handler to Intercept bus fault from Flash Ecc error
 - [LOC]
-  - Incorrect behavior for set_dtest_page (DqTEST11 overriden)
+  - Incorrect behavior for set_dtest_page (DqTEST11 overridden)
   - Fix SW1 button wake able on Localization board
   - Fix yellow led not properly initialized
   - Format localization pin_mux.c/h files
@@ -133,7 +197,7 @@ Experimental Features only:
 - [OTA] 
   - Prevent bus fault in case of ECC error when reading back OTA_CFR update status (disable by default)
 - [SecLib]
-  - Shared mutex for RNG and SecLib as they share same hardware ressource
+  - Shared mutex for RNG and SecLib as they share same hardware resource
 - [Key storage]
   - Fix to ignore the garbage at the end of buffers
   - Detect when buffers are too small in KS_AddKey() functions
@@ -156,7 +220,7 @@ Experimental Features only:
     - Flag is used to indicate NBU that Application domain goes to power down mode. Keep this flag to 0 if only Deep sleep is supported
     - This flag will be set to 1 if Application domain goes to power down mode
   - Re-introduce PWR_AllowDeviceToSleep()/PWR_DisallowDeviceToSleep(), PWR_IsDeviceAllowedToSleep() API
-  - Implement tick compensation mechanism for idle hook in a dedicated freertos utils file fwk_freertos_utils.[ch], new fnctions: FWK_PreIdleHookTickCompensation() and FWK_PostIdleHookTickCompensation
+  - Implement tick compensation mechanism for idle hook in a dedicated freertos utils file fwk_freertos_utils.[ch], new functions: FWK_PreIdleHookTickCompensation() and FWK_PostIdleHookTickCompensation
   - Rework timestamping on K4W1
     - PLATFORM_GetMaxTimeStamp() based on TSTMR
     - Rename PLATFORM_GetTimestamp() to PLATFORM_GetTimeStamp()
@@ -186,11 +250,11 @@ Experimental Features only:
   - Support Localization boards, Only BUTTON0 supported
     - New compile flag BOARD_LOCALIZATION_REVISION_SUPPORT
     - New pin_mux.[ch] files
-  - Offer the possibility to override CDAC and ISEL 32MHz settings before the initialization of the crystal in bord_platform.h
+  - Offer the possibility to override CDAC and ISEL 32MHz settings before the initialization of the crystal in board_platform.h
     - new BOARD_32MHZ_XTAL_CDAC_VALUE, BOARD_32MHZ_XTAL_ISEL_VALUE
     - BOARD_32MHZ_XTAL_TRIM_DEFAULT obsoleted
 - [NVM file system]
-  - Look ahead in pending save queue - Avoid consuming sapce to save outdated record
+  - Look ahead in pending save queue - Avoid consuming space to save outdated record
   - Fix NVM gNvDualImageSupport feature in NvIsRecordCopied
 - [Inter Core]
   - Change PLATFORM_NbuApiReq() API return parameters granularity from uint32 to uint8
@@ -240,7 +304,7 @@ Experimental Features only:
   - Bug fixes:
     - Move PWR LowPower callback to PLATFORM layers
     - Fix wrong compensation of SysTicks
-    - Reinit system clocks when exiting power down mode: BOARD_ExitPowerDownCb(), restaure 96Mhz clock is set before going to low power
+    - Reinit system clocks when exiting power down mode: BOARD_ExitPowerDownCb(), restore 96MHz clock is set before going to low power
     - Call Timermanager lowpower entry exit callbacks from PLATFORM_EnterLowPower()
     - Update PLATFORM_ShutdownRadio() function to force NBU for Deep power down mode
   - K32W1:

@@ -861,7 +861,8 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
     uint32_t newLen = inputLen;
-#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
+#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) && (defined(LTC_KEY_REGISTER_READABLE)) && \
+    (LTC_KEY_REGISTER_READABLE == 1)
     SECLIB_MUTEX_LOCK();
     (void)LTC_AES_DecryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_BLOCK_SIZE, kLTC_DecryptKey);
     SECLIB_MUTEX_UNLOCK();
@@ -2219,7 +2220,7 @@ static ecdhPublicKey_t  mReversedPublicKey;
 static ecdhPrivateKey_t mReversedPrivateKey;
 #endif /* mDbgRevertKeys_d */
 
-/* ECDH Sample Data Bluetooth specificaton V5.0 :
+/* ECDH Sample Data Bluetooth specification V5.0 :
 7.1.2.1 P-256 Data Set 1
 Private A: 3f49f6d4 a3c55f38 74c9b3e3 d2103f50 4aff607b eb40b799 5899b8a6 cd3c1abd
 Private B: 55188b3d 32f6bb9a 900afcfb eed4e72a 59cb9ac2 f19d7cfb 6b4fdd49 f47fc5fd
@@ -2258,9 +2259,9 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
     {
 #if mDbgRevertKeys_d
         if (gSecEcp256Success_c !=
-            ECP256_GenerateNewKeys(&mReversedPublicKey, &mReversedPrivateKey, pMultiplicationBuffer))
+            ECP256_GenerateKeyPair(&mReversedPublicKey, &mReversedPrivateKey, pMultiplicationBuffer))
 #else  /* !mDbgRevertKeys_d */
-        if (gSecEcp256Success_c != ECP256_GenerateNewKeys(pOutPublicKey, pOutPrivateKey, pMultiplicationBuffer))
+        if (gSecEcp256Success_c != ECP256_GenerateKeyPair(pOutPublicKey, pOutPrivateKey, pMultiplicationBuffer))
 #endif /* mDbgRevertKeys_d */
         {
             result = gSecError_c;
