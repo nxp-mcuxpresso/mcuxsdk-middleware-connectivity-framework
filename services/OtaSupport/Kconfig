@@ -1,0 +1,28 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: BSD-3-Clause
+
+menuconfig MCUX_COMPONENT_middleware.wireless.framework.ota_support
+    bool "Over-The-Air Firmware update (OTA)"
+    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.messaging
+    select MCUX_COMPONENT_component.flash_adapter
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.ota
+    depends on MCUX_COMPONENT_middleware.wireless.framework.platform
+    help
+        Over-The-Air Firmware update APIs to store new OTA firmware chunks into the OTA flash region.
+
+if MCUX_COMPONENT_middleware.wireless.framework.ota_support
+
+    config MCUX_COMPONENT_middleware.wireless.framework.ota_support.external_flash
+        bool "External flash"
+        select MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
+        help
+            Use external flash for OTA Support.
+
+    config MCUX_COMPONENT_middleware.wireless.framework.ota_support.internal_flash
+        bool "Internal flash"
+        select MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
+        help
+            Use internal flash for OTA Support.
+endif
