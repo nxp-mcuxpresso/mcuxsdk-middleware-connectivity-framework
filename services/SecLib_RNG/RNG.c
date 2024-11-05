@@ -644,7 +644,7 @@ static uint16_t RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
         {
             break;
         }
-        if ((uint8_t)TRNG_GetRandomData(TRNG0, pRandom, (size_t)outBytes) != 0U)
+        if ((uint8_t)TRNG_GetRandomData(TRNG0, pOut, (size_t)outBytes) != 0U)
         {
             break;
         }
