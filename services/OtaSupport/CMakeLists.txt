@@ -30,3 +30,12 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support.internal_fla
     mcux_add_linker_symbol(SYMBOLS "gUseInternalStorageLink_d=1" )
 
 endif()
+
+if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support.no_flash_selected)
+    mcux_add_source(
+        SOURCES
+            Source/OtaInternalFlash.c
+            Source/OtaExternalFlash.c
+    )
+    # Note : gUseInternalStorageLink_d not set, user shall select whether it is internal or external flash at application level
+endif()
