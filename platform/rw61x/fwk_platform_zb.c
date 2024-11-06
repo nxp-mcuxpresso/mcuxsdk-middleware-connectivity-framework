@@ -35,14 +35,6 @@
 #define PLATFORM_ZB_MAC_IMUMC_REMOTE_ADDR 22U
 #endif
 
-#ifndef PLATFORM_ZB_PHY_IMUMC_LOCAL_ADDR
-#define PLATFORM_ZB_PHY_IMUMC_LOCAL_ADDR 10U
-#endif
-
-#ifndef PLATFORM_ZB_PHY_IMUMC_REMOTE_ADDR
-#define PLATFORM_ZB_PHY_IMUMC_REMOTE_ADDR 20U
-#endif
-
 #ifndef PLATFORM_ZB_IMUMC_ALLOC_FAILED_DELAY_MS
 #define PLATFORM_ZB_IMUMC_ALLOC_FAILED_DELAY_MS 2U
 #endif
@@ -118,9 +110,7 @@ static void PLATFORM_GenerateEui64Addr(uint8_t *eui64_address);
 /* -------------------------------------------------------------------------- */
 
 static platform_zb_rx_callback_t zbMacRxCallback;
-// static platform_zb_rx_callback_t zbPhyRxCallback;
 static void *zbMacCallbackParam = NULL;
-// static void *                    zbPhyCallbackParam = NULL;
 
 static IMUMC_HANDLE_DEFINE(zbMacImumcHandle);
 static const hal_imumc_config_t zbMacImumcConfig = {
@@ -130,17 +120,6 @@ static const hal_imumc_config_t zbMacImumcConfig = {
     .callback    = &PLATFORM_ZbImumcRxCallback,
     .param       = (void *)PLATFORM_ZB_MAC_IMUMC_REMOTE_ADDR,
 };
-
-#if 0
-static IMUMC_HANDLE_DEFINE(zbPhyImumcHandle);
-static const hal_imumc_config_t zbPhyImumcConfig = {
-    .local_addr  = PLATFORM_ZB_PHY_IMUMC_LOCAL_ADDR,
-    .remote_addr = PLATFORM_ZB_PHY_IMUMC_REMOTE_ADDR,
-    .imuLink     = (uint8_t)kIMU_LinkCpu2Cpu3,
-    .callback    = &PLATFORM_ZbImumcRxCallback,
-    .param       = (void *)PLATFORM_ZB_PHY_IMUMC_REMOTE_ADDR,
-};
-#endif
 
 static const uint8_t gIeee802_15_4_ADDR_OUI_c[MAC_ADDR_OUI_PART_SIZE] = {IEEE802_15_4_ADDR_OUI};
 
@@ -210,42 +189,15 @@ int PLATFORM_SendZbMacMessage(uint8_t *msg, uint32_t len)
 
 int PLATFORM_InitZbPhyInterface(platform_zb_rx_callback_t callback, void *param)
 {
-    int ret = 0;
-#if 0
-    zbPhyRxCallback    = callback;
-    zbPhyCallbackParam = param;
-
-    do
-    {
-        /* IMUMC requires 15.4 controller to be started */
-        if (PLATFORM_InitOt() != 0)
-        {
-            ret = -1;
-            break;
-        }
-
-        /* Init IMUMC interface */
-        if (PLATFORM_InitZbImumc((hal_imumc_handle_t)zbPhyImumcHandle, zbPhyImumcConfig) != 0)
-        {
-            ret = -2;
-            break;
-        }
-    } while (false);
-
-    if (ret != 0)
-    {
-        zbPhyRxCallback    = NULL;
-        zbPhyCallbackParam = NULL;
-    }
-#else
     /* MISRA rule 11.1 forbids cast of function pointer to any other type so avoid (void)callback */
     if (callback != NULL)
     {
         ; /* intentionally */
     }
     (void)param;
-#endif
-    return ret;
+
+    /* NOT IMPLEMENTED */
+    return 0;
 }
 
 int PLATFORM_TerminateZbPhyInterface(void)
@@ -262,11 +214,8 @@ int PLATFORM_ResetZbPhyInterface(void)
 
 int PLATFORM_SendZbPhyMessage(uint8_t *msg, uint32_t len)
 {
-#if 0
-    PLATFORM_SendZbMessage((hal_imumc_handle_t)zbPhyImumcHandle, msg, len);
-#else
+    /* NOT IMPLEMENTED */
     return 0;
-#endif
 }
 
 void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address)
@@ -359,6 +308,7 @@ static hal_imumc_return_status_t PLATFORM_ZbImumcRxCallback(void *param, uint8_t
 {
     /* MISRA rule 11.6 requires cast to non void pointer before cast to arithmetic type */
     uint32_t remoteAddr = (uint32_t)(uint32_t *)param;
+
     /* notify power controller the remote cpu is awake */
     (void)PLATFORM_HandleControllerPowerState();
 
@@ -369,16 +319,6 @@ static hal_imumc_return_status_t PLATFORM_ZbImumcRxCallback(void *param, uint8_t
         {
             zbMacRxCallback(data, len, zbMacCallbackParam);
         }
-    }
-    else if (remoteAddr == PLATFORM_ZB_PHY_IMUMC_REMOTE_ADDR)
-    {
-#if 0
-        /* This is a PHY message */
-        if (zbPhyRxCallback != NULL)
-        {
-            zbPhyRxCallback(data, len, zbPhyCallbackParam);
-        }
-#endif
     }
     else
     {
