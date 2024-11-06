@@ -1,7 +1,7 @@
 
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2021-2023 NXP
+ * Copyright 2021-2024 NXP
  * All rights reserved.
  *
  * \file
@@ -14,7 +14,6 @@
 #ifndef __OTA_PRIVATE_H__
 #define __OTA_PRIVATE_H__
 
-#include "fwk_platform_extflash.h"
 #include "fsl_component_messaging.h"
 #include "fsl_os_abstraction.h"
 #include "OtaSupport.h"
