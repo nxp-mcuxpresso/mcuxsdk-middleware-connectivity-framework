@@ -110,7 +110,7 @@ static void PLATFORM_GenerateEui64Addr(uint8_t *eui64_address);
 /* -------------------------------------------------------------------------- */
 
 static platform_zb_rx_callback_t zbMacRxCallback;
-static void *zbMacCallbackParam = NULL;
+static void                     *zbMacCallbackParam = NULL;
 
 static IMUMC_HANDLE_DEFINE(zbMacImumcHandle);
 static const hal_imumc_config_t zbMacImumcConfig = {
