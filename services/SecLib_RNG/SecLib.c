@@ -67,10 +67,10 @@
 #define AES256        256U
 #define AES256_ROUNDS 14U
 
-#if ((defined(USE_RTOS) && (USE_RTOS > 0)) ||                                        \
-     ((defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) ||     \
-      (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0)) || \
-      (defined(FSL_FEATURE_SOC_AES_HW))))
+#if ((defined(USE_RTOS) && (USE_RTOS > 0)) &&                                       \
+     ((defined FSL_FEATURE_SOC_LTC_COUNT && (FSL_FEATURE_SOC_LTC_COUNT > 0)) ||     \
+      (defined FSL_FEATURE_SOC_MMCAU_COUNT && (FSL_FEATURE_SOC_MMCAU_COUNT > 0)) || \
+      (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))))
 #define gSecLibUseMutex_c TRUE
 #else
 #define gSecLibUseMutex_c FALSE
@@ -297,7 +297,7 @@ osa_status_t SecLibMutexUnlock(void)
 }
 
 /*! *********************************************************************************
- * \brief  This function performs initialization of the cryptografic HW acceleration.
+ * \brief  This function performs initialization of the cryptographic HW acceleration.
  *
  ********************************************************************************** */
 void SecLib_Init(void)
@@ -308,7 +308,7 @@ void SecLib_Init(void)
         initialized = true;
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
         LTC_Init(LTC0);
-#elif defined(FSL_FEATURE_SOC_AES_HW)
+#elif (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
 #ifdef CPU_QN908X
 #if USE_TASK_FOR_HW_AES
         AESM_Initialize();
@@ -324,7 +324,7 @@ void SecLib_Init(void)
 }
 
 /*! *********************************************************************************
- * \brief  This function performs initialization of the cryptografic HW acceleration.
+ * \brief  This function performs initialization of the cryptographic HW acceleration.
  *
  ********************************************************************************** */
 void SecLib_ReInit(void)
@@ -443,7 +443,7 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
 #elif (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
     (void)LTC_AES_EncryptEcb(LTC0, pInput, pOutput, AES_BLOCK_SIZE, pKey, AES_BLOCK_SIZE);
 
-#elif defined(FSL_FEATURE_SOC_AES_HW)
+#elif (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
     aes_enc_status_t hw_ase_status_flag;
 
     do
@@ -482,11 +482,8 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     mmcauAesContext_t *pCtx = &mmcauAesCtx;
     uint8_t           *pIn;
     uint8_t           *pOut;
-#endif
 
     SECLIB_MUTEX_LOCK();
-
-#if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
     /* Check if pKey is 4 bytes aligned */
     if ((uint32_t)pKey & 0x00000003u)
     {
@@ -529,14 +526,16 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     {
         FLib_MemCpy(pOutput, pCtx->alignedOut, AES_BLOCK_SIZE);
     }
-
+    SECLIB_MUTEX_UNLOCK();
 #elif (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
+    SECLIB_MUTEX_LOCK();
     (void)LTC_AES_DecryptEcb(LTC0, pInput, pOutput, AES_BLOCK_SIZE, pKey, AES_BLOCK_SIZE, kLTC_EncryptKey);
+    SECLIB_MUTEX_UNLOCK();
 
-#elif defined(FSL_FEATURE_SOC_AES_HW)
+#elif (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
 
     aes_enc_status_t hw_ase_status_flag;
-
+    SECLIB_MUTEX_LOCK();
     do
     {
         while (*(uint8_t *)(0x04000168u + 76u) == true)
@@ -549,11 +548,10 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
 
     } while (hw_ase_status_flag == HW_AES_Previous_Enc_on_going);
 
+    SECLIB_MUTEX_UNLOCK();
 #else
     sw_Aes128(pInput, pKey, 0, pOutput);
 #endif
-
-    SECLIB_MUTEX_UNLOCK();
 }
 
 /*! *********************************************************************************
@@ -587,7 +585,9 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
     AESM_SetParam(AES128ECB_Enc_Id, pAES, AES_128_ECB_Enc_HW);
     AESM_Start(AES128ECB_Enc_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_ECB_Enc_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 #else  /* SW AES */
     uint8_t tempBuffIn[AES_BLOCK_SIZE]  = {0};
@@ -640,7 +640,9 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, uint8_t *pKey
     AESM_SetParam(AES128ECB_Dec_Id, pAES, AES_128_ECB_Dec_HW);
     AESM_Start(AES128ECB_Dec_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_ECB_Dec_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 }
 #endif /* FSL_FEATURE_SOC_AES_HW */
@@ -676,7 +678,9 @@ void AES_128_ECB_Block_Encrypt(const uint8_t *pInput, uint32_t numBlocks, const 
     AESM_SetParam(AES128ECBB_Enc_Id, pAES, AES_128_ECB_Block_Enc_HW);
     AESM_Start(AES128ECBB_Enc_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_ECB_Block_Enc_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 
 #else  /* SW AES */
@@ -721,7 +725,9 @@ void AES_128_ECB_Block_Decrypt(uint8_t *pInput, uint32_t numBlocks, const uint8_
     AESM_SetParam(AES128ECBB_Dec_Id, pAES, AES_128_ECB_Block_Dec_HW);
     AESM_Start(AES128ECBB_Dec_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_ECB_Block_Dec_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 }
 #endif /* FSL_FEATURE_SOC_AES_HW */
@@ -936,7 +942,9 @@ void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, co
     AESM_SetParam(AES128CTR_Enc_Id, pAES, AES_128_CTR_Enc_HW);
     AESM_Start(AES128CTR_Enc_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_CTR_Enc_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 
 #else  /* SW AES */
@@ -1006,7 +1014,9 @@ void AES_128_CTR_Decrypt(
     AESM_SetParam(AES128CTR_Dec_Id, pAES, AES_128_CTR_Dec_HW);
     AESM_Start(AES128CTR_Dec_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_CTR_Dec_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 }
 #endif /* FSL_FEATURE_SOC_AES_HW */
@@ -1088,7 +1098,9 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     AESM_SetParam(AES128CMAC_Id, pAES, AES_128_CMAC_HW);
     AESM_Start(AES128CMAC_Id);
 #else
+    SECLIB_MUTEX_LOCK();
     AES_128_CMAC_HW(&pAES);
+    SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 
 #else  /* SW AES */
@@ -1619,7 +1631,9 @@ void SHA1_Init(void *pContext)
     context->bytes      = 0u;
     context->totalBytes = 0u;
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
+    SECLIB_MUTEX_LOCK();
     (void)mmcau_sha1_initialize_output((const unsigned int *)context->hash);
+    SECLIB_MUTEX_UNLOCK();
 #else
     sw_sha1_initialize_output(context->hash);
 #endif
@@ -1792,7 +1806,10 @@ void SHA256_Init(void *pContext)
     context->bytes      = 0u;
     context->totalBytes = 0u;
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
+    SECLIB_MUTEX_LOCK();
     (void)mmcau_sha256_initialize_output((const unsigned int *)context->hash);
+    SECLIB_MUTEX_UNLOCK();
+
 #else
     sw_sha256_initialize_output(context->hash);
 #endif
@@ -2667,7 +2684,9 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
 static void SHA1_hash_n(uint8_t *pData, uint32_t nBlk, uint32_t *pHash)
 {
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
+    SECLIB_MUTEX_LOCK();
     mmcau_sha1_hash_n(pData, nBlk, (unsigned int *)pHash);
+    SECLIB_MUTEX_UNLOCK();
 #else
     sw_sha1_hash_n(pData, (int32_t)nBlk, pHash);
 #endif
@@ -2684,13 +2703,15 @@ static void SHA1_hash_n(uint8_t *pData, uint32_t nBlk, uint32_t *pHash)
 static void SHA256_hash_n(const uint8_t *pData, uint32_t nBlk, uint32_t *pHash)
 {
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
+    SECLIB_MUTEX_LOCK();
     mmcau_sha256_hash_n(pData, nBlk, (unsigned int *)pHash);
+    SECLIB_MUTEX_UNLOCK();
 #else
     sw_sha256_hash_n(pData, (int32_t)nBlk, pHash);
 #endif
 }
 
-#ifdef FSL_FEATURE_SOC_AES_HW
+#if (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
 /*! *********************************************************************************
  * \brief  This function performs hardware AES-128 ECB encryption
  *
