@@ -126,29 +126,9 @@ static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey
                                                     uint8_t           *pMacKey,
                                                     uint8_t           *pLTKBlob);
 
-/*! *********************************************************************************
-*************************************************************************************
-* Private functions
-*************************************************************************************
-********************************************************************************** */
-
-#if gSecLibUseDspExtension_d
-static bool ECP256_LePointValid(const ecp256Point_t *P)
-{
-    ecp256Point_t tmp;
-    ECP256_PointCopy_and_change_endianness(tmp.raw, P->raw);
-    return ECP256_PointValid(&tmp);
-}
-#else
-
-extern bool_t EcP256_IsPointOnCurve(const uint32_t *X, const uint32_t *Y);
-
-static bool ECP256_LePointValid(const ecp256Point_t *P)
-{
-    return EcP256_IsPointOnCurve((const uint32_t *)&P->components_32bit.x[0],
-                                 (const uint32_t *)&P->components_32bit.y[0]);
-}
-#endif
+static uint8_t SecLib_Padding(const uint8_t *lastb, uint8_t pad_block[AES_BLOCK_SIZE], uint8_t length);
+static uint8_t SecLib_DePadding(const uint8_t pad_block[AES_BLOCK_SIZE]);
+static bool    ECP256_LePointValid(const ecp256Point_t *P);
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -348,29 +328,48 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
  *
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
+ * \return : gSecSuccess_c if no error,
+ *           gSecBadArgument_c in case of bad arguments,
+ *           gSecError_c in case of internal error.
+ *
  ********************************************************************************** */
-void AES_128_CBC_Encrypt(
+secResultType_t AES_128_CBC_Encrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    status_t      ret;
-    aes_context_t ctx;
+    status_t        st;
+    aes_context_t   ctx;
+    secResultType_t ret;
 
-    /* If the input length is not a multiple of AES 128 block size return */
-    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
+    do
     {
+        if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
+            /* If the input length is not a non zero multiple of AES 128 block size,  return */
+            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+        {
+            ret = gSecBadArgument_c;
+            break;
+        }
+
         SECLIB_MUTEX_LOCK();
 
-        ret = SSS_aes_operation(&ctx, pInput, inputLen, pInitVector, pKey, AES_128_KEY_BITS, pOutput, true,
-                                kAlgorithm_SSS_AES_CBC);
-        if (ret != kStatus_Success)
+        st = SSS_aes_operation(&ctx, pInput, inputLen, pInitVector, pKey, AES_128_KEY_BITS, pOutput, true,
+                               kAlgorithm_SSS_AES_CBC);
+        SECLIB_MUTEX_UNLOCK();
+
+        if (st != kStatus_Success)
         {
-            assert(0);
+            ret = gSecError_c;
+            break;
         }
         /* Update IV with last ciphered block to be injected at next call */
+        /* Note that inputLen is greater than or equal to AES_BLOCK_SIZE, otherwise would have exited
+           with gSecBadArgument_c, so difference cannot be negative */
         FLib_MemCpy(pInitVector, &pOutput[inputLen - AES_BLOCK_SIZE], AES_BLOCK_SIZE);
 
-        SECLIB_MUTEX_UNLOCK();
-    }
+        ret = gSecSuccess_c;
+    } while (false);
+
+    return ret;
 }
 
 /*! *********************************************************************************
@@ -388,30 +387,46 @@ void AES_128_CBC_Encrypt(
  *
  * \param[out]  pOutput Pointer to the location to store the plain text output.
  *
+ * \return : gSecSuccess_c if no error,
+ *           gSecBadArgument_c in case of bad arguments,
+ *           gSecError_c in case of internal error.
+ *
  ********************************************************************************** */
-void AES_128_CBC_Decrypt(
+secResultType_t AES_128_CBC_Decrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    status_t      ret;
-    aes_context_t ctx;
+    secResultType_t ret;
 
-    /* If the input length is not a multiple of AES 128 block size return */
-    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
+    do
     {
-        SECLIB_MUTEX_LOCK();
-
-        ret = SSS_aes_operation(&ctx, pInput, inputLen, pInitVector, pKey, AES_128_KEY_BITS, pOutput, false,
-                                kAlgorithm_SSS_AES_CBC);
-        if (ret != kStatus_Success)
+        status_t      st;
+        aes_context_t ctx;
+        if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
+            /* If the input length is not a non zero multiple of AES 128 block size,  return */
+            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
         {
-            assert(0);
+            ret = gSecBadArgument_c;
+            break;
+        }
+
+        SECLIB_MUTEX_LOCK();
+        st = SSS_aes_operation(&ctx, pInput, inputLen, pInitVector, pKey, AES_128_KEY_BITS, pOutput, false,
+                               kAlgorithm_SSS_AES_CBC);
+        SECLIB_MUTEX_UNLOCK();
+
+        if (st != kStatus_Success)
+        {
+            ret = gSecError_c;
+            break;
         }
         /* Update IV with last ciphered block to be injected at next call */
+        /* Note that inputLen is greater than or equal to AES_BLOCK_SIZE, otherwise would have exited
+           with gSecBadArgument_c, so difference cannot be negative */
         FLib_MemCpy(pInitVector, &pInput[inputLen - AES_BLOCK_SIZE], AES_BLOCK_SIZE);
+        ret = gSecSuccess_c;
 
-        SECLIB_MUTEX_UNLOCK();
-    }
-    /* Save the previous ciphered block as IV in caller's context for next call */
+    } while (false);
+    return ret;
 }
 
 /*! *********************************************************************************
@@ -426,8 +441,8 @@ void AES_128_CBC_Decrypt(
  *
  * \param[in]  inputLen Input message length in bytes - no specific constraint.
  *
- *             IMPORTANT: User must make sure that input and output
- *             buffers have at least inputLen + 16 bytes size
+ *  IMPORTANT: User must make sure output buffer has at least inputLen + 16 bytes size.
+ *  This constraint does not apply to input buffer (any longer).
  *
  * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
  *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
@@ -437,28 +452,45 @@ void AES_128_CBC_Decrypt(
  *
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
- * \return value  size of output message after padding is appended.
+ * \return size of output message after padding is appended.
  *
  ********************************************************************************** */
-
 uint32_t AES_128_CBC_Encrypt_And_Pad(
     uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    uint32_t newLen = 0;
+    uint32_t roundedLen = 0u;
 
-    /* compute new length */
-    newLen = inputLen + (AES_BLOCK_SIZE - (inputLen & (AES_BLOCK_SIZE - 1U)));
-    /* pad the input buffer with 1 bit of 1 and trail of 0's from inputLen to newLen */
-    for (uint32_t idx = 0U; idx < ((newLen - inputLen) - 1U); idx++)
+    do
     {
-        pInput[newLen - 1U - idx] = 0x00U;
-    }
-    pInput[inputLen] = 0x80U;
+        uint8_t last_blk_msg_sz;
+        uint8_t last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
+        /* compute new length */
+        roundedLen      = (inputLen / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+        last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
+        /* Perform AES-CBC operation on whole AES blocks */
+        if (AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
+        {
+            roundedLen = 0u;
+            break;
+        }
+        pInput += roundedLen;
+        pOutput += roundedLen;
+        /* There may be a remainder modulus 16 : copy it to last_block on stack */
+        /* then add padding so as to fill the last_block array */
+        if (SecLib_Padding(pInput, last_block, last_blk_msg_sz) == 0u)
+        {
+            roundedLen = 0u;
+            break;
+        }
+        if (AES_128_CBC_Encrypt(last_block, AES_BLOCK_SIZE, pInitVector, pKey, pOutput) != gSecSuccess_c)
+        {
+            roundedLen = 0u;
+            break;
+        }
+        roundedLen += AES_BLOCK_SIZE;
+    } while (false);
 
-    /* Apply CBC padding on the padded input */
-    AES_128_CBC_Encrypt(pInput, newLen, pInitVector, pKey, pOutput);
-
-    return newLen;
+    return roundedLen;
 }
 
 /*! *********************************************************************************
@@ -474,19 +506,32 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
  *
  * \param[out] pOutput Pointer to the location to store the plain text output.
  *
- * \return value  size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
+ * \return size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
  *
  ********************************************************************************** */
 uint32_t AES_128_CBC_Decrypt_And_Depad(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    uint32_t newLen = inputLen;
+    uint32_t newLen = 0uL;
 
-    if (newLen > 0u)
+    if (inputLen > 0u)
     {
-        AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput);
-        while ((pOutput[--newLen] != 0x80U) && (newLen != 0U))
+        if (AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput) == gSecSuccess_c)
         {
+            uint8_t padding_len;
+            /* If we are here inputLen is a non 0 multiple of AES_BLOCK_SIZE, otherwise AES_128_CBC_Decrypt would have
+            returned an error.
+            Yet the test below is to prevent a false MISRA error detection.
+            */
+            if ((inputLen >= AES_BLOCK_SIZE) && (inputLen % AES_BLOCK_SIZE == 0u))
+            {
+                uint8_t *p_last_block = &pOutput[inputLen - AES_BLOCK_SIZE];
+                padding_len           = SecLib_DePadding(p_last_block);
+                if ((padding_len > 0u) && (padding_len <= AES_BLOCK_SIZE))
+                {
+                    newLen = inputLen - (uint32_t)padding_len;
+                }
+            }
         }
     }
     return newLen;
@@ -517,7 +562,7 @@ void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, co
 
     SECLIB_MUTEX_LOCK();
 
-    /* The lenght of the input does not need to be a multiple of AES 128 block size */
+    /* The length of the input does not need to be a multiple of AES 128 block size */
     ret = SSS_aes128_CTR_operation(&ctx, pInput, inputLen, pCounter, pKey, pOutput, true, streamBlk,
                                    (size_t *)&ctrOffset);
     if (ret != kStatus_Success)
@@ -2073,156 +2118,6 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
     return result;
 }
 
-#ifdef DBG_SECLIB
-void dump_octet_string(const char *str, const unsigned char *data, size_t len)
-{
-    for (int i = 0; i < len; i++)
-    {
-        if (i % 16 == 0)
-            PRINTF("\r\n%s[%d]:\t", str, i);
-        if (data[i] < 0x10)
-            PRINTF("0%X", data[i]);
-        else
-            PRINTF("%02X", data[i]);
-    }
-}
-#endif
-
-/************************************************************************************
- * \private
- * \brief Function used to create the mac key and LTK using Bluetooth F5 algorithm
- *        Only ever called in the secure (Key blobs) variant of the F5,
- *
- * \param  [in] pDhKey                   pointer to DH Key object
- * \param  [in] pDerivationDataMacKey    derivation data for MacKey
- * \param  [in] pDerivationDataLTK       derivation data for LTK
- * \param  [out] pMacKey                 pointer to mac key
- * \param  [out] pLTKBlob                pointer to LTK blob
- *
- * \return sss_status_t
- ************************************************************************************/
-static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey,
-                                                    const uint8_t     *pDerivationDataMacKey,
-                                                    const uint8_t     *pDerivationDataLTK,
-                                                    uint8_t           *pMacKey,
-                                                    uint8_t           *pLTKBlob)
-{
-    sss_sscp_object_t     keyObj__MacKey;
-    sss_sscp_object_t     keyObj__LTK;
-    sss_sscp_derive_key_t ctx_deriveKey;
-
-    bool bInitialized_MacKey = false;
-    bool bInitialized_LTK    = false;
-
-    sss_status_t result = kStatus_SSS_Fail;
-
-    SECLIB_MUTEX_LOCK();
-    do
-    {
-        if ((CRYPTO_InitHardware()) != kStatus_Success)
-        {
-            break;
-        }
-
-        if (sss_sscp_key_object_init(&keyObj__MacKey, &g_keyStore) != kStatus_SSS_Success)
-        {
-            break;
-        }
-        bInitialized_MacKey = true;
-
-        if (sss_sscp_key_object_allocate_handle(
-                &keyObj__MacKey, ELE_S200_KEY_STORE_USER_ID_GENERIC, kSSS_KeyPart_Default, kSSS_CipherType_SYMMETRIC,
-                16u, kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_CryptoAlgo_MAC) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        if (sss_sscp_key_object_init(&keyObj__LTK, &g_keyStore) != kStatus_SSS_Success)
-        {
-            break;
-        }
-        bInitialized_LTK = true;
-
-        if (sss_sscp_key_object_allocate_handle(
-                &keyObj__LTK, ELE_S200_KEY_STORE_USER_ID_GENERIC, kSSS_KeyPart_Default, kSSS_CipherType_SYMMETRIC, 16u,
-#if !gSecLibAllowLtkFromBlob_c
-                kSSS_KeyProp_NoPlainRead |
-#endif
-                    kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_CryptoAlgo_KDF) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        /* derive keys for f5() */
-        if (sss_sscp_derive_key_context_init(&ctx_deriveKey, &g_sssSession, pPubDhKey, kAlgorithm_SSS_BLE_F5,
-                                             kMode_SSS_SymmetricKDF) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        do
-        {
-            if (sss_sscp_derive_key(&ctx_deriveKey, pDerivationDataMacKey, 53u, &keyObj__MacKey, 0U) !=
-                kStatus_SSS_Success)
-            {
-                break;
-            }
-            if (sss_sscp_derive_key(&ctx_deriveKey, pDerivationDataLTK, 53u, &keyObj__LTK, 0U) != kStatus_SSS_Success)
-            {
-                break;
-            }
-        } while (false);
-
-        if (sss_sscp_derive_key_context_free(&ctx_deriveKey) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        /* export keys from S200 */
-
-        /* export MacKey */
-        size_t  bufLen    = 16u;
-        size_t  keyBitLen = 128u;
-        uint8_t macData[16];
-        if (sss_sscp_key_store_get_key(&g_keyStore, &keyObj__MacKey, macData, &bufLen, &keyBitLen,
-                                       kSSS_KeyPart_Default) != kStatus_SSS_Success)
-        {
-            break;
-        }
-        FLib_MemCpyReverseOrder(pMacKey, macData, 16);
-
-        /* export LTK blob */
-        size_t ltkBlobByteLen = 40u;
-        keyBitLen             = 128u;
-
-        if (sss_sscp_key_store_export_key(&g_keyStore, &keyObj__LTK, pLTKBlob, &ltkBlobByteLen,
-                                          kSSS_blobType_ELKE_blob) != kStatus_SSS_Success)
-        {
-            break;
-        }
-
-        result = kStatus_SSS_Success;
-    } while (false);
-
-    /* delete keys and contexts from S200 */
-    if (bInitialized_MacKey)
-    {
-        (void)sss_sscp_key_object_free(&keyObj__MacKey, kSSS_keyObjFree_KeysStoreDefragment);
-    }
-
-    if (bInitialized_LTK)
-    {
-        (void)sss_sscp_key_object_free(&keyObj__LTK, kSSS_keyObjFree_KeysStoreDefragment);
-    }
-
-    /* DHkey object from pDhKeyData->outPoint can be deleted here */
-    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreDefragment);
-
-    SECLIB_MUTEX_UNLOCK();
-
-    return result;
-}
-
 /************************************************************************************
  * \brief Generates a symmetric key in ELKE blob or plain text form .
  *
@@ -2686,4 +2581,238 @@ secResultType_t SecLib_ImportA2BBlobSecure(const uint8_t *pKey, const secInputKe
         (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     return result;
+}
+
+/*! *********************************************************************************
+*************************************************************************************
+* Private functions
+*************************************************************************************
+********************************************************************************** */
+
+static bool ECP256_LePointValid(const ecp256Point_t *P)
+{
+#if gSecLibUseDspExtension_d
+    ecp256Point_t tmp;
+    ECP256_PointCopy_and_change_endianness(tmp.raw, P->raw);
+    return ECP256_PointValid(&tmp);
+#else
+    extern bool_t EcP256_IsPointOnCurve(const uint32_t *X, const uint32_t *Y);
+    return EcP256_IsPointOnCurve((const uint32_t *)&P->components_32bit.x[0],
+                                 (const uint32_t *)&P->components_32bit.y[0]);
+#endif
+}
+
+/************************************************************************************
+ * \private
+ * \brief Function used to create the mac key and LTK using Bluetooth F5 algorithm
+ *        Only ever called in the secure (Key blobs) variant of the F5,
+ *
+ * \param  [in] pDhKey                   pointer to DH Key object
+ * \param  [in] pDerivationDataMacKey    derivation data for MacKey
+ * \param  [in] pDerivationDataLTK       derivation data for LTK
+ * \param  [out] pMacKey                 pointer to mac key
+ * \param  [out] pLTKBlob                pointer to LTK blob
+ *
+ * \return sss_status_t
+ ************************************************************************************/
+static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey,
+                                                    const uint8_t     *pDerivationDataMacKey,
+                                                    const uint8_t     *pDerivationDataLTK,
+                                                    uint8_t           *pMacKey,
+                                                    uint8_t           *pLTKBlob)
+{
+    sss_sscp_object_t     keyObj__MacKey;
+    sss_sscp_object_t     keyObj__LTK;
+    sss_sscp_derive_key_t ctx_deriveKey;
+
+    bool bInitialized_MacKey = false;
+    bool bInitialized_LTK    = false;
+
+    sss_status_t result = kStatus_SSS_Fail;
+
+    SECLIB_MUTEX_LOCK();
+    do
+    {
+        if ((CRYPTO_InitHardware()) != kStatus_Success)
+        {
+            break;
+        }
+
+        if (sss_sscp_key_object_init(&keyObj__MacKey, &g_keyStore) != kStatus_SSS_Success)
+        {
+            break;
+        }
+        bInitialized_MacKey = true;
+
+        if (sss_sscp_key_object_allocate_handle(
+                &keyObj__MacKey, ELE_S200_KEY_STORE_USER_ID_GENERIC, kSSS_KeyPart_Default, kSSS_CipherType_SYMMETRIC,
+                16u, kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_CryptoAlgo_MAC) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        if (sss_sscp_key_object_init(&keyObj__LTK, &g_keyStore) != kStatus_SSS_Success)
+        {
+            break;
+        }
+        bInitialized_LTK = true;
+
+        if (sss_sscp_key_object_allocate_handle(
+                &keyObj__LTK, ELE_S200_KEY_STORE_USER_ID_GENERIC, kSSS_KeyPart_Default, kSSS_CipherType_SYMMETRIC, 16u,
+#if !gSecLibAllowLtkFromBlob_c
+                kSSS_KeyProp_NoPlainRead |
+#endif
+                    kSSS_KeyProp_NoPlainWrite | kSSS_KeyProp_CryptoAlgo_KDF) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        /* derive keys for f5() */
+        if (sss_sscp_derive_key_context_init(&ctx_deriveKey, &g_sssSession, pPubDhKey, kAlgorithm_SSS_BLE_F5,
+                                             kMode_SSS_SymmetricKDF) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        do
+        {
+            if (sss_sscp_derive_key(&ctx_deriveKey, pDerivationDataMacKey, 53u, &keyObj__MacKey, 0U) !=
+                kStatus_SSS_Success)
+            {
+                break;
+            }
+            if (sss_sscp_derive_key(&ctx_deriveKey, pDerivationDataLTK, 53u, &keyObj__LTK, 0U) != kStatus_SSS_Success)
+            {
+                break;
+            }
+        } while (false);
+
+        if (sss_sscp_derive_key_context_free(&ctx_deriveKey) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        /* export keys from S200 */
+
+        /* export MacKey */
+        size_t  bufLen    = 16u;
+        size_t  keyBitLen = 128u;
+        uint8_t macData[16];
+        if (sss_sscp_key_store_get_key(&g_keyStore, &keyObj__MacKey, macData, &bufLen, &keyBitLen,
+                                       kSSS_KeyPart_Default) != kStatus_SSS_Success)
+        {
+            break;
+        }
+        FLib_MemCpyReverseOrder(pMacKey, macData, 16);
+
+        /* export LTK blob */
+        size_t ltkBlobByteLen = 40u;
+        keyBitLen             = 128u;
+
+        if (sss_sscp_key_store_export_key(&g_keyStore, &keyObj__LTK, pLTKBlob, &ltkBlobByteLen,
+                                          kSSS_blobType_ELKE_blob) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        result = kStatus_SSS_Success;
+    } while (false);
+
+    /* delete keys and contexts from S200 */
+    if (bInitialized_MacKey)
+    {
+        (void)sss_sscp_key_object_free(&keyObj__MacKey, kSSS_keyObjFree_KeysStoreDefragment);
+    }
+
+    if (bInitialized_LTK)
+    {
+        (void)sss_sscp_key_object_free(&keyObj__LTK, kSSS_keyObjFree_KeysStoreDefragment);
+    }
+
+    /* DHkey object from pDhKeyData->outPoint can be deleted here */
+    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreNoDefragment);
+
+    SECLIB_MUTEX_UNLOCK();
+
+    return result;
+}
+
+/*! *********************************************************************************
+ * \brief  This function pads an incomplete 16 byte block of data, where padding is
+ *         the concatenation of x and a single '1',
+ *         followed by the minimum number of '0's, so that the total length is equal to 128 bits.
+ * Padding scheme is ISO/IEC 7816-4: one 80h byte (1 bit), followed by as many 00h as
+ * required to fill a 128 bit block.
+ *
+ * \param[in, out] lastb Pointer to the last block of message to be padded
+ *
+ * \param[in]  pad_block Padded block destination
+ *
+ * \param[in]  length    Number of message bytes in the block to be padded : must be in [0..AES_BLOCK_SIZE-1]
+ *
+ * \return  length of padding [1..AES_BLOCK_SIZE] if ok, 0 otherwise
+ *
+ ********************************************************************************** */
+static uint8_t SecLib_Padding(const uint8_t *lastb, uint8_t pad_block[AES_BLOCK_SIZE], uint8_t length)
+{
+    uint8_t  padding_sz = 0;
+    uint32_t j;
+    if (length < AES_BLOCK_SIZE)
+    {
+        for (j = 0u; j < AES_BLOCK_SIZE; j++)
+        {
+            /* there may be 0 bytes to copy if message was a multiple of AES_BLOCK_SIZE */
+            if (j < length)
+            {
+                /* original last block */
+                pad_block[j] = lastb[j];
+            }
+            else if (j == length)
+            {
+                pad_block[j] = 0x80u;
+            }
+            else
+            {
+                pad_block[j] = 0x00u;
+            }
+        }
+        padding_sz = AES_BLOCK_SIZE - length;
+    }
+    return padding_sz;
+}
+
+/*! *********************************************************************************
+ * \brief  This function removes padding from an octet string (at most 16 bytes of data).
+ *
+ * \param[in] pIn Pointer to start of last AES block of a message to be depadded
+ *
+ * \return  if > 0 Final size of padding to be removed : must be in [1..AES_BLOCK_SIZE].
+ *          if 0 : error occurred the last block does not contain expected padding patter.
+ *
+ ********************************************************************************** */
+static uint8_t SecLib_DePadding(const uint8_t pad_block[AES_BLOCK_SIZE])
+{
+    uint8_t padding_sz = 0u;
+
+    for (uint8_t i = AES_BLOCK_SIZE; i > 0u; i--)
+    {
+        uint8_t ch = pad_block[i - 1u];
+        if (ch == 0x80u)
+        {
+            padding_sz = AES_BLOCK_SIZE - i + 1u;
+            break;
+        }
+        else if (ch != 0x00u)
+        {
+            /* not padding */
+            padding_sz = 0u;
+            break;
+        }
+        else
+        {
+            /* MISRA rule 15.7 but useless */
+            continue;
+        }
+    }
+    return padding_sz;
 }

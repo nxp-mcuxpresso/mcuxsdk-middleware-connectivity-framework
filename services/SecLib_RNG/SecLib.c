@@ -205,8 +205,10 @@ static void SHA1_hash_n(uint8_t *pData, uint32_t nBlk, uint32_t *pHash);
 static void SHA256_hash_n(const uint8_t *pData, uint32_t nBlk, uint32_t *pHash);
 static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_t *K2);
 static void SecLib_LeftShiftOneBit(uint8_t *input, uint8_t *output);
-static void SecLib_Padding(const uint8_t *in_lastb, uint8_t pad_block[AES_128_BLOCK_SIZE], uint32_t length);
 static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out);
+
+static uint8_t SecLib_Padding(const uint8_t *lastb, uint8_t pad_block[AES_BLOCK_SIZE], uint8_t length);
+static uint8_t SecLib_DePadding(const uint8_t pad_block[AES_BLOCK_SIZE]);
 
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT == 1U))
 #else
@@ -748,17 +750,41 @@ void AES_128_ECB_Block_Decrypt(uint8_t *pInput, uint32_t numBlocks, const uint8_
  *
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
+ * \return : gSecSuccess_c if no error,
+ *           gSecBadArgument_c in case of bad arguments,
+ *           gSecError_c in case of internal error.
+ *
  ********************************************************************************** */
-void AES_128_CBC_Encrypt(
+secResultType_t AES_128_CBC_Encrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
+    secResultType_t ret;
+
+    do
     {
+        if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
+            /* If the input length is not a non zero multiple of AES 128 block size,  return */
+            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+        {
+            ret = gSecBadArgument_c;
+            break;
+        }
+
         /* LTC is capable of performing CBC operation natively */
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
+        status_t st;
         SECLIB_MUTEX_LOCK();
-        (void)LTC_AES_EncryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_128_KEY_BYTE_LEN);
+        st = LTC_AES_EncryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_128_KEY_BYTE_LEN);
         SECLIB_MUTEX_UNLOCK();
+        if (st != kStatus_Success)
+        {
+            ret = gSecError_c;
+            break;
+        }
+        /* Update IV with last ciphered block to be injected at next call */
+        /* Note that inputLen is greater than or equal to AES_BLOCK_SIZE, otherwise would have exited
+           with gSecBadArgument_c, so difference cannot be negative */
+        FLib_MemCpy(pInitVector, &pOutput[inputLen - AES_BLOCK_SIZE], AES_BLOCK_SIZE);
 #else
         uint8_t tempBuffIn[AES_BLOCK_SIZE] = {0};
 
@@ -773,13 +799,12 @@ void AES_128_CBC_Encrypt(
             pOutput += AES_BLOCK_SIZE;
             inputLen -= AES_BLOCK_SIZE;
         }
-#endif
         FLib_MemCpy(pInitVector, tempBuffIn, AES_BLOCK_SIZE);
-    }
-    else
-    {
-        assert(0);
-    }
+#endif
+        ret = gSecSuccess_c;
+    } while (false);
+
+    return ret;
 }
 
 /*! *********************************************************************************
@@ -797,22 +822,44 @@ void AES_128_CBC_Encrypt(
  *
  * \param[out]  pOutput Pointer to the location to store the plain text output.
  *
+ * \return : gSecSuccess_c if no error,
+ *           gSecBadArgument_c in case of bad arguments,
+ *           gSecError_c in case of internal error.
+ *
  ********************************************************************************** */
-void AES_128_CBC_Decrypt(
+secResultType_t AES_128_CBC_Decrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
-    {
-#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) && (defined(LTC_KEY_REGISTER_READABLE)) && \
-    (LTC_KEY_REGISTER_READABLE == 1)
-        SECLIB_MUTEX_LOCK();
-        (void)LTC_AES_DecryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_128_KEY_BYTE_LEN,
-                                 kLTC_DecryptKey);
-        SECLIB_MUTEX_UNLOCK();
-        FLib_MemCpy(pInitVector, &pInput[inputLen - AES_128_BLOCK_SIZE], AES_128_BLOCK_SIZE);
+    secResultType_t ret;
 
+    do
+    {
+        if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
+            /* If the input length is not a non zero multiple of AES 128 block size,  return */
+            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+        {
+            ret = gSecBadArgument_c;
+            break;
+        }
+
+#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) && \
+    (defined(LTC_KEY_REGISTER_READABLE) && (LTC_KEY_REGISTER_READABLE == 1))
+        status_t st;
+        SECLIB_MUTEX_LOCK();
+        st = LTC_AES_DecryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_128_KEY_BYTE_LEN,
+                                kLTC_DecryptKey);
+        SECLIB_MUTEX_UNLOCK();
+        if (st != kStatus_Success)
+        {
+            ret = gSecError_c;
+            break;
+        }
+        /* Update IV with last ciphered block to be injected at next call */
+        /* Note that inputLen is greater than or equal to AES_BLOCK_SIZE, otherwise would have exited
+           with gSecBadArgument_c, so difference cannot be negative */
+        FLib_MemCpy(pInitVector, &pInput[inputLen - AES_BLOCK_SIZE], AES_BLOCK_SIZE);
 #else
-        uint8_t temp[AES_BLOCK_SIZE] = {0};
+        uint8_t temp[AES_BLOCK_SIZE] = {0u};
 
         while (inputLen > 0u)
         {
@@ -827,11 +874,11 @@ void AES_128_CBC_Decrypt(
             inputLen -= AES_BLOCK_SIZE;
         }
 #endif
-    }
-    else
-    {
-        assert(0);
-    }
+        ret = gSecSuccess_c;
+
+    } while (false);
+
+    return ret;
 }
 
 /*! *********************************************************************************
@@ -846,8 +893,8 @@ void AES_128_CBC_Decrypt(
  *
  * \param[in]  inputLen Input message length in bytes - no specific constraint.
  *
- *             IMPORTANT: User must make sure that input and output
- *             buffers have at least inputLen + 16 bytes size
+ *  IMPORTANT: User must make sure output buffer has at least inputLen + 16 bytes size.
+ *  This constraint does not apply to input buffer (any longer).
  *
  * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
  *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
@@ -857,27 +904,45 @@ void AES_128_CBC_Decrypt(
  *
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
- * \return value  size of output message after padding is appended.
+ * \return size of output message after padding is appended.
  *
  ********************************************************************************** */
-
 uint32_t AES_128_CBC_Encrypt_And_Pad(
     uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    uint32_t newLen;
-    /* compute new length */
-    newLen = inputLen + (AES_BLOCK_SIZE - (inputLen & (AES_BLOCK_SIZE - 1U)));
-    /* pad the input buffer with 1 bit of 1 and trail of 0's from inputLen to newLen */
-    for (uint32_t idx = 0U; idx < ((newLen - inputLen) - 1U); idx++)
+    uint32_t roundedLen = 0u;
+
+    do
     {
-        pInput[newLen - 1U - idx] = 0x00U;
-    }
-    pInput[inputLen] = 0x80U;
+        uint8_t last_blk_msg_sz;
+        uint8_t last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
+        /* compute new length */
+        roundedLen      = (inputLen / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+        last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
+        /* Perform AES-CBC operation on whole AES blocks */
+        if (AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
+        {
+            roundedLen = 0u;
+            break;
+        }
+        pInput += roundedLen;
+        pOutput += roundedLen;
+        /* There may be a remainder modulus 16 : copy it to last_block on stack */
+        /* then add padding so as to fill the last_block array */
+        if (SecLib_Padding(pInput, last_block, last_blk_msg_sz) == 0u)
+        {
+            roundedLen = 0u;
+            break;
+        }
+        if (AES_128_CBC_Encrypt(last_block, AES_BLOCK_SIZE, pInitVector, pKey, pOutput) != gSecSuccess_c)
+        {
+            roundedLen = 0u;
+            break;
+        }
+        roundedLen += AES_BLOCK_SIZE;
+    } while (false);
 
-    /* Apply CBC padding on the padded input */
-    AES_128_CBC_Encrypt(pInput, newLen, pInitVector, pKey, pOutput);
-
-    return newLen;
+    return roundedLen;
 }
 
 /*! *********************************************************************************
@@ -893,19 +958,32 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
  *
  * \param[out] pOutput Pointer to the location to store the plain text output.
  *
- * \return value  size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
+ * \return size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
  *
  ********************************************************************************** */
 uint32_t AES_128_CBC_Decrypt_And_Depad(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    uint32_t newLen = 0u;
+    uint32_t newLen = 0uL;
+
     if (inputLen > 0u)
     {
-        newLen = inputLen;
-        AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput);
-        while ((pOutput[--newLen] != 0x80U) && (newLen != 0U))
+        if (AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput) == gSecSuccess_c)
         {
+            uint8_t padding_len;
+            /* If we are here inputLen is a non 0 multiple of AES_BLOCK_SIZE, otherwise AES_128_CBC_Decrypt would have
+            returned an error.
+            Yet the test below is to prevent a false MISRA error detection.
+            */
+            if ((inputLen >= AES_BLOCK_SIZE) && (inputLen % AES_BLOCK_SIZE == 0u))
+            {
+                uint8_t *p_last_block = &pOutput[inputLen - AES_BLOCK_SIZE];
+                padding_len           = SecLib_DePadding(p_last_block);
+                if ((padding_len > 0u) && (padding_len <= AES_BLOCK_SIZE))
+                {
+                    newLen = inputLen - (uint32_t)padding_len;
+                }
+            }
         }
     }
     return newLen;
@@ -1116,10 +1194,12 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     uint8_t  n;
     uint32_t i;
     uint8_t  flag;
+    uint8_t  residual_len;
 
     AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-    n = (uint8_t)((inputLen + 15u) / 16u); /* n is number of rounds */
+    n            = (uint8_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
+    residual_len = (uint8_t)(inputLen % AES_BLOCK_SIZE);
 
     if (n == 0u)
     {
@@ -1128,7 +1208,7 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     }
     else
     {
-        if ((inputLen % 16u) == 0u)
+        if (residual_len == 0u)
         { /* last block is a complete block */
             flag = 1u;
         }
@@ -1141,11 +1221,11 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     /* Process the last block  - the last part the MSB first input data */
     if (flag > 0u)
     { /* last block is complete block */
-        SecLib_Xor128(&pInput[16u * (n - 1u)], K1, M_last);
+        SecLib_Xor128(&pInput[AES_BLOCK_SIZE * (n - 1u)], K1, M_last);
     }
     else
     {
-        SecLib_Padding(&pInput[16u * (n - 1u)], padded, inputLen % 16u);
+        (void)SecLib_Padding(&pInput[AES_BLOCK_SIZE * (n - 1u)], padded, residual_len);
         SecLib_Xor128(padded, K2, M_last);
     }
 
@@ -1156,8 +1236,8 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
 
     for (i = 0u; i < (uint32_t)n - 1u; i++)
     {
-        SecLib_Xor128(X, &pInput[16u * i], Y); /* Y := Mi (+) X  */
-        AES_128_Encrypt(Y, pKey, X);           /* X := AES-128(KEY, Y) */
+        SecLib_Xor128(X, &pInput[AES_BLOCK_SIZE * i], Y); /* Y := Mi (+) X  */
+        AES_128_Encrypt(Y, pKey, X);                      /* X := AES-128(KEY, Y) */
     }
 
     SecLib_Xor128(X, M_last, Y);
@@ -1198,10 +1278,12 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     uint8_t  n;
     uint32_t i;
     uint8_t  flag;
+    uint8_t  residual_len;
 
     AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-    n = (uint8_t)((inputLen + 15u) / 16u); /* n is number of rounds */
+    n            = (uint8_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
+    residual_len = (uint8_t)(inputLen % AES_BLOCK_SIZE);
 
     if (n == 0u)
     {
@@ -1210,7 +1292,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     }
     else
     {
-        if ((inputLen % 16u) == 0u) /* last block is a complete block */
+        if (residual_len == 0u) /* last block is a complete block */
         {
             flag = 1u;
         }
@@ -1223,13 +1305,13 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     /* Process the last block  - the first part the LSB first input data */
     if (flag > 0u) /* last block is complete block */
     {
-        FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], 16u);
+        FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], AES_BLOCK_SIZE);
         SecLib_Xor128(reversedBlock, K1, M_last);
     }
     else
     {
-        FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], inputLen % 16u);
-        SecLib_Padding(reversedBlock, padded, inputLen % 16u);
+        FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], residual_len);
+        (void)SecLib_Padding(reversedBlock, padded, residual_len);
         SecLib_Xor128(padded, K2, M_last);
     }
 
@@ -1240,7 +1322,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
 
     for (i = 0u; i < (uint32_t)n - 1u; i++)
     {
-        FLib_MemCpyReverseOrder(reversedBlock, &pInput[inputLen - 16u * (i + 1u)], 16u);
+        FLib_MemCpyReverseOrder(reversedBlock, &pInput[inputLen - AES_BLOCK_SIZE * (i + 1u)], AES_BLOCK_SIZE);
         SecLib_Xor128(X, reversedBlock, Y); /* Y := Mi (+) X  */
         AES_128_Encrypt(Y, pKey, X);        /* X := AES-128(KEY, Y) */
     }
@@ -2899,10 +2981,13 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
     uint8_t  n;
     uint32_t i;
     uint8_t  flag;
+    uint8_t  n;
+    uint8_t  residual_len;
 
     AES_128_CMAC_Generate_Subkey(CMAC_p->Key, K1, K2);
 
-    n = (uint8_t)((CMAC_p->Len + 15u) / 16u); /* n is number of rounds */
+    n            = (uint8_t)((CMAC_p->Len + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
+    residual_len = (uint8_t)(CMAC_p->Len % AES_BLOCK_SIZE);
 
     if (n == 0u)
     {
@@ -2911,7 +2996,7 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
     }
     else
     {
-        if ((CMAC_p->Len % 16u) == 0u)
+        if (residual_len == 0u)
         { /* last block is a complete block */
             flag = 1u;
         }
@@ -2928,7 +3013,7 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
     }
     else
     {
-        SecLib_Padding(&CMAC_p->pPlain[16u * (n - 1u)], padded, CMAC_p->Len % 16u);
+        (void)SecLib_Padding(&CMAC_p->pPlain[AES_BLOCK_SIZE * (n - 1u)], padded, residual_len);
         SecLib_Xor128(padded, K2, M_last);
     }
 
@@ -2939,8 +3024,8 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
 
     for (i = 0u; i < n - 1u; i++)
     {
-        SecLib_Xor128(X, &CMAC_p->pPlain[16u * i], Y); /* Y := Mi (+) X  */
-        AES_128_Encrypt(Y, CMAC_p->Key, X);            /* X := AES-128(KEY, Y) */
+        SecLib_Xor128(X, &CMAC_p->pPlain[AES_BLOCK_SIZE * i], Y); /* Y := Mi (+) X  */
+        AES_128_Encrypt(Y, CMAC_p->Key, X);                       /* X := AES-128(KEY, Y) */
     }
 
     SecLib_Xor128(X, M_last, Y);
@@ -2958,43 +3043,82 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
 #endif /* FSL_FEATURE_SOC_AES_HW */
 
 /*! *********************************************************************************
- * \brief  This function pads the last block of a message.
- *  Copy remainder of last block of a message, then completes the AES block by
- *  applying the ISO/IEC 7816-4 padding scheme: adding a 0x80 octet after the last
- *  byte of original message then all 0x00 till block completion.
- *  If length is 0, the last_blockcpotentially empty if length is 0),
- *         Then is .
- * This Padding scheme is used in AES-CMAC and AES-CBC operations.
+ * \brief  This function pads an incomplete 16 byte block of data, where padding is
+ *         the concatenation of x and a single '1',
+ *         followed by the minimum number of '0's, so that the total length is equal to 128 bits.
+ * Padding scheme is ISO/IEC 7816-4: one 80h byte (1 bit), followed by as many 00h as
+ * required to fill a 128 bit block.
  *
- * \param[in] in_lastb Pointer to the last block to be copied to padded destination.
+ * \param[in, out] lastb Pointer to the last block of message to be padded
  *
- * \param[in] pad_block Pointer on padded block destination.
+ * \param[in]  pad_block Padded block destination
  *
- * \param[in] length    Number of bytes in the block to be padded.
- *  Note: May be 0 is message contains a whole number of AES 128 blocks.
- *  In this case in_lastb may point outside the message - but is not used.
+ * \param[in]  length    Number of message bytes in the block to be padded : must be in [0..AES_BLOCK_SIZE-1]
+ *
+ * \return  length of padding [1..AES_BLOCK_SIZE] if ok, 0 otherwise
  *
  ********************************************************************************** */
-static void SecLib_Padding(const uint8_t *in_lastb, uint8_t pad_block[AES_128_BLOCK_SIZE], uint32_t length)
+static uint8_t SecLib_Padding(const uint8_t *lastb, uint8_t pad_block[AES_BLOCK_SIZE], uint8_t length)
 {
+    uint8_t  padding_sz = 0;
     uint32_t j;
-
-    /* original last block */
-    for (j = 0u; j < AES_BLOCK_SIZE; j++)
+    if (length < AES_BLOCK_SIZE)
     {
-        if (j < length)
+        for (j = 0u; j < AES_BLOCK_SIZE; j++)
         {
-            pad_block[j] = in_lastb[j];
+            /* there may be 0 bytes to copy if message was a multiple of AES_BLOCK_SIZE */
+            if (j < length)
+            {
+                /* original last block */
+                pad_block[j] = lastb[j];
+            }
+            else if (j == length)
+            {
+                pad_block[j] = 0x80u;
+            }
+            else
+            {
+                pad_block[j] = 0x00u;
+            }
         }
-        else if (j == length)
+        padding_sz = AES_BLOCK_SIZE - length;
+    }
+    return padding_sz;
+}
+/*! *********************************************************************************
+ * \brief  This function removes padding from an octet string (at most 16 bytes of data).
+ *
+ * \param[in] pIn Pointer to start of last AES block of a message to be depadded
+ *
+ * \return  if > 0 Final size of padding to be removed : must be in [1..AES_BLOCK_SIZE].
+ *          if 0 : error occurred the last block does not contain expected padding patter.
+ *
+ ********************************************************************************** */
+static uint8_t SecLib_DePadding(const uint8_t pad_block[AES_BLOCK_SIZE])
+{
+    uint8_t padding_sz = 0u;
+
+    for (uint8_t i = AES_BLOCK_SIZE; i > 0u; i--)
+    {
+        uint8_t ch = pad_block[i - 1u];
+        if (ch == 0x80u)
         {
-            pad_block[j] = 0x80u;
+            padding_sz = AES_BLOCK_SIZE - i + 1u;
+            break;
+        }
+        else if (ch != 0x00u)
+        {
+            /* not padding */
+            padding_sz = 0u;
+            break;
         }
         else
         {
-            pad_block[j] = 0x00u;
+            /* MISRA rule 15.7 but useless */
+            continue;
         }
     }
+    return padding_sz;
 }
 
 /*! *********************************************************************************
@@ -3013,7 +3137,7 @@ static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out)
 {
     uint32_t i;
 
-    for (i = 0u; i < AES_128_BLOCK_SIZE; i++)
+    for (i = 0u; i < AES_BLOCK_SIZE; i++)
     {
         out[i] = a[i] ^ b[i];
     }
