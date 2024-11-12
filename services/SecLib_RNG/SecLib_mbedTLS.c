@@ -1,13 +1,13 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2023 NXP
+ * Copyright 2016-2024 NXP
  * All rights reserved.
  *
  * \file
  *
  * This is the source file for the security module used by the connectivity stacks. The Security
  *    Module SecLib provides an abstraction from the Hardware to the upper layer.
- *    In this file, a wrapper to mbdedTLS component is implemented
+ *    In this file, a wrapper to mbedTLS component is implemented
  *
  * SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
@@ -305,14 +305,15 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block.
- *         This function only accepts input lengths which are multiple
- *         of 16 bytes (AES 128 block size).
+ *
  *
  * \param[in]  pInput Pointer to the location of the input message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes - must be a multiple of AES_BLOCK_SIZE
  *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because IV is modifiable, it cannot be RO (const).
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
@@ -326,134 +327,146 @@ void AES_128_CBC_Encrypt(
     mbedtls_aes_context aesCtx;
 
     /* If the input length is not a multiple of AES 128 block size return */
-    if ((inputLen == 0U) || ((inputLen % AES_128_BLOCK_SIZE) != 0U))
+    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
     {
-        return;
+        mbedtls_aes_init(&aesCtx);
+        result = mbedtls_aes_setkey_enc(&aesCtx, pKey, AES_128_KEY_BITS);
+        if (result != 0)
+        {
+            assert(0);
+        }
+
+        SECLIB_MUTEX_LOCK();
+        result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_ENCRYPT, inputLen, pInitVector, pInput, pOutput);
+        if (result != 0)
+        {
+            assert(0);
+        }
+        /* Saving the last cipher block can be skipped because mbedtls does it already */
+        //FLib_MemCpy(pInitVector, &pOutput[inputLen - AES_BLOCK_SIZE], AES_BLOCK_SIZE);
+        SECLIB_MUTEX_UNLOCK();
+        mbedtls_aes_free(&aesCtx);
     }
-
-    mbedtls_aes_init(&aesCtx);
-    result = mbedtls_aes_setkey_enc(&aesCtx, pKey, AES_128_KEY_BITS);
-    if (result != 0)
-    {
-        assert(0);
-    }
-
-    SECLIB_MUTEX_LOCK();
-
-    result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_ENCRYPT, inputLen, pInitVector, pInput, pOutput);
-    if (result != 0)
-    {
-        assert(0);
-    }
-
-    SECLIB_MUTEX_UNLOCK();
-
-    mbedtls_aes_free(&aesCtx);
-}
-
-/*! *********************************************************************************
- * \brief  This function performs AES-128-CBC encryption on a message block after
- *         padding it with 1 bit of 1 and 0 bits trail.
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Input message length in bytes.
- *
- *             IMPORTANT: User must make sure that input and output
- *             buffers have at least inputLen + 16 bytes size
- *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the ciphered output.
- *
- * Return value: size of output buffer (after padding)
- *
- ********************************************************************************** */
-uint32_t AES_128_CBC_Encrypt_And_Pad(
-    uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
-{
-    int                 result;
-    uint32_t            newLen = 0;
-    uint32_t            idx;
-    mbedtls_aes_context aesCtx;
-
-    /* compute new length */
-    newLen = inputLen + (AES_128_BLOCK_SIZE - (inputLen & (AES_128_BLOCK_SIZE - 1U)));
-    /* pad the input buffer with 1 bit of 1 and trail of 0's from inputLen to newLen */
-    for (idx = 0U; idx < ((newLen - inputLen) - 1U); idx++)
-    {
-        pInput[newLen - 1U - idx] = 0x00U;
-    }
-    pInput[inputLen] = 0x80U;
-
-    mbedtls_aes_init(&aesCtx);
-    result = mbedtls_aes_setkey_enc(&aesCtx, pKey, AES_128_KEY_BITS);
-    if (result != 0)
-    {
-        assert(0);
-    }
-
-    SECLIB_MUTEX_LOCK();
-
-    result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_ENCRYPT, newLen, pInitVector, pInput, pOutput);
-    if (result != 0)
-    {
-        assert(0);
-    }
-
-    SECLIB_MUTEX_UNLOCK();
-
-    mbedtls_aes_free(&aesCtx);
-
-    return newLen;
 }
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC decryption on a message block.
  *
+ * \param[in]  pInput Pointer to the location of the input ciphered message.
+ *
+ * \param[in]  inputLen Input message length in bytes - must be a multiple of AES_BLOCK_SIZE.
+ *
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because IV is modifiable, it cannot be RO (const).
+ *
+ * \param[in]  pKey Pointer to the location of the 128-bit key.
+ *
+ * \param[out]  pOutput Pointer to the location to store the plain text output.
+ *
+ ********************************************************************************** */
+void AES_128_CBC_Decrypt(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
+{
+    int                 result;
+    mbedtls_aes_context aesCtx;
+
+    /* If the input length is not a multiple of AES 128 block size return */
+    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
+    {
+        mbedtls_aes_init(&aesCtx);
+        result = mbedtls_aes_setkey_enc(&aesCtx, pKey, AES_128_KEY_BITS);
+        if (result != 0)
+        {
+            assert(0);
+        }
+
+        SECLIB_MUTEX_LOCK();
+        result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_DECRYPT, inputLen, pInitVector, pInput, pOutput);
+        if (result != 0)
+        {
+            assert(0);
+        }
+        /* Saving the previous ciphered block as IV in caller's context for next call because mbedtls does
+         it already */
+        //FLib_MemCpy(pInitVector, &pInput[inputLen - AES_BLOCK_SIZE], AES_BLOCK_SIZE);
+        SECLIB_MUTEX_UNLOCK();
+        mbedtls_aes_free(&aesCtx);
+    }
+}
+
+/*! *********************************************************************************
+ * \brief  This function performs AES-128-CBC encryption on a message block after
+ *         padding until AES block completion.
+ *
+ * Padding scheme is ISO/IEC 7816-4: one 80h byte (1 bit), followed by as many 00h as
+ * required to fill a 128 bit block. Note that if the message length is a multiple of
+ * AES block size already, another block is appended to the original message.
+ *
  * \param[in]  pInput Pointer to the location of the input message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes - no specific constraint.
  *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *             IMPORTANT: User must make sure that input and output
+ *             buffers have at least inputLen + 16 bytes size
+ *
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because it is modifiable it cannot be RO (const).
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
- * Return value: size of output buffer (after depadding)
+ * \return value  size of output message after padding is appended.
+ *
+ ********************************************************************************** */
+uint32_t AES_128_CBC_Encrypt_And_Pad(
+    uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
+{
+    uint32_t newLen = 0;
+
+    /* compute new length */
+    newLen = inputLen + (AES_BLOCK_SIZE - (inputLen & (AES_BLOCK_SIZE - 1U)));
+    /* pad the input buffer with 1 bit of 1 and trail of 0's from inputLen to newLen */
+    for (uint32_t idx = 0U; idx < ((newLen - inputLen) - 1U); idx++)
+    {
+        pInput[newLen - 1U - idx] = 0x00U;
+    }
+    pInput[inputLen] = 0x80U;
+
+    AES_128_CBC_Encrypt(pInput, newLen, pInitVector, pKey, pOutput);
+
+    return newLen;
+}
+
+/*! *********************************************************************************
+ * \brief  This function performs AES_128_CBC_Decrypt_And_Depad decryption on a message.
+ *
+ * \param[in]  pInput Pointer to the location of the input ciphered message.
+ *
+ * \param[in]  inputLen Input message length in bytes must be a multiple of AES block size
+ *
+ * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *
+ * \param[in]  pKey Pointer to the location of the 128-bit key.
+ *
+ * \param[out] pOutput Pointer to the location to store the plain text output.
+ *
+ * \return value  size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
  *
  ********************************************************************************** */
 uint32_t AES_128_CBC_Decrypt_And_Depad(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    int                 result;
-    uint32_t            newLen = inputLen;
-    mbedtls_aes_context aesCtx;
-
-    mbedtls_aes_init(&aesCtx);
-    result = mbedtls_aes_setkey_dec(&aesCtx, pKey, AES_128_KEY_BITS);
-    if (result != 0)
+    uint32_t newLen = 0u;
+    if (inputLen > 0u)
     {
-        assert(0);
-    }
-
-    SECLIB_MUTEX_LOCK();
-
-    result = mbedtls_aes_crypt_cbc(&aesCtx, MBEDTLS_AES_DECRYPT, inputLen, pInitVector, pInput, pOutput);
-    if (result != 0)
-    {
-        assert(0);
-    }
-
-    SECLIB_MUTEX_UNLOCK();
-
-    mbedtls_aes_free(&aesCtx);
-
-    while ((pOutput[--newLen] != 0x80U) && (newLen != 0U))
-    {
+        newLen = inputLen;
+        AES_128_CBC_Decrypt(pInput, newLen, pInitVector, pKey, pOutput);
+        while ((pOutput[--newLen] != 0x80U) && (newLen != 0U))
+        {
+        }
     }
     return newLen;
 }
@@ -999,12 +1012,6 @@ void SecLib_XorN(uint8_t *pDst, const uint8_t *pSrc, uint8_t n)
         n--;
     }
 }
-
-/*! *********************************************************************************
-*************************************************************************************
-* Private functions
-*************************************************************************************
-********************************************************************************** */
 
 #if defined(MBEDTLS_SHA1_C)
 /*! *********************************************************************************

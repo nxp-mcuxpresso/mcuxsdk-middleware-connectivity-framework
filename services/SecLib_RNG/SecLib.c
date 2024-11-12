@@ -202,11 +202,10 @@ secLibCallback_t pfSecLibMultCallback = NULL;
 ********************************************************************************** */
 
 static void SHA1_hash_n(uint8_t *pData, uint32_t nBlk, uint32_t *pHash);
-
 static void SHA256_hash_n(const uint8_t *pData, uint32_t nBlk, uint32_t *pHash);
 static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_t *K2);
 static void SecLib_LeftShiftOneBit(uint8_t *input, uint8_t *output);
-static void SecLib_Padding(const uint8_t *lastb, uint8_t *pad, uint32_t length);
+static void SecLib_Padding(const uint8_t *in_lastb, uint8_t pad_block[AES_128_BLOCK_SIZE], uint32_t length);
 static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out);
 
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT == 1U))
@@ -468,11 +467,11 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
 /*! *********************************************************************************
  * \brief  This function performs AES-128 decryption on a 16-byte block.
  *
- * \param[in]  pInput Pointer to the location of the 16-byte plain text block.
+ * \param[in]  pInput Pointer to the location of the 16-byte ciphered text block.
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
- * \param[out]  pOutput Pointer to the location to store the 16-byte ciphered output.
+ * \param[out]  pOutput Pointer to the location to store the 16-byte plain text output.
  *
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
@@ -729,17 +728,15 @@ void AES_128_ECB_Block_Decrypt(uint8_t *pInput, uint32_t numBlocks, const uint8_
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block.
- *         This function accepts arbitrary (non-multiple of AES block size) length data
- *         in which case it can be used for data signing but the output in this case will
- *         not be AES 128 CBC decryptable.
- *         To be able to decrypt the output please use an input length which is a multiple of
- *         the AES block size.
+ *
  *
  * \param[in]  pInput Pointer to the location of the input message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes - must be a multiple of AES_BLOCK_SIZE
  *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because IV is modifiable, it cannot be RO (const).
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
@@ -749,159 +746,161 @@ void AES_128_ECB_Block_Decrypt(uint8_t *pInput, uint32_t numBlocks, const uint8_
 void AES_128_CBC_Encrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
+    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
+    {
+        /* LTC is capable of performing CBC operation natively */
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
-    SECLIB_MUTEX_LOCK();
-    (void)LTC_AES_EncryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_BLOCK_SIZE);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        (void)LTC_AES_EncryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_128_KEY_BYTE_LEN);
+        SECLIB_MUTEX_UNLOCK();
+#else
+        uint8_t tempBuffIn[AES_BLOCK_SIZE] = {0};
+
+        FLib_MemCpy(tempBuffIn, pInitVector, AES_BLOCK_SIZE);
+        /* If remaining data is bigger than one AES block size */
+        while (inputLen > 0u)
+        {
+            SecLib_XorN(tempBuffIn, pInput, AES_BLOCK_SIZE);
+            AES_128_Encrypt(tempBuffIn, pKey, pOutput);
+            FLib_MemCpy(tempBuffIn, pOutput, AES_BLOCK_SIZE);
+            pInput += AES_BLOCK_SIZE;
+            pOutput += AES_BLOCK_SIZE;
+            inputLen -= AES_BLOCK_SIZE;
+        }
+#endif
+        FLib_MemCpy(pInitVector, tempBuffIn, AES_BLOCK_SIZE);
+    }
+    else
+    {
+        assert(0);
+    }
+}
+
+/*! *********************************************************************************
+ * \brief  This function performs AES-128-CBC decryption on a message block.
+ *
+ * \param[in]  pInput Pointer to the location of the input ciphered message.
+ *
+ * \param[in]  inputLen Input message length in bytes - must be a multiple of AES_BLOCK_SIZE.
+ *
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because IV is modifiable, it cannot be RO (const).
+ *
+ * \param[in]  pKey Pointer to the location of the 128-bit key.
+ *
+ * \param[out]  pOutput Pointer to the location to store the plain text output.
+ *
+ ********************************************************************************** */
+void AES_128_CBC_Decrypt(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
+{
+    if ((inputLen >= AES_BLOCK_SIZE) && ((inputLen % AES_BLOCK_SIZE) == 0U) && (pInitVector != NULL))
+    {
+#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) && (defined(LTC_KEY_REGISTER_READABLE)) && \
+    (LTC_KEY_REGISTER_READABLE == 1)
+        SECLIB_MUTEX_LOCK();
+        (void)LTC_AES_DecryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_128_KEY_BYTE_LEN,
+                                 kLTC_DecryptKey);
+        SECLIB_MUTEX_UNLOCK();
+        FLib_MemCpy(pInitVector, &pInput[inputLen - AES_128_BLOCK_SIZE], AES_128_BLOCK_SIZE);
 
 #else
-    static uint8_t tempBuffIn[AES_BLOCK_SIZE]  = {0};
-    uint8_t        tempBuffOut[AES_BLOCK_SIZE] = {0};
+        uint8_t temp[AES_BLOCK_SIZE] = {0};
 
-    if (pInitVector != NULL)
-    {
-        FLib_MemCpy(tempBuffIn, pInitVector, AES_BLOCK_SIZE);
-    }
+        while (inputLen > 0u)
+        {
+            FLib_MemCpy(temp, pInput, AES_BLOCK_SIZE);
+            AES_128_Decrypt(pInput, pKey, pOutput);
+            SecLib_XorN(pOutput, pInitVector, AES_BLOCK_SIZE);
 
-    /* If remaining data is bigger than one AES block size */
-    while (inputLen > AES_BLOCK_SIZE)
-    {
-        SecLib_XorN(tempBuffIn, pInput, AES_BLOCK_SIZE);
-        AES_128_Encrypt(tempBuffIn, pKey, pOutput);
-        FLib_MemCpy(tempBuffIn, pOutput, AES_BLOCK_SIZE);
-        pInput += AES_BLOCK_SIZE;
-        pOutput += AES_BLOCK_SIZE;
-        inputLen -= AES_BLOCK_SIZE;
-    }
+            FLib_MemCpy(pInitVector, temp, AES_BLOCK_SIZE);
 
-    /* If remaining data is smaller then one AES block size  */
-    SecLib_XorN(tempBuffIn, pInput, inputLen);
-    AES_128_Encrypt(tempBuffIn, pKey, tempBuffOut);
-    FLib_MemCpy(pOutput, tempBuffOut, inputLen);
+            pInput += AES_BLOCK_SIZE;
+            pOutput += AES_BLOCK_SIZE;
+            inputLen -= AES_BLOCK_SIZE;
+        }
 #endif
+    }
+    else
+    {
+        assert(0);
+    }
 }
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block after
- *padding it with 1 bit of 1 and 0 bits trail.
+ *         padding until AES block completion.
+ *
+ * Padding scheme is ISO/IEC 7816-4: one 80h byte (1 bit), followed by as many 00h as
+ * required to fill a 128 bit block. Note that if the message length is a multiple of
+ * AES block size already, another block is appended to the original message.
  *
  * \param[in]  pInput Pointer to the location of the input message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes - no specific constraint.
  *
  *             IMPORTANT: User must make sure that input and output
  *             buffers have at least inputLen + 16 bytes size
  *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because it is modifiable it cannot be RO (const).
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
- * Return value: size of output buffer (after padding)
+ * \return value  size of output message after padding is appended.
  *
  ********************************************************************************** */
+
 uint32_t AES_128_CBC_Encrypt_And_Pad(
     uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    uint32_t newLen = 0;
-    uint32_t idx;
-    /*compute new length*/
-    newLen = inputLen + (AES_BLOCK_SIZE - (inputLen & (AES_BLOCK_SIZE - 1u)));
-    /*pad the input buffer with 1 bit of 1 and trail of 0's from inputLen to newLen*/
-    for (idx = 0; idx < (newLen - inputLen) - 1u; idx++)
+    uint32_t newLen;
+    /* compute new length */
+    newLen = inputLen + (AES_BLOCK_SIZE - (inputLen & (AES_BLOCK_SIZE - 1U)));
+    /* pad the input buffer with 1 bit of 1 and trail of 0's from inputLen to newLen */
+    for (uint32_t idx = 0U; idx < ((newLen - inputLen) - 1U); idx++)
     {
-        pInput[newLen - 1u - idx] = 0x00u;
+        pInput[newLen - 1U - idx] = 0x00U;
     }
-    pInput[inputLen] = 0x80u;
+    pInput[inputLen] = 0x80U;
 
-    /* CBC-Encrypt */
-#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
-    SECLIB_MUTEX_LOCK();
-    (void)LTC_AES_EncryptCbc(LTC0, pInput, pOutput, newLen, pInitVector, pKey, AES_BLOCK_SIZE);
-    SECLIB_MUTEX_UNLOCK();
-#else
-    static uint8_t tempBuffIn[AES_BLOCK_SIZE] = {0};
+    /* Apply CBC padding on the padded input */
+    AES_128_CBC_Encrypt(pInput, newLen, pInitVector, pKey, pOutput);
 
-    if (pInitVector != NULL)
-    {
-        FLib_MemCpy(tempBuffIn, pInitVector, AES_BLOCK_SIZE);
-    }
-    inputLen = newLen;
-    while (inputLen > 0u)
-    {
-        SecLib_XorN(tempBuffIn, pInput, AES_BLOCK_SIZE);
-        AES_128_Encrypt(tempBuffIn, pKey, pOutput);
-        FLib_MemCpy(tempBuffIn, pOutput, AES_BLOCK_SIZE);
-        pInput += AES_BLOCK_SIZE;
-        pOutput += AES_BLOCK_SIZE;
-        inputLen -= AES_BLOCK_SIZE;
-    }
-#endif
     return newLen;
 }
+
 /*! *********************************************************************************
- * \brief  This function performs AES-128-CBC decryption on a message block.
+ * \brief  This function performs AES_128_CBC_Decrypt_And_Depad decryption on a message.
  *
- * \param[in]  pInput Pointer to the location of the input message.
+ * \param[in]  pInput Pointer to the location of the input ciphered message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes must be a multiple of AES block size
  *
  * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
- * \param[out]  pOutput Pointer to the location to store the ciphered output.
+ * \param[out] pOutput Pointer to the location to store the plain text output.
  *
- * Return value: size of output buffer (after depadding)
+ * \return value  size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
  *
  ********************************************************************************** */
 uint32_t AES_128_CBC_Decrypt_And_Depad(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
-    uint32_t newLen = inputLen;
-#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) && (defined(LTC_KEY_REGISTER_READABLE)) && \
-    (LTC_KEY_REGISTER_READABLE == 1)
-    SECLIB_MUTEX_LOCK();
-    (void)LTC_AES_DecryptCbc(LTC0, pInput, pOutput, inputLen, pInitVector, pKey, AES_BLOCK_SIZE, kLTC_DecryptKey);
-    SECLIB_MUTEX_UNLOCK();
-
-#else
-    static uint8_t temp[2 * AES_BLOCK_SIZE] = {0};
-
-    if ((inputLen & (AES_BLOCK_SIZE - 1)) != 0u)
+    uint32_t newLen = 0u;
+    if (inputLen > 0u)
     {
-        return 0;
-    }
-
-    if (pInitVector != NULL)
-    {
-        FLib_MemCpy(temp, pInitVector, AES_BLOCK_SIZE);
-    }
-
-    FLib_MemCpy(temp + AES_BLOCK_SIZE, pInput, AES_BLOCK_SIZE);
-
-    while (inputLen > 0u)
-    {
-        AES_128_Decrypt(pInput, pKey, pOutput);
-
-        SecLib_XorN(pOutput, temp, AES_BLOCK_SIZE);
-
-        pInput += AES_BLOCK_SIZE;
-        pOutput += AES_BLOCK_SIZE;
-        inputLen -= AES_BLOCK_SIZE;
-
-        FLib_MemCpy(temp, temp + AES_BLOCK_SIZE, AES_BLOCK_SIZE);
-        if (inputLen > 0u)
+        newLen = inputLen;
+        AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput);
+        while ((pOutput[--newLen] != 0x80U) && (newLen != 0U))
         {
-            FLib_MemCpy(temp + AES_BLOCK_SIZE, pInput, AES_BLOCK_SIZE);
         }
-    }
-
-    pOutput -= newLen;
-#endif
-    while ((pOutput[--newLen] != 0x80u) && (newLen != 0u))
-    {
     }
     return newLen;
 }
@@ -1569,179 +1568,6 @@ void SecLib_XorN(uint8_t *pDst, const uint8_t *pSrc, uint8_t n)
 }
 
 /*! *********************************************************************************
-*************************************************************************************
-* Private functions
-*************************************************************************************
-********************************************************************************** */
-
-#if (!defined(FSL_FEATURE_SOC_LTC_COUNT) || (FSL_FEATURE_SOC_LTC_COUNT == 0))
-/*! *********************************************************************************
- * \brief  Increments the value of a given counter vector.
- *
- * \param [in,out]     ctr         Counter.
- *
- * \remarks used for AES CTR
- *
- ********************************************************************************** */
-static void AES_128_IncrementCounter(uint8_t *ctr)
-{
-    uint32_t   i;
-    uint64_t   tempLow;
-    uuint128_t tempCtr;
-
-    for (i = 0u; i < AES_BLOCK_SIZE; i++)
-    {
-        tempCtr.u8[AES_BLOCK_SIZE - i - 1] = ctr[i];
-    }
-
-    tempLow = tempCtr.u64[0];
-    tempCtr.u64[0]++;
-
-    if (tempLow > tempCtr.u64[0])
-    {
-        tempCtr.u64[1]++;
-    }
-
-    for (i = 0u; i < AES_BLOCK_SIZE; i++)
-    {
-        ctr[i] = tempCtr.u8[AES_BLOCK_SIZE - i - 1];
-    }
-}
-#endif /* !(FSL_FEATURE_SOC_LTC_COUNT) */
-
-/*! *********************************************************************************
- * \brief  Generates the two subkeys that correspond two an AES key
- *
- * \param [in]    key        AES Key.
- *
- * \param [out]   K1         First subkey.
- *
- * \param [out]   K2         Second subkey.
- *
- * \remarks   This is public open source code! Terms of use must be checked before use!
- *
- ********************************************************************************** */
-static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_t *K2)
-{
-    uint8_t  const_Rb[16] = {0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
-                             0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x87u};
-    uint8_t  L[16];
-    uint8_t  Z[16];
-    uint8_t  tmp[16] = {0};
-    uint32_t i;
-
-    for (i = 0u; i < 16u; i++)
-    {
-        Z[i] = 0u;
-    }
-
-    AES_128_Encrypt(Z, key, L);
-
-    if ((L[0] & 0x80u) == 0u)
-    {
-        /* If MSB(L) = 0, then K1 = L << 1 */
-        SecLib_LeftShiftOneBit(L, K1);
-    }
-    else
-    {
-        /* Else K1 = ( L << 1 ) (+) Rb */
-        SecLib_LeftShiftOneBit(L, tmp);
-        SecLib_Xor128(tmp, const_Rb, K1);
-    }
-
-    if ((K1[0] & 0x80u) == 0u)
-    {
-        SecLib_LeftShiftOneBit(K1, K2);
-    }
-    else
-    {
-        SecLib_LeftShiftOneBit(K1, tmp);
-        SecLib_Xor128(tmp, const_Rb, K2);
-    }
-}
-
-/*! *********************************************************************************
- * \brief    Shifts a given vector to the left with one bit.
- *
- * \param [in]      input         Input vector.
- *
- * \param [out]     output        Output vector.
- *
- * \remarks   This is public open source code! Terms of use must be checked before use!
- *
- ********************************************************************************** */
-static void SecLib_LeftShiftOneBit(uint8_t *input, uint8_t *output)
-{
-    int32_t i;
-    uint8_t overflow = 0u;
-
-    for (i = 15; i >= 0; i--)
-    {
-        output[i] = input[i] << 1u;
-        output[i] |= overflow;
-        overflow = ((input[i] & 0x80u) > 0u) ? 1u : 0u;
-    }
-}
-
-/*! *********************************************************************************
- * \brief  This function pads an incomplete 16 byte block of data, where padding is
- *         the concatenation of x and a single '1',
- *         followed by the minimum number of '0's, so that the total length is equal to 128 bits.
- *
- * \param[in, out] lastb Pointer to the last block to be padded
- *
- * \param[in]  pad       Padded block destination
- *
- * \param[in]  length    Number of bytes in the block to be padded
- *
- * \remarks   This is public open source code! Terms of use must be checked before use!
- *
- ********************************************************************************** */
-static void SecLib_Padding(const uint8_t *lastb, uint8_t *pad, uint32_t length)
-{
-    uint32_t j;
-
-    /* original last block */
-    for (j = 0u; j < 16u; j++)
-    {
-        if (j < length)
-        {
-            pad[j] = lastb[j];
-        }
-        else if (j == length)
-        {
-            pad[j] = 0x80u;
-        }
-        else
-        {
-            pad[j] = 0x00u;
-        }
-    }
-}
-
-/*! *********************************************************************************
- * \brief  This function Xors 2 blocks of 128 bits and copies the result to a set destination
- *
- * \param [in]    a        Pointer to the first block to XOR
- *
- * \param [in]    b        Pointer to the second block to XOR.
- *
- * \param [out]   out      Destination pointer
- *
- * \remarks   This is public open source code! Terms of use must be checked before use!
- *
- ********************************************************************************** */
-static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out)
-{
-    uint32_t i;
-
-    for (i = 0u; i < 16u; i++)
-    {
-        out[i] = a[i] ^ b[i];
-    }
-}
-
-/*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a SHA1 context structure
  *
  * \return    Address of the SHA1 context buffer
@@ -1869,7 +1695,7 @@ void SHA1_HashFinish(void *pContext, uint8_t *pOutput)
     numBytes = context->bytes;
     /* Add 1 bit (a 0x80 byte) after the message to begin padding */
     context->buffer[numBytes++] = 0x80u;
-    /* Chack for space to fit an 8 byte length field plus the 0x80 */
+    /* Check for space to fit an 8 byte length field plus the 0x80 */
     if (context->bytes >= 56u)
     {
         /* Fill the rest of the chunk with zeros */
@@ -2042,7 +1868,7 @@ void SHA256_HashFinish(void *pContext, uint8_t *pOutput)
     numBytes = context->bytes;
     /* Add 1 bit (a 0x80 byte) after the message to begin padding */
     context->buffer[numBytes++] = 0x80u;
-    /* Chack for space to fit an 8 byte length field plus the 0x80 */
+    /* Check for space to fit an 8 byte length field plus the 0x80 */
     if (context->bytes >= 56u)
     {
         /* Fill the rest of the chunk with zeros */
@@ -3109,3 +2935,179 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
 }
 
 #endif /* FSL_FEATURE_SOC_AES_HW */
+
+/*! *********************************************************************************
+ * \brief  This function pads the last block of a message.
+ *  Copy remainder of last block of a message, then completes the AES block by
+ *  applying the ISO/IEC 7816-4 padding scheme: adding a 0x80 octet after the last
+ *  byte of original message then all 0x00 till block completion.
+ *  If length is 0, the last_blockcpotentially empty if length is 0),
+ *         Then is .
+ * This Padding scheme is used in AES-CMAC and AES-CBC operations.
+ *
+ * \param[in] in_lastb Pointer to the last block to be copied to padded destination.
+ *
+ * \param[in] pad_block Pointer on padded block destination.
+ *
+ * \param[in] length    Number of bytes in the block to be padded.
+ *  Note: May be 0 is message contains a whole number of AES 128 blocks.
+ *  In this case in_lastb may point outside the message - but is not used.
+ *
+ ********************************************************************************** */
+static void SecLib_Padding(const uint8_t *in_lastb, uint8_t pad_block[AES_128_BLOCK_SIZE], uint32_t length)
+{
+    uint32_t j;
+
+    /* original last block */
+    for (j = 0u; j < AES_BLOCK_SIZE; j++)
+    {
+        if (j < length)
+        {
+            pad_block[j] = in_lastb[j];
+        }
+        else if (j == length)
+        {
+            pad_block[j] = 0x80u;
+        }
+        else
+        {
+            pad_block[j] = 0x00u;
+        }
+    }
+}
+
+/*! *********************************************************************************
+ * \brief  This function Xors 2 blocks of 128 bits and copies the result to a set destination
+ *
+ * \param [in]    a        Pointer to the first block to XOR
+ *
+ * \param [in]    b        Pointer to the second block to XOR.
+ *
+ * \param [out]   out      Destination pointer
+ *
+ * \remarks   This is public open source code! Terms of use must be checked before use!
+ *
+ ********************************************************************************** */
+static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out)
+{
+    uint32_t i;
+
+    for (i = 0u; i < AES_128_BLOCK_SIZE; i++)
+    {
+        out[i] = a[i] ^ b[i];
+    }
+}
+/*! *********************************************************************************
+*************************************************************************************
+* Private functions
+*************************************************************************************
+********************************************************************************** */
+
+#if (!defined(FSL_FEATURE_SOC_LTC_COUNT) || (FSL_FEATURE_SOC_LTC_COUNT == 0))
+/*! *********************************************************************************
+ * \brief  Increments the value of a given counter vector.
+ *
+ * \param [in,out]     ctr         Counter.
+ *
+ * \remarks used for AES CTR
+ *
+ ********************************************************************************** */
+static void AES_128_IncrementCounter(uint8_t *ctr)
+{
+    uint32_t   i;
+    uint64_t   tempLow;
+    uuint128_t tempCtr;
+
+    for (i = 0u; i < AES_BLOCK_SIZE; i++)
+    {
+        tempCtr.u8[AES_BLOCK_SIZE - i - 1] = ctr[i];
+    }
+
+    tempLow = tempCtr.u64[0];
+    tempCtr.u64[0]++;
+
+    if (tempLow > tempCtr.u64[0])
+    {
+        tempCtr.u64[1]++;
+    }
+
+    for (i = 0u; i < AES_BLOCK_SIZE; i++)
+    {
+        ctr[i] = tempCtr.u8[AES_BLOCK_SIZE - i - 1];
+    }
+}
+#endif /* !(FSL_FEATURE_SOC_LTC_COUNT) */
+
+/*! *********************************************************************************
+ * \brief  Generates the two subkeys that correspond to an AES key
+ *
+ * \param [in]    key        AES Key.
+ *
+ * \param [out]   K1         First subkey.
+ *
+ * \param [out]   K2         Second subkey.
+ *
+ * \remarks   This is public open source code! Terms of use must be checked before use!
+ *
+ ********************************************************************************** */
+static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_t *K2)
+{
+    uint8_t  const_Rb[16] = {0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
+                             0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x87u};
+    uint8_t  L[16];
+    uint8_t  Z[16];
+    uint8_t  tmp[16] = {0};
+    uint32_t i;
+
+    for (i = 0u; i < 16u; i++)
+    {
+        Z[i] = 0u;
+    }
+
+    AES_128_Encrypt(Z, key, L);
+
+    if ((L[0] & 0x80u) == 0u)
+    {
+        /* If MSB(L) = 0, then K1 = L << 1 */
+        SecLib_LeftShiftOneBit(L, K1);
+    }
+    else
+    {
+        /* Else K1 = ( L << 1 ) (+) Rb */
+        SecLib_LeftShiftOneBit(L, tmp);
+        SecLib_Xor128(tmp, const_Rb, K1);
+    }
+
+    if ((K1[0] & 0x80u) == 0u)
+    {
+        SecLib_LeftShiftOneBit(K1, K2);
+    }
+    else
+    {
+        SecLib_LeftShiftOneBit(K1, tmp);
+        SecLib_Xor128(tmp, const_Rb, K2);
+    }
+}
+
+/*! *********************************************************************************
+ * \brief    Shifts a given vector to the left with one bit.
+ *
+ * \param [in]      input         Input vector.
+ *
+ * \param [out]     output        Output vector.
+ *
+ * \remarks   This is public open source code! Terms of use must be checked before use!
+ *
+ ********************************************************************************** */
+static void SecLib_LeftShiftOneBit(uint8_t *input, uint8_t *output)
+{
+    int32_t i;
+    uint8_t overflow = 0u;
+
+    for (i = 15; i >= 0; i--)
+    {
+        output[i] = input[i] << 1u;
+        output[i] |= overflow;
+        overflow = ((input[i] & 0x80u) > 0u) ? 1u : 0u;
+    }
+}

@@ -203,14 +203,15 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block.
- *         This function only accepts input lengths which are multiple
- *         of 16 bytes (AES 128 block size).
+ *
  *
  * \param[in]  pInput Pointer to the location of the input message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes - must be a multiple of AES_BLOCK_SIZE
  *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because IV is modifiable, it cannot be RO (const).
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
@@ -221,42 +222,68 @@ void AES_128_CBC_Encrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput);
 
 /*! *********************************************************************************
+ * \brief  This function performs AES-128-CBC decryption on a message block.
+ *
+ * \param[in]  pInput Pointer to the location of the input ciphered message.
+ *
+ * \param[in]  inputLen Input message length in bytes - must be a multiple of AES_BLOCK_SIZE.
+ *
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because IV is modifiable, it cannot be RO (const).
+ *
+ * \param[in]  pKey Pointer to the location of the 128-bit key.
+ *
+ * \param[out]  pOutput Pointer to the location to store the plain text output.
+ *
+ ********************************************************************************** */
+void AES_128_CBC_Decrypt(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput);
+
+/*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block after
- *         padding it with 1 bit of 1 and 0 bits trail.
+ *         padding until AES block completion.
+ *
+ * Padding scheme is ISO/IEC 7816-4: one 80h byte (1 bit), followed by as many 00h as
+ * required to fill a 128 bit block. Note that if the message length is a multiple of
+ * AES block size already, another block is appended to the original message.
  *
  * \param[in]  pInput Pointer to the location of the input message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes - no specific constraint.
  *
  *             IMPORTANT: User must make sure that input and output
  *             buffers have at least inputLen + 16 bytes size
  *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ * \param[in, out]  pInitVector Pointer to the location of the 128-bit initialization vector.
+ *                 On exit the IV content is updated with ciphered output to be injected as next block IV.
+ *                 Because it is modifiable it cannot be RO (const).
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
- * \param[out] pOutput Pointer to the location to store the ciphered output.
+ * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
- * \return     uint32_t size of output buffer (after padding)
+ * \return value  size of output message after padding is appended.
  *
  ********************************************************************************** */
+
 uint32_t AES_128_CBC_Encrypt_And_Pad(
     uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput);
 
 /*! *********************************************************************************
- * \brief  This function performs AES-128-CBC decryption on a message block.
+ * \brief  This function performs AES_128_CBC_Decrypt_And_Depad decryption on a message.
  *
- * \param[in]  pInput Pointer to the location of the input message.
+ * \param[in]  pInput Pointer to the location of the input ciphered message.
  *
- * \param[in]  inputLen Input message length in bytes.
+ * \param[in]  inputLen Input message length in bytes must be a multiple of AES block size
  *
  * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key.
  *
- * \param[out] pOutput Pointer to the location to store the ciphered output.
+ * \param[out] pOutput Pointer to the location to store the plain text output.
  *
- * \return     uint32_t size of output buffer (after depadding the 0x80 0x00 ... padding sequence)
+ * \return value  size of output buffer (after depadding the 0x80 [0x00 .. ]. padding sequence)
  *
  ********************************************************************************** */
 uint32_t AES_128_CBC_Decrypt_And_Depad(
