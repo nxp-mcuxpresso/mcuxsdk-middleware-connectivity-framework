@@ -22,7 +22,6 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.nvm)
 endif()
 
 if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.nvm.fsci)
-    mcux_add_macro(gNvmEnableFSCIMonitoring_c=1)
     mcux_add_macro(gFsciIncluded_c=1)
     mcux_add_source(
         SOURCES Source/NV_FsciCommands.c
