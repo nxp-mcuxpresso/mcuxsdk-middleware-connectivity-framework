@@ -20,6 +20,7 @@
 #include "fsl_spc.h"
 #include "fsl_wuu.h"
 #include "fsl_cmc.h"
+#include "fsl_vbat.h"
 
 /* SDK components */
 #include "fsl_pm_core.h"
@@ -302,15 +303,13 @@ int PLATFORM_GetDefaultRamBanksRetained(void)
 
 void PLATFORM_SetRamBanksRetained(int bank_mask)
 {
+    bool vbat_ldo_ram_required = ((bank_mask & (1 << PLATFORM_VBAT_LDORAM_IDX)) != 0);
+
     /* Set SRAM retention config handled by the CMC module */
     CMC_PowerOffSRAMLowPowerOnly(CMC0, (uint32_t)(~bank_mask));
 
     /* One RAM bank is handled by VBAT module */
-    uint32_t vbat_ldoramc = VBAT0->LDORAMC;
-    vbat_ldoramc &= ~VBAT_LDORAMC_RET_MASK;
-    vbat_ldoramc |=
-        VBAT_LDORAMC_RET((uint32_t)(~((uint32_t)bank_mask & ((uint32_t)1U << PLATFORM_VBAT_LDORAM_IDX)) >> 7));
-    VBAT0->LDORAMC = vbat_ldoramc;
+    VBAT_EnableSRAMArrayRetained(VBAT0, vbat_ldo_ram_required);
 
 #if defined(gPlatformShutdownEccRamInLowPower) && (gPlatformShutdownEccRamInLowPower > 0)
     last_bank_mask = bank_mask;
