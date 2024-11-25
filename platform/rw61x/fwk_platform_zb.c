@@ -22,6 +22,7 @@
 #include "fsl_os_abstraction.h"
 #include "RNG_Interface.h"
 #include "PDM.h"
+#include "FunctionLib.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -104,6 +105,18 @@ static bool PLATFORM_IsZbLinkReady(void);
  * \param[in] eui64_address pointer to a 8 bytes array
  */
 static void PLATFORM_GenerateEui64Addr(uint8_t *eui64_address);
+
+/* -------------------------------------------------------------------------- */
+/*                             External prototypes                            */
+/* -------------------------------------------------------------------------- */
+
+/*!
+ * \brief Sends a MAC platform request to get the IEEE 64bits address from OTP
+ *        memory.
+ *
+ * \param[out] eui64_address pointer to a 8 bytes buffer to write the address to
+ */
+extern void MAC_PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address);
 
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
@@ -222,18 +235,24 @@ void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address)
 {
     uint16_t len = 0U;
 
-    /* TODO: Add Get request to MAC firmware to retrieve the address from OTP memory
-     * If all 0xFF is returned, fall back to this randomly generated address */
+    memset((void *)eui64_address, 0xFF, EUI_64_SZ);
 
-    if (PDM_bDoesDataExist(PDM_ID_ZPSMAC_EXTADDR, &len) == true)
+    /* Get request to MAC firmware to retrieve the address from OTP memory
+     * If all 0xFF is returned, fall back to a randomly generated address */
+    MAC_PLATFORM_GetIeee802_15_4Addr(eui64_address);
+
+    if (FLib_MemCmpToVal((const void *)eui64_address, 0xFFU, EUI_64_SZ) == TRUE)
     {
-        assert(len == EUI_64_SZ);
-        (void)PDM_eReadDataFromRecord(PDM_ID_ZPSMAC_EXTADDR, eui64_address, EUI_64_SZ, &len);
-    }
-    else
-    {
-        PLATFORM_GenerateEui64Addr(eui64_address);
-        (void)PDM_eSaveRecordData(PDM_ID_ZPSMAC_EXTADDR, eui64_address, EUI_64_SZ);
+        if (PDM_bDoesDataExist(PDM_ID_ZPSMAC_EXTADDR, &len) == true)
+        {
+            assert(len == EUI_64_SZ);
+            (void)PDM_eReadDataFromRecord(PDM_ID_ZPSMAC_EXTADDR, eui64_address, EUI_64_SZ, &len);
+        }
+        else
+        {
+            PLATFORM_GenerateEui64Addr(eui64_address);
+            (void)PDM_eSaveRecordData(PDM_ID_ZPSMAC_EXTADDR, eui64_address, EUI_64_SZ);
+        }
     }
 }
 
