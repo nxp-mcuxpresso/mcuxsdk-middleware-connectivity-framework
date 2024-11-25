@@ -192,7 +192,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
     bool "Random Number Generator (RNG)"
-    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
+    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu

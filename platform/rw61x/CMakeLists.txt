@@ -105,3 +105,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.zb)
         fwk_platform_zb.c
         DEVICE_IDS ${RW61x_FAMILY})
 endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rng)
+    # Nothing needed, platform rng API is defined in fwk_platform.c
+endif()
