@@ -132,11 +132,40 @@ int RNG_Init(void)
     return result;
 }
 
+/*! *********************************************************************************
+ * \brief  Reinitialize the RNG module post-wakeup.
+ *         May do nothing, action is dependent on platform.
+ *
+ * \return  gRngSuccess_d if successful, gRngInternalError_d if operation fails.
+ *
+ * Note: Failure only possible for specific platforms.
+ *
+ ********************************************************************************** */
 int RNG_ReInit(void)
 {
     int result = gRngSuccess_d;
-    (void)PLATFORM_ResetCrypto();
+    if (PLATFORM_ResetCrypto() != 0)
+    {
+        result = gRngInternalError_d;
+    }
     return result;
+}
+
+/*! *********************************************************************************
+ * \brief  DeInitialize the RNG module.
+ *         Resets the RNG context variables. Only used for test purposes.
+ *
+ * \return none
+ *
+ ********************************************************************************** */
+void RNG_DeInit(void)
+{
+    rng_ctx.mRngCtxInitialized = FALSE;
+    rng_ctx.mPrngIsSeeded      = FALSE;
+    rng_ctx.mPolyRngSeeded     = FALSE;
+    rng_ctx.mPolyRngRandom     = 0xDEADBEEF;
+    rng_ctx.mPRNG_Requests     = gRngMaxRequests_d;
+    rng_ctx.mNeedReseed        = FALSE;
 }
 
 /*! *********************************************************************************
@@ -175,22 +204,55 @@ int RNG_GetTrueRandomNumber(uint32_t *pRandomNo)
  ********************************************************************************** */
 int RNG_GetPseudoRandomData(uint8_t *pOut, uint8_t outBytes, uint8_t *pSeed)
 {
-    int drbgResult;
+    int ret;
 
-    if (rng_ctx.mRngCtxInitialized == TRUE)
+    NOT_USED(pSeed);
+
+    do
     {
-        if (rng_ctx.mPrngIsSeeded == TRUE)
+        int drbgResult;
+
+        if (pOut == NULL || outBytes == 0u)
+        {
+            ret = gRngBadArguments_d;
+            break;
+        }
+
+        if (rng_ctx.mRngCtxInitialized != TRUE)
+        {
+            ret = gRngNotInitialized_d;
+            break;
+        }
+
+        if (!rng_ctx.mPrngIsSeeded)
+        {
+            /* request reseed */
+            if (RNG_NotifyReseedNeeded() < 0)
+            {
+                /* if request fails, bad news */
+                ret = gRngInternalError_d;
+            }
+            else
+            {
+                /* wait for reseed to retry */
+                ret = gRngReseedPending_d;
+            }
+            break;
+        }
+        else
         {
             if (rng_ctx.mPRNG_Requests == gRngMaxRequests_d)
             {
-                RNG_NotifyReseedNeeded();
+                if (RNG_NotifyReseedNeeded() < 0)
+                {
+                    ret = gRngInternalError_d;
+                    break;
+                }
             }
+            /* Continue in spite of the gRngMaxRequests_d limit reached */
+            rng_ctx.mPRNG_Requests++;
 
-            if (outBytes == 0U)
-            {
-                return 0;
-            }
-            else if (outBytes > mPRNG_NoOfBytes_c)
+            if (outBytes > mPRNG_NoOfBytes_c)
             {
                 outBytes = mPRNG_NoOfBytes_c;
             }
@@ -199,35 +261,22 @@ int RNG_GetPseudoRandomData(uint8_t *pOut, uint8_t outBytes, uint8_t *pSeed)
                 ; // if (outBytes != 0U && outBytes <= mPRNG_NoOfBytes_c)
             }
 
-            if (pOut == NULL)
-            {
-                return 0;
-            }
-
             RNG_MUTEX_LOCK();
             drbgResult = mbedtls_hmac_drbg_random(&mRngHmacDrbgCtx, pOut, outBytes);
             RNG_MUTEX_UNLOCK();
 
             rng_ctx.mPRNG_Requests++;
 
-            if (drbgResult == 0)
+            if (drbgResult != 0)
             {
-                return (int16_t)outBytes;
+                ret = gRngInternalError_d;
+                break;
             }
-            else
-            {
-                return 0;
-            }
+            ret = (int)outBytes;
         }
-        else
-        {
-            return -1;
-        }
-    }
-    else
-    {
-        return 0;
-    }
+    } while (false);
+
+    return ret;
 }
 
 /*! *********************************************************************************
@@ -327,26 +376,22 @@ int RNG_SetSeed(void)
             drbgResult = mbedtls_hmac_drbg_seed(&mRngHmacDrbgCtx, pMdInfo, RNG_entropy_func, &mRngEntropyCtx,
                                                 mPrngPersonalizationString_c, sizeof(mPrngPersonalizationString_c));
             RNG_MUTEX_UNLOCK();
-            assert(drbgResult == 0);
-            if (drbgResult == 0)
-            {
-                status                = gRngSuccess_d;
-                rng_ctx.mPrngIsSeeded = TRUE;
-            }
         }
         else
         {
             RNG_MUTEX_LOCK();
             /* Reseed the HMAC DRBG with no additional seed data. */
             drbgResult = mbedtls_hmac_drbg_reseed(&mRngHmacDrbgCtx, NULL, 0);
-            assert(drbgResult == 0);
-            if (drbgResult == 0)
-            {
-                status                = gRngSuccess_d;
-                rng_ctx.mPrngIsSeeded = TRUE;
-            }
             RNG_MUTEX_UNLOCK();
         }
+
+        assert(drbgResult == 0);
+        if (drbgResult == 0)
+        {
+            status                = gRngSuccess_d;
+            rng_ctx.mPrngIsSeeded = TRUE;
+        }
+
         /* On RNG_mbedTLS as the seed is only managed by mbedTLS layer we cannot send it to another core */
         rng_ctx.mNeedReseed = FALSE;
 
