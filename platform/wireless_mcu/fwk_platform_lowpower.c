@@ -284,6 +284,11 @@ int PLATFORM_GetDefaultRamBanksRetained(void)
         ram_upper_limit = (uint32_t)&firmware_ram_upper_limit;
     }
 
+    /* TCM_ADDR macro are defined in non-secure addresses, in order to do a proper comparison we need to ensure ram
+     * limits are also defined in non-secure addresses (bit 28 equal to 0) */
+    ram_lower_limit &= ~PLATFORM_ADDRESS_SECURE_MASK;
+    ram_upper_limit &= ~PLATFORM_ADDRESS_SECURE_MASK;
+
     assert(ram_upper_limit > ram_lower_limit);
 
     /* Go through each selectables RAM banks and check if we can shutdown some

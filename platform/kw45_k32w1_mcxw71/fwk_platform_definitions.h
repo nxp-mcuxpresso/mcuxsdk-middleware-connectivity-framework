@@ -93,6 +93,8 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define gPlatformShutdownEccRamInLowPower 1
 #endif
 
+#define PLATFORM_ADDRESS_SECURE_MASK (0x10000000U)
+
 #define gPlatformRamStartAddress_c (0x20000000U)
 #define gPlatformRamEndAddress_c   (0x2001BFFFU)
 
