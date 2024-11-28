@@ -137,6 +137,11 @@
 
 #define ROUND_FLOOR(_X_, _SHIFT_) ((((uint32_t)_X_) >> (_SHIFT_)) << (_SHIFT_))
 
+#if defined(__GNUC__)
+#ifndef gNvmErasePartitionWhenFlashing_c
+#define gNvmErasePartitionWhenFlashing_c 0U
+#endif /* gNvmErasePartitionWhenFlashing_c */
+#endif /*  defined(__GNUC__) */
 /*****************************************************************************
  *****************************************************************************
  * Private type definitions
@@ -1048,6 +1053,31 @@ NVM_STATIC const uint32_t eraseNVMFirst[4] = {0xffffffffu, 0xffffffffu, 0xffffff
 NVM_STATIC const uint32_t eraseNVMSecond[4] = {0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu};
 
 #endif /* __IAR_SYSTEMS_ICC__  */
+#if defined(__GNUC__)
+#if gNvmErasePartitionWhenFlashing_c
+/*
+ * Name: eraseNVMFirst
+ * Description: byte used to the force the erasure of the first sector of
+ *              the first virtual page (thus invalidating the entire page)
+ *              via IAR flashloader. Below section must be defined in the
+ *              linker configuration file (*.icf)
+ */
+
+NVM_STATIC const uint32_t eraseNVMFirst[4]
+    __attribute__((used, section("fEraseNVM"))) = {0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu};
+
+/*
+ * Name: eraseNVMSecond
+ * Description: byte used to the force the erasure of the first sector of
+ *              the second virtual page (thus invalidating the entire page)
+ *              via IAR flashloader. Below section must be defined in the
+ *              linker configuration file (*.icf)
+ */
+
+NVM_STATIC const uint32_t eraseNVMSecond[4]
+    __attribute__((used, section("sEraseNVM"))) = {0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu};
+#endif /* gNvmErasePartitionWhenFlashing_c */
+#endif /* __GNUC__  */
 #endif /* gNvStorageIncluded_d */
 
 /*****************************************************************************
