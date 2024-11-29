@@ -428,7 +428,7 @@ void HMAC_AES_MMO(const uint8_t *pKey, uint16_t keyLen, const uint8_t *pData, ui
  ****************************************************************************/
 static void AesMmoBlockUpdate(tuAES_Block *puHash, tuAES_Block *puBlock)
 {
-    tuAES_Block uOut;
+    tuAES_Block uOut = {.au32 = {0uL}};
 
     /* Block cipher using Hash as key */
     AES_128_Encrypt((uint8_t *)puBlock, (uint8_t *)puHash, (uint8_t *)&uOut);

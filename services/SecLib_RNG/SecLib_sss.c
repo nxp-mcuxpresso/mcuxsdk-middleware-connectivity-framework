@@ -1575,7 +1575,7 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
 
     do
     {
-        uint8_t tempOut[16];
+        uint8_t tempOut[16] = {0u};
 
         /*! Check for NULL output pointers and return with proper status if this is the case. */
         if ((NULL == pMacKey) || (NULL == pLtk) || (NULL == pN1) || (NULL == pN2) || (NULL == pA1) || (NULL == pA2))
@@ -1591,13 +1591,13 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
 
         /*! Build the most significant part of the f5 input data to compute the MacKey */
         f5CmacBuffer[0] = 0; /* Counter = 0 */
-        FLib_MemCpy(&f5CmacBuffer[1], (const uint8_t *)f5KeyId, 4);
-        FLib_MemCpyReverseOrder(&f5CmacBuffer[5], (const uint8_t *)pN1, 16);
-        FLib_MemCpyReverseOrder(&f5CmacBuffer[21], (const uint8_t *)pN2, 16);
+        FLib_MemCpy(&f5CmacBuffer[1], (const uint8_t *)f5KeyId, 4u);
+        FLib_MemCpyReverseOrder(&f5CmacBuffer[5], (const uint8_t *)pN1, 16u);
+        FLib_MemCpyReverseOrder(&f5CmacBuffer[21], (const uint8_t *)pN2, 16u);
         f5CmacBuffer[37] = 0x01U & a1at;
-        FLib_MemCpyReverseOrder(&f5CmacBuffer[38], (const uint8_t *)pA1, 6);
+        FLib_MemCpyReverseOrder(&f5CmacBuffer[38], (const uint8_t *)pA1, 6u);
         f5CmacBuffer[44] = 0x01U & a2at;
-        FLib_MemCpyReverseOrder(&f5CmacBuffer[45], (const uint8_t *)pA2, 6);
+        FLib_MemCpyReverseOrder(&f5CmacBuffer[45], (const uint8_t *)pA2, 6u);
         f5CmacBuffer[51] = 0x01; /* Length msB big endian = 0x01, Length = 256 */
         f5CmacBuffer[52] = 0x00; /* Length lsB big endian = 0x00, Length = 256 */
 
@@ -1606,18 +1606,18 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
 
         /*! Copy the MacKey to the output location
          *  in reverse order. The CMAC result is generated MSB first. */
-        FLib_MemCpyReverseOrder(pMacKey, (const uint8_t *)tempOut, 16);
+        FLib_MemCpyReverseOrder(pMacKey, (const uint8_t *)tempOut, 16u);
 
         /*! Build the least significant part of the f5 input data to compute the MacKey.
          *  It is identical to the most significant part with the exception of the counter. */
-        f5CmacBuffer[0] = 1; /* Counter = 1 */
+        f5CmacBuffer[0] = 1u; /* Counter = 1 */
 
         /*! Compute the LTK into the temporary buffer. */
         AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
 
         /*! Copy the LTK to the output location
          *  in reverse order. The CMAC result is generated MSB first. */
-        FLib_MemCpyReverseOrder(pLtk, (const uint8_t *)tempOut, 16);
+        FLib_MemCpyReverseOrder(pLtk, (const uint8_t *)tempOut, 16u);
 
         result = gSecSuccess_c;
 
@@ -1903,10 +1903,10 @@ secResultType_t SecLib_DeobfuscateKeySecure(const uint8_t *pBlob, uint8_t *pKey)
  ********************************************************************************** */
 secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, const uint8_t *pR)
 {
-    secResultType_t result           = gSecError_c;
-    uint8_t         tempAddrPart[16] = {0};
-    uint8_t         tempOutHash[16];
-    uint8_t         tempKey[16];
+    secResultType_t result                       = gSecError_c;
+    uint8_t         tempAddrPart[AES_BLOCK_SIZE] = {0u};
+    uint8_t         tempOutHash[AES_BLOCK_SIZE]  = {0u};
+    uint8_t         tempKey[AES_128_KEY_BYTE_LEN];
     do
     {
         /*! Check for NULL output pointers and return with proper status if this is the case. */
@@ -1917,22 +1917,22 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
         /* Initialize the r' value in the temporary location. 3 bytes of ramdom value.
          *  Initialize it reversed for AES.
          */
-        for (int i = 0; i < 3; i++)
+        for (uint8_t i = 0; i < 3u; i++)
         {
-            tempAddrPart[15 - i] = pR[i];
+            tempAddrPart[AES_BLOCK_SIZE - 1u - i] = pR[i];
         }
         /* Regular operation with plaintext key */
         /*! Reverse the Key and place it in a temporary location. */
-        FLib_MemCpyReverseOrder(tempKey, (const uint8_t *)pKey, 16);
+        FLib_MemCpyReverseOrder(tempKey, (const uint8_t *)pKey, AES_128_KEY_BYTE_LEN);
 
         /*! Compute the hash. */
         AES_128_Encrypt(tempAddrPart, tempKey, tempOutHash);
 
         /*! Copy the relevant bytes to the output. */
-        pHash[0] = tempOutHash[15];
-        pHash[1] = tempOutHash[14];
-        pHash[2] = tempOutHash[13];
-
+        for (uint8_t i = 0; i < 3u; i++)
+        {
+            pHash[i] = tempOutHash[AES_BLOCK_SIZE - 1u - i];
+        }
         result = gSecSuccess_c;
 
     } while (false);
