@@ -45,12 +45,13 @@ extern osa_status_t SecLibMutexUnlock(void);
 
 typedef struct rng_ctx_t
 {
-    bool_t   mRngCtxInitialized;
-    bool_t   mPrngIsSeeded;
-    bool_t   mPolyRngSeeded;
-    uint32_t mPolyRngRandom;
-    uint32_t mPRNG_Requests;
-    bool_t   mNeedReseed;
+    bool_t                  mRngCtxInitialized;
+    bool_t                  mPrngIsSeeded;
+    bool_t                  mPolyRngSeeded;
+    uint32_t                mPolyRngRandom;
+    uint32_t                mPRNG_Requests;
+    bool_t                  mNeedReseed;
+    mbedtls_entropy_context entropy_ctx;
 } RNG_context_t;
 
 /*! *********************************************************************************
@@ -106,14 +107,21 @@ int RNG_Init(void)
 
     (void)PLATFORM_InitCrypto();
 
-    mbedtls_entropy_init(&mRngEntropyCtx);
-    mbedtls_hmac_drbg_init(&mRngHmacDrbgCtx);
-    rng_ctx.mRngCtxInitialized = TRUE;
     do
     {
+        if (rng_ctx.mRngCtxInitialized == TRUE)
+        {
+            result = gRngSuccess_d;
+            break;
+        }
+
         (void)SecLibMutexCreate();
 
         RNG_MUTEX_LOCK();
+
+        mbedtls_entropy_init(&mRngEntropyCtx);
+        mbedtls_hmac_drbg_init(&mRngHmacDrbgCtx);
+
         rngResult = mbedtls_entropy_func(&mRngEntropyCtx, (unsigned char *)&rng_ctx.mPolyRngRandom,
                                          sizeof(rng_ctx.mPolyRngRandom));
         RNG_MUTEX_UNLOCK();
@@ -122,7 +130,9 @@ int RNG_Init(void)
         {
             break;
         }
-        rng_ctx.mPolyRngSeeded = TRUE;
+        rng_ctx.mPolyRngSeeded     = TRUE;
+        rng_ctx.mRngCtxInitialized = TRUE;
+
         /* Set seed for pseudo random number generation */
         (void)RNG_SetSeed();
 
@@ -178,12 +188,32 @@ void RNG_DeInit(void)
  ********************************************************************************** */
 int RNG_GetTrueRandomNumber(uint32_t *pRandomNo)
 {
-    if ((rng_ctx.mPolyRngSeeded == TRUE) && (pRandomNo != NULL))
+    int ret;
+
+    do
     {
-        rng_ctx.mPolyRngRandom = (uint32_t)(((uint64_t)rng_ctx.mPolyRngRandom * 279470273UL) % 4294967291UL);
-        *pRandomNo             = rng_ctx.mPolyRngRandom;
-    }
-    return gRngSuccess_d;
+        if (pRandomNo == NULL)
+        {
+            ret = gRngBadArguments_d;
+            break;
+        }
+
+        if (rng_ctx.mRngCtxInitialized != TRUE)
+        {
+            ret = gRngNotInitialized_d;
+            break;
+        }
+
+        if (RNG_entropy_func(&mRngEntropyCtx, (unsigned char *)pRandomNo, sizeof(uint32_t)) != 0)
+        {
+            ret = gRngSuccess_d;
+        }
+        else
+        {
+            ret = gRngInternalError_d;
+        }
+    } while (0 != 0);
+    return ret;
 }
 
 /*! *********************************************************************************
