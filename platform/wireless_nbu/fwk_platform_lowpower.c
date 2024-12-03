@@ -161,7 +161,6 @@ static void PLATFORM_HandleLowPowerEntry(void)
         SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
         /* update sleep entry timestamp: required to know if native clock is valid after wakeup (HW issue: LL-2953) */
-        /* for KW47 we need to use new status bit: TODO */
         LL_API_UpdateLastNativeClkBeforeSleep();
 
         /* Request low power entry to RFMC */
@@ -194,6 +193,9 @@ static void PLATFORM_HandleLowPowerEntry(void)
         /* Wait for the XTAL to be ready before running anything else */
         while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
             ;
+
+        /* Wait the sleep clock update after waking up from an asynchronous wakeup */
+        LL_API_WaitForClkUpdtFromLowPwr();
     }
 
     /* Set sleep clock source to auto */
