@@ -8,7 +8,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.file_system
     bool "Wrapper to Little FS (FileSystem)"
     select MCUX_COMPONENT_middleware.littlefs
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_utility.debug_console
+    depends on MCUX_COMPONENT_utility.debug_console || MCUX_COMPONENT_utility.debug_console_lite
     depends on MCUX_COMPONENT_middleware.wireless.framework.platform
     help
       Basic Flash read/write APIs using LittleFS.
