@@ -1,3 +1,22 @@
+#### 7.0.0 for MCUXpresso SDK 24.12.00 release: KW45/KW47/MCX W71/MCX W72/K32W148/RW61x/RT595/RT1060/RT1170 support
+
+Minor Changes (no impact on application):
+
+Platform specific:
+  - [RW61X] 
+    - Add MCUX_COMPONENT_middleware.wireless.framework.platform.rng to the platform to fix a warning at generation
+    - Retrieve IEEE 64 bits address from OTP memory
+  - [wireless_mcu]
+    - Ignore the secure bit from RAM addresses when comparing used ram bank in bank retention mechanism
+
+Services:
+  - [OTA] 
+    - Add choice name to OtaSupport flash selection in Kconfig
+  - [NVM]
+    - Add gNvmErasePartitionWhenFlashing_c feature support to gcc toolchain
+  - [SecLib_RNG]
+    - Misra fixes
+
 #### 7.0.0 revB for MCUXpresso SDK 24.12.00 release: KW45/KW47/MCX W71/MCX W72/K32W148/RW61x/RT595/RT1060/RT1170 support
 
 Major Changes (User Applications may be impacted):
