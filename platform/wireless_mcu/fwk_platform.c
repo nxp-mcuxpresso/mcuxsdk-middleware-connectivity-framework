@@ -56,11 +56,7 @@
       a shift of 31.25us on the link layer timebase in NBU.
 */
 #if !defined(BOARD_32KHZ_XTAL_CLOAD_DEFAULT)
-#if defined(FWK_KW47_MCXW72_FAMILIES) && (FWK_KW47_MCXW72_FAMILIES == 1)
-#define BOARD_32KHZ_XTAL_CLOAD_DEFAULT 4U
-#else
 #define BOARD_32KHZ_XTAL_CLOAD_DEFAULT 8U
-#endif
 #endif
 
 /*! @brief Default coarse adjustement config for 32KHz crystal,
