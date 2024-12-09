@@ -162,4 +162,13 @@ int PLATFORM_RequestRngSeedToHost(void);
  */
 int PLATFORM_FwkSrvRequestNewTemperature(uint32_t periodic_interval_ms);
 
+#if defined(gPlatformIcsNbuDeferredNbuApi2Idle_d) && (gPlatformIcsNbuDeferredNbuApi2Idle_d == 1)
+/*!
+ * \brief Send pending nbu api indication message that has been delayed by PLATFORM_FwkSrvSendNbuApiIndicationLater()
+ *
+ *\details Called from Idle to avoid calling it from ISR
+ */
+void PLATFORM_FwkSrvCheckAndSendNbuApiIndicationInIdle(void);
+#endif
+
 #endif /* __FWK_PLATFORM_ICS_H__ */

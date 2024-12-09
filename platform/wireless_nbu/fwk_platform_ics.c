@@ -40,6 +40,13 @@ extern bool     Controller_EnableSecurityFeature();
 static int                       PLATFORM_FwkSrvSendPacket(eFwkSrvMsgType msg_type, void *msg, uint16_t msg_lg);
 static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t *data, uint32_t len);
 static bool                      FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type);
+#if defined(gPlatformIcsNbuDeferredNbuApi2Idle_d) && (gPlatformIcsNbuDeferredNbuApi2Idle_d == 1)
+static void PLATFORM_FwkSrvSendNbuApiIndicationLater(void *msg, uint16_t msg_lg);
+
+static uint32_t platformNbuApiIndication[32];
+static uint16_t platformLastNbuApiIndicationSize = 0U;
+static bool     platformNbuApiIndicationPending  = 0U;
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
@@ -164,6 +171,25 @@ int PLATFORM_FwkSrvRequestNewTemperature(uint32_t periodic_interval_ms)
                                      sizeof(uint32_t));
 }
 
+#if defined(gPlatformIcsNbuDeferredNbuApi2Idle_d) && (gPlatformIcsNbuDeferredNbuApi2Idle_d == 1)
+void PLATFORM_FwkSrvCheckAndSendNbuApiIndicationInIdle(void)
+{
+    uint32_t irqMask = 0U;
+
+    /* Interrupt masking should not be necessary as the NbuApiIndication function is blocking on host side just added by
+     * security */
+    irqMask = PLATFORM_SET_INTERRUPT_MASK();
+
+    if (platformNbuApiIndicationPending > 0U)
+    {
+        PLATFORM_FwkSrvSendPacket(gFwkSrvNbuApiIndication_c, platformNbuApiIndication,
+                                  platformLastNbuApiIndicationSize);
+        platformNbuApiIndicationPending--;
+    }
+    PLATFORM_CLEAR_INTERRUPT_MASK(irqMask);
+}
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
@@ -249,7 +275,13 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
                     ind[0U] = 0U; // rpmsg failure: API does not exist etc.
                     ind_len = 1U;
                 }
+#if defined(gPlatformIcsNbuDeferredNbuApi2Idle_d) && (gPlatformIcsNbuDeferredNbuApi2Idle_d == 1)
+                /* Delay the moment we send the message over the rpmsg to avoid calling it from ISR which is not
+                 * supported */
+                PLATFORM_FwkSrvSendNbuApiIndicationLater((void *)&ind[0U], ind_len);
+#else
                 PLATFORM_FwkSrvSendPacket(gFwkSrvNbuApiIndication_c, (void *)&ind[0U], ind_len);
+#endif
             }
             break;
 
@@ -310,6 +342,15 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
     }
     return res;
 }
+
+#if defined(gPlatformIcsNbuDeferredNbuApi2Idle_d) && (gPlatformIcsNbuDeferredNbuApi2Idle_d == 1)
+static void PLATFORM_FwkSrvSendNbuApiIndicationLater(void *msg, uint16_t msg_lg)
+{
+    platformLastNbuApiIndicationSize = msg_lg;
+    memcpy(&platformNbuApiIndication, msg, platformLastNbuApiIndicationSize);
+    platformNbuApiIndicationPending++;
+}
+#endif
 
 static bool FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type)
 {
