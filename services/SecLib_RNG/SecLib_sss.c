@@ -1484,7 +1484,7 @@ void ECDH_P256_FreeDhKeyDataSecure(computeDhKeyParam_t *pDhKeyData)
 {
     /* turn into void* first to avoid MISRA 11.3 */
     void *pKeyData = &pDhKeyData->outPoint;
-    (void)sss_sscp_key_object_free((sss_sscp_object_t *)pKeyData, kSSS_keyObjFree_KeysStoreNoDefragment);
+    (void)sss_sscp_key_object_free((sss_sscp_object_t *)pKeyData, kSSS_keyObjFree_KeysStoreDefragment);
 }
 
 /************************************************************************************
@@ -1775,11 +1775,11 @@ secResultType_t SecLib_DeriveBluetoothSKDSecure(const uint8_t *pInSKD,
     }
     if (bLTKObjectInitialized == true)
     {
-        (void)sss_sscp_key_object_free(&keyObjLTK, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObjLTK, kSSS_keyObjFree_KeysStoreDefragment);
     }
     if (bSKObjectInitialized == true)
     {
-        (void)sss_sscp_key_object_free(&keyObjSK, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObjSK, kSSS_keyObjFree_KeysStoreDefragment);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1848,7 +1848,7 @@ secResultType_t SecLib_ObfuscateKeySecure(const uint8_t *pKey, uint8_t *pBlob, c
 
     if (keyInit == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     SECLIB_MUTEX_UNLOCK();
     return result;
@@ -1910,7 +1910,7 @@ secResultType_t SecLib_DeobfuscateKeySecure(const uint8_t *pBlob, uint8_t *pKey)
 
     if (keyInit == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     SECLIB_MUTEX_UNLOCK();
     return result;
@@ -1947,7 +1947,7 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
         {
             break;
         }
-        /* Initialize the r' value in the temporary location. 3 bytes of ramdom value.
+        /* Initialize the r' value in the temporary location. 3 bytes of random value.
          *  Initialize it reversed for AES.
          */
         for (uint8_t i = 0; i < 3u; i++)
@@ -2038,12 +2038,12 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
         }
         contextInit = true;
 
-        /* Initialize the r' value in the temporary location. 3 bytes of ramdom value.
+        /* Initialize the r' value in the temporary location. 3 bytes of random value.
          *  Initialize it reversed for AES.
          */
-        for (int i = 0; i < 3; i++)
+        for (uint8_t i = 0u; i < 3u; i++)
         {
-            tempAddrPart[15 - i] = pR[i];
+            tempAddrPart[AES_BLOCK_SIZE - 1u - i] = pR[i];
         }
 
         if (sss_sscp_cipher_one_go(&context, NULL, 0, tempAddrPart, tempFullHash, 16U) != kStatus_SSS_Success)
@@ -2051,9 +2051,11 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
             break;
         }
 
-        pHash[0] = tempFullHash[15];
-        pHash[1] = tempFullHash[14];
-        pHash[2] = tempFullHash[13];
+        /*! Copy the relevant bytes to the output. */
+        for (uint8_t i = 0; i < 3u; i++)
+        {
+            pHash[i] = tempFullHash[AES_BLOCK_SIZE - 1u - i];
+        }
 
         result = gSecSuccess_c;
 
@@ -2061,7 +2063,7 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
 
     if (keyInit == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     if (contextInit == true)
     {
@@ -2205,16 +2207,16 @@ static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey
     /* delete keys and contexts from S200 */
     if (bInitialized_MacKey)
     {
-        (void)sss_sscp_key_object_free(&keyObj__MacKey, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj__MacKey, kSSS_keyObjFree_KeysStoreDefragment);
     }
 
     if (bInitialized_LTK)
     {
-        (void)sss_sscp_key_object_free(&keyObj__LTK, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj__LTK, kSSS_keyObjFree_KeysStoreDefragment);
     }
 
     /* DHkey object from pDhKeyData->outPoint can be deleted here */
-    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreNoDefragment);
+    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreDefragment);
 
     SECLIB_MUTEX_UNLOCK();
 
@@ -2287,7 +2289,7 @@ secResultType_t SecLib_GenerateSymmetricKey(const uint32_t keySize, const bool_t
 
     if (keyObjFree == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     SECLIB_MUTEX_UNLOCK();
     return result;
@@ -2386,7 +2388,7 @@ secResultType_t SecLib_GenerateBluetoothEIRKBlobSecure(const void  *pIRK,
     } while (false);
     if (keyObjFree == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     SECLIB_MUTEX_UNLOCK();
     return result;
@@ -2455,7 +2457,7 @@ secResultType_t ECDH_P256_FreeE2EKeyDataSecure(ecdhDhKey_t *pE2EKeyData)
     /* turn into void* first to avoid MISRA 11.3 */
     void *pKeyData = pE2EKeyData;
 
-    status = sss_sscp_key_object_free((sss_sscp_object_t *)pKeyData, kSSS_keyObjFree_KeysStoreNoDefragment);
+    status = sss_sscp_key_object_free((sss_sscp_object_t *)pKeyData, kSSS_keyObjFree_KeysStoreDefragment);
 
     if (kStatus_SSS_Success == status)
     {
@@ -2562,7 +2564,7 @@ secResultType_t SecLib_ExportA2BBlobSecure(const void *pKey, const secInputKeyTy
     SECLIB_MUTEX_UNLOCK();
     if (keyObjFree == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     return result;
 }
@@ -2681,7 +2683,7 @@ secResultType_t SecLib_ImportA2BBlobSecure(const uint8_t *pKey, const secInputKe
 
     if (keyInit == true)
     {
-        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreNoDefragment);
+        (void)sss_sscp_key_object_free(&keyObj, kSSS_keyObjFree_KeysStoreDefragment);
     }
     return result;
 }
