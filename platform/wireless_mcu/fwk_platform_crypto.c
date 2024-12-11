@@ -8,7 +8,6 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
-#include <stdarg.h>
 #include "fwk_platform_crypto.h"
 #include "sss_crypto.h"
 

@@ -10,8 +10,6 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
-#include <stdarg.h>
-
 #include "fsl_common.h"
 #include "fwk_platform_ics.h"
 #include "fwk_platform.h"

@@ -157,7 +157,7 @@ int PLATFORM_GetDefaultRamBanksRetained(void);
  *
  * \param[in] bank_mask mask of which bank needs to be retained
  */
-void PLATFORM_SetRamBanksRetained(int bank_mask);
+void PLATFORM_SetRamBanksRetained(uint32_t bank_mask);
 
 /*!
  * @}  end of FWK_Platform_LowPower addtogroup

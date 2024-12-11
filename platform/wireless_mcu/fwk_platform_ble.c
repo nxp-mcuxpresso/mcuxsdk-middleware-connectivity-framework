@@ -369,19 +369,21 @@ static int PLATFORM_InitHciLink(void)
 
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
 {
-    PLATFORM_RemoteActiveReq();
+    /* len shall be strictly positive as message shall not be empty */
+    assert(len > 0u);
 
-    if (hci_rx_callback != NULL)
+    if ((len > 0u) && (hci_rx_callback != NULL))
     {
+        PLATFORM_RemoteActiveReq();
+
         hci_rx_callback(data[0], &data[1], len - 1U);
-    }
 
 #ifdef SERIAL_BTSNOOP
-    sbtsnoop_write_hci_pkt(data[0U], 1U, &data[1], len - 1U);
+        sbtsnoop_write_hci_pkt(data[0U], 1U, &data[1], len - 1U);
 #endif
 
-    PLATFORM_RemoteActiveRel();
-
+        PLATFORM_RemoteActiveRel();
+    }
     (void)param;
 
     return kStatus_HAL_RL_RELEASE;

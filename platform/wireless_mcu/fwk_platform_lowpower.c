@@ -116,7 +116,7 @@ static const bool TCM_IS_ECC[] = {
     PLATFORM_BANK_IS_ECC,
 };
 
-static int last_bank_mask = ~0;
+static uint32_t last_bank_mask = ~0u;
 #endif /* gPlatformShutdownEccRamInLowPower */
 
 static const spc_power_domain_id_t pd_name_2_id[2U] = {
@@ -306,12 +306,12 @@ int PLATFORM_GetDefaultRamBanksRetained(void)
     return bank_mask;
 }
 
-void PLATFORM_SetRamBanksRetained(int bank_mask)
+void PLATFORM_SetRamBanksRetained(uint32_t bank_mask)
 {
-    bool vbat_ldo_ram_required = ((bank_mask & (1 << PLATFORM_VBAT_LDORAM_IDX)) != 0);
+    bool vbat_ldo_ram_required = ((bank_mask & ((uint32_t)1U << PLATFORM_VBAT_LDORAM_IDX)) != 0u);
 
     /* Set SRAM retention config handled by the CMC module */
-    CMC_PowerOffSRAMLowPowerOnly(CMC0, (uint32_t)(~bank_mask));
+    CMC_PowerOffSRAMLowPowerOnly(CMC0, ~bank_mask);
 
     /* One RAM bank is handled by VBAT module */
     VBAT_EnableSRAMArrayRetained(VBAT0, vbat_ldo_ram_required);

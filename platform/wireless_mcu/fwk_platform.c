@@ -8,8 +8,6 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
-#include <stdarg.h>
-
 /* Get some BOARD_***_DEFAULT macro values if defined in board.h for 32kHz settings */
 #include "board_platform.h"
 
@@ -102,15 +100,6 @@
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
-
-extern const scg_sys_clk_config_t g_sysClkConfig_SOC_ClockLowPower;
-
-const scg_sys_clk_config_t g_sysClkConfig_SOC_ClockLowPower = {
-    .divSlow = (uint32_t)kSCG_SysClkDivBy3,  /* Slow Clock Divider: divided by 3 */
-    .divBus  = (uint32_t)kSCG_SysClkDivBy1,  /* Bus Clock Divider: divided by 1 */
-    .divCore = (uint32_t)kSCG_SysClkDivBy16, /* Core Clock Divider: divided by 16 */
-    .src     = (uint32_t)kSCG_SysClkSrcFirc, /* Fast IRC is selected as System Clock Source */
-};
 
 static volatile int timer_manager_initialized = 0;
 
