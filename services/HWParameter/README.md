@@ -1,15 +1,16 @@
-# Production Data Storage
+# HWParameter: Hardware parameter
+## Production Data Storage
 
 Hardware parameters provide production data storage
 
-## Overview
+### Overview
 
 Different platforms/boards need board/network node-specific settings to function according to the design. (Examples of such settings are IEEE® addresses and radio calibration values specific to the node.) For this purpose, the last flash sector is reserved and contains hardware-specific parameters for production data storage. These parameters pertain to the network node as a distinct entity. For example, a silicon mounted on a PCB in a specific configuration, rather than to just the silicon itself. This sector is reserved by the linker file, through the PROD_DATA section and it should be read/written only through the API described below.
 
 > Note :
 This sector is not erased/written at code download time and it is not updated via over-the-air firmware update procedures to preserve the respective node-specific data, regardless of the firmware running on it.
 
-## Constant Definitions
+### Constant Definitions
 
 Name :
 
@@ -36,7 +37,7 @@ Note: the length of mProdDataIdentifier imposes the definition of PROD_DATA_ID_S
 The legacy HW parameters structure provides headroom for future usage.
 There are currently 63 bytes available.
 
-## Data type definitions
+### Data type definitions
 Name :
 
 
@@ -72,7 +73,7 @@ The CRC calculation starts from the reserved field of the hardwareParameters_t a
 
 Add new fields before the reserved field. This method does not cause a CRC fail, but you must keep in mind to subtract the total size of the new fields from the size of the reserved field. For example, if a field of uint8_t size is added using this method, the size of the reserved field shall be changed to 63.
 
-# Co-locating application factory data in HW Parameters flash sector.
+## Co-locating application factory data in HW Parameters flash sector.
 
 The sector containing the Hardware parameter structure may be located in the internal flash, usually at its last sector.
 The actual Hardware parameter structure has a size of 128 bytes - including padding reserved for future use.
@@ -81,11 +82,11 @@ A total of 2kB is alloted to this purpose.
 
 If this option was chosen, whenever any of the Hardware parameter fields is modified, its CRC16 will change so the sector will need erasing. The gHwParamsAppFactoryDataPreserveOnHwParamUpdate_d compilation option deals with restoring the contents of the App Factory Data. Nonetheless this requires a temporary allocation a 2kB buffer to preserve the previous content and restore then on completion of the Hw Parameter update.
 
-# Special reserved area at start of IFR1 in range [0x02002000..0x02002600[
+## Special reserved area at start of IFR1 in range [0x02002000..0x02002600[
 On development boards a 1536 byte area is reserved and the actual Hardware parameter area begins at offset 0x600.
 Preserving this area on a HW parameter update also requires a temporary 1.5kB dynamic allocation (in addition to the App Factory 2kB allocation), to be able to restore on completion of update operation.
 
-# HW Parameters Production Data placement options
+## HW Parameters Production Data placement options
 
 The placement of production data (PROD_DATA) can be selected based on the definition of gHwParamsProdDataPlacement_c (see fwk_config.h).
 The productions data seldom need update for final products, once calibration data, MAC addresses or others have been programmed.

@@ -1,4 +1,4 @@
-# Framework Serial Communication Interface
+# FSCI: Framework Serial Communication Interface
 ## Overview
 The Framework Serial Communication Interface (FSCI) is both a software module and a protocol that allows monitoring and extensive testing of the protocol layers. It also allows separation of the protocol stack between two protocol layers in a two processing entities setup, the host processor (typically running the upper layers of a protocol stack) and the Black Box application (typically containing the lower layers of the stack, serving as a modem). The Test Tool software is an example of a host processor, which can interact with FSCI Black Boxes at various layers. In this setup, the user can run numerous commands to test the Black Box application services and interfaces.
 
@@ -10,10 +10,15 @@ The FSCI module executes either in the context of the Serial Manager task or own
 
 ## FSCI packet structure
 The FSCI module sends and receives messages as shown in the figure below. This structure is not specific to a serial interface and is designed to offer the best communication reliability. The Black Box device expects messages in little-endian format. It also responds with messages in little-endian format.
-![](./pics/FSCI_packet_structure.PNG)
+
+![](./pics/FSCI_packet_structure.PNG "MCUXpresso SDK layers")
+
 Below is an illustration of the FSCI packet structure when a virtual interface is used instead :
-![](./pics/FSCI_packet_structure_virtual_interface.PNG)
-![](./pics/FSCI_packet_structure_fields.PNG)
+
+![](./pics/FSCI_packet_structure_virtual_interface.PNG "toto")
+
+![](./pics/FSCI_packet_structure_fields.PNG "tutu")
+
 >*NOTE* : When virtual interfaces are used, the first checksum is decremented with the ID of the interface. The second checksum is used for error detection.
 
 ## constant definition
