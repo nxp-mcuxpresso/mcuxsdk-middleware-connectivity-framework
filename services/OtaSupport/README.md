@@ -1,4 +1,4 @@
-# Over-the-Air Programming Support
+# OtaSupport: Over-the-Air Programming Support
 ## Overview
 This module includes APIs for the over-the-air image upgrade process.
 A Server device receives an image over the serial interface from a PC or other device thorough FSCI commands. If the Server has an image storage, the image is saved locally. If not, the image is requested chunk by chunk:

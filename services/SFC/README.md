@@ -1,10 +1,11 @@
-# Overview
+# SFC : Smart Frequency Calibration
+## Overview
 
 The Smart Frequency Calibration module provides operations and calibration for the FRO32K source clock. This module is split between main core and Radio core:
 - fwk_rf_sfc.[ch]: RF_SFC module on Radio core that provides Main FRO32K measurement/calibration and state machine in synchornization with Radio domain activities. See details below.
 - fwk_sfc.h: SFC module on host core that provides type definition for usage with fwk_platform_ics.[ch] with PLATFORM_FwkSrvSetRfSfcConfig() API and fwk_platform_ble.c for received callback from the NBU core
 
-# Host SFC Module
+## Host SFC Module
 
 This module provides ability to configure the RF_SFC module by sending message to Radio core through fwk_platform_ics.c `PLATFORM_FwkSrvSetRfSfcConfig()`:
 - filter size
@@ -15,7 +16,7 @@ On the other way, the RF_SFC from Radio core sends back notifications to SFC mod
 - last measured frequency
 - average ppm from 32768Khz frequency
 
-# RF_SFC module
+## RF_SFC module
 
 The RF_SFC module provides the functionality to calibrate the FRO32K source clock during Initialization and radio activity.
 
@@ -33,7 +34,7 @@ The targeted frequency offset shall be within 200ppm. The RF_SFC will handle two
 
 The RF_SFC module works in active and all low power modes on NBU domain, or on host application domain except power down mode. Power down mode on host application domain is not supported with the FRO32K configuration as clock source.
 
-# Feature enablement
+## Feature enablement
 
 Enabling the FRO32K is done by calling the PLATFORM_InitFro32K() function during application initialization in hardware_init.c file, in BOARD_InitHardware() function.
 If FRO32K is not enabled, Oscillator XTAL32K shall be called instead by calling PLATFORM_InitOsc32K() function.
@@ -42,23 +43,23 @@ The call to PLATFORM_InitFro32K() from BOARD_InitHardware() can be done by setti
 #define gBoardUseFro32k_d       1
 ```
 
-# Detailed description
+## Detailed description
 
-### Frequency measurements
+#### Frequency measurements
 
 When NBU low power is enabled, the frequency measurements are triggered on Low power wake-up by HW signal.
 The SFC process called from Idle task will check regularly the completion of the frequency measurement. When the measurement is done, it goes to filtering and frequency estimation process.
 The frequency measurement duration depends on monitor mode or convergence mode:
 In convergence mode, the frequency measurement duration is 0.5ms while it is 2ms in monitor mode. In monitor mode, the duration value remains less than the minimal radio activity duration so it does not impact the low power consumption in monitoring mode.
 
-### Filtering and Frequency estimation
+#### Filtering and Frequency estimation
 
 The FRO32KHz frequency measurement values are noisy because of thermal noise on the FRO32K itself. Also, the frequency measurement can introduce some error. In monitoring mode, it is required to filter the measurements by applying an exponential filter.
  new_estimation =  (new_measurement + ((1 << n) -1) * last_estimation) >> n
 
 Default value for n is 7 (meaning 128 samples in the averaging window).
 
-### Frequency calibration
+#### Frequency calibration
 
 When the frequency estimation gets higher than the targeted 200ppm target, the RF_SFC updates the trimming value for one positive or negative increment.
 For this purpose, it requires to:
@@ -68,11 +69,11 @@ For this purpose, it requires to:
 
 A slight power impact is expected during a calibration update due to host domain wake-up.
 
-# Operational modes
+## Operational modes
 
 When the low power mode is enabled on NBU power domain, RF SFC handles two modes of operation: convergence and monitor modes. However, when low power is disabled on NBU power domain, only convergence mode is supported.
 
-### Convergence mode
+#### Convergence mode
 
 Convergence mode is used when the estimated FRO32K frequency is above 200ppm. Typically this occurs :
 - During Power ON reset or other reset when NBU is switched OFF
@@ -82,13 +83,13 @@ The convergence mode process typically starts with a FRO32K trim register update
 These operations are repeated in a loop until the estimated frequency value gets below 200ppm. When below 200ppm, the RC SFC switches to Monitoring mode.
 The convergence mode is only a transition mode to monitoring mode. In convergence mode, the NBU power domain does not go to low power. The convergence mode time duration depends on the initial frequency error of the FR032K. Default frequency measurement duration is 0.5ms so 20 measurements (given as example only) will require less than 10 ms to converge.
 
-### Monitoring mode
+#### Monitoring mode
 
 Monitoring mode is used when the estimated FRO32K frequency is below 200ppm. In this mode, the measurement is triggered on NBU domain wake up from low power mode using an internal hardware signal. The exponential filter is applied to compute the frequency estimation. If the frequency estimation value  is still within 200ppm, the NBU power domain is allowed to go to low power.
 If the estimated value gets above the 200ppm threshold, the RF SFC switch back to convergence mode. The trim register is updated by one increment (positive or negative) and because the frequency has been adjusted and changed, the estimated filtered frequency is reset to discard all previous measurements.
 Going back to convergence mode typically happens during a temperature gradient. If the temperature is constant, it is not expected to have the estimated value to go beyond 200ppm so no calibration should be required.
 
-# Initialization and configuration
+## Initialization and configuration
 
 During initialization, the RF SFC module will block the Radio Software until monitoring mode is reached. This is to prevent the radio from running with an inaccurate time base due to an important 32k clock frequency error.
 
@@ -98,9 +99,9 @@ Initialization and configuration is done by the NBU core. The configuration para
 
 In order to prevent the host application domain from going into power down mode (power down mode not supported with FRO32K as clock source), the fwkSrvLowPowerConstraintCallbacks functions structure is registered to the Framework service on host application core from fwk_platform_lowpower.c file, PLATFORM_LowPowerInit() function. The NBU code applies a low power Deep Sleep constraint to the application core. This constraint is released when the NBU firmware has no activity to do and re-applied when a new activity starts.
 
-# Lowpower impact
+## Lowpower impact
 
-### Power impact during active mode:
+#### Power impact during active mode:
 In monitoring mode (this should be 99.9% of the time if temperature does not vary), the FRO32KHz frequency measurements are performed during a Radio activity so it does not increase the active current as the sources clocks are already active. Also, it does not increase the active time as the measurement takes less time than an advertising event or connection event so no impact on power consumption.
 
 The main power impact will be in convergence mode. In this case, measurements/calibrations are done in loop until the monitoring mode is reached (frequency error less than 200ppm). This could happen:
@@ -109,7 +110,7 @@ The main power impact will be in convergence mode. In this case, measurements/ca
 
 When FRO32K frequency needs to be adjusted, the NBU core will wake-up the main power domain and will update the FRO32K trimming register.
 
-### Power impact during low power mode:
+#### Power impact during low power mode:
 The power consumption in low power mode will increase slightly due to running FRO32K compared to XTAL32K. The power consumption of FRO32K typically consumes 350nA while it is only 100nA with XTAL32K. Refer to the product datasheet for the exact numbers.
 
 
