@@ -180,12 +180,14 @@ int PLATFORM_InitNbu(void)
         uint32_t rfmc_ctrl;
         int      cnt = 0;
 
+#if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
         /* Init TRDC for NBU - Allow NBU to access GPIOD*/
         trdc_non_processor_domain_assignment_t domainAssignment;
         TRDC_SetDacGlobalValid(TRDC);
         TRDC_GetDefaultNonProcessorDomainAssignment(&domainAssignment);
         domainAssignment.privilegeAttr = (uint8_t)kTRDC_ForcePrivilege;
         TRDC_SetNonProcessorDomainAssignment(TRDC, (uint8_t)kTRDC_MasterRadioNBU, &domainAssignment);
+#endif
 
         /* Initialize a memory zone of the shared memory that will be used to transmit a message later */
         PLATFORM_SetLowPowerFlag(false);
