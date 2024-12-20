@@ -1,35 +1,66 @@
-#### 7.0.0 for MCUXpresso SDK 24.12.00 release: KW45/KW47/MCX W71/MCX W72/K32W148/RW61x/RT595/RT1060/RT1170 support
+## 7.0.1 revA mcux SDK 25.03.00:
 
-Minor Changes (no impact on application):
+Supported platforms: KW45x, KW47x, MCXW71, MCXW72, K32W1x, RW61x, RT595, RT1060, RT1170
 
-Platform specific:
-  - [RW61X] 
+### Minor Changes (bug fixes):
+#### Services:
+- [SecLib_RNG] AES-CBC evolution:
+    - added `AES_CBC_Decrypt()` API for sw, SSS and mbedtls variants.
+    - Made AES-CBC SW implementation reentrant avoiding use of static storage of AES block.
+    - fixed SSS version to update Initialization Vector within SecLib, simplifying caller's implementation.
+    - modified `AES_128_CBC_Encrypt_And_Pad()` so as to avoid the constraint mandating that 16 byte headroom be available at end of input buffer.
+- [SecLib_RNG] RNG modifications:
+  - `RNG_GetPseudoRandomData()` could return 0 in some error cases where caller expected a negative status.
+      - Explicited RNG error codes
+      - Added argument checks for all APIs and return `gRngBadArguments_d` (-2) when wrong
+      - added checks of RNG initalization and return `gRngNotInitialized_d` (-3) when not done
+      - fixed correcteness of `RNG_GetPrngFunc()` and `RNG_GetPrngContext()` relative to API description.
+      - Added `RNG_DeInit()` function mostly for test and coverage purposes.
+      - Improved RNG description in README.md
+      - Unified the APIs behaviour between mbedtls and non mbedtls variants.
+  - RNG/mbedtls : Prevent `RNG_Init()` from corrupting RNG entropy context if called more than once.
+  - RNG/mbedtls: fixed `RNG_GetTrueRandomNumber()` to return a proper `mbedtls_entropy_func()` result.
+
+#### Platform specific:
+  - [KW47/MCXW72]: Change xtal cload default value from 4 to 8 in order to increase the precision of the link layer timebase in NBU
+
+## 7.0.0 mcux SDK 24.12.00:
+
+Supported platforms: KW45x, KW47x, MCXW71, MCXW72, K32W1x, RW61x, RT595, RT1060, RT1170
+
+### Minor Changes (bug fixes):
+#### Platform specific:
+  - [RW61X]
     - Add MCUX_COMPONENT_middleware.wireless.framework.platform.rng to the platform to fix a warning at generation
     - Retrieve IEEE 64 bits address from OTP memory
-  - [wireless_mcu]
+  - [KW45x, MCXW71x, KW47x, MCXW72x]
     - Ignore the secure bit from RAM addresses when comparing used ram bank in bank retention mechanism
+    - Add `gPlatformNbuDebugGpioDAccessEnabled_d` Compile Macro (enabled by default). Can be used to disable the NBU debug capability using IOs in case Trustzone is enabled (``PLATFORM_InitNbu()` code executed from unsecure world).
+    - Fix in NBU firmware when sending ICS messages gFwkSrvNbuApiRequest_c (from controller_api.h API functions)
 
-Services:
-  - [OTA] 
+#### Services:
+  - [OTA]
     - Add choice name to OtaSupport flash selection in Kconfig
   - [NVM]
     - Add gNvmErasePartitionWhenFlashing_c feature support to gcc toolchain
   - [SecLib_RNG]
     - Misra fixes
 
-#### 7.0.0 revB for MCUXpresso SDK 24.12.00 release: KW45/KW47/MCX W71/MCX W72/K32W148/RW61x/RT595/RT1060/RT1170 support
+## 7.0.0 revB mcux SDK 24.12.00:
 
-Major Changes (User Applications may be impacted):
+Supported platforms: KW45x, KW47x, MCXW71, MCXW72, K32W1x, RW61x, RT595, RT1060, RT1170
+
+### Major Changes (User Applications may be impacted):
 - mcux github support with cmake/Kconfig from sdk3
     user shall now use CmakeLists.txt and Kconfig files from root folder. Compilation should be done using west build command.
     In order to see the Framework Kconfig, use command >west build -t guiconfig
 - Board files and linker scripts moved to examples repository
 
-Bugfixes:
+#### Bugfixes:
 - [platform lowpower]
   - Entering Deep down power mode will no longer call `PLATFORM_EnterPowerDown()`. This API is now called only when going to Power down mode
 
-Platform specific:
+#### Platform specific:
 - [KW47/MCXW72]: Early access release only
     - Deep sleep power mode not fully tested. User can experiment deep sleep and deep down modes using low power reference design applications
     - XTAL32K-less support using FRO32K not tested
@@ -38,21 +69,21 @@ Platform specific:
     - Deep sleep mode is supported. Power down mode is supported in low power reference design applications as experimental only
     - XTAL32K-less support using FRO32K is experimental - FRO32K notifications callback is debug only and should not be used for mass production firmware builds
 
-Minor Changes (no impact on application):
-- Overal folder restructuring for SDK3
+### Minor Changes (no impact on application):
+- Overall folder restructuring for SDK3
   - [Platform]:
     - Rename platform_family from connected_mcu/nbu to wireless_mcu/nbu
     - platform family have now a dedicated fwk_config.h, rpmsg_config.h and SecLib_mbedtls_config.h
   - [Services]
     - Move all framework services in a common directory "services/"
 
-#### 7.0.0 revA: KW45/KW47/MCX W71/MCX W72/K32W148
-Experimental Features only:
+## 7.0.0 revA: KW45/KW47/MCX W71/MCX W72/K32W148
+### Experimental Features only:
   - Power down on application power domain: Some tests have shown some failure. Power consumption higher than Deep Sleep.
       => This feature is not fully supported in this release
   - XTAL32K less board with FRO32K support: Some additional stress tests are under progress.
   - FRO32K notifications callback is for debug only and shall not be used for production. User shall not execute long processing (such as PRINTF) as it is executed in ISR context.
-Main Changes:
+### Main Changes:
 - Cmake/Kconfig support for SDK3.0
 - [Sensors] API renaming:
   - `SENSORS_InitAdc()` renamed to `SENSORS_Init()`
@@ -66,7 +97,7 @@ Main Changes:
     OTA module shall always be initialized on a Permanent image, this change ensures it is the case.
   - `OTA_MakeHeadRoomForNextBlock()`: now erases the OTA partition up to the image total size (rounded to the sector) if known.
 
-Minor changes:
+### Minor changes:
 - [Platform]
   - Updated macro values:
     -kw47: BOARD_32MHZ_XTAL_CDAC_VALUE from 12U to 16U, BOARD_32MHZ_XTAL_ISEL_VALUE from 7U to 11U, BOARD_32KHZ_XTAL_CLOAD_DEFAULT from 8U to 4U,      BOARD_32KHZ_XTAL_COARSE_ADJ_DEFAULT from 1U to 3U
@@ -77,37 +108,38 @@ Minor changes:
 - [platform lowpower]
   - Move RAM layout values in fwk_platform_definition.h and update RAM retention API for KW47/MCXW72
 
-Bugfixes:
+### Bugfixes:
 - [OtaSupport]
   - `OTA_MakeHeadRoomForNextBlock()`: fixed a case where the function could try to erase outside the OTA partition range.
 
-#### 6.2.4: KW45/K32W1x/MCXW71/RX61x SDK 2.16.100
+## 6.2.4: KW45/K32W1x/MCXW71/RX61x SDK 2.16.100
 
 This release does not contain the changes from 6.2.3 release.
 
 This release contains changes from 6.2.2 release.
 
-Main Change:
+### Main Change:
 - armgcc support for Cmake sdk2 support and VS code integration
 
-Minor changes:
+### Minor changes:
 - [NBU]
   - Optimize some critical sections on nbu firmware
 - [Platform]
   - Optimize `PLATFORM_RemoteActiveReq()` execution time.
 
-#### 6.2.3: KW47 EAR1.0
+## 6.2.3: KW47 EAR1.0
 
 Initial Connectivity Framework enablement for KW47 EAR1.0 support.
 
-New features: OpenNBU feature : nbu_ble project is available and modify and build
-Supported features:
+#### New features:
+  - OpenNBU feature : nbu_ble project is available for modification and building
+#### Supported features:
   - Deep sleep mode
-Unsuported features:
+#### Unsuported features:
   - Power down mode
   - FRO32K support (XTAL32K less boards)
 
-Main changes:
+### Main changes:
 - [NBU]
   - LPTMR2 available and TimerManager initialization with Compile Macro: `gPlatformUseLptmr_d`
   - NBU can now have access to GPIOD
@@ -121,14 +153,14 @@ Main changes:
     - `RNG_SetSeed()` and `RNG_SetExternalSeed()` return status code.
   - Optimized Linear Congruential modulus computation to reduce cycle count.
 
-Minor changes:
+### Minor changes:
 - [NVM]
   - Optimize `NvIsRecordErased()` procedure for faster garbage collection
   - MISRA fix : Remove externs and weaks from NVM module - Make RNG and timer manager dependencies conditional
 - [Platform]
   - Allow the debugger to wakeup the KW47/MCXW72 target
 
-#### 6.2.2: KW45/K32W1 MR6 SDK 2.16.000
+## 6.2.2: KW45/K32W1 MR6 SDK 2.16.000
 
 Experimental Features only:
   - Power down on application power domain : Some tests have shown some failure. Power consumption higher than Deep Sleep.
@@ -136,7 +168,7 @@ Experimental Features only:
   - XTAL32K less board with FRO32K support : Some additional stress tests are under progress.
   - FRO32K notifications callback is for debug only and shall not be used for production. User shall not execute long processing (such as PRINTF) as it is executed in ISR context.
 
-##### Changes
+### Changes
 - [Board] Support for freedom board FRDM-MCX W7X
 - [HWparams]
   - Support for location of HWParameters and Application Factory Data IFR in IFR1
@@ -149,7 +181,7 @@ Experimental Features only:
 - [NVM] fix Nv_Shutdown() API
 - [SecLib] New feature AES MMO supported for Zigbee
 
-#### 6.2.2: RW61x RFP4 SDK 2.16.000
+## 6.2.2: RW61x RFP4 SDK 2.16.000
 
 - [Platform] Support Zigbee stack
 - [OTA] Add support for RW61x OTA with remap feature.
@@ -160,13 +192,13 @@ Experimental Features only:
 - [SecLib] New feature AES MMO supported for Zigbee
 - [Misra] various fixes
 
-#### 6.2.1: KW45/K32W1 MR5 SDK 2.15.000
+## 6.2.1: KW45/K32W1 MR5 SDK 2.15.000
 
 Experimental Features only:
   - Power down on application power domain : Some tests have shown some failure. This feature is not fully supported in this release
   - XTAL32K less board with FRO32K support : Some additional stress tests are under progress. Timing variation of the timebase are being analyzed
 
-##### Major changes
+### Major changes
 - [RNG]: API updates
   - New compile flag to keep deprecated API: FWK_RNG_DEPRECATED_API
   - change return error code to int type for RNG_Init(), RNG_ReInit()
@@ -186,7 +218,7 @@ Experimental Features only:
 - [gcc linker]
   - Exclude k32w1_nbu_ble_15_4_dyn.bin from .data section
 
-###### Minor Changes
+### Minor Changes
 - [Platform]
     - PLATFORM_GetTimeStamp(0 has an important fix for reading the Timestamp in TSTMR0
     - New API PLATFORM_TerminateCrypto(), PLATFORM_ResetCrypto() called from SecLib for lowpower exit
@@ -237,7 +269,7 @@ Experimental Features only:
 - [Sensors]
     - fix: PLATFORM_GetTemperatureValue() shall have NBU started to send temperature to NBU
 
-#### 6.2.1: RW61x RFP3
+## 6.2.1: RW61x RFP3
 - [NVS]
   - Add support of NVS and Settings in framework
 - [MISRA] fixes
@@ -246,9 +278,9 @@ Experimental Features only:
 - [OTA]
   - Fix OTA partition overflow during OTA stop and resume transfer
 
-#### 6.2.0: RT1060/RT1170 SDK2.15 Major
+## 6.2.0: RT1060/RT1170 SDK2.15 Major
 
-#### 6.1.8: KW45/K32W1 MR4
+## 6.1.8: KW45/K32W1 MR4
 
 - [BOARD PLATFORM]
   - Move gBoardUseFro32k_d to board_platform.h file
@@ -288,7 +320,7 @@ Experimental Features only:
     - fix Null pointer harfault when MEM_STATISTICS_INTERNAL enable
     - Fix MemReinitBank() on wakeup from lowpower when Ecc banks are turned off
 
-#### 6.1.7: KW45/K32W1 MR3
+## 6.1.7: KW45/K32W1 MR3
 
 - [OTA]
   - New API OTA_SetNewImageFlagWithOffset()
@@ -361,7 +393,7 @@ Experimental Features only:
   - fix when gFsciRxAck_c enabled
   - integrate new reset APIs
 
-#### 6.1.4: RW610/RW612 RFP1
+## 6.1.4: RW610/RW612 RFP1
 
 - [Low Power]
   - Added support of low power for OpenThread stack.
@@ -373,7 +405,7 @@ Experimental Features only:
   - Created a new utilities module for FreeRTOS: fwk_freertos_utils.c/h.
   - Implemented a tick compensation mechanism to be used in FreeRTOS idle hook, likely around flash operations. This mechanism aims to estimate the number of ticks missed by FreeRTOS in case the interrupts are masked for a long time.
 
-#### 6.1.4: KW45/K32W1 MR2
+## 6.1.4: KW45/K32W1 MR2
 
 - [Low power]
   - Powerdown mode tested and enabled on Low Power Reference Design applications
@@ -442,7 +474,7 @@ Experimental Features only:
 - [Debug]
   - Added MACROs for performance measurement using DWT: DBG_PERF_MEAS
 
-#### 6.1.3 KW45 MR1 QP1
+## 6.1.3 KW45 MR1 QP1
 
 - [Initialization] Delay the switch to XTAL32K source clock until the BLE host stack is initialized
 - [lowpower] NBU wakeup from lowpower: configuration can now be programmed with BOARD_NBU_WAKEUP_DELAY_LPO_CYCLE, BOARD_RADIO_DOMAIN_WAKE_UP_DELAY in board.h file
@@ -453,7 +485,7 @@ Experimental Features only:
 - [XTAL 32K trim] XTAL 32K configuration can be tuned in board.h file with BOARD_32MHZ_XTAL_TRIM_DEFAULT, BOARD_32KHZ_XTAL_CLOAD_DEFAULT, BOARD_32KHZ_XTAL_COARSE_ADJ_DEFAULT
 - [MAC address] Add OUI field in PLATFORM_GenerateNewBDAddr() when using Unique Device Id
 
-#### 6.1.2: RW610/RW612 PRC1
+## 6.1.2: RW610/RW612 PRC1
 
 - [Low Power]
   - Updates after SDK Power Manager files renaming.
@@ -475,7 +507,7 @@ Experimental Features only:
 - [linker script]
   - Fixed wrong assert.
 
-#### 6.1.1: KW45/K32W1 MR1
+## 6.1.1: KW45/K32W1 MR1
 
 - [platform] Use new FLib_MemSet32Aligned() to write in ECC RAM bank to force ECC calculation in the MEM_ReinitRamBank() function
 - [FunctionLib] Implement new API to set a word aligned
@@ -492,7 +524,7 @@ Experimental Features only:
 - [NVM] Add an API to know if there is a pending operation in the queue
 - [FSCI] Fix wrong error case handling in FSCI_Monitor()
 
-#### 6.1.0: KW45/K32W1 RFP
+## 6.1.0: KW45/K32W1 RFP
 
 - [LowPower] Do not call PLATFORM_StopWakeUpTimer() in PWR_EnterLowPower() if PLATFORM_StartWakeUpTimer() was not previously called
 - [boards] Add the possibility to wakeup on UART 0 even if it is not the default UART
@@ -501,4 +533,4 @@ Experimental Features only:
 - [linker script] update SMU2 shared memory region layout with NBU: increase sqram_btblebuf_size to support 24 connections. Shared memory region moved to the end
 - [SecLib] SecLib_DeriveBluetoothSKD() API update to support if  EdgeLock key shall be regenerated
 
-#### 6.0.11: KW45/K32W1 PRC3.1
+## 6.0.11: KW45/K32W1 PRC3.1
