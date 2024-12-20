@@ -408,14 +408,14 @@ int RNG_GetPseudoRandomData(uint8_t *pOut, uint8_t outBytes, uint8_t *pSeed)
                 pOut[i] = ((uint8_t *)prngBuffer)[i];
             }
         }
+        ret = (int)outputBytes;
 #else /* gRngUseSecureSubSystem_d */
         if (outputBytes > mPRNG_NoOfBytes_c)
         {
             outputBytes = mPRNG_NoOfBytes_c;
         }
-        outputBytes = (uint16_t)RNG_Specific_GetRandomData(pOut, (uint16_t)outputBytes);
+        ret = RNG_Specific_GetRandomData(pOut, (uint16_t)outputBytes);
 #endif
-        ret = (int)outputBytes;
 
     } while (false);
     return ret;
