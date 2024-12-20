@@ -6,8 +6,10 @@ Platform specific:
   - [RW61X] 
     - Add MCUX_COMPONENT_middleware.wireless.framework.platform.rng to the platform to fix a warning at generation
     - Retrieve IEEE 64 bits address from OTP memory
-  - [wireless_mcu]
+  - [KW45x, MCXW71x, KW47x, MCXW72x]
     - Ignore the secure bit from RAM addresses when comparing used ram bank in bank retention mechanism
+    - Add `gPlatformNbuDebugGpioDAccessEnabled_d` Compile Macro (enabled by default). Can be used to disable the NBU debug capability using IOs in case Trustzone is enabled (``PLATFORM_InitNbu()` code executed from unsecure world).
+    - Fix in NBU firmware when sending ICS messages gFwkSrvNbuApiRequest_c (from controller_api.h API functions)
 
 Services:
   - [OTA] 
