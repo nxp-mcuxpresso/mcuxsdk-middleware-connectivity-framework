@@ -21,6 +21,14 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
         ../include
         DEVICE_IDS ${RW61x_FAMILY}
     )
+
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.file_system)
+        mcux_add_source(SOURCES
+            fwk_platform_flash.c
+            fwk_platform_flash.h
+            DEVICE_IDS ${RW61x_FAMILY}
+        )
+    endif()
 endif()
 
 mcux_add_macro(
