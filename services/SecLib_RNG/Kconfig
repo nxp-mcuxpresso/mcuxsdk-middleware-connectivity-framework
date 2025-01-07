@@ -26,6 +26,8 @@ if MCUX_COMPONENT_middleware.wireless.framework.seclib_rng
         config MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls
             bool "Use MbedTLS"
             select MCUX_COMPONENT_middleware.mbedtls
+        config  MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.custom
+            bool "Use custom Seclib_RNG"
     endchoice
 
 endif
