@@ -270,6 +270,7 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
             break;
         }
 #endif
+        status = kStatus_OTA_Flash_Success;
     } while (false);
     return status;
 }
@@ -312,6 +313,7 @@ static ota_flash_status_t InternalFlash_FlushWriteBuffer(void)
         }
 #endif
         mWriteBuffLevel = 0U;
+        status          = kStatus_OTA_Flash_Success;
     } while (false);
 #else
     status = kStatus_OTA_Flash_Success;
