@@ -11,13 +11,13 @@ The FSCI module executes either in the context of the Serial Manager task or own
 ## FSCI packet structure
 The FSCI module sends and receives messages as shown in the figure below. This structure is not specific to a serial interface and is designed to offer the best communication reliability. The Black Box device expects messages in little-endian format. It also responds with messages in little-endian format.
 
-![](./pics/FSCI_packet_structure.PNG "MCUXpresso SDK layers")
+![](./pics/FSCI_packet_structure.PNG)
 
 Below is an illustration of the FSCI packet structure when a virtual interface is used instead :
 
-![](./pics/FSCI_packet_structure_virtual_interface.PNG "toto")
+![](./pics/FSCI_packet_structure_virtual_interface.PNG)
 
-![](./pics/FSCI_packet_structure_fields.PNG "tutu")
+![](./pics/FSCI_packet_structure_fields.PNG)
 
 >*NOTE* : When virtual interfaces are used, the first checksum is decremented with the ID of the interface. The second checksum is used for error detection.
 
