@@ -7289,7 +7289,10 @@ void NvSetCriticalSection(void)
 #if (gNvStorageIncluded_d && gNvEnableCriticalSection_c)
     OSA_SR_ALLOC();
     OSA_ENTER_CRITICAL();
-    ++mNvCriticalSectionFlag;
+    if (mNvCriticalSectionFlag < (uint8_t)UINT8_MAX)
+    {
+        ++mNvCriticalSectionFlag;
+    }
     OSA_EXIT_CRITICAL();
 #endif
 }
