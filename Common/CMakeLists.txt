@@ -13,6 +13,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework)
         SOURCES
                 EmbeddedTypes.h
                 fwk_hal_macros.h
+                fwk_errno.h
                 ../services/DBG/fwk_debug.h
     )
 endif()

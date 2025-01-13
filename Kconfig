@@ -27,6 +27,7 @@ rsource "services/FSCI/Kconfig"
 rsource "services/SFC/Kconfig"
 rsource "services/FileSystem/Kconfig"
 rsource "services/OTW/Kconfig"
+rsource "services/WorkQ/Kconfig"
 
 rsource "zephyr/Kconfig"
 

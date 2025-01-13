@@ -20,4 +20,5 @@ mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/FSCI)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/SFC)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/FileSystem)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/OTW)
+mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/WorkQ)
 
