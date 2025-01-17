@@ -7,6 +7,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.platform
     bool "Platform"
     default y
     depends on MCUX_HW_DEVICE_MCXW716C || MCUX_HW_DEVICE_MCXW716A \
+        || MCUX_HW_DEVICE_MCXW236B || MCUX_HW_DEVICE_MCXW235B \
         || MCUX_HW_DEVICE_KW45B41Z52 || MCUX_HW_DEVICE_KW45B41Z53 \
         || MCUX_HW_DEVICE_KW45B41Z82 || MCUX_HW_DEVICE_KW45B41Z83 \
         || MCUX_HW_DEVICE_K32W1480 \
@@ -84,6 +85,15 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     depends on MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_MCXW727C
     depends on MCUX_HW_DEVICE_KW47B42ZB7_CORE_ID_cm33_core1 || MCUX_HW_DEVICE_MCXW727C_CORE_ID_cm33_core1
+
+config MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
+    bool "MCXW23x family"
+    select MCUX_COMPONENT_component.timer_manager
+    select CONFIG_MCUX_COMPONENT_component.ctimer_adapter
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
+    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.flash_adapter
+    depends on MCUX_HW_DEVICE_MCXW236B || MCUX_HW_DEVICE_MCXW235B
 
 config MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x
     bool "RW61x family"
@@ -196,7 +206,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     help
       Random Number Generator platform APIs.
 
@@ -281,7 +292,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.crypto
     bool "Crypto"
     depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
-                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     help
       SecLib SSS crypto APIs.
 

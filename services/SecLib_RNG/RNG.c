@@ -792,11 +792,7 @@ static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
     int ret;
     do
     {
-        if ((TRNG0->MCTL & TRNG_MCTL_ENT_VAL_MASK) == 0U)
-        {
-            ret = gRngInternalError_d;
-            break;
-        }
+        /* Entropy valid wait loop part of function below, no need to check here. */
         if ((uint8_t)TRNG_GetRandomData(TRNG0, pOut, (size_t)outBytes) != 0U)
         {
             ret = gRngInternalError_d;
