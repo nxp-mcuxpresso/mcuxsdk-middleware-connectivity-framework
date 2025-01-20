@@ -18,6 +18,8 @@
 #include "fwk_debug.h"
 #include "fwk_hal_macros.h"
 #include "fwk_debug.h"
+#include "ll_types.h"
+#include "controller_api_ll.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -276,8 +278,6 @@ void SFC_Enable(bool enable)
     }
 }
 
-extern uint32_t LL_SCHED_GetSleepTime(void);
-
 void SFC_Process(void)
 {
     uint64_t lastCalibrationTimestampDiffInQuarterUs;
@@ -286,7 +286,7 @@ void SFC_Process(void)
     /* Check the time before next BLE LL event
      * If it returns 0xFFFFFFFFU, it means the LL has nothing to do, meaning no radio event is scheduled
      * We can allow the host core to go to power gated modes */
-    if (LL_SCHED_GetSleepTime() == 0xFFFFFFFFU)
+    if (LL_API_SCHED_GetSleepTime() == 0xFFFFFFFFU)
     {
         SFC_Enable(false);
     }
