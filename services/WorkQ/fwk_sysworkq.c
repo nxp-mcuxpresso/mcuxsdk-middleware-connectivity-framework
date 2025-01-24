@@ -23,11 +23,7 @@
 #endif
 
 #ifndef CONFIG_FWK_SYSWORKQ_PRIO
-#if USE_RTOS
-#define CONFIG_FWK_SYSWORKQ_PRIO PRIORITY_RTOS_TO_OSA(2U)
-#else
-#define CONFIG_FWK_SYSWORKQ_PRIO (OSA_TASK_PRIORITY_MIN - 2U)
-#endif
+#define CONFIG_FWK_SYSWORKQ_PRIO 4U
 #endif
 
 /* -------------------------------------------------------------------------- */

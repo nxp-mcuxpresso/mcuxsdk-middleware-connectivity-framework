@@ -63,7 +63,7 @@ static inline void flag_clear(uint32_t *flags, uint32_t mask)
     *flags &= ~mask;
 }
 
-static inline int fwk_workq_lock(void)
+static inline uint32_t fwk_workq_lock(void)
 {
     uint32_t intMask = 0U;
 
@@ -110,10 +110,11 @@ static void workq_thread(void *workq)
             }
         }
 
-#if !USE_RTOS
-        /* baremetal support */
-        break;
-#endif
+        if (gUseRtos_c == 0U)
+        {
+            /* baremetal support */
+            break;
+        }
     }
 }
 
