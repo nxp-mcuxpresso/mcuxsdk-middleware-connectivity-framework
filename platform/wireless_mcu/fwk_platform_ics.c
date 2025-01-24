@@ -1,9 +1,7 @@
 /*
- * Copyright 2021-2024 NXP
- * All rights reserved.
- *
- *
+ * Copyright 2021-2025 NXP
  * SPDX-License-Identifier: BSD-3-Clause
+ *
  */
 
 /* -------------------------------------------------------------------------- */
@@ -11,11 +9,19 @@
 /* -------------------------------------------------------------------------- */
 
 #include "fsl_common.h"
+#include "fwk_config.h"
 #include "fwk_platform_ics.h"
 #include "fwk_platform.h"
 #include "FunctionLib.h"
 #include "fsl_adapter_rpmsg.h"
 #include "fwk_debug.h"
+
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+#include "fwk_workq.h"
+#include "fsl_component_generic_list.h"
+#include "fsl_component_mem_manager.h"
+#include "fwk_hal_macros.h"
+#endif
 
 #if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
 #include "fsl_debug_console.h"
@@ -30,6 +36,25 @@
 
 /* API wait loop counter */
 #define MAX_WAIT_NBU_API_RESPONSE_LOOPS 100000000U
+
+/* -------------------------------------------------------------------------- */
+/*                                Private types                               */
+/* -------------------------------------------------------------------------- */
+
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+typedef struct
+{
+    list_element_t node;
+    uint32_t       len;
+    uint8_t       *data;
+} rx_data_t;
+
+typedef struct
+{
+    fwk_work_t   work;
+    list_label_t pending;
+} rx_work_t;
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -51,6 +76,10 @@ static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t l
 static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len);
+
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+static void PLATFORM_RxWorkHandler(fwk_work_t *work);
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
@@ -103,6 +132,13 @@ static void (*PLATFORM_RxCallbackService[gFwkSrvNbu2HostLast_c - gFwkSrvNbu2Host
     PLATFORM_RxNbuRequestRngSeedService,
     PLATFORM_RxNbuRequestTemperature,
 };
+
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+static rx_work_t rx_work = {
+    .work.handler = PLATFORM_RxWorkHandler,
+};
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -123,11 +159,18 @@ int PLATFORM_FwkSrvInit(void)
             result = 1;
             break;
         }
+
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+        LIST_Init(&rx_work.pending, 0U);
+        (void)WORKQ_InitSysWorkQ();
+#endif
+
         if (kStatus_HAL_RpmsgSuccess != HAL_RpmsgInit((hal_rpmsg_handle_t)fwkRpmsgHandle, &rpmsg_config))
         {
             result = -2;
             break;
         }
+
         /* Flag initialization on module */
         mFwkSrvInit = TRUE;
     } while (false);
@@ -429,6 +472,25 @@ void PLATFORM_RegisterTemperatureRequestCb(nbu_security_event_callback_t cb)
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
 
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+static void PLATFORM_RxWorkHandler(fwk_work_t *work)
+{
+    list_element_t *node;
+    rx_data_t      *rx_data;
+    (void)work;
+
+    node = LIST_RemoveHead(&rx_work.pending);
+
+    while (node != NULL)
+    {
+        rx_data = CONTAINER_OF(node, rx_data_t, node);
+        PLATFORM_RxCallbackService[rx_data->data[0] - 1U](rx_data->data, rx_data->len);
+        (void)MEM_BufferFree(rx_data);
+        node = LIST_RemoveHead(&rx_work.pending);
+    }
+}
+#endif
+
 static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t *data, uint32_t len)
 {
     hal_rpmsg_return_status_t res = kStatus_HAL_RL_RELEASE;
@@ -437,7 +499,46 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
 
     if (FwkSrv_MsgTypeInExpectedSet(msg_type))
     {
-        PLATFORM_RxCallbackService[msg_type - 1U](data, len);
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+        bool process_now = false;
+        do
+        {
+            if ((msg_type != (uint8_t)gFwkSrvNbuVersionIndication_c) &&
+                (msg_type != (uint8_t)gFwkSrvNbuApiIndication_c))
+            {
+                rx_data_t *rx_data = MEM_BufferAlloc(sizeof(rx_data_t) + len);
+
+                if (rx_data == NULL)
+                {
+                    /* allocation failed - process in the ISR to avoid losing the data
+                     * TODO: use the error callback mechanism to forward the error to the application */
+                    process_now = true;
+                    break;
+                }
+
+                rx_data->data = (uint8_t *)rx_data + sizeof(rx_data_t);
+                rx_data->len  = len;
+                (void)memcpy(rx_data->data, data, len);
+                (void)LIST_AddTail(&rx_work.pending, &rx_data->node);
+                if (WORKQ_Submit(&rx_work.work) < 0)
+                {
+                    process_now = true;
+                    break;
+                }
+            }
+            else
+            {
+                process_now = true;
+                break;
+            }
+        } while (false);
+
+        if (process_now == true)
+#endif
+        {
+            /* some messages must be serviced in the ISR */
+            PLATFORM_RxCallbackService[msg_type - 1U](data, len);
+        }
     }
     return res;
 }
