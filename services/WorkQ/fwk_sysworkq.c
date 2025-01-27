@@ -31,6 +31,7 @@
 /* -------------------------------------------------------------------------- */
 
 static fwk_workq_t sysworkq;
+FWK_WORKQ_THREAD_DEFINE(sysworkq_thread, CONFIG_FWK_SYSWORKQ_PRIO, CONFIG_FWK_SYSWORKQ_STACK_SIZE);
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -38,7 +39,7 @@ static fwk_workq_t sysworkq;
 
 int WORKQ_InitSysWorkQ(void)
 {
-    return WORKQ_Start(&sysworkq, CONFIG_FWK_SYSWORKQ_STACK_SIZE, CONFIG_FWK_SYSWORKQ_PRIO);
+    return WORKQ_Start(&sysworkq, FWK_WORKQ_THREAD(sysworkq_thread));
 }
 
 int WORKQ_Submit(fwk_work_t *work)

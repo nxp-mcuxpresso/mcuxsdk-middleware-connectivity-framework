@@ -12,8 +12,10 @@ A workqueue is composed by the following:
 * A **thread** that processes the work items added to the queue.
 * Information used internally by the service.
 
-A workqueue is defined using the variable type `fwk_workq_t`. The workqueue must be started before being able to submit
-work items to it, this is done by calling `WORKQ_Start()`.
+A workqueue is defined using the variable type `fwk_workq_t`. The workqueue thread must be defined by the user using
+the `FWK_WORKQ_THREAD_DEFINE()` macro. The workqueue must be started before being able to submit work items to it, this
+is done by calling `WORKQ_Start()`. The macro `FWK_WORKQ_THREAD()` can be used in second parameter to `WORKQ_Start()`
+to provide a pointer to the workqueue thread definition.
 
 ## Work items
 

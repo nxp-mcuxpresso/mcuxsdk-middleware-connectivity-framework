@@ -23,8 +23,26 @@
 /* -------------------------------------------------------------------------- */
 
 /*!
- * \brief Defines and initializes a work
+ * \brief Defines a workqueue thread
  *
+ * OSA API forces the user to define a thread handler, here we define a dummy
+ * thread handler which will be replaced by the internal thread handler from
+ * the workqueue service.
+ */
+#define FWK_WORKQ_THREAD_DEFINE(name, prio, stackSize) \
+    static void name(void *workq)                      \
+    {                                                  \
+        (void)workq;                                   \
+    }                                                  \
+    static OSA_TASK_DEFINE(name, prio, 1, stackSize, false)
+
+/*!
+ * \brief Access a workqueue thread definition
+ */
+#define FWK_WORKQ_THREAD(name) OSA_TASK(name)
+
+/*!
+ * \brief Defines and initializes a work
  */
 #define FWK_WORK_DEFINE(work, work_handler) \
     fwk_work_t work = {                     \
@@ -65,14 +83,13 @@ struct fwk_work_t
  * This function should not be called twice for the same queue.
  *
  * \param[in] queue pointer to the queue.
- * \param[in] stackSize size of the stack of the work thread, in bytes.
- * \param[in] prio priority of the work thread.
+ * \param[in] thread_def pointer to the thread definition provided by FWK_WORKQ_THREAD.
  * \return int 0 if success
  * \return int 1 if the queue was already started (no change done)
  * \return int -EINVAL if incorrect parameters.
  * \return int -ENOMEM if memory allocation failed.
  */
-int WORKQ_Start(fwk_workq_t *queue, uint32_t stackSize, uint32_t prio);
+int WORKQ_Start(fwk_workq_t *queue, const osa_task_def_t *thread_def);
 
 /*!
  * \brief Submit a work item to a work queue.

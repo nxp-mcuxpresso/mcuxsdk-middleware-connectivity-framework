@@ -122,14 +122,13 @@ static void workq_thread(void *workq)
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
 
-int WORKQ_Start(fwk_workq_t *queue, uint32_t stackSize, uint32_t prio)
+int WORKQ_Start(fwk_workq_t *queue, const osa_task_def_t *thread_def)
 {
     int ret = 0;
-    OSA_TASK_DEFINE(workq_thread, prio, 1, stackSize, false);
 
     do
     {
-        if ((queue == NULL) || (stackSize == 0U))
+        if ((queue == NULL) || (thread_def->stacksize == 0U))
         {
             ret = -EINVAL;
             break;
@@ -141,6 +140,11 @@ int WORKQ_Start(fwk_workq_t *queue, uint32_t stackSize, uint32_t prio)
             break;
         }
 
+        /* the OSA thread definition are const so make a local copy in RAM to change the thread handler */
+        osa_task_def_t thread_local;
+        (void)memcpy(&thread_local, thread_def, sizeof(osa_task_def_t));
+        thread_local.pthread = workq_thread;
+
         LIST_Init(&queue->pending, 0U);
 
         if (OSA_EventCreate(queue->notify, 1U) != KOSA_StatusSuccess)
@@ -149,7 +153,7 @@ int WORKQ_Start(fwk_workq_t *queue, uint32_t stackSize, uint32_t prio)
             break;
         }
 
-        if (OSA_TaskCreate(queue->thread, OSA_TASK(workq_thread), queue) != KOSA_StatusSuccess)
+        if (OSA_TaskCreate(queue->thread, &thread_local, queue) != KOSA_StatusSuccess)
         {
             (void)OSA_EventDestroy(queue->notify);
             ret = -ENOMEM;
