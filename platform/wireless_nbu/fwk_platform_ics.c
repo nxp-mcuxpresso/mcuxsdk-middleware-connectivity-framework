@@ -41,6 +41,18 @@ static int                       PLATFORM_FwkSrvSendPacket(eFwkSrvMsgType msg_ty
 static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t *data, uint32_t len);
 static bool                      FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type);
 
+static void PLATFORM_RxNbuVersionRequest(uint8_t *data, uint32_t len);
+static void PLATFORM_RxXtal32MTrimIndication(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuApiRequest(uint8_t *data, uint32_t len);
+static void PLATFORM_RxTemperatureIndication(uint8_t *data, uint32_t len);
+static void PLATFORM_RxHostChipRevision(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuSecureModeRequest(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuWakeUpDelayLpoCycle(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuFrequencyConstraint(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len);
+static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len);
+static void PLATFORM_RxRngReseed(uint8_t *data, uint32_t len);
+
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
@@ -56,6 +68,20 @@ __attribute__((weak)) void RNG_SetExternalSeed(uint8_t *external_seed)
 {
     (void)external_seed; /* Stub of the RNG_SetExternalSeed() function */
 }
+
+static void (*PLATFORM_RxCallbackService[gFwkSrvHost2NbuLast_c - gFwkSrvHost2NbuFirst_c - 1U])(uint8_t *data,
+                                                                                               uint32_t len) = {
+    PLATFORM_RxNbuVersionRequest,
+    PLATFORM_RxXtal32MTrimIndication,
+    PLATFORM_RxNbuApiRequest,
+    PLATFORM_RxTemperatureIndication,
+    PLATFORM_RxHostChipRevision,
+    PLATFORM_RxNbuSecureModeRequest,
+    PLATFORM_RxNbuWakeUpDelayLpoCycle,
+    PLATFORM_RxNbuFrequencyConstraint,
+    PLATFORM_RxNbuSfcConfig,
+    PLATFORM_RxEnableFroNotification,
+    PLATFORM_RxRngReseed};
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -209,104 +235,14 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
 {
     hal_rpmsg_return_status_t res = kStatus_HAL_RL_RELEASE;
     uint8_t                   msg_type;
-    uint32_t                  data_len;
 
     msg_type = data[0];
-    data_len = len - 1U;
 
-    PWR_DBG_LOG("fwk Rcv Pkt %x type=%d sz=%d", data, msg_type, data_len);
+    PWR_DBG_LOG("fwk Rcv Pkt %x type=%d sz=%d", data, msg_type, len - 1U);
 
     if (FwkSrv_MsgTypeInExpectedSet(msg_type))
     {
-        switch (msg_type)
-        {
-            case gFwkSrvNbuVersionRequest_c:
-                PLATFORM_SendNbuVersionIndication();
-                break;
-
-            case gFwkSrvXtal32MTrimIndication_c:
-                PLATFORM_SetXtal32MhzTrim(data[1]);
-                break;
-
-            case gFwkSrvNbuApiRequest_c:
-            {
-                uint32_t nb_returns;
-                uint8_t  ind[1U + NBU_API_MAX_RETURN_PARAM_LENGTH]; /* rpmsg status + API status + API outputs */
-                uint16_t ind_len;
-
-                /* execute the API */
-                nb_returns = Controller_HandleNbuApiReq(&ind[1], data + 1U, len - 1U);
-                assert((nb_returns > 0U) && (nb_returns <= NBU_API_MAX_RETURN_PARAM_LENGTH));
-
-                /* indication message: 1 byte rpmsg status followed by 4 bytes api status */
-                if (nb_returns != 0)
-                {
-                    ind[0U] = 1U; // rpmsg success, API could still fail
-                    ind_len = 1U + nb_returns;
-                }
-                else
-                {
-                    ind[0U] = 0U; // rpmsg failure: API does not exist etc.
-                    ind_len = 1U;
-                }
-                PLATFORM_FwkSrvSendPacket(gFwkSrvNbuApiIndication_c, (void *)&ind[0U], ind_len);
-            }
-            break;
-
-            case gFwkTemperatureIndication_c:
-            {
-                /* data[0] is the API id */
-                /* data[1-4] is the temperature as signed 32 bits - little endian */
-                int32_t temperature = *((int32_t *)&data[1]);
-                PLATFORM_SaveTemperatureValue(temperature);
-            }
-            break;
-
-            case gFwkSrvHostChipRevision_c:
-                PLATFORM_SetChipRevision(data[1]);
-                break;
-
-            case gFwkSrvNbuSecureModeRequest_c:
-            {
-#if defined(DEBUG)
-                bool rmpsg_status;
-
-                /* execute the API */
-                rmpsg_status = Controller_EnableSecurityFeature();
-                assert(rmpsg_status);
-                (void)rmpsg_status;
-#else  /*defined(DEBUG)*/
-                (void)Controller_EnableSecurityFeature();
-#endif /*defined(DEBUG)*/
-            }
-            break;
-            case gFwkSrvNbuWakeupDelayLpoCycle_c:
-                PLATFORM_SetWakeupDelay(data[1]);
-                break;
-
-            case gFwkSrvNbuUpdateFrequencyConstraintFromHost:
-                PLATFORM_SetFrequencyConstraintFromHost(data[1]);
-                break;
-
-            case gFwkSrvNbuSetRfSfcConfig_c:
-            {
-                sfc_config_t sfc_config;
-                uint32_t     size_to_copy = (data_len < sizeof(sfc_config_t)) ? data_len : sizeof(sfc_config_t);
-
-                memset(&sfc_config, 0U, sizeof(sfc_config_t));
-                memcpy(&sfc_config, (sfc_config_t *)&data[1], size_to_copy);
-                SFC_UpdateConfig((const sfc_config_t *)&sfc_config);
-            }
-            break;
-            case gFwkSrvFroEnableNotification_c:
-                SFC_EnableNotification(data[1]);
-                break;
-            case gFwkSrvRngReseed_c:
-                RNG_SetExternalSeed(&data[1]);
-                break;
-            default:
-                break;
-        }
+        PLATFORM_RxCallbackService[msg_type - gFwkSrvHost2NbuFirst_c - 1U](data, len);
     }
     return res;
 }
@@ -314,4 +250,99 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
 static bool FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type)
 {
     return (msg_type > gFwkSrvHost2NbuFirst_c && msg_type < gFwkSrvHost2NbuLast_c);
+}
+
+static void PLATFORM_RxNbuVersionRequest(uint8_t *data, uint32_t len)
+{
+    (void)data;
+    (void)len;
+    (void)PLATFORM_SendNbuVersionIndication();
+}
+
+static void PLATFORM_RxXtal32MTrimIndication(uint8_t *data, uint32_t len)
+{
+    PLATFORM_SetXtal32MhzTrim(data[1]);
+    (void)len;
+}
+
+static void PLATFORM_RxNbuApiRequest(uint8_t *data, uint32_t len)
+{
+    uint32_t nb_returns;
+    uint8_t  ind[1U + NBU_API_MAX_RETURN_PARAM_LENGTH]; /* rpmsg status + API status + API outputs */
+    uint16_t ind_len;
+
+    /* execute the API */
+    nb_returns = Controller_HandleNbuApiReq(&ind[1], data + 1U, len - 1U);
+    assert((nb_returns > 0U) && (nb_returns <= NBU_API_MAX_RETURN_PARAM_LENGTH));
+
+    /* indication message: 1 byte rpmsg status followed by 4 bytes api status */
+    if (nb_returns != 0)
+    {
+        ind[0U] = 1U; // rpmsg success, API could still fail
+        ind_len = 1U + nb_returns;
+    }
+    else
+    {
+        ind[0U] = 0U; // rpmsg failure: API does not exist etc.
+        ind_len = 1U;
+    }
+    (void)PLATFORM_FwkSrvSendPacket(gFwkSrvNbuApiIndication_c, (void *)&ind[0U], ind_len);
+}
+
+static void PLATFORM_RxTemperatureIndication(uint8_t *data, uint32_t len)
+{
+    /* data[0] is the API id */
+    /* data[1-4] is the temperature as signed 32 bits - little endian */
+    int32_t temperature = *((int32_t *)&data[1]);
+    PLATFORM_SaveTemperatureValue(temperature);
+}
+
+static void PLATFORM_RxHostChipRevision(uint8_t *data, uint32_t len)
+{
+    PLATFORM_SetChipRevision(data[1]);
+}
+
+static void PLATFORM_RxNbuSecureModeRequest(uint8_t *data, uint32_t len)
+{
+#if defined(DEBUG)
+    bool rmpsg_status;
+
+    /* execute the API */
+    rmpsg_status = Controller_EnableSecurityFeature();
+    assert(rmpsg_status);
+    (void)rmpsg_status;
+#else  /*defined(DEBUG)*/
+    (void)Controller_EnableSecurityFeature();
+#endif /*defined(DEBUG)*/
+}
+
+static void PLATFORM_RxNbuWakeUpDelayLpoCycle(uint8_t *data, uint32_t len)
+{
+    PLATFORM_SetWakeupDelay(data[1]);
+}
+
+static void PLATFORM_RxNbuFrequencyConstraint(uint8_t *data, uint32_t len)
+{
+    PLATFORM_SetFrequencyConstraintFromHost(data[1]);
+}
+
+static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
+{
+    sfc_config_t sfc_config;
+    uint32_t     data_len     = len - 1U;
+    uint32_t     size_to_copy = (data_len < sizeof(sfc_config_t)) ? data_len : sizeof(sfc_config_t);
+
+    memset(&sfc_config, 0U, sizeof(sfc_config_t));
+    memcpy(&sfc_config, (sfc_config_t *)&data[1], size_to_copy);
+    SFC_UpdateConfig((const sfc_config_t *)&sfc_config);
+}
+
+static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len)
+{
+    SFC_EnableNotification(data[1]);
+}
+
+static void PLATFORM_RxRngReseed(uint8_t *data, uint32_t len)
+{
+    RNG_SetExternalSeed(&data[1]);
 }
