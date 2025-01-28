@@ -19,7 +19,7 @@
 /* -------------------------------------------------------------------------- */
 
 #ifndef CONFIG_FWK_SYSWORKQ_STACK_SIZE
-#define CONFIG_FWK_SYSWORKQ_STACK_SIZE 256U
+#define CONFIG_FWK_SYSWORKQ_STACK_SIZE 512U
 #endif
 
 #ifndef CONFIG_FWK_SYSWORKQ_PRIO
