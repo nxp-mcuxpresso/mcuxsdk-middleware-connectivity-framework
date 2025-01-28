@@ -20,7 +20,7 @@ On the other way, the RF_SFC from Radio core sends back notifications to SFC mod
 
 The RF_SFC module provides the functionality to calibrate the FRO32K source clock during Initialization and radio activity.
 
-The RF_SFC is mostly used on XTAL3K less solution when no 32Khz crystal is soldered on the board. It allows to calibrate the FRO32K source clock to the desired frequency to keep Radio time base within the allowed tolerance given by the connectivity standards.
+The RF_SFC is mostly used on XTAL32K less solution when no 32Khz crystal is soldered on the board. It allows to calibrate the FRO32K source clock to the desired frequency to keep Radio time base within the allowed tolerance given by the connectivity standards.
 However, even on a XTAL32K solution, the RF_SFC is also used during Initialization until the XTAL32K is up and running in the system. The system firstly runs on the FRO32K clock source then switch to the XTAL32K clock source when it is ready with enough accuracy. This allows to save significant boot time as the FRO32K start up (including calibration) is much faster compared to XTAL32K .
 
 This module will handle:
@@ -29,7 +29,7 @@ This module will handle:
 - FRO32K calibration in order to update the trimming value to reduce the frequency error on the clock.
 
 The targeted frequency offset shall be within 200ppm. The RF_SFC will handle two modes of operation:
-- convergence mode: when frequency estimation is above 200pm,
+- Convergence mode: when frequency estimation is above 200pm,
 - Monitor mode: when frequency estimation is below 200pm.
 
 The RF_SFC module works in active and all low power modes on NBU domain, or on host application domain except power down mode. Power down mode on host application domain is not supported with the FRO32K configuration as clock source.
@@ -75,12 +75,13 @@ When the low power mode is enabled on NBU power domain, RF SFC handles two modes
 
 #### Convergence mode
 
-Convergence mode is used when the estimated FRO32K frequency is above 200ppm. Typically this occurs :
+Convergence mode is used when the estimated FRO32K frequency is above 200ppm or when the filter has been reset. Typically this occurs :
 - During Power ON reset or other reset when NBU is switched OFF
 - When temperature varies and FRO32K frequency deviates outside 200ppm threshold target
+- When no calibration has been done during some time as we discard old values that could influence the algorithm
 
 The convergence mode process typically starts with a FRO32K trim register update, performs a frequency measurement and the FRO32K trim register is updated until the measured frequency gets below 200ppm.
-These operations are repeated in a loop until the estimated frequency value gets below 200ppm. When below 200ppm, the RC SFC switches to Monitoring mode.
+These operations are repeated in a loop until the estimated frequency value gets below 200ppm. When below 200ppm during multiple measurements, the RC SFC switches to Monitoring mode.
 The convergence mode is only a transition mode to monitoring mode. In convergence mode, the NBU power domain does not go to low power. The convergence mode time duration depends on the initial frequency error of the FR032K. Default frequency measurement duration is 0.5ms so 20 measurements (given as example only) will require less than 10 ms to converge.
 
 #### Monitoring mode
@@ -106,7 +107,8 @@ In monitoring mode (this should be 99.9% of the time if temperature does not var
 
 The main power impact will be in convergence mode. In this case, measurements/calibrations are done in loop until the monitoring mode is reached (frequency error less than 200ppm). This could happen:
 -	During power ON reset,
--	When temperature varies: The frequency will deviate from 32768Hz and FRO32K trimming register correction will need to be updated for that.
+-	When temperature varies: The frequency will deviate from 32768Hz and FRO32K trimming register correction will need to be updated for that,
+-   When no measurement has been done during some time as we cannot predict if the FRO has drifted, so we discard older values and start convergence mode.
 
 When FRO32K frequency needs to be adjusted, the NBU core will wake-up the main power domain and will update the FRO32K trimming register.
 

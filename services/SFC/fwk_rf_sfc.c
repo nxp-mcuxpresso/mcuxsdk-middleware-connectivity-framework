@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2020-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                        Copyright 2020-2023, 2025 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -36,13 +35,17 @@
 #define RF_SFC_DEFAULT_FILTER_SIZE             128U
 #define RF_SFC_DEFAULT_CALIBRATION_INTERVAL_MS 1000U
 
+/* Number of sample that should be in the filter before switching to monitor mode. Doing multiple measurements allow us
+ * to build confidence in the calibration we have done */
+#define RF_SFC_TRIG_SAMPLE_NUMBER 3U
+
 /* -------------------------------------------------------------------------- */
 /*                          Private type definitions                          */
 /* -------------------------------------------------------------------------- */
 
 typedef struct
 {
-    bool     first;
+    uint32_t sampleNumber;
     int32_t  sum;
     uint32_t shift;
 } sfc_filter_state_t;
@@ -75,7 +78,7 @@ typedef struct
 /* -------------------------------------------------------------------------- */
 
 static void     SFC_HandleHostLowPowerConstraint(bool setConstraint);
-static void     SFC_StartCalibration(bool force);
+static void     SFC_StartCalibration(void);
 static void     SFC_MeasureFreqBlocking(void);
 static void     SFC_Calibrate(void);
 static void     SFC_MeasureCallback(status_t status);
@@ -177,9 +180,9 @@ static volatile sfc_handle_t sfcHandle = {
     .osc32kSwitchPending      = false,
     .filterState =
         {
-            .first = true,
-            .sum   = 0,
-            .shift = 0U,
+            .sampleNumber = 0U,
+            .sum          = 0,
+            .shift        = 0U,
         },
 };
 
@@ -259,7 +262,7 @@ void SFC_Enable(bool enable)
 
             /* Start calibration */
             sfcHandle.enable = true;
-            SFC_StartCalibration(false);
+            SFC_StartCalibration();
         }
     }
     else
@@ -308,7 +311,7 @@ void SFC_Process(void)
             sfcHandle.measureAvailable = false;
 
             /* Restart a calibration (either direct measure or trigger based measure) */
-            SFC_StartCalibration(false);
+            SFC_StartCalibration();
         }
         else if (!SFC_IsBusy())
         {
@@ -336,8 +339,8 @@ void SFC_Process(void)
                  * So, we reset the filter before performing a forced calibration to be able to react quickly */
                 SFC_ResetFilterState();
 
-                /* Force start a calibration using an immediate measure */
-                SFC_StartCalibration(true);
+                /* Start a calibration, it will use an immediate measure as the filter has been reset */
+                SFC_StartCalibration();
             }
         }
         else
@@ -484,7 +487,7 @@ static void SFC_MeasureFreqBlocking(void)
  * \brief Starts a non blocking frequency measure of the FRO32K
  *
  */
-static void SFC_StartCalibration(bool force)
+static void SFC_StartCalibration(void)
 {
     uint32_t intMask;
 
@@ -496,7 +499,8 @@ static void SFC_StartCalibration(bool force)
     (!defined(gNbuJtagCapability) || (gNbuJtagCapability == 0))
         if (sfcHandle.ppmTargetReached == true)
         {
-            if ((force == false) && ((RF_CMC1->RADIO_LP & RF_CMC1_RADIO_LP_BLE_WKUP_MASK) == 0U))
+            if (((RF_CMC1->RADIO_LP & RF_CMC1_RADIO_LP_BLE_WKUP_MASK) == 0U) &&
+                (sfcHandle.filterState.sampleNumber >= RF_SFC_TRIG_SAMPLE_NUMBER))
             {
                 /* When the current precision is within the ppm target, we use the trigger based configuration to
                  * monitor the clock at each wake up from low power if the NBU is allowed to enter low power
@@ -660,10 +664,9 @@ static void SFC_MeasureCallback(status_t status)
  */
 static int32_t SFC_ComputeMMA(int32_t sample)
 {
-    if (sfcHandle.filterState.first == true)
+    if (sfcHandle.filterState.sampleNumber == 0U)
     {
-        sfcHandle.filterState.sum   = sample << sfcHandle.filterState.shift;
-        sfcHandle.filterState.first = false;
+        sfcHandle.filterState.sum = sample << sfcHandle.filterState.shift;
     }
     else
     {
@@ -671,13 +674,18 @@ static int32_t SFC_ComputeMMA(int32_t sample)
         sfcHandle.filterState.sum += sample;
     }
 
+    if (sfcHandle.filterState.sampleNumber < sfcConfig.filterSize)
+    {
+        sfcHandle.filterState.sampleNumber++;
+    }
+
     return sfcHandle.filterState.sum >> sfcHandle.filterState.shift;
 }
 
 static void SFC_ResetFilterState(void)
 {
-    sfcHandle.filterState.first = true;
-    sfcHandle.filterState.sum   = 0;
+    sfcHandle.filterState.sampleNumber = 0U;
+    sfcHandle.filterState.sum          = 0;
 }
 
 static uint32_t SFC_GetPowerOfTwoShift(uint32_t x)
