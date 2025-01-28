@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2020-2024 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2020-2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -85,5 +84,13 @@ void SFC_UpdateConfig(const sfc_config_t *config);
  * \param[in] enable
  */
 void SFC_EnableNotification(int enable);
+
+/*!
+ * \brief Indicates if SFC module has an available measurement to process
+ *
+ * \return true measurement is available
+ * \return false measure not started or a calibration is ongoing
+ */
+bool SFC_IsMeasureAvailable(void);
 
 #endif /* _FWK_SFC_H_ */

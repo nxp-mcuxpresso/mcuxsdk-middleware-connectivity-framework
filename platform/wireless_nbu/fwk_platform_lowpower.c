@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                        Copyright 2021-2023, 2025 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -35,7 +34,7 @@ extern bool PHY_XCVR_AllowLowPower(void);
 /* -------------------------------------------------------------------------- */
 static void PLATFORM_HandleLowPowerEntry(void);
 static void PLATFORM_HandleWFI(void);
-static bool PLATFORM_IsLowPowerAllowed(void);
+static int  PLATFORM_LowPowerModeAllowed(void);
 static bool PLATFORM_IsRemoteAllowingLowPower(void);
 static bool PLATFORM_IsBleAllowingLowPower(void);
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
@@ -85,9 +84,9 @@ void PLATFORM_LowPowerInit(void)
 
 void PLATFORM_EnterLowPower(void)
 {
-    uint32_t irqMask = DisableGlobalIRQ();
-
-    if (PLATFORM_IsLowPowerAllowed() == true)
+    uint32_t irqMask      = DisableGlobalIRQ();
+    int      stateAllowed = PLATFORM_LowPowerModeAllowed();
+    if (stateAllowed == 0)
     {
         /* Indicate remote CPU the radio is going to low power */
         PLATFORM_RemoteLowPowerIndication(true);
@@ -101,7 +100,7 @@ void PLATFORM_EnterLowPower(void)
         /* Indicate remote CPU the radio is active */
         PLATFORM_RemoteLowPowerIndication(false);
     }
-    else
+    else if (stateAllowed == 1)
     {
         uint32_t sleepTime = LL_API_SCHED_GetSleepTime();
 
@@ -119,6 +118,10 @@ void PLATFORM_EnterLowPower(void)
              * correctly updated */
             PLATFORM_HandleWFI();
         }
+    }
+    else
+    {
+        /* Neither lowpower nor WFI is authorized, it will loop in Idle until one is authorized */
     }
 
     EnableGlobalIRQ(irqMask);
@@ -239,44 +242,50 @@ static void PLATFORM_HandleWFI(void)
 /*!
  * \brief Checks from various sources if the radio can enter low power
  *
- * \return true
- * \return false
+ * \return 0  : lowpower allowed
+ * \return 1  : WFI allowed
+ * \return -1 : Neither lowpower nor WFI is allowed
  */
-static bool PLATFORM_IsLowPowerAllowed(void)
+static int PLATFORM_LowPowerModeAllowed(void)
 {
-    bool ret = true;
+    int ret = 0;
 
     do
     {
         if (initialized == false)
         {
             /* Do not allow low power if the module hasn't been initialized */
-            ret = false;
+            ret = 1;
             break;
         }
         else if (PLATFORM_IsBleAllowingLowPower() == false)
         {
             /* BLE may not be ready for low power */
-            ret = false;
+            ret = 1;
             break;
         }
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
         else if (PLATFORM_Is_15_4_AllowingLowPower() == false)
         {
             /* 15.4 PHY may not be ready for low power */
-            ret = false;
+            ret = 1;
             break;
         }
 #endif
         else if (PLATFORM_IsRemoteAllowingLowPower() == false)
         {
             /* Remote CPU can prevent low power */
-            ret = false;
+            ret = 1;
             break;
         }
         else if (SFC_IsBusy() == true)
         {
-            ret = false;
+            ret = 1;
+            break;
+        }
+        else if (SFC_IsMeasureAvailable() == true)
+        {
+            ret = -1;
             break;
         }
     } while (false);

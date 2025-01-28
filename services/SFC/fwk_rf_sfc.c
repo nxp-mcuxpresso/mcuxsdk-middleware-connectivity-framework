@@ -271,7 +271,9 @@ void SFC_Enable(bool enable)
         {
             /* Release low power constraint to the host core */
             SFC_HandleHostLowPowerConstraint(false);
-            sfcHandle.enable = false;
+            /* If the SFC module is disabled, we need to clear the measure available flag */
+            sfcHandle.measureAvailable = false;
+            sfcHandle.enable           = false;
         }
 
         if (SFC_IsBusy() == true)
@@ -441,6 +443,12 @@ void SFC_EnableNotification(int enable)
 {
     sfcNotificationEnabled = enable;
 }
+
+bool SFC_IsMeasureAvailable(void)
+{
+    return sfcHandle.measureAvailable;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
