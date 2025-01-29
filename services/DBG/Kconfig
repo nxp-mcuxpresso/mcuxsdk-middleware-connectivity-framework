@@ -4,5 +4,6 @@
 menu "Framework Debug"
 
 rsource "sbtsnoop/Kconfig"
+rsource "SWO/Kconfig"
 
 endmenu
