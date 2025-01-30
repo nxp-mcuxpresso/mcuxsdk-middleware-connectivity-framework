@@ -1,10 +1,11 @@
 /*!
- * Copyright 2021, 2024 NXP
+ * Copyright 2021, 2024-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fwk_platform_lcl.h"
+#include "fwk_platform_definitions.h"
 #include "FunctionLib.h"
 #if defined(gMWS_Enabled_d) && (gMWS_Enabled_d > 0)
 #include "MWS.h"
@@ -53,7 +54,7 @@
 #define DTEST_ALL (0x1FFFUL)
 
 /* DTEST5 conflicts with PTC1 (SW2) on localization board */
-#if ((defined(BOARD_LOCALIZATION_REVISION_SUPPORT)) && BOARD_LOCALIZATION_REVISION_SUPPORT)
+#if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
 #undef DTEST1
 #define DTEST1 0UL
 #endif
@@ -92,10 +93,17 @@
    The purpose is to propose the default values without conflict of pin setting
    between these active features. They could be overrided by customer through APIs.
 */
+#if defined(FWK_KW47_MCXW72_FAMILIES) || (FWK_KW47_MCXW72_FAMILIES == 1)
+#if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
+#define gAppRfGpoSRC RFMC_GPO_LANT_3_0_COEX_3_0 /* hardware dependancy: LCL uses group RF_GPO[7:4] */
+#else
 #define gAppRfGpoSRC RFMC_GPO_COEX_3_0_LANT_3_0 /* hardware dependancy: LCL uses group RF_GPO[3:0] */
+#endif
+#else
+#define gAppRfGpoSRC RFMC_GPO_COEX_3_0_LANT_3_0 /* hardware dependancy: LCL uses group RF_GPO[3:0] */
+#endif
 
-#define gAppRfGpoFEM        RFMC_GPO_INVALID    /* FEM uses RF_GPO[11..8] */
-#define COEXT_RFGPO_OBE_LCL BIT_210             /* hardware dependancy: LCL uses RF_GPO[2:0] */
+#define gAppRfGpoFEM RFMC_GPO_INVALID /* FEM uses RF_GPO[11..8] */
 
 /* Total size of COEX config including several XCVR structures which could be changed */
 #define COEX_CONFIG_LEN                                                                                      \
@@ -296,24 +304,6 @@ void PLATFORM_Init_Dtest_TX_RX_EN(void)
 
 void PLATFORM_InitLclDtest(void)
 {
-    const gpio_pin_config_t config = {
-        .pinDirection = kGPIO_DigitalOutput,
-        .outputLogic  = 0,
-    };
-
-    /* TRDC initialized during NBU initialization */
-
-    /* Configure PTD3 and PTD2 as GPIO (may be used for debug purpose by the NBU) */
-    PORT_SetPinMux(PORTD, 3U, kPORT_MuxAsGpio);
-    PORT_SetPinMux(PORTD, 2U, kPORT_MuxAsGpio);
-    GPIO_PinInit(GPIOD, 3U, &config);
-    GPIO_PinInit(GPIOD, 2U, &config);
-    /* Attention: COEX/FEM output signal setting may override HADM NBU debug on PTD2, PTD3 ! */
-
-    /* Enable GPIO for CM33 debugging */
-    PORT_SetPinMux(PORTC, 4U, kPORT_MuxAsGpio);
-    GPIO_PinInit(GPIOC, 4U, &config);
-
     // dtest_page usually one of DTEST_RSM2, DTEST_NBU_LL, DTEST_RX_IQ
     set_dtest_page(DTEST_RSM2);
     dtest_pins_init(DTEST_LIST);
@@ -627,34 +617,139 @@ static uint8_t PLATFORM_FEM_pin_init(rfmcGpoCoex_t rfgpo_sel, uint8_t ant_sel_pi
  * API
  ******************************************************************************/
 
-void PLATFORM_InitLclRfGpo(void)
+uint8_t PLATFORM_InitLclRfGpo(uint8_t rfgpo_id)
 {
-    CLOCK_EnableClock(kCLOCK_PortA);
-    /* enable RF_GPO[2:0] */
-    PORT_SetPinMux(PORTA, 18, kPORT_MuxAlt6);
-    PORT_SetPinMux(PORTA, 19, kPORT_MuxAlt6);
-    PORT_SetPinMux(PORTA, 20, kPORT_MuxAlt6);
+    uint8_t      status;
+    rfmcStatus_t rfmc_status = gRfmcSuccess_c;
 
-    rfmcGpoOBE |= COEXT_RFGPO_OBE_LCL;
+    if (rfgpo_id > LCL_RFGPO_7_4)
+    {
+        status = 1U; /* out of range */
+    }
+    else if (rfgpo_id == LCL_RFGPO_NONE)
+    {
+        /* nothing to do */
+        status = 0U;
+    }
+    else
+    {
+        if (rfgpo_id == LCL_RFGPO_3_0)
+        {
+            /* detect conflict between Localisation, Coexistence and FEM */
+            if ((rfmcGpoSRC != RFMC_GPO_INVALID) && (rfmcGpoSRC != RFMC_GPO_FEM_3_0_LANT_3_0) &&
+                (rfmcGpoSRC != RFMC_GPO_COEX_3_0_LANT_3_0))
+            {
+                return 1U;
+            }
 
-    /* Configure RFMC to route lant_lut_gpio[3:0] to SoC RF_GPO[3:0] */
-    RFMC_SetRfGpoConfig(gAppRfGpoSRC, rfmcGpoOBE);
+            rfmcGpoOBE |= BIT_210;
+        }
+        else
+        {
+            /* detect conflict between Localisation, Coexistence and FEM */
+            if ((rfmcGpoSRC != RFMC_GPO_INVALID) && (rfmcGpoSRC != RFMC_GPO_LANT_3_0_FEM_3_0) &&
+                (rfmcGpoSRC != RFMC_GPO_LANT_3_0_COEX_3_0))
+            {
+                return 1U;
+            }
 
-    /* detect conflict between Localisation, Coexistence and FEM */
-    assert((rfmcGpoSRC == RFMC_GPO_INVALID) ||
-           ((rfmcGpoSRC == gAppRfGpoSRC) && (rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0)) ||
-           (rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0));
-    rfmcGpoSRC = gAppRfGpoSRC;
+            rfmcGpoOBE |= BIT_654;
+        }
+
+        /* keep rfmcGpoSRC as is if valid & compatible */
+        rfmcGpoSRC = (rfmcGpoSRC != RFMC_GPO_INVALID) ? rfmcGpoSRC : gAppRfGpoSRC;
+
+        /* Configure RFMC to route lant_lut_gpio[3:0] to SoC RF_GPO[3:0] or RF_GPO[7:4] */
+        rfmc_status = RFMC_SetRfGpoConfig(rfmcGpoSRC, rfmcGpoOBE);
+        status      = (rfmc_status == gRfmcSuccess_c) ? 0U : 1U;
+    }
+
+    return status;
 }
 
-void PLATFORM_InitLcl(void)
+void PLATFORM_InitLclGpioDebug(bool_t debug)
 {
-    PLATFORM_InitLclRfGpo();
+#if !defined(NDEBUG)
+    /* TRDC initialized during NBU initialization */
+    if (debug)
+    {
+        const gpio_pin_config_t config = {
+            .pinDirection = kGPIO_DigitalOutput,
+            .outputLogic  = 0,
+        };
+
+        PORT_SetPinMux(PORTD, 2U, kPORT_MuxAsGpio);
+        PORT_SetPinMux(PORTD, 3U, kPORT_MuxAsGpio);
+        GPIO_PinInit(GPIOD, 3U, &config);
+        GPIO_PinInit(GPIOD, 2U, &config);
+
+        /* Enable GPIO for application core debugging */
+        PORT_SetPinMux(PORTC, 4U, kPORT_MuxAsGpio);
+        GPIO_PinInit(GPIOC, 4U, &config);
+    }
+    else
+    {
+#if defined(FWK_KW47_MCXW72_FAMILIES) || (FWK_KW47_MCXW72_FAMILIES == 1)
+#if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
+        /* only KW47-LOC needs PTD2 */
+        PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt4);
+#endif
+#endif
+    }
+#endif
+}
+
+uint8_t PLATFORM_InitLcl(void)
+{
+    uint8_t rfgpo_id;
+
+    /* set debug pins first which could be overriden later */
+    PLATFORM_InitLclGpioDebug(true);
+
+#if defined(KW45B41Z82_SERIES) || defined(KW45B41Z83_SERIES)
+    rfgpo_id = LCL_RFGPO_3_0;
+
+    CLOCK_EnableClock(kCLOCK_PortA);
+    /* enable RF_GPO[2:0] */
+    PORT_SetPinMux(PORTA, 18U, kPORT_MuxAlt6);
+    PORT_SetPinMux(PORTA, 19U, kPORT_MuxAlt6);
+    PORT_SetPinMux(PORTA, 20U, kPORT_MuxAlt6);
+#else /* KW47 and more series */
+#if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
+    rfgpo_id = LCL_RFGPO_7_4;
+
+    /* enable RF_GPO[6:4] */
+    /* PLATFORM_InitLclGpioDebug() may set PORTD 2 & 3 as kPORT_MuxAsGpio */
+    //PORT_SetPinMux(PORTD, 1U, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTD, 3U, kPORT_MuxAlt4);
+
+    /* need to power PTD1 as VDD to RF Switch */
+    const gpio_pin_config_t config = {
+        .pinDirection = kGPIO_DigitalOutput,
+        .outputLogic  = 1,
+    };
+    GPIO_PinInit(GPIOD, 1U, &config);
+    PORT_SetPinMux(PORTD, 1U, kPORT_MuxAsGpio);
+    //PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt4);
+#else
+    rfgpo_id = LCL_RFGPO_3_0;
+
+    CLOCK_EnableClock(kCLOCK_PortA);
+    /* enable RF_GPO[2:0] */
+    PORT_SetPinMux(PORTA, 18U, kPORT_MuxAlt6);
+    PORT_SetPinMux(PORTA, 19U, kPORT_MuxAlt6);
+    PORT_SetPinMux(PORTA, 20U, kPORT_MuxAlt6);
+#endif
+#endif
+    uint8_t status = PLATFORM_InitLclRfGpo(rfgpo_id);
 
 #if !defined(NDEBUG)
     /* Enable DTEST when building debug target */
     PLATFORM_InitLclDtest();
 #endif
+
+    return status;
 }
 
 uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
