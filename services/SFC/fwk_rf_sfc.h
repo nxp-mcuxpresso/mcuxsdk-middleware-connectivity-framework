@@ -27,12 +27,15 @@
  * Defines the ppm target
  * \var sfc_config_t::maxCalibrationIntervalMs
  * Defines the maximum time between 2 calibration in msec.
+ * \var sfc_config_t::trigSampleNumber
+ * Number of samples required in the filter to swicth from convergence to monitor mode.
  */
 typedef struct
 {
     uint32_t filterSize;
     uint32_t ppmTarget;
     uint32_t maxCalibrationIntervalMs;
+    uint32_t trigSampleNumber;
 } sfc_config_t;
 
 /* -------------------------------------------------------------------------- */

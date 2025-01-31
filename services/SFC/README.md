@@ -6,15 +6,31 @@ The Smart Frequency Calibration module provides operations and calibration for t
 - fwk_sfc.h: SFC module on host core that provides type definition for usage with fwk_platform_ics.[ch] with PLATFORM_FwkSrvSetRfSfcConfig() API and fwk_platform_ble.c for received callback from the NBU core
 
 ## Host SFC Module
-
+### Algorithm parametrization
 This module provides ability to configure the RF_SFC module by sending message to Radio core through fwk_platform_ics.c `PLATFORM_FwkSrvSetRfSfcConfig()`:
-- filter size
-- Max ppm threshold
-- Max calibration interval
+- Filter size
+- Maximum ppm threshold
+- Maximum calibration interval
+- Number of sample in filter to swicth from convergence to monitor mode
 
+#### Ppm target
+The ppm target is the deviation from the target clock accepted by the algorithm. When the deviation is larger than the ppm target. The algorithm will update the trimming value and reset the filter. The ppm target cannot be more aggressive RF_SFC_MAXIMAL_PPM_TARGET in order to avoid having to update trimming value at each measurement.
+
+#### Filter size
+Filter size must be included between RF_SFC_MINIMAL_FILTER_SIZE and RF_SFC_MAXIMAL_FILTER_SIZE. See *Filtering and Frequency estimation* section for more details on the parameter.
+
+#### Maximum calibration interval
+In monitor mode, new measurement are triggered by lowpower entry/exit. If the NBU core has a lot of radio activity it could never enter lowpower. The maximum calibration interval is here to ensure a measurement is done regularly. When executing idle the SFC module checks when the last measurement has been done, if it has been too long, it reset the filter and forces a new measurement 
+
+#### Trig sample number
+The trig sample number is the number of samples needed by the algorithm in its filter to switch from convergence to monitor mode. Having more than one sample in convergence mode allows to confirm the trimming value that we have set.
+
+### SFC debug information
 On the other way, the RF_SFC from Radio core sends back notifications to SFC module on main core using RX callback PLATFORM_RegisterFroNotificationCallback() from fwk_platform_ics.h and such information:
 - last measured frequency
 - average ppm from 32768Khz frequency
+- last ppm measured from 32768Khz frequency
+- FRO trimming value
 
 ## RF_SFC module
 
@@ -114,7 +130,4 @@ When FRO32K frequency needs to be adjusted, the NBU core will wake-up the main p
 
 #### Power impact during low power mode:
 The power consumption in low power mode will increase slightly due to running FRO32K compared to XTAL32K. The power consumption of FRO32K typically consumes 350nA while it is only 100nA with XTAL32K. Refer to the product datasheet for the exact numbers.
-
-
-
 

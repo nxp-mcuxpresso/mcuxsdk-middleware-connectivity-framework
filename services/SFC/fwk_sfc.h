@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2020-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                        Copyright 2020-2023, 2025 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -12,6 +11,22 @@
 /* -------------------------------------------------------------------------- */
 
 #include <stdint.h>
+
+/* -------------------------------------------------------------------------- */
+/*                       RF SFC Default parametrization                       */
+/* -------------------------------------------------------------------------- */
+
+#define RF_SFC_MAXIMAL_PPM_TARGET  200U
+#define RF_SFC_MINIMAL_FILTER_SIZE 1U
+#define RF_SFC_MAXIMAL_FILTER_SIZE 256U
+
+#define RF_SFC_DEFAULT_PPM_TARGET              RF_SFC_MAXIMAL_PPM_TARGET
+#define RF_SFC_DEFAULT_FILTER_SIZE             128U
+#define RF_SFC_DEFAULT_CALIBRATION_INTERVAL_MS 1000U
+
+/* Number of sample that should be in the filter before switching to monitor mode. Doing multiple measurements allow us
+ * to build confidence in the calibration we have done */
+#define RF_SFC_DEFAULT_TRIG_SAMPLE_NUMBER 3U
 
 /* -------------------------------------------------------------------------- */
 /*                                Public types                                */
@@ -27,12 +42,15 @@
  * Defines the ppm target
  * \var sfc_config_t::maxCalibrationIntervalMs
  * Defines the maximum time between 2 calibration in msec.
+ * \var sfc_config_t::trigSampleNumber
+ * Number of samples required in the filter to swicth from convergence to monitor mode.
  */
 typedef struct
 {
     uint32_t filterSize;
     uint32_t ppmTarget;
     uint32_t maxCalibrationIntervalMs;
+    uint32_t trigSampleNumber;
 } sfc_config_t;
 
 /*!

@@ -37,7 +37,7 @@
 
 /* Number of sample that should be in the filter before switching to monitor mode. Doing multiple measurements allow us
  * to build confidence in the calibration we have done */
-#define RF_SFC_TRIG_SAMPLE_NUMBER 3U
+#define RF_SFC_DEFAULT_TRIG_SAMPLE_NUMBER 3U
 
 /* -------------------------------------------------------------------------- */
 /*                          Private type definitions                          */
@@ -159,6 +159,7 @@ static volatile sfc_config_t sfcConfig = {
     .filterSize               = RF_SFC_DEFAULT_FILTER_SIZE,
     .ppmTarget                = RF_SFC_DEFAULT_PPM_TARGET,
     .maxCalibrationIntervalMs = RF_SFC_DEFAULT_CALIBRATION_INTERVAL_MS,
+    .trigSampleNumber         = RF_SFC_DEFAULT_TRIG_SAMPLE_NUMBER,
 };
 
 /*!
@@ -395,6 +396,7 @@ void SFC_UpdateConfig(const sfc_config_t *config)
     uint32_t ppmTarget                = config->ppmTarget;
     uint32_t filterSize               = config->filterSize;
     uint32_t maxCalibrationIntervalMs = config->maxCalibrationIntervalMs;
+    uint32_t trigSampleNumber         = config->trigSampleNumber;
 
     uint32_t irqMask = DisableGlobalIRQ();
 
@@ -434,6 +436,20 @@ void SFC_UpdateConfig(const sfc_config_t *config)
     {
         /* Register the new max interval between 2 calibration */
         sfcConfig.maxCalibrationIntervalMs = maxCalibrationIntervalMs;
+    }
+
+    if ((trigSampleNumber != sfcConfig.trigSampleNumber) && trigSampleNumber != 0U)
+    {
+        if (trigSampleNumber >= sfcConfig.filterSize)
+        {
+            /* Ensure we are at least using monitor mode on the last sample when the filter is full  */
+            sfcConfig.trigSampleNumber = sfcConfig.filterSize;
+        }
+        else
+        {
+            /* Register the new number of samples required in the filter to go to monitor mode */
+            sfcConfig.trigSampleNumber = trigSampleNumber;
+        }
     }
 
     EnableGlobalIRQ(irqMask);
@@ -508,7 +524,7 @@ static void SFC_StartCalibration(void)
         if (sfcHandle.ppmTargetReached == true)
         {
             if (((RF_CMC1->RADIO_LP & RF_CMC1_RADIO_LP_BLE_WKUP_MASK) == 0U) &&
-                (sfcHandle.filterState.sampleNumber >= RF_SFC_TRIG_SAMPLE_NUMBER))
+                (sfcHandle.filterState.sampleNumber >= sfcConfig.trigSampleNumber))
             {
                 /* When the current precision is within the ppm target, we use the trigger based configuration to
                  * monitor the clock at each wake up from low power if the NBU is allowed to enter low power

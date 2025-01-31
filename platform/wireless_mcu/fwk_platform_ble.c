@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                        Copyright 2021-2023, 2025 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -31,7 +30,7 @@
 #endif
 
 #if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS)
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
 #include "fwk_sfc.h"
 #endif
 
@@ -81,6 +80,7 @@
 #define PLATFORM_DEFAULT_FRO32K_PPM_TARGET                  200U
 #define PLATFORM_DEFAULT_FRO32K_FILTER_SIZE                 128U
 #define PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS 1000U
+#define PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER          3U
 
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
@@ -101,7 +101,7 @@ static const hal_rpmsg_config_t hciRpmsgConfig = {
 static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
 
 #if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS)
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
 static const sfc_config_t sfcConfig = {
 #ifdef BOARD_FRO32K_PPM_TARGET
     .ppmTarget = BOARD_FRO32K_PPM_TARGET,
@@ -117,9 +117,15 @@ static const sfc_config_t sfcConfig = {
     .maxCalibrationIntervalMs = BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
 #else
     .maxCalibrationIntervalMs = PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
-#endif /* BOARD_FRO32K_FILTER_SIZE */
+#endif /* BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS */
+#ifdef BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+    .trigSampleNumber = BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+#else
+    .trigSampleNumber         = PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER,
+#endif /* BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
 };
-#endif /* BOARD_FRO32K_PPM_TARGET || BOARD_FRO32K_FILTER_SIZE */
+#endif /* BOARD_FRO32K_PPM_TARGET || BOARD_FRO32K_FILTER_SIZE ||  BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS || \
+          BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
 
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                        */
@@ -204,7 +210,7 @@ int PLATFORM_InitBle(void)
         CHECK_AND_RAISE_ERROR(status, -5);
 
 #if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS)
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
         PLATFORM_FwkSrvSetRfSfcConfig((void *)&sfcConfig, (uint16_t)sizeof(sfc_config_t));
 #endif
 
