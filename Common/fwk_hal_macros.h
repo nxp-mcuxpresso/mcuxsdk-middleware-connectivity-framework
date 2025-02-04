@@ -24,8 +24,8 @@
  *****************************************************************************************/
 #if defined(__GNUC__)
 
-#define HAL_CLZ(x) ((uint8_t)(__builtin_clz(x) & 0x1fUL))
-#define HAL_CTZ(x) ((uint8_t)(__builtin_ctz(x) & 0x1fUL))
+#define HAL_CLZ(x) ((uint8_t)(__builtin_clz(x) & 0x3fUL))
+#define HAL_CTZ(x) ((uint8_t)(__builtin_ctz(x) & 0x3fUL))
 static inline uint32_t __hal_revb(uint32_t x)
 {
     unsigned int res;
@@ -36,8 +36,8 @@ static inline uint32_t __hal_revb(uint32_t x)
 
 #elif defined(__IAR_SYSTEMS_ICC__)
 
-#define HAL_CLZ(x)  ((uint8_t)(__iar_builtin_CLZ(x) & 0x1fUL))
-#define HAL_RBIT(x) ((uint32_t)(__iar_builtin_RBIT(x) & 0x1fUL))
+#define HAL_CLZ(x)  ((uint8_t)(__iar_builtin_CLZ(x) & 0x3fUL))
+#define HAL_RBIT(x) ((uint32_t)(__iar_builtin_RBIT(x)))
 
 static inline uint8_t __hal_ctz(uint32_t x)
 {
@@ -63,15 +63,15 @@ static inline uint8_t __hal_ctz(uint32_t x)
  *
  ****************************************************************************************
  */
-#define HAL_BSR(x) ((uint8_t)(31u - HAL_CLZ(x)))
+#define HAL_BSR(x) (((x) != 0UL) ? (uint8_t)(31U - (HAL_CLZ(x) & 0x1fU)) : 0xffU)
 #define HAL_BSF(x) HAL_CTZ(x)
 #define HAL_FFS(x) (HAL_CTZ(x) + 1U)
 
 /*!
  ****************************************************************************************
  * @brief
- * HAL_REV16 swap bytes in a 16 bit word : useful for htons/ntohs and all enddianness conversions
- * HAL_REV32 swap bytes in a 32 bit word : useful for htonl/ntohl and all enddianness conversions
+ * HAL_REV16 swap bytes in a 16 bit word : useful for htons/ntohs and all endianness conversions
+ * HAL_REV32 swap bytes in a 32 bit word : useful for htonl/ntohl and all endianness conversions
  ****************************************************************************************
  */
 #if defined(__GNUC__)
@@ -118,9 +118,9 @@ static inline uint8_t __hal_ctz(uint32_t x)
 #define KHz(x) (((uint32_t)x) * 1000U)
 #define MHz(x) (((uint32_t)x) * 1000000U)
 
-#define SET_BIT(bitmap, i) bitmap[((i) >> 5U)] |= (1U << ((i)&0x1f))
-#define CLR_BIT(bitmap, i) bitmap[((i) >> 5U)] &= ~(1U << ((i)&0x1f))
-#define GET_BIT(bitmap, i) (((bitmap[(i) >> 5U] & (1U << ((i)&0x1f))) >> ((i)&0x1f)) != 0U)
+#define SET_BIT(bitmap, i) bitmap[((i) >> 5U)] |= (1U << ((i)&0x1fU))
+#define CLR_BIT(bitmap, i) bitmap[((i) >> 5U)] &= ~(1U << ((i)&0x1fU))
+#define GET_BIT(bitmap, i) (((bitmap[(i) >> 5U] & (1U << ((i)&0x1fU))) >> ((i)&0x1f)) != 0U)
 
 /* LOG_1, LOG_2, LOG_4, LOG_8: used by LOG macro */
 #define LOG_1(n) (((n) >= (1u << 1U)) ? 1U : 0U)
