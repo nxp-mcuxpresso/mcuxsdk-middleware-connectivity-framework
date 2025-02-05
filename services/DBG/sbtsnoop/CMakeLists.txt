@@ -13,9 +13,6 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.sbtsnoop)
                 readme.md
     )
 
-    mcux_add_macro(
-        SERIAL_BTSNOOP
-    )
 endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.sbtsnoop.port.nxp_ble)
