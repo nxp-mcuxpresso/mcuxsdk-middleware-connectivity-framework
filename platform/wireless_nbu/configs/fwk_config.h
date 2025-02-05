@@ -41,7 +41,7 @@
  * thread stack (this can be configured).
  */
 #ifndef gPlatformIcsUseWorkqueueRxProcessing_d
-#define gPlatformIcsUseWorkqueueRxProcessing_d 0
+#define gPlatformIcsUseWorkqueueRxProcessing_d 1
 #endif
 
 #endif /* _FWK_CONFIG_H_ */
