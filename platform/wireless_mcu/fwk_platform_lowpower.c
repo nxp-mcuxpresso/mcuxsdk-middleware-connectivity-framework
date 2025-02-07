@@ -235,7 +235,7 @@ PLATFORM_status_t PLATFORM_GetLowpowerMode(PLATFORM_PowerDomain_t power_domain, 
         spc_power_domain_low_power_mode_t spcLowPowermode;
         spcLowPowermode = SPC_GetPowerDomainLowPowerMode(SPC0, pd_id);
 
-        if ((uint32_t)spcLowPowermode >= sizeof(spc_lp_name_2_pd_state))
+        if ((uint32_t)spcLowPowermode >= ARRAY_SIZE(spc_lp_name_2_pd_state))
         {
             status = PLATFORM_Error;
         }
