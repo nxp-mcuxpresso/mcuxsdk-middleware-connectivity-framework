@@ -4321,6 +4321,9 @@ NVM_STATIC void NvInternalRecordsUpdate(uint32_t              srcMetaAddr,
         if ((metaInfo.fields.NvmDataEntryID == ownerRecordMetaInfo->fields.NvmDataEntryID) &&
             (0U == maNvRecordsCpyOffsets[metaInfo.fields.NvmElementIndex]))
         {
+            /* Coverity: Speculative execution data leak
+             * Insert a barrier between the comparison and the memory accesses to prevent speculative execution */
+            __DSB();
             maNvRecordsCpyOffsets[metaInfo.fields.NvmElementIndex] = metaInfo.fields.NvmRecordOffset;
         }
         metaAddress -= sizeof(NVM_RecordMetaInfo_t);
