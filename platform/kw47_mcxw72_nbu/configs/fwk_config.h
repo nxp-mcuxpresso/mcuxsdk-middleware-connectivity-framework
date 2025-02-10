@@ -31,4 +31,17 @@
  */
 #define gRngUseSecLib_d 0
 
+/*********************************************************************
+ *        PLATFORM
+ *********************************************************************/
+/* Enable ICS RX processing in the system workqueue thread
+ * If enabled, the ICS will use the system workqueue to process its received data. This allows to reduce the time spent
+ * in the ISR and reduces impact on system activities.
+ * Note: the system workqueue requires a dedicated thread, so enabling this feature will consume a bit of RAM for the
+ * thread stack (this can be configured).
+ */
+#ifndef gPlatformIcsUseWorkqueueRxProcessing_d
+#define gPlatformIcsUseWorkqueueRxProcessing_d 1
+#endif
+
 #endif /* _FWK_CONFIG_H_ */
