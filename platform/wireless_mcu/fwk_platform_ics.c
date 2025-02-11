@@ -463,7 +463,7 @@ void PLATFORM_RegisterSecurityEventCb(nbu_security_event_callback_t cb)
     nbu_security_event_callback = cb;
 }
 
-void PLATFORM_RegisterTemperatureRequestCb(nbu_security_event_callback_t cb)
+void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t cb)
 {
     nbu_request_temperature_callback = cb;
 }
@@ -659,12 +659,14 @@ static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len)
 {
     if (nbu_request_temperature_callback != NULL)
     {
-        uint32_t periodic_interval_ms;
-        assert(len == sizeof(uint32_t));
-        FLib_MemCpy(&periodic_interval_ms, &data[1], sizeof(uint32_t));
-        (*nbu_request_temperature_callback)(periodic_interval_ms);
+        assert(len == (sizeof(uint32_t) + 1));
+        /* Data buffer can contain a periodic interval parameter
+         * Ignoring this data as periodic measurement is not supported yet
+         */
+        (*nbu_request_temperature_callback)(0U);
     }
-    NOT_USED(len);
+    (void)len;
+    (void)data;
 }
 
 static bool FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type)

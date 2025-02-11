@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2021-2023,2025 NXP                     */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -27,6 +26,12 @@
  * Value used to indicated that temperature is unknown
  */
 #define PLATFORM_SENSOR_UNKNOWN_TEMPERATURE ((int32_t)999999)
+
+/* -------------------------------------------------------------------------- */
+/*                           Public type definitions                          */
+/* -------------------------------------------------------------------------- */
+
+typedef void (*temp_ready_event_callback_t)(int32_t temperature_value);
 
 /* -------------------------------------------------------------------------- */
 /*                        Public functions declaration                        */
@@ -93,6 +98,13 @@ void PLATFORM_SaveAdcContext(void);
  *
  */
 void PLATFORM_RestoreAdcContext(void);
+
+/*!
+ * \brief Register function callback called when temperature measurement is ready
+ *
+ * \param[in] cb callback that will be used when temperature measurement is ready
+ */
+void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb);
 
 /*!
  * @}  end of FWK_Platform_Sensors addtogroup

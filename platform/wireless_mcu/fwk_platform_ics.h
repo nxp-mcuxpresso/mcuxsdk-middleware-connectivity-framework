@@ -1,7 +1,5 @@
 /*
- * Copyright 2021-2022, 2024 NXP
- * All rights reserved.
- *
+ * Copyright 2021-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -222,8 +220,9 @@ void PLATFORM_RegisterSecurityEventCb(nbu_security_event_callback_t cb);
 /*!
  * \brief Register function callback called when nbu request a temperature measurement
  * \warning function callback will be called in the context of interruption (ISR)
+ *          if gPlatformIcsUseWorkqueueRxProcessing_d is disabled
  *
- * \param[in] cb error callback for platform module
+ * \param[in] cb callback that will be executed when nbu requests a temperature measurement
  *
  */
 void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t cb);
