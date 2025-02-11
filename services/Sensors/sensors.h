@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022, 2024 NXP
+ * Copyright 2021-2022, 2024-2025 NXP
  * All rights reserved.
  *
  *
@@ -35,6 +35,9 @@
  *      temperature2 = (SENSORS_GetTemperature())/10;
  * </pre>
  * In our case temperature1 is equal to temperature2, both are in degree celsius
+ * \note Calling SENSORS_TriggerBatteryMeasurement() in the middle before SENSORS_RefreshTemperatureValue()
+ *       on the same thread is not supported. Same thing when calling SENSORS_TriggerTemperatureMeasurement()
+ *       between SENSORS_TriggerBatteryMeasurement() and SENSORS_RefreshBatteryLevel() on the same thread.
  * @{
  */
 
@@ -74,7 +77,8 @@ void SENSORS_Init(void);
 
 /*!
  * \brief Deinit sensor Module.
- *
+ * \note  The calling task should referesh the triggered measurement before deinitializing
+ *        the sensor module.
  */
 void SENSORS_Deinit(void);
 
@@ -89,7 +93,10 @@ void Sensors_SetLowpowerCriticalCb(const Sensors_LowpowerCriticalCBs_t *pfCallba
 
 /*!
  * \brief Trigger the ADC on the temperature.
- *
+ * \note  When triggering the temperature measurement, the calling task becomes owner of
+ *        the measurement and must refresh before any other measurement can be triggered.
+ *        Triggering twice or triggering another type of measurement during an ongoing
+ *        one is undefined behavior by the module
  */
 void SENSORS_TriggerTemperatureMeasurement(void);
 
@@ -110,7 +117,10 @@ int32_t SENSORS_GetTemperature(void);
 
 /*!
  * \brief Trigger the ADC on the battery.
- *
+ * \note  When triggering the temperature measurement, the calling task becomes owner of
+ *        the measurement and must refresh before any other measurement can be triggered.
+ *        Triggering twice or triggering another type of measurement during an ongoing
+ *        one is undefined behavior by the module
  */
 void SENSORS_TriggerBatteryMeasurement(void);
 

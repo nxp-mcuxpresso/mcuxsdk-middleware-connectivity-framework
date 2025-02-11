@@ -1,7 +1,5 @@
 /*
- * Copyright 2021-2022-2024 NXP
- * All rights reserved.
- *
+ * Copyright 2021-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -18,6 +16,7 @@
 #include "fsl_device_registers.h"
 #include "fsl_os_abstraction.h"
 #include "fsl_common.h"
+#include "fwk_platform_ics.h"
 
 /************************************************************************************
 *************************************************************************************
@@ -53,14 +52,21 @@ static OSA_MUTEX_HANDLE_DEFINE(mADCMutexId);
 #define gSensorsAdcCalibrationDurationInMs_c 0U
 #endif
 
+typedef enum _temperature_measurement_s
+{
+    TMP_MEASUREMENT_IDLE,
+    TMP_MEASUREMENT_ONGOING,
+} temperature_measurement_s;
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private memory declarations
 *************************************************************************************
 *********************************************************************************** */
 
-static uint8_t LastBatteryLevel = VALUE_NOT_AVAILABLE_8;
-static int32_t LastTemperature  = (int32_t)VALUE_NOT_AVAILABLE_32;
+static uint8_t                            LastBatteryLevel   = VALUE_NOT_AVAILABLE_8;
+static int32_t                            LastTemperature    = (int32_t)VALUE_NOT_AVAILABLE_32;
+static volatile temperature_measurement_s temperature_status = TMP_MEASUREMENT_IDLE;
 
 /*!
  * @brief pointer to Callback function structure used to allow / disallow lowpower during Sensors activity
@@ -95,6 +101,19 @@ static int32_t Sensors_ReleaseLpConstraint(int32_t power_mode)
     return status;
 }
 
+static void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
+{
+    /* periodic measurement not supported yet */
+    assert(temperature_meas_interval_ms == 0);
+
+    SENSORS_TriggerTemperatureMeasurement();
+}
+
+static void Sensors_TemperatureReadyCb(int32_t temperature_value)
+{
+    (void)SENSORS_RefreshTemperatureValue();
+}
+
 /************************************************************************************
 *************************************************************************************
 * Public functions
@@ -115,8 +134,9 @@ void SENSORS_Init(void)
     {
         assert(0);
     }
-    return;
 #endif
+    PLATFORM_RegisterNbuTemperatureRequestEventCb(&Sensors_TemperatureReqCb);
+    PLATFORM_RegisterTemperatureReadyEventCb(&Sensors_TemperatureReadyCb);
 }
 
 /*!
@@ -125,6 +145,7 @@ void SENSORS_Init(void)
  */
 void SENSORS_Deinit(void)
 {
+    ADC_MUTEX_LOCK();
     PLATFORM_DeinitAdc();
 
 #if gSensorsUseMutex_c
@@ -133,8 +154,10 @@ void SENSORS_Deinit(void)
     {
         assert(0);
     }
-    return;
 #endif
+    PLATFORM_RegisterNbuTemperatureRequestEventCb(NULL);
+    PLATFORM_RegisterTemperatureReadyEventCb(NULL);
+    ADC_MUTEX_UNLOCK();
 }
 
 /*!
@@ -156,14 +179,29 @@ void Sensors_SetLowpowerCriticalCb(const Sensors_LowpowerCriticalCBs_t *pfCallba
  */
 void SENSORS_TriggerTemperatureMeasurement(void)
 {
-    (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
+    /* Lock the mutex now, it will be unlocked when the measure in SENSORS_RefreshTemperatureValue() */
     ADC_MUTEX_LOCK();
-    if (false == PLATFORM_IsAdcInitialized())
+
+    if (temperature_status == TMP_MEASUREMENT_IDLE)
     {
-        PLATFORM_InitAdc();
-        OSA_TimeDelay(gSensorsAdcCalibrationDurationInMs_c);
+        (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
+        temperature_status = TMP_MEASUREMENT_ONGOING;
+        if (false == PLATFORM_IsAdcInitialized())
+        {
+            PLATFORM_InitAdc();
+            OSA_TimeDelay(gSensorsAdcCalibrationDurationInMs_c);
+        }
+        PLATFORM_StartTemperatureMonitor();
     }
-    PLATFORM_StartTemperatureMonitor();
+#if USE_RTOS
+    else
+    {
+        /* When using RTOS OS like FreeRTOS, temperature_status will always be IDLE when the mutex is successfully taken
+         * so if we reach this else statement, it's a bug.
+         * This is not true in Baremetal as mutexes are stubbed. */
+        assert(0);
+    }
+#endif
 }
 
 /*!
@@ -175,12 +213,28 @@ int32_t SENSORS_RefreshTemperatureValue(void)
 {
     int32_t temperature;
 
-    PLATFORM_GetTemperatureValue(&temperature);
+    /* We are using recursive mutexes so the mutex holder can lock several time the same mutex. This mutex is first
+     * locked in SENSORS_TriggerTemperatureMeasurement(), locking it here a second time ensures the refresh is done by
+     * the current mutex holder.
+     * This mutex must be unlocked twice to be fully available to other tasks. */
+    ADC_MUTEX_LOCK();
 
+    if (temperature_status == TMP_MEASUREMENT_ONGOING)
+    {
+        PLATFORM_GetTemperatureValue(&temperature);
+        temperature_status = TMP_MEASUREMENT_IDLE;
+        /* This unlock corresponds to the lock done in SENSORS_TriggerTemperatureMeasurement() */
+        ADC_MUTEX_UNLOCK();
+        (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
+        LastTemperature = temperature;
+    }
+    else
+    {
+        temperature = LastTemperature;
+    }
+
+    /* Unlock the mutex again because the mutex can be taken up to 2 times by the same holder */
     ADC_MUTEX_UNLOCK();
-    (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
-
-    LastTemperature = temperature;
     return temperature;
 }
 
@@ -201,8 +255,8 @@ int32_t SENSORS_GetTemperature(void)
  */
 void SENSORS_TriggerBatteryMeasurement(void)
 {
-    (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
     ADC_MUTEX_LOCK();
+    (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
     if (false == PLATFORM_IsAdcInitialized())
     {
         PLATFORM_InitAdc();
@@ -220,8 +274,8 @@ uint8_t SENSORS_RefreshBatteryLevel(void)
 {
     uint8_t BatteryLevel;
     PLATFORM_GetBatteryLevel(&BatteryLevel);
-    ADC_MUTEX_UNLOCK();
     (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
+    ADC_MUTEX_UNLOCK();
 
     LastBatteryLevel = BatteryLevel;
     return BatteryLevel;
