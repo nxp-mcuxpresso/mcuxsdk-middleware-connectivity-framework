@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  * All rights reserved.
  *
  * \file
@@ -1400,6 +1400,24 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
     SECLIB_MUTEX_UNLOCK();
 
     (void)MEM_BufferFree(wrk_buf);
+
+    return ret;
+}
+
+/************************************************************************************
+ * \brief Checks whether a public key is valid (point is on the curve).
+ *
+ * \return TRUE if valid, FALSE if not
+ *
+ ************************************************************************************/
+bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey)
+{
+    bool_t ret = false;
+
+    if (ECP256_LePointValid(pKey))
+    {
+        ret = true;
+    }
 
     return ret;
 }
