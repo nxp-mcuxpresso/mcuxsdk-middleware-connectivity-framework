@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 mcux_set_list(RW61x_FAMILY "RW610 RW612")
@@ -11,6 +11,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
         fwk_platform_definitions.h
         fwk_platform.c
         fwk_platform.h
+        fwk_platform_ics.h
         ../include/fwk_platform_rng.h
         DEVICE_IDS ${RW61x_FAMILY}
     )

@@ -1,6 +1,5 @@
 /*
- * Copyright 2021-2022 NXP
- * All rights reserved.
+ * Copyright 2021-2022,2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -23,6 +22,13 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
+
+/* -------------------------------------------------------------------------- */
+/*                           Public type definitions                          */
+/* -------------------------------------------------------------------------- */
+
+typedef void (*temp_ready_event_callback_t)(int32_t temperature_value);
 
 /************************************************************************************
 *************************************************************************************
@@ -79,6 +85,17 @@ void PLATFORM_StartTemperatureMonitor(void);
  * \param  [out] temperature_value       The temperature value is returned by reference in tenths of degree celsius
  */
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value);
+
+/*!
+ * \brief Register function callback called when temperature measurement is ready
+ * \note  This is not implemented/supported on RW platform
+ *
+ * \param[in] cb callback that will be executed when temperature measurement is ready
+ */
+static inline void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
+{
+    (void)cb;
+}
 
 /*!
  * @}  end of FWK_Platform_Sensors addtogroup
