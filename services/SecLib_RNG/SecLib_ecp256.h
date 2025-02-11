@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023, 2025 NXP
  * All rights reserved.
  *
  * \file
@@ -211,6 +211,14 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
  *
  ************************************************************************************/
 secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData);
+
+/************************************************************************************
+ * \brief Checks whether a public key is valid (point is on the curve).
+ *
+ * \return TRUE if valid, FALSE if not
+ *
+ ************************************************************************************/
+bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey);
 
 /************************************************************************************
  * \brief Computes the Diffie-Hellman Key for an ECDH P256 key pair.

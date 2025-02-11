@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2024 NXP
+ * Copyright 2016-2025 NXP
  * All rights reserved.
  *
  * \file
@@ -2031,6 +2031,44 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
     NOT_USED(pKey);
     NOT_USED(pR);
     return gSecError_c;
+}
+
+/************************************************************************************
+ * \brief Checks whether a public key is valid (point is on the curve).
+ *
+ * \return TRUE if valid, FALSE if not
+ *
+ ************************************************************************************/
+bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey)
+{
+    bool_t            ret = false;
+    ecp256Point_t     tmp;
+    mbedtls_ecp_group grp;
+    mbedtls_ecp_point pt;
+
+    /* Change endianness */
+    ECP256_PointCopy_and_change_endianness(tmp.raw, pKey->raw);
+
+    /* Initialize group - P256 */
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256R1);
+
+    /* Initialize point */
+    mbedtls_ecp_point_init(&pt);
+    mbedtls_mpi_read_binary(&pt.X, tmp.components_8bit.x, 32U);
+    mbedtls_mpi_read_binary(&pt.Y, tmp.components_8bit.y, 32U);
+    mbedtls_mpi_lset(&pt.Z, 1);
+
+    if (mbedtls_ecp_check_pubkey(&grp, &pt) == 0U)
+    {
+        ret = true;
+    }
+
+    /* Cleanup */
+    mbedtls_ecp_point_free(&pt);
+    mbedtls_ecp_group_free(&grp);
+
+    return ret;
 }
 
 /*! *********************************************************************************

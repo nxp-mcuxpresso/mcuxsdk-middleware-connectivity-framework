@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2018,2020-2024 NXP
+ * Copyright 2016-2018,2020-2025 NXP
  * All rights reserved.
  *
  * \file
@@ -2445,6 +2445,24 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pPrivateKey,
 void ECDH_P256_FreeDhKeyData(computeDhKeyParam_t *pDhKeyData)
 {
     NOT_USED(pDhKeyData);
+}
+
+/************************************************************************************
+ * \brief Checks whether a public key is valid (point is on the curve).
+ *
+ * \return TRUE if valid, FALSE if not
+ *
+ ************************************************************************************/
+bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey)
+{
+    bool_t ret = false;
+
+    if (ECP256_LePointValid(pKey))
+    {
+        ret = true;
+    }
+
+    return ret;
 }
 
 /*! *********************************************************************************
