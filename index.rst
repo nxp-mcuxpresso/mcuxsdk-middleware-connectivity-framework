@@ -2,15 +2,10 @@ Wireless Framework
 ===============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Introduction
 
    Framework System <README.md>
-
-.. toctree::
-   :maxdepth: 1
-   :caption: CHANGELOG
-
    CHANGELOG <CHANGELOG.md>
 
 .. toctree::
