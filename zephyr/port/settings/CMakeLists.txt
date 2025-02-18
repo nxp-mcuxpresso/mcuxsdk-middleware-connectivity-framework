@@ -11,4 +11,9 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.zephyr_port.settings)
                 ../../include/zephyr/sys/slist.h
                 settings_port.h
     )
+
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.zephyr_port.settings.redefine_api)
+        mcux_add_macro(gSettingsRedefineApiName_c=1)
+    endif()
+
 endif()
