@@ -57,6 +57,12 @@
 #if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
 #undef DTEST1
 #define DTEST1 0UL
+
+/* DTEST13 conflicts with PTC7 (SW3) on localization board */
+#if (defined(gAppButtonCnt_c) && (gAppButtonCnt_c > 1))
+#undef DTEST13
+#define DTEST13 0UL
+#endif
 #endif
 
 /*
@@ -744,8 +750,8 @@ uint8_t PLATFORM_InitLcl(void)
 #endif
     uint8_t status = PLATFORM_InitLclRfGpo(rfgpo_id);
 
-#if defined(LCL_DTEST)
-    /* Enable DTEST */
+#if !defined(NDEBUG)
+    /* Enable DTEST when building debug target */
     PLATFORM_InitLclDtest();
 #endif
 
