@@ -57,6 +57,12 @@
 #if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
 #undef DTEST1
 #define DTEST1 0UL
+
+/* DTEST13 conflicts with PTC7 (SW3) on localization board */
+#if (defined(gAppButtonCnt_c) && (gAppButtonCnt_c > 1))
+#undef DTEST13
+#define DTEST13 0UL
+#endif
 #endif
 
 /*
