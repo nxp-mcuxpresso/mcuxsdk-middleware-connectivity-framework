@@ -744,8 +744,8 @@ uint8_t PLATFORM_InitLcl(void)
 #endif
     uint8_t status = PLATFORM_InitLclRfGpo(rfgpo_id);
 
-#if !defined(NDEBUG)
-    /* Enable DTEST when building debug target */
+#if defined(LCL_DTEST)
+    /* Enable DTEST */
     PLATFORM_InitLclDtest();
 #endif
 
