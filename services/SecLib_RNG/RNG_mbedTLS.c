@@ -204,7 +204,7 @@ int RNG_GetTrueRandomNumber(uint32_t *pRandomNo)
             break;
         }
 
-        if (RNG_entropy_func(&mRngEntropyCtx, (unsigned char *)pRandomNo, sizeof(uint32_t)) != 0)
+        if (RNG_entropy_func(&mRngEntropyCtx, (unsigned char *)pRandomNo, sizeof(uint32_t)) == 0)
         {
             ret = gRngSuccess_d;
         }

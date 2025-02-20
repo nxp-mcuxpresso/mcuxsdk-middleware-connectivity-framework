@@ -1,5 +1,17 @@
 
 ## Connectivity framework CHANGELOG
+### 7.0.1 RFP mcux SDK 25.03.00
+
+**Supported platforms:** 
+- KW45x, KW47x, MCXW71, MCXW72, K32W1x
+- RW61x
+- RT595, RT1060, RT1170
+- MCXW23
+
+#### Minor Changes (bug fixes)
+##### Services
+- [SecLib_RNG] fix return status from RNG_GetTrueRandomNumber() function: return correctly gRngSuccess_d when RNG_entropy_func() function is successfull
+
 ### 7.0.1 revB mcux SDK 25.03.00
 
 **Supported platforms:** 
