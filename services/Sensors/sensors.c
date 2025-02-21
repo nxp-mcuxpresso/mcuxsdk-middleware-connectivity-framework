@@ -179,11 +179,10 @@ void Sensors_SetLowpowerCriticalCb(const Sensors_LowpowerCriticalCBs_t *pfCallba
  */
 void SENSORS_TriggerTemperatureMeasurement(void)
 {
-    /* Lock the mutex now, it will be unlocked when the measure in SENSORS_RefreshTemperatureValue() */
-    ADC_MUTEX_LOCK();
-
     if (temperature_status == TMP_MEASUREMENT_IDLE)
     {
+        /* Lock the mutex now, it will be unlocked when the measure in SENSORS_RefreshTemperatureValue() */
+        ADC_MUTEX_LOCK();
         (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
         temperature_status = TMP_MEASUREMENT_ONGOING;
         if (false == PLATFORM_IsAdcInitialized())
@@ -193,15 +192,6 @@ void SENSORS_TriggerTemperatureMeasurement(void)
         }
         PLATFORM_StartTemperatureMonitor();
     }
-#if USE_RTOS
-    else
-    {
-        /* When using RTOS OS like FreeRTOS, temperature_status will always be IDLE when the mutex is successfully taken
-         * so if we reach this else statement, it's a bug.
-         * This is not true in Baremetal as mutexes are stubbed. */
-        assert(0);
-    }
-#endif
 }
 
 /*!
