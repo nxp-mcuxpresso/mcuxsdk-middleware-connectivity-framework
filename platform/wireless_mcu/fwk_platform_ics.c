@@ -465,7 +465,12 @@ void PLATFORM_RegisterSecurityEventCb(nbu_security_event_callback_t cb)
 
 void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t cb)
 {
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
     nbu_request_temperature_callback = cb;
+#else
+    /* NBU temperature request handling is only supported when gPlatformIcsUseWorkqueueRxProcessing_d is enabled */
+    cb = NULL;
+#endif
 }
 
 /* -------------------------------------------------------------------------- */

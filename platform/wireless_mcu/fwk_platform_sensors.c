@@ -16,6 +16,7 @@
 #include "fsl_lpadc.h"
 #include "fsl_os_abstraction.h"
 #include "fwk_workq.h"
+#include "fwk_config.h"
 
 /* -------------------------------------------------------------------------- */
 /*                              Exported functions                            */
@@ -156,7 +157,12 @@ void PLATFORM_RestoreAdcContext(void)
 
 void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
 {
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
     temperature_ready_callback = cb;
+#else
+    /* Temperature ready event is only supported when gPlatformIcsUseWorkqueueRxProcessing_d is enabled */
+    cb = NULL;
+#endif
 }
 
 /* -------------------------------------------------------------------------- */

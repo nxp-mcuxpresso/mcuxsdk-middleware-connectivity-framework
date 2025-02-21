@@ -101,6 +101,7 @@ void PLATFORM_RestoreAdcContext(void);
 
 /*!
  * \brief Register function callback called when temperature measurement is ready
+ * \note  gPlatformIcsUseWorkqueueRxProcessing_d should be enabled to support this.
  *
  * \param[in] cb callback that will be used when temperature measurement is ready
  */

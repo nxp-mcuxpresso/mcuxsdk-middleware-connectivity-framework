@@ -219,8 +219,7 @@ void PLATFORM_RegisterSecurityEventCb(nbu_security_event_callback_t cb);
 
 /*!
  * \brief Register function callback called when nbu request a temperature measurement
- * \warning function callback will be called in the context of interruption (ISR)
- *          if gPlatformIcsUseWorkqueueRxProcessing_d is disabled
+ * \note  gPlatformIcsUseWorkqueueRxProcessing_d should be enabled to support this.
  *
  * \param[in] cb callback that will be executed when nbu requests a temperature measurement
  *
