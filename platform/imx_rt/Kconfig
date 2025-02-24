@@ -9,7 +9,7 @@ choice MCUX_COMPONENT_middleware.wireless.framework.platform.coex.transceiver
     prompt "Coex implementation selection for supported transceivers"
     config MCUX_COMPONENT_middleware.wireless.framework.platform.coex.k32w0
         bool "Coex platform support for k32w0 transceiver"
-        select MCUX_COMPONENT_component.osa_interface
+        select MCUX_COMPONENT_component.osa
         select MCUX_COMPONENT_middleware.wireless.framework.otw
         help
             Use coex platform implementation to manage k32w0 controller.
@@ -17,7 +17,7 @@ choice MCUX_COMPONENT_middleware.wireless.framework.platform.coex.transceiver
         bool "Coex platform support for iw612 transceiver"
         select MCUX_COMPONENT_component.igpio_adapter
         select MCUX_COMPONENT_middleware.wifi.fwdnld
-        select MCUX_COMPONENT_component.osa_interface
+        select MCUX_COMPONENT_component.osa
         select MCUX_COMPONENT_middleware.freertos-kernel
         select MCUX_COMPONENT_middleware.wifi.osa_free_rtos
         help

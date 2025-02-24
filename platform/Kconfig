@@ -28,7 +28,7 @@ choice
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
     bool "KW45x, K32W1x, MCXW71x families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
@@ -47,7 +47,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
     bool "KW45x, MCXW71x NBU families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
@@ -59,7 +59,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
     bool "KW47x, MCXW72x families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
@@ -76,7 +76,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
     bool "KW47x, MCXW72x NBU families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
@@ -91,7 +91,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     select MCUX_COMPONENT_component.timer_manager
     select CONFIG_MCUX_COMPONENT_component.ctimer_adapter
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_component.flash_adapter
     depends on MCUX_HW_DEVICE_MCXW236B || MCUX_HW_DEVICE_MCXW235B
 

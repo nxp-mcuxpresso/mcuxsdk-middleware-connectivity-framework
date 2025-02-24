@@ -8,7 +8,7 @@ choice MCUX_COMPONENT_middleware.mbedtls.port.selection
 endchoice
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ota
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib

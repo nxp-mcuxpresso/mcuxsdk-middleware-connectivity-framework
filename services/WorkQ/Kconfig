@@ -3,7 +3,7 @@
 
 menuconfig MCUX_COMPONENT_middleware.wireless.framework.workq
     bool "Simple workqueue threads"
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_component.lists
     help
       Use workqueues to defer processing to shared threads.

@@ -4,7 +4,7 @@
 menuconfig MCUX_COMPONENT_middleware.wireless.framework.dbg.sbtsnoop
     bool "btsnoop HCI logging"
     depends on MCUX_COMPONENT_utility.debug_console || MCUX_COMPONENT_utility.debug_console_lite
-    select MCUX_COMPONENT_component.osa_interface
+    select MCUX_COMPONENT_component.osa
     help
       This component provides btsnoop support for HCI logging.
 
