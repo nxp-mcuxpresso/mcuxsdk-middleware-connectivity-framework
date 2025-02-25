@@ -66,7 +66,7 @@ enum { R0, R1, R2, R3, R12, LR, PC, PSR, SIZE_OF_EXCEPTION_STACK};
 /* TRAP instruction */
 #define MICRO_TRAP()                                                        \
 {                                                                           \
-    asm volatile("BKPT 0;");                                                \
+    asm volatile("BKPT 0");                                                \
 }
 
 /****************************************************************************/

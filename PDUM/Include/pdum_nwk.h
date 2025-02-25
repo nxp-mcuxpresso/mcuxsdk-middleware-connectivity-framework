@@ -1,7 +1,7 @@
 /*****************************************************************************
  * SPDX-License-Identifier: BSD-3-Clause
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2008, 2020 NXP
+ * Copyright 2008, 2020, 2024 NXP
  * All rights reserved.
  *
  * MODULE:             PDU Manager
@@ -46,11 +46,36 @@ extern "C" {
 //  RAM saving lpsw2999: NPDU size can be shrunk
 #define PDUM_NPDU_SIZE              (127-9)
 #endif
-#define PDUM_NPDU_DESCENDING(npdu)  (((pdum_tsNPdu *)(npdu))->u8Footer < ((pdum_tsNPdu *)(npdu))->u8Header)
-#define PDUM_NPDU_ASCENDING(npdu)   (((pdum_tsNPdu *)(npdu))->u8Footer >= ((pdum_tsNPdu *)(npdu))->u8Header)
 
 #define TRACE_NPDU_MAX TRUE
 #define PDUM_NPDU_FREETAG (0xFF)
+
+#define PDUM_NPDU_ASSERT_FN g_pfPDUM_vNpduAssert
+
+PDUM_INLINE uint32 __PDUM_u32GetLr()
+{
+    register uint32 lr;
+
+#ifdef __arm__
+    __asm volatile ("mov %0, LR\n" : "=r" (lr));
+#else
+    lr = 0;
+#endif
+
+    return lr;
+}
+
+#define PDUM_NPDU_DESCENDING(npdu)  (\
+    ((pdum_tsNPdu *)(npdu))->u8Tag == PDUM_NPDU_FREETAG && PDUM_NPDU_ASSERT_FN ? \
+        PDUM_NPDU_ASSERT_FN(__PDUM_u32GetLr(), npdu),\
+    (((pdum_tsNPdu *)(npdu))->u8Footer < ((pdum_tsNPdu *)(npdu))->u8Header) :\
+	(((pdum_tsNPdu *)(npdu))->u8Footer < ((pdum_tsNPdu *)(npdu))->u8Header))
+
+#define PDUM_NPDU_ASCENDING(npdu)   (\
+    ((pdum_tsNPdu *)(npdu))->u8Tag == PDUM_NPDU_FREETAG && PDUM_NPDU_ASSERT_FN ? \
+        PDUM_NPDU_ASSERT_FN(__PDUM_u32GetLr(), npdu),\
+    (((pdum_tsNPdu *)(npdu))->u8Footer >= ((pdum_tsNPdu *)(npdu))->u8Header) :\
+    (((pdum_tsNPdu *)(npdu))->u8Footer >= ((pdum_tsNPdu *)(npdu))->u8Header))
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
@@ -96,6 +121,7 @@ typedef enum {
 /****************************************************************************/
 /***        External Variables                                            ***/
 /****************************************************************************/
+extern void (*PDUM_NPDU_ASSERT_FN)(uint32 u32Lr, pdum_tsNPdu *psNpdu);
 
 /****************************************************************************/
 /***        Exported Functions                                            ***/

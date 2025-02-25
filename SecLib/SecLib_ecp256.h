@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2022 NXP
+ * Copyright 2022, 2024 NXP
  * All rights reserved.
  *
  * \file
@@ -97,6 +97,13 @@ typedef union big_int256_t {
 
 typedef big_int256_t ecp256Coordinate_t;
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpacked"
+#pragma GCC diagnostic ignored "-Wattributes"
+/* Disable warnings given by packed and attributes for the inefficient structure */
+#endif
+
 typedef union {
     uint8_t raw[2*SEC_ECP256_COORDINATE_LEN];
     PACKED_STRUCT {
@@ -112,6 +119,9 @@ typedef union {
         ecp256Coordinate_t Y;
     } coord;
 } ecp256Point_t;
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 typedef struct
 {

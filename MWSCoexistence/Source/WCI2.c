@@ -18,6 +18,9 @@
 #include "fsl_os_abstraction.h"
 #include "GPIO_Adapter.h"
 #include "TimersManager.h"
+#if !defined(gWCI2_UseCoexistenceBitBang_d) || (gWCI2_UseCoexistenceBitBang_d == 0)
+#include "fsl_usart.h"
+#endif
 
 #if (gWCI2_UseCoexistence_d) && (!gTimestamp_Enabled_d)
 #error The WCI2 Coexistence uses the Timestamp service. Please enable the TMR Timestamp (gTimestamp_Enabled_d).
@@ -27,12 +30,62 @@
 * Private type definitions
 *************************************************************************************
 ************************************************************************************/
+#if !defined(gWCI2_UseCoexistenceBitBang_d) || (gWCI2_UseCoexistenceBitBang_d == 0)
+
+#ifndef WCI2_USART
+#define WCI2_USART USART1
+#endif
+
+#ifndef WCI2_BAUDRATE
+#define WCI2_BAUDRATE 921600
+#endif
+#else
 /* 38400 bps for 32MHz w/CTIMER prescaler = 32 (default) */
 #define WCI2_BIT_TIME                   26u
+#endif
+
+#if defined(gWCI2_UseCoexistenceBitBang_d) && (gWCI2_UseCoexistenceBitBang_d != 0)
 #define WCI2_TYPE0_MSG_RX_SHIFT         3u
 #define WCI2_TYPE0_MSG_TX_SHIFT         2u
 #define WCI2_TYPE7_MSG_RX_PRIO_SHIFT    0u
 #define WCI2_TYPE7_MSG_TX_PRIO_SHIFT    2u
+#else
+#define WCI2_TYPE0_MSG_RX_SHIFT         4u
+#define WCI2_TYPE0_MSG_TX_SHIFT         5u
+#define WCI2_TYPE7_MSG_RX_PRIO_SHIFT    6u
+#define WCI2_TYPE7_MSG_TX_PRIO_SHIFT    4u
+#endif
+
+/* defines for PRIO bits over the WCI2 interface */
+//#define WCI2_PRIO_LSB
+#define WCI2_PRIO_MSB /* use for IW612 WCI2 coex */
+//#define WCI2_PRIO_MSB_LSB
+
+#ifdef WCI2_PRIO_LSB
+#if defined(gWCI2_UseCoexistenceBitBang_d) && (gWCI2_UseCoexistenceBitBang_d != 0)
+#define TX_PRIO_BIT 0b01
+#define RX_PRIO_BIT 0b01
+#else
+#define TX_PRIO_BIT 0b10
+#define RX_PRIO_BIT 0b10
+#endif
+#endif
+
+#ifdef WCI2_PRIO_MSB
+#if defined(gWCI2_UseCoexistenceBitBang_d) && (gWCI2_UseCoexistenceBitBang_d != 0)
+#define TX_PRIO_BIT 0b10
+#define RX_PRIO_BIT 0b10
+#else
+#define TX_PRIO_BIT 0b01
+#define RX_PRIO_BIT 0b01
+#endif
+#endif
+
+#ifdef WCI2_PRIO_MSB_LSB
+#define TX_PRIO_BIT 0b11
+#define RX_PRIO_BIT 0b11
+#endif
+
 /************************************************************************************
 *************************************************************************************
 * Private prototypes
@@ -99,7 +152,11 @@ static void WCI2_DisableRfDenyPinInterrupt(void);
 #if gWCI2_UseCoexistence_d
 static void request_grant(mwsRfState_t);
 static void release_access(void);
-static void bitbang_gpio(uint8_t);
+static void WCI2_SendByte(uint8_t);
+#if (!defined(gWCI2_UseCoexistenceBitBang_d)) || (gWCI2_UseCoexistenceBitBang_d == 0)
+static mwsStatus_t WCI2_UART_Init(void);
+#endif
+
 #endif
 /************************************************************************************
 *************************************************************************************
@@ -481,6 +538,12 @@ mwsStatus_t WCI2_CoexistenceInit(void *rfReq, void *rfTxDeny, void *rfRxDeny)
         WCI2_CoexistenceSetPriority(gMWS_CoexRxPrio_d, gMWS_CoexTxPrio_d);
         WCI2_CoexistenceEnable();
 
+#if !defined(gWCI2_UseCoexistenceBitBang_d) || (gWCI2_UseCoexistenceBitBang_d == 0)
+        if (gMWS_Success_c != WCI2_UART_Init())
+        {
+            status = gMWS_Error_c;
+        }
+#endif
         /* We need TS service since ReleaseAccess bitbangs the GPIO */
         TMR_TimeStampInit();
         WCI2_CoexistenceReleaseAccess();
@@ -988,7 +1051,11 @@ uint8_t WCI2_GetCoexStats(mwsCoexStats_t *stats)
 static void request_grant(mwsRfState_t newState)
 {
     uint64_t timestamp;
+#if defined(gWCI2_UseCoexistenceBitBang_d) && (gWCI2_UseCoexistenceBitBang_d != 0)
     uint8_t type7_msg = 0b11100000;
+#else
+    uint8_t type7_msg = 0b00000111;
+#endif
     uint8_t type0_msg = 0b00000000;
 
     /* Send "Request Prio" */
@@ -1001,28 +1068,35 @@ static void request_grant(mwsRfState_t newState)
         type0_msg |= 1 << WCI2_TYPE0_MSG_TX_SHIFT;
     }
 
-    type7_msg |= (mCoexFlags & (1 << gMWS_RxState_c)) << 
-                                                WCI2_TYPE7_MSG_RX_PRIO_SHIFT;
-    type7_msg |= (mCoexFlags & (1 << gMWS_TxState_c)) << 
-                                                WCI2_TYPE7_MSG_TX_PRIO_SHIFT;
+    if (mCoexFlags & (1 << gMWS_RxState_c))
+    {
+        type7_msg |= RX_PRIO_BIT << WCI2_TYPE7_MSG_RX_PRIO_SHIFT;
+    }
+
+    if (mCoexFlags & (1 << gMWS_TxState_c))
+    {
+        type7_msg |= TX_PRIO_BIT << WCI2_TYPE7_MSG_TX_PRIO_SHIFT;
+    }
 
     OSA_InterruptDisable();
 
-    bitbang_gpio(type7_msg);
+    WCI2_SendByte(type7_msg);
     timestamp = TMR_GetTimestamp();
     while ((TMR_GetTimestamp() - timestamp) < gWCI2_CoexPrioSignalTime_d);
-    bitbang_gpio(type0_msg);
+    WCI2_SendByte(type0_msg);
 
     OSA_InterruptEnable();
 }
 
 static void release_access()
 {
-    uint8_t type7_msg = 0b11100000;
-    bitbang_gpio(type7_msg);
+    /* Release access is done by type 0 message, with no operation */
+    uint8_t type0_msg = 0b00000000;
+    WCI2_SendByte(type0_msg);
 }
 
-static void bitbang_gpio(uint8_t byte_to_send)
+#if defined(gWCI2_UseCoexistenceBitBang_d) && (gWCI2_UseCoexistenceBitBang_d != 0)
+static void WCI2_SendByte(uint8_t byte_to_send)
 {
     uint32_t ts, bit;
 
@@ -1058,4 +1132,30 @@ static void bitbang_gpio(uint8_t byte_to_send)
     }
     OSA_InterruptEnable();
 }
+#else
+static void WCI2_SendByte(uint8_t byte_to_send)
+{
+    USART_WriteByte(WCI2_USART, byte_to_send);
+}
+
+static mwsStatus_t WCI2_UART_Init(void)
+{
+    mwsStatus_t ret =  gMWS_Success_c;
+    usart_config_t usartConfig;
+    status_t status;
+
+    USART_GetDefaultConfig(&usartConfig);
+
+    usartConfig.enableRx = FALSE;
+    usartConfig.baudRate_Bps = WCI2_BAUDRATE;
+
+    status = USART_Init(WCI2_USART, &usartConfig, 32000000);
+    if (status != kStatus_Success)
+    {
+        ret = gMWS_InvalidParameter_c;
+    }
+
+    return ret;
+}
+#endif /* gWCI2_UseCoexistenceBitBang_d */
 #endif /* gWCI2_UseCoexistence_d */

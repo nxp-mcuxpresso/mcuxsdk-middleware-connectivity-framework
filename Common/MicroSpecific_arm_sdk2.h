@@ -114,7 +114,7 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
  * #define MICRO_GET_PRIMASK_LEVEL()                                 \
  *  ({                                                               \
  *       register uint32 __u32primaskLevelStore;                     \
- *       asm volatile ("MRS %[primasklevelstore], PRIMASK;"          \
+ *       asm volatile ("MRS %[primasklevelstore], PRIMASK"           \
  *           :[primasklevelstore] "=r"(__u32primaskLevelStore)       \
  *           :                                                       \
  *           );                                                      \
@@ -126,7 +126,7 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
  * #define MICRO_SET_PRIMASK_LEVEL(A)                                \
  *  ({                                                               \
  *       register uint32 __u32primaskLevelStore  = A;                \
- *       asm volatile ("MSR PRIMASK, %[primasklevelstore];"          \
+ *       asm volatile ("MSR PRIMASK, %[primasklevelstore]"           \
  *           :                                                       \
  *           :[primasklevelstore] "r"(__u32primaskLevelStore)        \
  *           );                                                      \
@@ -137,7 +137,7 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
  * #define MICRO_GET_ACTIVE_INT_LEVEL()                              \
  *   ({                                                              \
  *       register uint32 __u32interruptActiveLevel;                  \
- *       asm volatile ("MRS %[activelevelstore], BASEPRI;"           \
+ *       asm volatile ("MRS %[activelevelstore], BASEPRI"            \
  *           :[activelevelstore] "=r"(__u32interruptActiveLevel)     \
  *           : );                                                    \
  *       __u32interruptActiveLevel;                                  \
@@ -148,10 +148,10 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
  * #define MICRO_SET_ACTIVE_INT_LEVEL_MAX(A)                         \
  *  ({                                                               \
  *     register uint32 __u32interruptLevelStore  = A;                \
- *       asm volatile ("MSR BASEPRI_MAX, %[intlevelstore];"          \
+ *       asm volatile ("MSR BASEPRI_MAX, %[intlevelstore]"           \
  *           :                                                       \
  *           :[intlevelstore] "r"(__u32interruptLevelStore)          \
- *           );                                                       \
+ *           );                                                      \
  *  })
  */
 #define MICRO_SET_ACTIVE_INT_LEVEL(A)        __set_BASEPRI(A)
@@ -159,7 +159,7 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
  * #define MICRO_SET_ACTIVE_INT_LEVEL(A)                             \
  *  ({                                                               \
  *      register uint32 __u32interruptLevelStore  = A;               \
- *       asm volatile ("MSR BASEPRI, %[intlevelstore];"              \
+ *       asm volatile ("MSR BASEPRI, %[intlevelstore]"               \
  *           :                                                       \
  *           :[intlevelstore] "r"(__u32interruptLevelStore)          \
  *           );                                                      \
@@ -176,7 +176,7 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
  * possible.
  * #define MICRO_DISABLE_AND_SAVE_INTERRUPTS(u32Store)               \
  *  ({                                                               \
- *       asm volatile ("MRS %[primasklevelstore], PRIMASK;"          \
+ *       asm volatile ("MRS %[primasklevelstore], PRIMASK"           \
  *               :[primasklevelstore] "=r"(u32Store)                 \
  *               :                                                   \
  *               );                                                  \
@@ -187,7 +187,7 @@ extern uint8 u8AHI_InterruptReadActivePriorityLevel(void);
 /* Former implementation : deprecated since CMSIS equivalent exist.
  * #define MICRO_RESTORE_INTERRUPTS(u32Store)                        \
  *  ({                                                               \
- *       asm volatile ("MSR PRIMASK, %[primasklevelstore];"          \
+ *       asm volatile ("MSR PRIMASK, %[primasklevelstore]"           \
  *               :                                                   \
  *               :[primasklevelstore] "r"(u32Store)                  \
  *               );                                                  \
@@ -276,7 +276,7 @@ static inline uint32_t __ffs(uint32_t x)
  * #define MICRO_GET_LX()                               \
  * ({                                                   \
  *   register uint32 __u32lxRegister;                   \
- *   asm volatile ("MOV %[lxRegister], R14;"            \
+ *   asm volatile ("MOV %[lxRegister], R14"             \
  *         :[lxRegister] "=r"(__u32lxRegister)          \
  *           :                                          \
  *           );                                         \
@@ -288,7 +288,7 @@ static inline uint32_t __ffs(uint32_t x)
  * #define MICRO_GET_STACK_LEVEL()                       \
  *  ({                                                   \
  *       register uint32 __u32stackRegister;             \
- *       asm volatile ("MOV %[stackRegister], SP;"       \
+ *       asm volatile ("MOV %[stackRegister], SP"        \
  *           :[stackRegister] "=r"(__u32stackRegister)   \
  *           :                                           \
  *           );                                          \
@@ -298,11 +298,11 @@ static inline uint32_t __ffs(uint32_t x)
 
 #define MICRO_TRAP()             __BKPT(0)
 /* Former implementation : deprecated since CMSIS equivalent exist.
- * #define MICRO_TRAP()         asm volatile("BKPT 0;")
+ * #define MICRO_TRAP()         asm volatile("BKPT 0")
  */
 #define MICRO_NOP()              __NOP()
 /* Former implementation : deprecated since CMSIS equivalent exist.
- * #define MICRO_NOP()          asm volatile ("nop;")
+ * #define MICRO_NOP()          asm volatile ("nop")
  */
 
 /* macro using privilege/non-privilege model:
@@ -366,7 +366,7 @@ static inline uint32_t __ffs(uint32_t x)
 #define MICRO_JUMP_TO_ADDRESS(ADDRESS)                                      \
    ({                                                                       \
        register uint32 __u32programAddressStore = ADDRESS | 0x1;            \
-       asm volatile ("BLX %[programAddressStore];"                          \
+       asm volatile ("BLX %[programAddressStore]"                          \
            :                                                                \
            :[programAddressStore] "r"(__u32programAddressStore));           \
     })

@@ -170,7 +170,7 @@ extern volatile uint32_t gMWS_CoexRfDenyActiveState_d;
 
 #if defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d == 1)
 #ifndef gWCI2_CoexGrantPinSampleDelay
-#define gWCI2_CoexGrantPinSampleDelay   50  /* usec */
+#define gWCI2_CoexGrantPinSampleDelay   100  /* usec */
 #endif
 #endif
 
