@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 
+#include "fwk_config.h"
 #include "fsl_common.h"
 #include "ll_types.h"
 #include "fwk_platform_lowpower.h"
@@ -28,6 +29,8 @@ extern bool PHY_XCVR_AllowLowPower(void);
 #define ST_INIT                                0x11U
 #define HANDLE_INIT                            0x000EU
 #define PLATFORM_SWITCH_SLEEP_CLOCK_TIMEOUT_US 200U
+
+#define PLATFORM_BTRTU1_ISR_ADDR 0xA8009424U
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -55,6 +58,15 @@ static uint32_t bleMinimalSleepTimeAllowedHs = BLE_MINIMAL_SLEEP_TIME_ALLOWED;
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
+#if defined(gPlatformLowpowerEnableWakeUpInterrupt_d) && (gPlatformLowpowerEnableWakeUpInterrupt_d == 1)
+void T1_INT_IRQHandler(void)
+{
+    /* Clear the BTRTU timer 1 interrupt*/
+    *(uint32_t *)PLATFORM_BTRTU1_ISR_ADDR &= ~(BTRTU1_BTRTU1_ISR_T1_INT_MASK);
+}
+#endif
+
 void PLATFORM_LowPowerInit(void)
 {
     if (initialized == false)
@@ -75,6 +87,14 @@ void PLATFORM_LowPowerInit(void)
 
         /* Enable interrupt of the XTAL ready, necessary to read instant value of XTAL_RDY */
         RF_CMC1->IRQ_CTRL |= RF_CMC1_IRQ_CTRL_RDY_IE_MASK;
+
+#if defined(gPlatformLowpowerEnableWakeUpInterrupt_d) && (gPlatformLowpowerEnableWakeUpInterrupt_d == 1)
+        /* Initialize BTRTU timer 1 interrupt (classic bluetooth interrupt) that is not used on this platform. It will
+         * be triggered by PLATFORM_RemoteActiveReq() on host core each time it needs to access to NBU power domain */
+        BTRTU1->BTRTU1_TIMER1_LEN = 1U;
+        BTRTU1->BTRTU1_IMR |= BTRTU1_BTRTU1_IMR_T1_INT_MASK;
+        NVIC_EnableIRQ(T1_INT_IRQn);
+#endif
 
         initialized = true;
     }

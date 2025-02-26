@@ -182,4 +182,8 @@
 #define gPlatformIcsUseWorkqueueRxProcessing_d 1
 #endif
 
+/* Address which can trigger a dummy interrupt on NBU. Used in PLATFORM_RemoteActiveReq() to ensure code is executed on
+ * NBU when trying to access to its power domain. In some corner cases NBU could become irresponsive if the NBU power domain was woken up without executing any code on the core  */
+#define gPlatformNbuWakeUpInterruptAddr 0x48949410U
+
 #endif /* _FWK_CONFIG_H_ */

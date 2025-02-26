@@ -93,6 +93,8 @@
 #define FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US 10000U
 #endif /* FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US */
 
+#define FWK_PLATFORM_NBU_WAKE_UP_INTERRUPT_MASK 0x8UL
+
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
  * the returned status will be negative  */
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
@@ -680,6 +682,11 @@ void PLATFORM_RemoteActiveReq(void)
         }
         rfmc_ctrl |= RFMC_RF2P4GHZ_CTRL_LP_WKUP_DLY(lp_wakeup_delay);
         RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
+#if defined(gPlatformNbuWakeUpInterruptAddr)
+        /* Enable an interrupt on NBU, ensure we execute code on NBU each time we access to its power domain. To do so a
+         * dummy interrupt is used */
+        *(uint32_t *)gPlatformNbuWakeUpInterruptAddr |= FWK_PLATFORM_NBU_WAKE_UP_INTERRUPT_MASK;
+#endif
     }
     else
     {
