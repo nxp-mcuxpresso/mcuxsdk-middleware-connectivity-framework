@@ -8,6 +8,7 @@
 /* -------------------------------------------------------------------------- */
 #include <stdlib.h>
 
+#include "fwk_config.h"
 #include "fsl_common.h"
 #include "fwk_platform.h"
 #include "fwk_platform_ics.h"
@@ -27,7 +28,10 @@
 #define RF_SFA_IRQ_PRIORITY      4
 #define HOST_LOWPOWER_CONSTRAINT 2U
 
-#define RF_SFC_MAXIMAL_PPM_TARGET  200U
+#ifndef RF_SFC_MAXIMAL_PPM_TARGET
+#define RF_SFC_MAXIMAL_PPM_TARGET 200U
+#endif
+
 #define RF_SFC_MINIMAL_FILTER_SIZE 1U
 #define RF_SFC_MAXIMAL_FILTER_SIZE 256U
 

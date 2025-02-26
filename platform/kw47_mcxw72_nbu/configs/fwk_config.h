@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,13 +7,8 @@
 #ifndef _FWK_CONFIG_H_
 #define _FWK_CONFIG_H_
 
-/*
- * KW47 NBU requires RNG but is not allowed to invoke S200 services directly.
- */
-#define gRngUseSecureSubSystem_d 0
-
 /*********************************************************************
- *        SecLib
+ *        SecLib_RNG
  *********************************************************************/
 
 /*
@@ -30,6 +25,17 @@
  * Call Lehmer LCG random generation instead.
  */
 #define gRngUseSecLib_d 0
+
+/*
+ * KW47 NBU requires RNG but is not allowed to invoke S200 services directly.
+ */
+#define gRngUseSecureSubSystem_d 0
+
+/*********************************************************************
+ *        SFC
+ *********************************************************************/
+
+#define RF_SFC_MAXIMAL_PPM_TARGET 360U
 
 /*********************************************************************
  *        PLATFORM
