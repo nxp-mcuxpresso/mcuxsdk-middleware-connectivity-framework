@@ -55,6 +55,7 @@ void PLATFORM_InitLclGpioDebug(bool_t debug);
  * \param[in]  config_len   length of configuration, for checking
  *
  * \return 0/1 which is Success/Failure correspondingly
+ * \remarks Must be called after NBU initiation since it relies on common RF parameters.
  ********************************************************************************** */
 uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len);
 
@@ -63,6 +64,7 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len);
  * \param[in]  config_ptr   pointer to FEM configuration
  *
  * \return 0/1 which is Success/Failure correspondingly
+ * \remarks Must be called after NBU initiation since it relies on common RF parameters.
  ********************************************************************************** */
 uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len);
 

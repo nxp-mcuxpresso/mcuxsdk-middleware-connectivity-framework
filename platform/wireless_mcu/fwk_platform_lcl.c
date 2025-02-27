@@ -119,7 +119,6 @@
 /* Default COEX configuration including several XCVR structures + output/input signals setting + RF_GPO option.
    Details: all output signals activated without inversion/muxing, TSM is source, high priority TX/RX,
             RF_ACTIVE aligned with RF_STATUS & RF_PRIO in RX but TX, RF_NOT_ALLOWED active HIGH on PTC7.
-   Remark: KW45 HW bug - RF_NALLOWED is active LOW instead of HIGH. May need to set rfna_invert to 1.
  */
 const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
     /* wiring configuration */
@@ -131,8 +130,12 @@ const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
     0x01,         /* tsm_controls_coex;     When set to 1, TSM will control output signals */
     /* -------- */
     0x01, /* rfactSrc;                  coexRfactSrc_t 0..2 */
-    /* coexRfSignalInvert_t: */
+/* coexRfSignalInvert_t: */
+#if defined(KW45B41Z82_SERIES) || defined(KW45B41Z83_SERIES)
+    0x01, /* rfna_invert;               KW45 HW bug - RF_NALLOWED is active LOW instead of HIGH */
+#else
     0x00, /* rfna_invert;               When set to 1, inverts the RF_NOT_ALLOWED signal in RFMC muxing logic */
+#endif
     0x00, /* rfact_invert;              When set to 1, inverts the RF_ACTIVE signal in RFMC muxing logic */
     0x00, /* rfstat_invert;             When set to 1, inverts the RF_STATUS signal in RFMC muxing logic */
     0x00, /* rfpri_invert[0];           When set to 1, inverts the RF_PRIORITY signals in RFMC muxing logic */
