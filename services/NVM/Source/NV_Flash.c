@@ -385,71 +385,65 @@ NVM_STATIC void __NvmRestoreUnmirrored(void);
 /******************************************************************************
  * Name: NvInitPendingSavesQueue
  * Description: Initialize the pending saves queue
- * Parameters: [IN] pQueue - pointer to queue
+ * Parameters: none
  * Return: none
  ******************************************************************************/
-NVM_STATIC void NvInitPendingSavesQueue(NVM_SaveQueue_t *pQueue);
+NVM_STATIC void NvInitPendingSavesQueue(void);
 
 /******************************************************************************
  * Name: NvPushPendingSave
  * Description: Add a new pending save to the queue tail
- * Parameters: [IN] pQueue - pointer to queue
- *             [IN] data - data to be saved
+ * Parameters: [IN] data - data to be saved
  * Return: TRUE if the push operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC bool_t NvPushPendingSave(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t data);
+NVM_STATIC bool_t NvPushPendingSave(NVM_TableEntryInfo_t data);
 
 /******************************************************************************
  * Name: NvGetPendingSaveHead
  * Description: Retrieves the head element from the pending saves queue leaving=
  *              it at head position. Also see NvPopPendingSave.
- * Parameters: [IN] pQueue - pointer to queue
- *             [OUT] pData - pointer to the location where data will be placed
+ * Parameters: [OUT] pData - pointer to the location where data will be placed
  * Return: TRUE if the get head operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC bool_t NvGetPendingSaveHead(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t *pData);
+NVM_STATIC bool_t NvGetPendingSaveHead(NVM_TableEntryInfo_t *pData);
 
 /******************************************************************************
  * Name: NvRemovePendingSaveHead
  * Description: Consume pending save queue head by incrementing its head index.
  *              Also see NvPopPendingSave.
- * Parameters: [IN] pQueue - pointer to queue
+ * Parameters: none
  * Return: none
  ******************************************************************************/
-NVM_STATIC void NvRemovePendingSaveHead(NVM_SaveQueue_t *pQueue);
+NVM_STATIC void NvRemovePendingSaveHead(void);
 
 /******************************************************************************
  * Name: NvLookAheadInPendingSaveQueue
  * Description: Search through pending save queue if an update is pending on the
  *              element designated by an id and index.
  *
- * Parameters: [IN] pQueue - pointer to queue
- *             [IN] searched_id
+ * Parameters: [IN] searched_id
  *             [IN] searched_index
  *
  * Return: op_type of pending operation OP_NONE if not found,
  *         OP_SAVE_ALL or OP_SAVE_SINGLE if found
  ******************************************************************************/
-NVM_STATIC uint8_t NvLookAheadInPendingSaveQueue(NVM_SaveQueue_t *pQueue,
-                                                 uint16_t         searched_id,
-                                                 uint16_t         searched_index);
+NVM_STATIC uint8_t NvLookAheadInPendingSaveQueue(uint16_t searched_id, uint16_t searched_index);
 
 /******************************************************************************
  * Name: NvPopPendingSave
  * Description: Retrieves the head element from the pending saves queue
- * Parameters: [IN] pQueue - pointer to queue
- *             [OUT] pData - pointer to the location where data will be placed
+ * Parameters: [OUT] pData - pointer to the location where data will be placed
  * Return: TRUE if the pop operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC bool_t NvPopPendingSave(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t *pData);
+NVM_STATIC bool_t NvPopPendingSave(NVM_TableEntryInfo_t *pData);
 
 /******************************************************************************
  * Name: NvGetPendingSavesCount
  * Description: self explanatory
- * Parameters: [IN] pQueue - pointer to queue
+ * Parameters: none
  * Return: Number of pending saves
  ******************************************************************************/
-NVM_STATIC uint16_t NvGetPendingSavesCount(NVM_SaveQueue_t *pQueue);
+NVM_STATIC uint16_t NvGetPendingSavesCount(void);
 
 #if (!defined(gNvLegacyTable_Disabled_d) || (gNvLegacyTable_Disabled_d == 0))
 /******************************************************************************
@@ -1200,7 +1194,7 @@ NVM_STATIC NVM_Status_t __NvRegisterTableEntry(void            *ptrData,
         else
         {
 #if gNvFragmentation_Enabled_d
-            if (elemCount > gNvRecordsCopiedBufferSize_c)
+            if (elemCount > (uint16_t)gNvRecordsCopiedBufferSize_c)
             {
                 status = gNVM_DefragBufferTooSmall_c;
             }
@@ -1827,7 +1821,7 @@ NVM_STATIC NVM_Status_t __NvAtomicSave(void)
             }
         }
 #else  /*gUnmirroredFeatureSet_d*/
-        NvInitPendingSavesQueue(&mNvPendingSavesQueue);
+        NvInitPendingSavesQueue();
 #endif /*gUnmirroredFeatureSet_d*/
         /* if critical section, add a special entry in the queue */
         if (mNvCriticalSectionFlag != 0U)
@@ -2035,7 +2029,7 @@ NVM_STATIC NVM_Status_t __NvFormat(void)
         } /* for */
 #endif
         /* clear the save queue */
-        NvInitPendingSavesQueue(&mNvPendingSavesQueue);
+        NvInitPendingSavesQueue();
     } while (FALSE);
 
     return status;
@@ -2147,19 +2141,19 @@ NVM_STATIC int __NvIdle(void)
             }
 #endif /* gNvmUseSaveOnTimerJitter_c */
             /* process the save-on-idle requests */
-            while (NvGetPendingSaveHead(&mNvPendingSavesQueue, &tblIdx))
+            while (NvGetPendingSaveHead(&tblIdx))
             /* so long as we find something in Head, there are pending operations */
             {
                 if ((gNvCopyAll_c == tblIdx.entryId) && (gNvCopyAll_c == tblIdx.elementIndex) &&
                     (OP_SAVE_ALL == tblIdx.op_type))
                 {
                     (void)__NvAtomicSave();
-                    NvRemovePendingSaveHead(&mNvPendingSavesQueue);
+                    NvRemovePendingSaveHead();
                     continue;
                 }
                 else if (gNvInvalidDataEntry_c == tblIdx.entryId)
                 {
-                    NvRemovePendingSaveHead(&mNvPendingSavesQueue);
+                    NvRemovePendingSaveHead();
                     continue;
                 }
                 else
@@ -2172,7 +2166,7 @@ NVM_STATIC int __NvIdle(void)
                     /* was left in queue : do not add again and reorder write */
                     break;
                 }
-                NvRemovePendingSaveHead(&mNvPendingSavesQueue);
+                NvRemovePendingSaveHead();
                 nb_operation++;
             }
         }
@@ -2606,7 +2600,7 @@ NVM_STATIC NVM_Status_t __NvModuleInit(bool_t flashInit)
 #if (gNvFragmentation_Enabled_d == TRUE)
         for (loopCnt = 0U; loopCnt < mNVM_DataTableNbEntries; loopCnt++)
         {
-            if (pNVM_DataTable[loopCnt].ElementsCount > (uint32_t)gNvRecordsCopiedBufferSize_c)
+            if (pNVM_DataTable[loopCnt].ElementsCount > (uint16_t)gNvRecordsCopiedBufferSize_c)
             {
                 status = gNVM_DefragBufferTooSmall_c;
                 break;
@@ -2616,7 +2610,7 @@ NVM_STATIC NVM_Status_t __NvModuleInit(bool_t flashInit)
 #endif
         {
             /* Initialize the pending saves queue */
-            NvInitPendingSavesQueue(&mNvPendingSavesQueue);
+            NvInitPendingSavesQueue();
 
             /* Initialize the data set info table */
             for (loopCnt = 0U; loopCnt < (uint16_t)gNvTableEntriesCountMax_c; loopCnt++)
@@ -3040,42 +3034,39 @@ NVM_STATIC bool_t NvIsNVMFlashAddress(void *address)
 /******************************************************************************
  * Name: NvInitPendingSavesQueue
  * Description: Initialize the pending saves queue
- * Parameters: [IN] pQueue - pointer to queue
+ * Parameters: none
  * Return: none
  ******************************************************************************/
-NVM_STATIC void NvInitPendingSavesQueue(NVM_SaveQueue_t *pQueue)
+NVM_STATIC void NvInitPendingSavesQueue(void)
 {
-    assert(NULL != pQueue);
-    pQueue->Head         = 0U;
-    pQueue->Tail         = 0U;
-    pQueue->EntriesCount = 0U;
+    mNvPendingSavesQueue.Head         = 0U;
+    mNvPendingSavesQueue.Tail         = 0U;
+    mNvPendingSavesQueue.EntriesCount = 0U;
 }
 
 /******************************************************************************
  * Name: NvPushPendingSave
  * Description: Add a new pending save to the queue
- * Parameters: [IN] pQueue - pointer to queue
- *             [IN] data - data to be saved
+ * Parameters: [IN] data - data to be saved
  * Return: TRUE if the push operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC bool_t NvPushPendingSave(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t data)
+NVM_STATIC bool_t NvPushPendingSave(NVM_TableEntryInfo_t data)
 {
     bool_t status = FALSE;
 
-    assert(NULL != pQueue); /* this is an internal function always called with non NULL queue pointer */
-
     /* Can only add to queue if at least one slot is remaining */
-    if (pQueue->EntriesCount < (uint16_t)(gNvPendingSavesQueueSize_c))
+    if (mNvPendingSavesQueue.EntriesCount < (uint16_t)(gNvPendingSavesQueueSize_c))
     {
+        uint16_t tail_idx = mNvPendingSavesQueue.Tail;
         /* Add the item to queue */
-        pQueue->QData[pQueue->Tail] = data;
+        mNvPendingSavesQueue.QData[tail_idx] = data;
         /* Increment and wrap the tail when it reaches gNvPendingSavesQueueSize_c */
-        INCREMENT_Q_INDEX(pQueue->Tail);
+        INCREMENT_Q_INDEX(tail_idx);
 
         /* Increment the entries count */
-        pQueue->EntriesCount++;
-
-        status = TRUE;
+        mNvPendingSavesQueue.EntriesCount++;
+        mNvPendingSavesQueue.Tail = tail_idx;
+        status                    = TRUE;
     }
 
     return status;
@@ -3088,45 +3079,46 @@ NVM_STATIC bool_t NvPushPendingSave(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_
  *             [OUT] pData - pointer to the location where data will be placed
  * Return: TRUE if the pop operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC bool_t NvGetPendingSaveHead(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t *pData)
+NVM_STATIC bool_t NvGetPendingSaveHead(NVM_TableEntryInfo_t *pData)
 {
     bool_t status = FALSE;
-    assert(pQueue != NULL);
     assert(pData != NULL);
-    if (pQueue->EntriesCount != 0U)
+    if (mNvPendingSavesQueue.EntriesCount != 0U)
     {
-        *pData = pQueue->QData[pQueue->Head];
+        *pData = mNvPendingSavesQueue.QData[mNvPendingSavesQueue.Head];
         status = TRUE;
     }
     return status;
 }
 
-NVM_STATIC void NvRemovePendingSaveHead(NVM_SaveQueue_t *pQueue)
+NVM_STATIC void NvRemovePendingSaveHead(void)
 {
-    /* Increment and wrap the head when it reaches gNvPendingSavesQueueSize_c */
-    INCREMENT_Q_INDEX(pQueue->Head);
+    if (mNvPendingSavesQueue.EntriesCount > 0u)
+    {
+        /* Increment and wrap the head when it reaches gNvPendingSavesQueueSize_c */
+        INCREMENT_Q_INDEX(mNvPendingSavesQueue.Head);
 
-    /* Decrement the entries count */
-    pQueue->EntriesCount--;
+        /* Decrement the entries count */
+        mNvPendingSavesQueue.EntriesCount--;
+    }
 }
 
 /******************************************************************************
  * Name: NvPopPendingSave
  * Description: Retrieves the head element from the pending saves queue
- * Parameters: [IN] pQueue - pointer to queue
- *             [OUT] pData - pointer to the location where data will be placed
+ * Parameters: [OUT] pData - pointer to the location where data will be placed
  * Return: TRUE if the pop operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC bool_t NvPopPendingSave(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t *pData)
+NVM_STATIC bool_t NvPopPendingSave(NVM_TableEntryInfo_t *pData)
 {
-    bool_t status = TRUE;
+    bool_t status;
 
-    status = NvGetPendingSaveHead(pQueue, pData);
+    status = NvGetPendingSaveHead(pData);
 
     if (status == TRUE)
     {
         /* Update Head index to consume head */
-        NvRemovePendingSaveHead(pQueue);
+        NvRemovePendingSaveHead();
     }
     return status;
 }
@@ -3134,37 +3126,31 @@ NVM_STATIC bool_t NvPopPendingSave(NVM_SaveQueue_t *pQueue, NVM_TableEntryInfo_t
 /******************************************************************************
  * Name: NvGetPendingSavesCount
  * Description: self explanatory
- * Parameters: [IN] pQueue - pointer to queue
+ * Parameters: none
  * Return: Number of pending saves
  ******************************************************************************/
-NVM_STATIC uint16_t NvGetPendingSavesCount(NVM_SaveQueue_t *pQueue)
+NVM_STATIC uint16_t NvGetPendingSavesCount(void)
 {
-    uint16_t status = 0U;
-    if (NULL != pQueue)
-    {
-        status = pQueue->EntriesCount;
-    }
-    return status;
+    /* Called from context where pQueue is well controlled */
+    return mNvPendingSavesQueue.EntriesCount;
 }
 
 /******************************************************************************
  * Name: NvLookAheadInPendingSaveQueue
  * Description: Retrieves the head element from the pending saves queue
- * Parameters: [IN] pQueue - pointer to queue
- *             [IN] searched_id - entry Id
+ * Parameters: [IN] searched_id - entry Id
  *             [IN] searched_index
  * Return: TRUE if the pop operation succeeded, FALSE otherwise
  ******************************************************************************/
-NVM_STATIC uint8_t NvLookAheadInPendingSaveQueue(NVM_SaveQueue_t *pQueue, uint16_t searched_id, uint16_t searched_index)
+NVM_STATIC uint8_t NvLookAheadInPendingSaveQueue(uint16_t searched_id, uint16_t searched_index)
 {
     eNvFlashOp_t found = OP_NONE;
-    uint16_t     i;
-    if (pQueue->EntriesCount != 0U)
+    if (mNvPendingSavesQueue.EntriesCount != 0U)
     {
-        i = pQueue->Head;
-        while (i != pQueue->Tail)
+        uint16_t i = mNvPendingSavesQueue.Head;
+        while (i != mNvPendingSavesQueue.Tail)
         {
-            NVM_TableEntryInfo_t *elm = &pQueue->QData[i];
+            NVM_TableEntryInfo_t *elm = &mNvPendingSavesQueue.QData[i];
             if (elm->entryId == searched_id)
             {
                 if ((elm->op_type == OP_SAVE_ALL) ||
@@ -4112,7 +4098,7 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
 
             /* update the destination record address copy */
             dstAddress += (uint16_t)gNvCacheBufferSize_c;
-            /* update the record size */
+            /* update the record size: since size was greater than gNvCacheBufferSize_c, it cannot become negative */
             size -= (uint16_t)gNvCacheBufferSize_c;
             /* update the inner offset value */
             innerOffset += (uint16_t)gNvCacheBufferSize_c;
@@ -4137,7 +4123,7 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
             dstAddress += size;
 
             /* check alignment and adjust it if necessary */
-            misalignedBytes = (uint8_t)((dstAddress - (dstAddress & (~((uint32_t)PGM_SIZE_BYTE - 1U)))));
+            misalignedBytes = (uint8_t)(dstAddress & (((uint32_t)PGM_SIZE_BYTE - 1U)));
 
             /* initialise the inner offset */
             innerOffset = 0U;
@@ -4149,7 +4135,7 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
                 dstAddress &= ((uint32_t) ~(uint32_t)((uint32_t)PGM_SIZE_BYTE - 1UL));
 
                 /* compute the loop end */
-                loopEnd = (uint16_t)PGM_SIZE_BYTE - misalignedBytes;
+                loopEnd = (uint16_t)PGM_SIZE_BYTE - (uint16_t)misalignedBytes;
 
                 /* update with data from RAM */
                 for (loopIdx = 0U; loopIdx < loopEnd; loopIdx++)
@@ -4356,9 +4342,9 @@ NVM_STATIC NVM_Status_t NvInternalDefragmentedCopy(uint32_t              srcMeta
     uint8_t  space_left;
     uint16_t copy_amount;
     uint8_t  dstBuffer[PGM_SIZE_BYTE];
-    uint16_t element_idx           = 0U;
-    uint8_t  element_inner_copied  = 0U;
-    uint32_t written_buffers_count = 0U;
+    uint16_t element_idx          = 0U;
+    uint8_t  element_inner_copied = 0U;
+    uint32_t prog_addr            = dstRecordAddr;
 
     NVM_RecordMetaInfo_t dstMetaInfo;
 #if gNvUseExtendedFeatureSet_d
@@ -4587,20 +4573,23 @@ NVM_STATIC NVM_Status_t NvInternalDefragmentedCopy(uint32_t              srcMeta
         }
 #endif /* gNvDualImageSupport_d */
         /* write the record data */
-        status = NV_FlashProgramUnaligned(dstRecordAddr + (written_buffers_count * PGM_SIZE_BYTE), PGM_SIZE_BYTE,
-                                          dstBuffer, TRUE);
+
+        status = NV_FlashProgramUnaligned(prog_addr, PGM_SIZE_BYTE, dstBuffer, TRUE);
         if (gNVM_OK_c != status)
         {
             /* avoid losing status value returned by NV_FlashProgramUnaligned, not necessarily gNVM_RecordWriteError_c
              */
             break;
         }
-        written_buffers_count++;
-
         /* copied all the data, exit */
         if (size <= (uint16_t)PGM_SIZE_BYTE)
         {
             break;
+        }
+        prog_addr += (uint16_t)PGM_SIZE_BYTE;
+        if (prog_addr > (uint32_t)NV_STORAGE_END_ADDRESS)
+        {
+            status = gNVM_Error_c;
         }
         size -= (uint16_t)PGM_SIZE_BYTE;
     }
@@ -5077,7 +5066,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
                                 NvGetTblEntryMetaAddrFromId(srcMetaAddress, srcMetaInfo.fields.NvmDataEntryID);
                         }
 
-                    if (NvLookAheadInPendingSaveQueue(&mNvPendingSavesQueue, srcMetaInfo.fields.NvmDataEntryID,
+                    if (NvLookAheadInPendingSaveQueue(srcMetaInfo.fields.NvmDataEntryID,
                                                       srcMetaInfo.fields.NvmElementIndex) != (uint8_t)OP_NONE)
                     {
                         /* skip and continue : either we found a pending save operation that will obliterate the
@@ -5378,7 +5367,7 @@ NVM_STATIC NVM_Status_t NvInternalFormat(uint32_t pageCounterValue)
 NVM_STATIC NVM_Status_t NvSaveRamTable(NVM_VirtualPageID_t pageId)
 {
     uint32_t     addr;
-    NVM_Status_t status = gNVM_Error_c;
+    NVM_Status_t status;
 
     assert(NULL != pNVM_DataTable);
     do
@@ -6410,7 +6399,7 @@ NVM_STATIC NVM_Status_t NvProcessFirstSaveInQueue(NVM_TableEntryInfo_t *ptrTblId
     {
         if (NvIsPendingOperation())
         {
-            while (NvPopPendingSave(&mNvPendingSavesQueue, &tblIdx))
+            while (NvPopPendingSave(&tblIdx))
             {
                 /* save tblIdx */
                 *ptrTblIdx = tblIdx;
@@ -6491,7 +6480,7 @@ NVM_STATIC NVM_Status_t NvAddSaveRequestToQueue(NVM_TableEntryInfo_t *ptrTblIdx)
         if (mNvPendingSavesQueue.EntriesCount == 0U)
         {
             /* add request to queue */
-            if (FALSE == NvPushPendingSave(&mNvPendingSavesQueue, nvTblIdx))
+            if (FALSE == NvPushPendingSave(nvTblIdx))
             {
                 status = gNVM_SaveRequestRejected_c;
             }
@@ -6560,12 +6549,12 @@ NVM_STATIC NVM_Status_t NvAddSaveRequestToQueue(NVM_TableEntryInfo_t *ptrTblIdx)
                 else
                 {
                     /* push the request to save operation pending queue */
-                    if (!NvPushPendingSave(&mNvPendingSavesQueue, nvTblIdx))
+                    if (!NvPushPendingSave(nvTblIdx))
                     {
                         preNvTblIdx = nvTblIdx;
                         /* free a space */
                         status = NvProcessFirstSaveInQueue(&nvTblIdx);
-                        if (!NvPushPendingSave(&mNvPendingSavesQueue, preNvTblIdx))
+                        if (!NvPushPendingSave(preNvTblIdx))
                         {
                             status = gNVM_SaveRequestRejected_c;
                         }
@@ -6660,7 +6649,7 @@ NVM_STATIC void __NvShutdown(void)
      * mutex already taken from NvShutdown */
     NvCompletePendingOperationsUnsafe();
 
-    assert(NvGetPendingSavesCount(&mNvPendingSavesQueue) == 0U);
+    assert(NvGetPendingSavesCount() == 0U);
     assert(mNvCopyOperationIsPending == FALSE);
     for (uint16_t idx = 0; idx < mNVM_DataTableNbEntries; idx++)
     {
@@ -6697,24 +6686,28 @@ NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, 
     NVM_Status_t st           = gNVM_OK_c;
     uint32_t     remaining_sz = size;
     uint32_t     offset       = 0U;
-    uint32_t     read_sz      = PGM_SIZE_BYTE;
     uint8_t      phrase[PGM_SIZE_BYTE];
 
     NOT_USED(catch_ecc_err);
 
     while (remaining_sz > 0U)
     {
-        uint8_t *read_ptr = &phrase[0];
         uint32_t addr;
+        size_t   read_sz;
+
         if (remaining_sz <= PGM_SIZE_BYTE)
         {
             read_sz = remaining_sz;
+        }
+        else
+        {
+            read_sz = PGM_SIZE_BYTE;
         }
         addr = flash_addr + offset;
 #if defined gNvSalvageFromEccFault_d && (gNvSalvageFromEccFault_d > 0)
         if (TRUE == catch_ecc_err)
         {
-            if (HAL_FlashReadCheckEccFaults(addr, read_sz, read_ptr) != kStatus_HAL_Flash_Success)
+            if (HAL_FlashReadCheckEccFaults(addr, read_sz, &phrase[0]) != kStatus_HAL_Flash_Success)
             {
                 /* HAL_FlashRead mays return kStatus_HAL_Flash_EccError */
                 /* It means that the ECC Fault would have fired need to proceed to erase of active page to salvage  */
@@ -6726,7 +6719,7 @@ NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, 
         else
 #endif
         {
-            if (HAL_FlashRead(addr, read_sz, read_ptr) != kStatus_HAL_Flash_Success)
+            if (HAL_FlashRead(addr, read_sz, &phrase[0]) != kStatus_HAL_Flash_Success)
             {
                 /* HAL_FlashRead always returns kStatus_HAL_Flash_Success, so not really attainable */
                 /* If the ECC Fault fires we reset directly. On next reset the NVM recovery takes place */
@@ -6735,7 +6728,7 @@ NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, 
             }
         }
 
-        if (FLib_MemCmp(read_ptr, &ram_buf[offset], read_sz) != TRUE)
+        if (FLib_MemCmp(&phrase[0], &ram_buf[offset], read_sz) != TRUE)
         {
             st = gNVM_RecordWriteError_c;
             break;
@@ -6957,7 +6950,7 @@ void NvModuleDeInit(void)
     mNvFlashConfigInitialised = FALSE;
 
 #if gNvFragmentation_Enabled_d
-    FLib_MemSet(&maNvRecordsCpyOffsets[0], 0U, gNvRecordsCopiedBufferSize_c * sizeof(maNvRecordsCpyOffsets[0]));
+    FLib_MemSet((void *)&maNvRecordsCpyOffsets[0], 0U, sizeof(maNvRecordsCpyOffsets));
 #endif
 
 #if gNvUseExtendedFeatureSet_d
@@ -7681,7 +7674,7 @@ bool_t NvIsPendingOperation(void)
 {
     bool_t IsPending = FALSE;
 #if gNvStorageIncluded_d
-    if (NvGetPendingSavesCount(&mNvPendingSavesQueue) != 0U)
+    if (NvGetPendingSavesCount() != 0U)
     {
         IsPending = TRUE;
     }
