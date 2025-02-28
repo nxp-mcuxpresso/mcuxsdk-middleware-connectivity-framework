@@ -99,7 +99,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x
     bool "RW61x family"
     select MCUX_COMPONENT_component.timer_manager
     select MCUX_COMPONENT_component.ostimer_time_stamp_adapter
-    select MCUX_COMPONENT_component.mflash_offchip
+    imply MCUX_COMPONENT_component.mflash_offchip
     select MCUX_COMPONENT_middleware.mbedtls
     depends on MCUX_HW_DEVICE_RW612 || MCUX_HW_DEVICE_RW610
 
@@ -114,7 +114,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.rt1170
     select MCUX_COMPONENT_driver.lpi2c
     select MCUX_COMPONENT_component.timer_manager
     select MCUX_COMPONENT_component.pit_time_stamp_adapter
-    select MCUX_COMPONENT_component.mflash_offchip
+    imply MCUX_COMPONENT_component.mflash_offchip
     select MCUX_COMPONENT_middleware.wireless.framework.platform.imx_rt
     depends on MCUX_HW_DEVICE_MIMXRT1171 || MCUX_HW_DEVICE_MIMXRT1172 || \
                MCUX_HW_DEVICE_MIMXRT1173 || MCUX_HW_DEVICE_MIMXRT1175 || \
@@ -125,7 +125,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.rt1060
     select MCUX_COMPONENT_driver.lpi2c
     select MCUX_COMPONENT_component.timer_manager
     select MCUX_COMPONENT_component.pit_time_stamp_adapter
-    select MCUX_COMPONENT_component.mflash_offchip
+    imply MCUX_COMPONENT_component.mflash_offchip
     select MCUX_COMPONENT_middleware.wireless.framework.platform.imx_rt
     depends on MCUX_HW_DEVICE_MIMXRT1061 || MCUX_HW_DEVICE_MIMXRT1062
 
