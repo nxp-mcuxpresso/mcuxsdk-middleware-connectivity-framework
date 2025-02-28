@@ -20,6 +20,7 @@
 #include "HWParameter.h"
 #include "RNG_Interface.h"
 #include "fwk_debug.h"
+#include "controller_api.h"
 
 #if defined(gMWS_Enabled_d) && (gMWS_Enabled_d == 1)
 #include "MWS.h"
@@ -419,8 +420,7 @@ static void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
     }
 
     /* configure max tx power in controller */
-    extern void Controller_SetMaxTxPower(int8_t power_dBm, uint8_t ldo_ant_trim);
-    Controller_SetMaxTxPower(max_tx_power, ldo_ana_trim);
+    (void)Controller_SetMaxTxPower(max_tx_power, ldo_ana_trim);
 }
 
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
@@ -485,13 +485,17 @@ uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
     uint32_t ll_timing_slot = 0U;
     uint16_t ll_timing_us   = 0U;
 
-    extern void Controller_GetTimestampEx(uint32_t * ll_timing_slot, uint16_t * ll_timing_us, uint64_t * tstmr);
-    Controller_GetTimestampEx(&ll_timing_slot, &ll_timing_us, &tstmr0);
+    if (Controller_GetTimestampEx(&ll_timing_slot, &ll_timing_us, &tstmr0) == KOSA_StatusSuccess)
+    {
+        ble_native_timestamp = (uint64_t)(ll_timing_slot)*625ULL + (uint64_t)(ll_timing_us);
+        currentTimestamp     = PLATFORM_GetTimeStamp();
 
-    ble_native_timestamp = (uint64_t)(ll_timing_slot)*625ULL + (uint64_t)(ll_timing_us);
-    currentTimestamp     = PLATFORM_GetTimeStamp();
-
-    delta = (ble_native_timestamp - controllerTimestamp) + (currentTimestamp - tstmr0);
+        delta = (ble_native_timestamp - controllerTimestamp) + (currentTimestamp - tstmr0);
+    }
+    else
+    {
+        delta = 0U;
+    }
 
     return delta;
 }
