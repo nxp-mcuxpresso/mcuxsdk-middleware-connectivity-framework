@@ -56,6 +56,14 @@ typedef struct
 } rx_work_t;
 #endif
 
+typedef struct
+{
+    uint16_t freq;
+    int16_t  ppm_mean;
+    int16_t  ppm;
+    uint16_t fro_trim;
+} fro_data_t;
+
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -622,12 +630,15 @@ static void PLATFORM_RxHostReleaseLowPowerConstraintService(uint8_t *data, uint3
 
 static void PLATFORM_RxFroNotificationService(uint8_t *data, uint32_t len)
 {
-    uint16_t freq     = (((uint16_t)(data[2]) << 8U) & 0xFF00U) + ((uint16_t)(data[1]) & 0xFFU);
-    uint16_t ppm_mean = (((uint16_t)(data[4]) << 8U) & 0xFF00U) + ((uint16_t)(data[3]) & 0xFFU);
-    uint16_t ppm      = (((uint16_t)(data[6]) << 8U) & 0xFF00U) + ((uint16_t)(data[5]) & 0xFFU);
-    uint16_t fro_trim = (((uint16_t)(data[8]) << 8U) & 0xFF00U) + ((uint16_t)(data[7]) & 0xFFU);
-    pfPlatformDebugCallback(freq, (int16_t)ppm_mean, (int16_t)ppm, fro_trim);
-    NOT_USED(len);
+    assert(len >= sizeof(fro_data_t) + 1U);
+    fro_data_t fro_notif_data;
+
+    if (len >= (sizeof(fro_data_t) + 1U))
+    {
+        FLib_MemCpy((void *)&fro_notif_data, (void *)&data[1], sizeof(fro_data_t));
+        pfPlatformDebugCallback(fro_notif_data.freq, fro_notif_data.ppm_mean, fro_notif_data.ppm,
+                                fro_notif_data.fro_trim);
+    }
 }
 
 static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t len)
