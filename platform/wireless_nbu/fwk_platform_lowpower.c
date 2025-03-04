@@ -331,7 +331,9 @@ static bool PLATFORM_IsBleAllowingLowPower(void)
     {
         uint8_t  sleepAllowed = LL_API_SCHED_IsSleepAllowed();
         uint32_t sleepTime    = LL_API_SCHED_GetSleepTime();
-        uint8_t  pendingCmd   = LL_API_BLE_HCI_GetNofPendingCommand();
+#if defined(gPlatformLowpowerCheckHciPendingCommand) && (gPlatformLowpowerCheckHciPendingCommand == 1)
+        uint8_t pendingCmd = LL_API_BLE_HCI_GetNofPendingCommand();
+#endif
 
         if (sleepAllowed == 1u)
         {
@@ -349,8 +351,8 @@ static bool PLATFORM_IsBleAllowingLowPower(void)
             ret = false;
             break;
         }
-#if 0
-        else if(pendingCmd > 0U)
+#if defined(gPlatformLowpowerCheckHciPendingCommand) && (gPlatformLowpowerCheckHciPendingCommand == 1)
+        else if (pendingCmd > 0U)
         {
             /* Some HCI event are not sent directly when receiving an HCI command
              * The HCI task delays the HCI event and increments the number of pending
