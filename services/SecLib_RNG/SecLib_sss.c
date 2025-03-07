@@ -91,7 +91,7 @@ extern osa_status_t SecLibMutexUnlock(void);
 ************************************************************************************/
 #if gSecLibUseMutex_c
 /*! Mutex used to protect the AES Context when an RTOS is used. */
-static OSA_MUTEX_HANDLE_DEFINE(mSecLibMutexId);
+static OSA_MUTEX_HANDLE_DEFINE(mSecLibSssMutexId);
 #endif /* gSecLibUseMutex_c */
 
 static sss_ecp256_context_t  g_ECP_KeyPair;
@@ -144,7 +144,7 @@ osa_status_t SecLibMutexCreate(void)
     if (!seclib_mutex_created)
     {
         /*! Initialize the SecLib Mutex here. If not already done by RNG module */
-        st = OSA_MutexCreate((osa_mutex_handle_t)mSecLibMutexId);
+        st = OSA_MutexCreate((osa_mutex_handle_t)mSecLibSssMutexId);
 
         if (KOSA_StatusSuccess != st)
         {
@@ -161,7 +161,7 @@ osa_status_t SecLibMutexCreate(void)
 osa_status_t SecLibMutexLock(void)
 {
 #if gSecLibUseMutex_c
-    return OSA_MutexLock((osa_mutex_handle_t)mSecLibMutexId, osaWaitForever_c);
+    return OSA_MutexLock((osa_mutex_handle_t)mSecLibSssMutexId, osaWaitForever_c);
 #else
     return KOSA_StatusSuccess;
 #endif
@@ -170,7 +170,7 @@ osa_status_t SecLibMutexLock(void)
 osa_status_t SecLibMutexUnlock(void)
 {
 #if gSecLibUseMutex_c
-    return OSA_MutexUnlock((osa_mutex_handle_t)mSecLibMutexId);
+    return OSA_MutexUnlock((osa_mutex_handle_t)mSecLibSssMutexId);
 #else
     return KOSA_StatusSuccess;
 #endif
