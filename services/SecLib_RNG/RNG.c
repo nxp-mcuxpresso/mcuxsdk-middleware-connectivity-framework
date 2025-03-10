@@ -48,6 +48,8 @@
 #else
 #include "fsl_rnga.h"
 #endif
+#elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter > 0)
+#include "fsl_adapter_rng.h"
 #endif
 #endif
 #if defined(gRngSeedStorageAddr_d) || defined(gRngSeedHwParamStorage_d)
@@ -920,6 +922,65 @@ static int RNG_Specific_Init(uint32_t *pSeed)
     return status;
 }
 
+#elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter > 0)
+
+static int RNG_Specific_Init(uint32_t *pSeed)
+{
+    int              ret = 0;
+    hal_rng_status_t status;
+
+    do
+    {
+        status = HAL_RngInit();
+        if ((status != kStatus_HAL_RngSuccess) && (status != KStatus_HAL_RngNotSupport))
+        {
+            ret = gRngInternalError_d;
+            break;
+        }
+
+        if (RNG_Specific_GetRandomData((uint8_t *)pSeed, mPRNG_NoOfBytes_c) != 0)
+        {
+            ret = gRngInternalError_d;
+            break;
+        }
+
+        rng_ctx.mPrngIsSeeded = TRUE;
+
+    } while (false);
+
+    return ret;
+}
+
+static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
+{
+    int              ret = 0;
+    hal_rng_status_t status;
+
+    do
+    {
+        status = HAL_RngHwGetData(pOut, outBytes);
+
+        if (status != kStatus_HAL_RngSuccess)
+        {
+            if (status != KStatus_HAL_RngNotSupport)
+            {
+                ret = gRngInternalError_d;
+                break;
+            }
+
+            status = HAL_RngGetData(pOut, outBytes);
+
+            if (status != kStatus_HAL_RngSuccess)
+            {
+                ret = gRngInternalError_d;
+                break;
+            }
+        }
+    } while (false);
+
+    return ret;
+}
+
 #else
 
 static int RNG_Specific_Init(uint32_t *pSeed)
@@ -938,6 +999,7 @@ static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
     (void)outBytes;
     return 0;
 }
+
 #endif
 
 #if (defined gRngUseLehmerGen_c && (gRngUseLehmerGen_c > 0))
