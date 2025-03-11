@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2024 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2021-2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -9,6 +8,9 @@
 /* -------------------------------------------------------------------------- */
 
 #include "fwk_platform_genfsk.h"
+#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
+#include "fwk_platform_dcdc.h"
+#endif
 #include "nxp2p4_xcvr.h"
 
 /* -------------------------------------------------------------------------- */
@@ -42,6 +44,11 @@ void PLATFORM_SetGenfskMaxTxPower(int8_t max_tx_power)
         // 10dBm
         ldo_ana_trim = 15U;
     }
+
+#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
+    /* Configure SPC high power mode depending the targeted tx power and if the application core is allowing it */
+    PLATFORM_ConfigureSpcHighPowerMode(power_dBm);
+#endif
 
     XCVR_setLdoAntTrim(ldo_ana_trim);
 }

@@ -17,6 +17,9 @@
 #include "fwk_rf_sfc.h"
 #include "controller_api_ll.h"
 #include "fwk_debug.h"
+#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
+#include "fwk_platform_dcdc.h"
+#endif
 
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
 extern bool PHY_XCVR_AllowLowPower(void);
@@ -176,6 +179,11 @@ static void PLATFORM_HandleLowPowerEntry(void)
     /* Force sleep clock source to 32k */
     if (PLATFORM_SwitchSleepClockSource(true) == 0)
     {
+#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
+        /* Disable SPC high power mode */
+        PLATFORM_EnableSpcHighPowerMode(false);
+#endif
+
         /* Disable and clear Systicks */
         SysTick->CTRL = 0U;
         SysTick->VAL  = SysTick->LOAD;
@@ -212,6 +220,10 @@ static void PLATFORM_HandleLowPowerEntry(void)
 
         /* Re-enable systicks */
         SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
+        /* Enable SPC high power mode */
+        PLATFORM_EnableSpcHighPowerMode(true);
+#endif
 
         /* Wait for the XTAL to be ready before running anything else */
         while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
