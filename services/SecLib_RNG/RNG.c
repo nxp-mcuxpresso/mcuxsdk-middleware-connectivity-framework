@@ -48,7 +48,7 @@
 #else
 #include "fsl_rnga.h"
 #endif
-#elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter > 0)
+#elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter_c > 0)
 #include "fsl_adapter_rng.h"
 #endif
 #endif
@@ -922,7 +922,7 @@ static int RNG_Specific_Init(uint32_t *pSeed)
     return status;
 }
 
-#elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter > 0)
+#elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter_c > 0)
 
 static int RNG_Specific_Init(uint32_t *pSeed)
 {
