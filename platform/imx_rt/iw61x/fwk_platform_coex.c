@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2022-2023 NXP                               */
-/*                            All rights reserved.                            */
+/*                           Copyright 2022-2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -12,11 +11,18 @@
 #include "fsl_adapter_gpio.h"
 #include "fsl_common.h"
 #include "wifi-decl.h"
-#include "sduart_nw61x_se.h"
 #include "firmware_dnld.h"
 #include "fwdnld_intf_abs.h"
 #include "fsl_os_abstraction.h"
 #include "fwk_platform.h"
+
+#if defined(SD9177)
+/* import Firecrest firmware */
+#include "sduart_nw61x_se.h"
+#elif defined(IW610)
+/* import Nighthawk firmware */
+#include "sduart_iw610_se.h"
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */

@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 mcux_set_list(IMXRT_FAMILY "MIMXRT1171xxxxx MIMXRT1172xxxxx MIMXRT1173xxxxx MIMXRT1175xxxxx MIMXRT1176xxxxx MIMXRT1061xxxxA \
@@ -33,7 +33,16 @@ endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.coex.iw612)
     mcux_add_source(SOURCES
-        iw612/fwk_platform_coex.c
+        iw61x/fwk_platform_coex.c
+        ../include/fwk_platform_coex.h
+        DEVICE_IDS ${IMXRT_FAMILY}
+        CORE_IDS "cm4" "cm7"
+    )
+endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.coex.iw610)
+    mcux_add_source(SOURCES
+        iw61x/fwk_platform_coex.c
         ../include/fwk_platform_coex.h
         DEVICE_IDS ${IMXRT_FAMILY}
         CORE_IDS "cm4" "cm7"

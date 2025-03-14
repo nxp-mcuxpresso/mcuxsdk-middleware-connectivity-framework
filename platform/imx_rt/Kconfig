@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if MCUX_COMPONENT_middleware.wireless.framework.platform.imx_rt
@@ -22,6 +22,15 @@ choice MCUX_COMPONENT_middleware.wireless.framework.platform.coex.transceiver
         depends on MCUX_COMPONENT_middleware.wifi.fwdnld
         help
             Use coex platform implementation to manage iw612 controller.
+    config MCUX_COMPONENT_middleware.wireless.framework.platform.coex.iw610
+        bool "Coex platform support for iw610 transceiver"
+        select MCUX_COMPONENT_component.igpio_adapter
+        select MCUX_COMPONENT_component.osa
+        select MCUX_COMPONENT_middleware.freertos-kernel
+        select MCUX_COMPONENT_middleware.wifi.osa_free_rtos
+        depends on MCUX_COMPONENT_middleware.wifi.fwdnld
+        help
+            Use coex platform implementation to manage iw610 controller.
 endchoice
 
 endif # MCUX_COMPONENT_middleware.wireless.framework.platform.coex
