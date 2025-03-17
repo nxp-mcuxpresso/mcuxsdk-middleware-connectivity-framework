@@ -11,8 +11,8 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
         configs/fwk_config.h
         fwk_platform_definitions.h
         fwk_platform.c
-        ../wireless_mcu/fwk_platform.h
         ../include/fwk_platform_rng.h
+        ../wireless_mcu/fwk_platform.h
         ../wireless_mcu/fwk_platform_ble.h
         DEVICE_IDS ${MCXW23_FAMILY}
         CORE_IDS "cm33_core0" "cm33"

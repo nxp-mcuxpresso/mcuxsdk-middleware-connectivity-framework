@@ -46,10 +46,10 @@ void PLATFORM_InitTimerManager(void)
 
     if (timer_manager_initialized == 0)
     {
-        timerConfig.instance       = SOC_CTIMER_INSTANCE;
-        timerConfig.srcClock_Hz    = CLOCK_GetCTimerClkFreq(SOC_CTIMER_INSTANCE);
-        timerConfig.clockSrcSelect = 0;
-        //timerConfig.hardwareTimerAlwaysOn = true;
+        timerConfig.instance              = SOC_CTIMER_INSTANCE;
+        timerConfig.srcClock_Hz           = CLOCK_GetCTimerClkFreq(SOC_CTIMER_INSTANCE);
+        timerConfig.clockSrcSelect        = 0;
+        timerConfig.hardwareTimerAlwaysOn = true;
 
 #if SOC_CTIMER_INSTANCE == 0U
 #if SDK_OS_FREE_RTOS
@@ -77,10 +77,10 @@ void PLATFORM_InitTimerManager(void)
 
     if (timer_manager_initialized == 0)
     {
-        timerConfig.instance       = SOC_OSTIMER_INSTANCE;
-        timerConfig.srcClock_Hz    = CLOCK_GetOSTimerClkFreq();
-        timerConfig.clockSrcSelect = 0;
-        //timerConfig.hardwareTimerAlwaysOn = true;
+        timerConfig.instance              = SOC_OSTIMER_INSTANCE;
+        timerConfig.srcClock_Hz           = CLOCK_GetOSTimerClkFreq();
+        timerConfig.clockSrcSelect        = 0;
+        timerConfig.hardwareTimerAlwaysOn = true;
 #if SOC_OSTIMER_INSTANCE == 0U
 #else  /* SOC_OSTIMER_INSTANCE */
 #error Adapt the IRQn to match the OSTIMER instance
@@ -129,9 +129,9 @@ void PLATFORM_InitBle(void)
 uint64_t PLATFORM_GetTimeStamp(void)
 {
 #ifdef TIMER_PORT_TYPE_CTIMER
-    return (uint32_t)(CTIMER_GetTimerCountValue(SOC_CTIMER_INSTANCE) / CLOCK_GetCTimerClkFreq(0));
+    return (uint64_t)(CTIMER_GetTimerCountValue(SOC_CTIMER_INSTANCE) / CLOCK_GetCTimerClkFreq(0));
 #else
-    return (uint32_t)(OSTIMER_GetCurrentTimerValue(SOC_OSTIMER_INSTANCE) / CLOCK_GetOSTimerClkFreq());
+    return (uint64_t)(OSTIMER_GetCurrentTimerValue(OSTIMER) / CLOCK_GetOSTimerClkFreq());
 #endif /* TIMER_PORT_TYPE_CTIMER */
 }
 

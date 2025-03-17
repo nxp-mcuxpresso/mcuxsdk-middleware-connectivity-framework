@@ -89,8 +89,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
 
 config MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     bool "MCXW23x family"
-    select MCUX_COMPONENT_component.timer_manager
-    select CONFIG_MCUX_COMPONENT_component.ctimer_adapter
+    select MCUX_COMPONENT_component.timer_manager.mcxw23
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_component.flash_adapter
