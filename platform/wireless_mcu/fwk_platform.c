@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2024 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2021-2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -14,28 +13,32 @@
 #include "fwk_platform.h"
 #include "fwk_config.h"
 #include "fwk_platform_ics.h"
-#if defined(FPGA_SUPPORT) && (FPGA_SUPPORT == 1)
+#if defined(FPGA_TARGET) && (FPGA_TARGET == 1)
 #include "fwk_platform_fpga.h"
 #endif
 
-#include "FunctionLib.h"
-#include "fsl_adapter_flash.h"
-#include "HWParameter.h"
-#include "fsl_component_timer_manager.h"
-#include "fsl_os_abstraction.h"
-#include "fsl_adapter_rpmsg.h"
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
 #include "fsl_trdc.h"
+#endif
+
+#include "FunctionLib.h"
+#include "fsl_component_timer_manager.h"
+#include "fsl_os_abstraction.h"
+#include "fsl_adapter_rpmsg.h"
 
 #include "rpmsg_platform.h"
+
+#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
+#include "HWParameter.h"
+#endif
 
 #if defined(gMWS_Enabled_d) && (gMWS_Enabled_d > 0)
 #include "fwk_platform_mws.h"
 #endif
 
 #include "fwk_debug.h"
-
 #include "mcmgr_imu_internal.h"
 
 /* -------------------------------------------------------------------------- */
@@ -136,6 +139,7 @@ static uint64_t u64ReadTimeStamp(void)
 
     return (uint64_t)reg_l | (((uint64_t)reg_h) << 32U);
 }
+
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -167,6 +171,7 @@ int PLATFORM_InitNbu(void)
         uint32_t rfmc_ctrl;
         int      cnt = 0;
 
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 #if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
         /* Init TRDC for NBU - Allow NBU to access GPIOD*/
         trdc_non_processor_domain_assignment_t domainAssignment;
@@ -178,6 +183,7 @@ int PLATFORM_InitNbu(void)
 
         /* Initialize a memory zone of the shared memory that will be used to transmit a message later */
         PLATFORM_SetLowPowerFlag(false);
+#endif
 
         rfmc_ctrl = RFMC->RF2P4GHZ_CTRL;
 
@@ -255,15 +261,12 @@ int PLATFORM_InitMulticore(void)
         nbu_started = 1;
     }
 
-#if defined(FPGA_SUPPORT) && (FPGA_SUPPORT == 1)
-    PLATFORM_InitRadio();
-#endif
-
     return status;
 }
 
 void PLATFORM_LoadHwParams(void)
 {
+#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
     uint8_t               xtal_32m_trim;
     hardwareParameters_t *pHWParams = NULL;
     uint32_t              status;
@@ -277,6 +280,7 @@ void PLATFORM_LoadHwParams(void)
         /* Set value to RFMC */
         PLATFORM_SetXtal32MhzTrim(xtal_32m_trim, FALSE);
     }
+#endif
 }
 
 /* get 4 words of information that uniquely identifies the MCU */
@@ -297,6 +301,7 @@ void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
     return;
 }
 
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 int PLATFORM_InitFro32K(void)
 {
     /* Enable the fro32k and select it as 32k clock source and disable osc32k
@@ -488,6 +493,7 @@ void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams)
 
     RFMC->XO_TEST = rfmc_xo;
 }
+#endif
 
 int PLATFORM_InitTimerManager(void)
 {
@@ -585,6 +591,7 @@ void PLATFORM_Delay(uint64_t delayUs)
 
 void PLATFORM_DisableControllerLowPower(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     /* Increase active request number so it is always asserted while Controller
      * is not allowed to go to low power
      * This will avoid going through the wake up procedure each time
@@ -599,6 +606,7 @@ void PLATFORM_DisableControllerLowPower(void)
      * Note: If NBU is already in low power, this will apply to next Idle period
      */
     RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_BLE_WKUP_MASK;
+#endif
 }
 
 void PLATFORM_RemoteActiveReq(void)
@@ -766,6 +774,7 @@ void PLATFORM_RegisterErrorCallback(PLATFORM_ErrorCallback_t cb)
 int PLATFORM_ClearIoIsolationFromLowPower(void)
 {
     int ret = 0;
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     if ((SPC_CheckPowerDomainLowPowerRequest(SPC0, kSPC_PowerDomain0) == true) &&
         (SPC_GetPowerDomainLowPowerMode(SPC0, kSPC_PowerDomain0) >= kSPC_PowerDownWithSysClockOff))
     {
@@ -776,5 +785,6 @@ int PLATFORM_ClearIoIsolationFromLowPower(void)
 
         ret = 1;
     }
+#endif
     return ret;
 }

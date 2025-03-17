@@ -66,12 +66,14 @@ typedef struct
  * Private memory declarations
  ************************************************************************************/
 
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 /* We have to adapt the divide register of the FRO depending the frequency of the core to keep a frequency for flash APB
  * clock & RF_CMC clock between 16MHz and 32MHz */
 static const uint8_t PLATFORM_FroDiv[] = {1U, 1U, 2U, 2U, 3U};
 
 /* Tells if the 32MHz Xtal trim value has been updated by CM33 (HWParameters) */
 static bool_t xtal32MhzTrimInitialized = FALSE;
+#endif
 
 static volatile int8_t active_request_nb = 0;
 static uint8_t         chip_revision     = 0xFFU;
@@ -83,9 +85,11 @@ static uint8_t freq_constraint_from_controller = 0U;
 static volatile int timer_manager_initialized = 0;
 
 static void PLATFORM_UpdateFrequency(void);
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 static void PLATFORM_SetClock(uint8_t range);
 
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
+#endif
 
 /************************************************************************************
  * Public functions
@@ -93,16 +97,21 @@ static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
 
 void PLATFORM_RemoteActiveReq(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     PLATFORM_RemoteActiveReqOptionalDelay(true);
+#endif
 }
 
 void PLATFORM_RemoteActiveReqWithoutDelay(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     PLATFORM_RemoteActiveReqOptionalDelay(false);
+#endif
 }
 
 void PLATFORM_RemoteActiveRel(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
 
     // PWR_DBG_LOG("<--active_request_nb RELEASE=%d", active_request_nb);
@@ -119,8 +128,10 @@ void PLATFORM_RemoteActiveRel(void)
     }
 
     PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+#endif
 }
 
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 uint8_t PLATFORM_GetXtal32MhzTrim(void)
 {
     uint8_t ret = 0xFFU;
@@ -142,6 +153,7 @@ void PLATFORM_SetXtal32MhzTrim(uint8_t trim)
         xtal32MhzTrimInitialized = TRUE;
     }
 }
+#endif
 
 void PLATFORM_SetChipRevision(uint8_t chip_rev_l)
 {
@@ -190,6 +202,7 @@ void PLATFORM_Delay(uint64_t delayUs)
     PLATFORM_WaitTimeout(PLATFORM_GetTimeStamp(), delayUs);
 }
 
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 void PLATFORM_InitFro192M(void)
 {
     uint64_t soctrim1_01;
@@ -219,6 +232,7 @@ void PLATFORM_InitFro192M(void)
                         FRO192M_FROTRIM_TRIMCOAR((uint32_t)((soctrim1_01 >> 28) & 0x3FU)) |
                         FRO192M_FROTRIM_TRIMFINE((uint32_t)((soctrim1_01 >> 34) & 0xFFU));
 }
+#endif
 
 void PLATFORM_SetFrequencyConstraintFromHost(uint8_t freq_constraint)
 {
@@ -238,7 +252,6 @@ uint8_t PLATFORM_GetFrequencyConstraintFromHost(void)
 }
 
 #if (defined(gPlatformUseLptmr_d)) && (gPlatformUseLptmr_d == 1U)
-
 int PLATFORM_InitTimerManager(void)
 {
     int status = 0;
@@ -299,12 +312,16 @@ void PLATFORM_DeinitTimerManager(void)
 
 static void PLATFORM_UpdateFrequency(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     /* Take the higher frequency between the constraint set by the controller and the one from the host and apply it */
     uint8_t frequency = (freq_constraint_from_host > freq_constraint_from_controller) ? freq_constraint_from_host :
                                                                                         freq_constraint_from_controller;
     PLATFORM_SetClock(frequency);
+#else
+    (void)freq_constraint_from_controller;
+#endif
 }
-
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 static void PLATFORM_SetClock(uint8_t range)
 {
     uint32_t fro192M_clock_ctrl;
@@ -335,6 +352,35 @@ static void PLATFORM_SetClock(uint8_t range)
     while ((FRO192M0->FROCCSR & FRO192M_FROCCSR_VALID_MASK) != FRO192M_FROCCSR_VALID_MASK)
     {
     }
+}
+
+uint32_t PLATFORM_GetClockFreq(void)
+{
+    uint32_t fro192M_clock_ctrl;
+    uint32_t fro192M_div;
+    uint32_t post_div;
+    uint32_t fro_freq = 0uL;
+
+    while (TRUE)
+    {
+        fro192M_clock_ctrl = FRO192M0->FROCCSR;
+
+        if ((fro192M_clock_ctrl & FRO192M_FROCCSR_VALID_MASK))
+        {
+            /* Read back FOR 192 divisor from FROCCSR whereas it was set from FRODIV */
+            fro192M_div = (fro192M_clock_ctrl & FRO192M_FRODIV_FRODIV_MASK) >> FRO192M_FRODIV_FRODIV_SHIFT;
+            fro192M_div += 1u;
+            post_div = ((fro192M_clock_ctrl & FRO192M_FROCCSR_POSTDIV_SEL_MASK) >> FRO192M_FROCCSR_POSTDIV_SEL_SHIFT);
+            const uint32_t fro_freq_tb[5] = {16000000, 24000000, 32000000, 48000000, 64000000};
+
+            if (post_div < sizeof(fro_freq_tb) / sizeof(fro_freq_tb[0]))
+            {
+                fro_freq = fro_freq_tb[post_div];
+            }
+            break;
+        }
+    }
+    return fro_freq;
 }
 
 static uint32_t PLATFORM_GetLowPowerFlag(void)
@@ -371,4 +417,5 @@ static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay)
 
     // PWR_DBG_LOG("-->active_request_nb REQUEST=%d", active_request_nb);
 }
+#endif
 /*${function:end}*/

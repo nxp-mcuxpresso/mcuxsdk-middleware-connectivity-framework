@@ -27,6 +27,11 @@
  */
 #define PLATFORM_SENSOR_UNKNOWN_TEMPERATURE ((int32_t)999999)
 
+/*!
+ * Value used to indicated that temperature is unknown
+ */
+#define PLATFORM_SENSOR_UNKNOWN_BATTERY_LVL ((int8_t)99)
+
 /* -------------------------------------------------------------------------- */
 /*                           Public type definitions                          */
 /* -------------------------------------------------------------------------- */

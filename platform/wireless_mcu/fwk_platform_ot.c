@@ -16,9 +16,6 @@
 #include "HWParameter.h"
 #include "FunctionLib.h"
 
-#if defined(gMWS_Enabled_d) && (gMWS_Enabled_d == 1)
-#include "MWS.h"
-#endif
 /* Default IEE EIU64 OUI */
 #ifndef IEEE802_15_4_ADDR_OUI
 #define IEEE802_15_4_ADDR_OUI 0x37U, 0x60U, 0x00U
@@ -69,10 +66,6 @@ int PLATFORM_InitOT(void)
         CHECK_AND_RAISE_ERROR(status, -5);
 #endif
 
-#if defined(gMWS_Enabled_d) && (gMWS_Enabled_d == 1)
-        MWS_Init();
-#endif
-
 #if USE_NBU
         /* Send chip revision (A0 or A1) to NBU */
         status = PLATFORM_SendChipRevision();
@@ -82,12 +75,10 @@ int PLATFORM_InitOT(void)
         /* Update 32MHz trim value with the one stored in HW parameters */
         PLATFORM_LoadHwParams();
 
-#if !defined(FPGA_SUPPORT) || (FPGA_SUPPORT == 0)
 #if !defined(gBoardUseFro32k_d) || (gBoardUseFro32k_d == 0)
         /* Make sure OSC32k is ready and select it as clock source */
         status = PLATFORM_SwitchToOsc32k();
         CHECK_AND_RAISE_ERROR(status, -7);
-#endif
 #endif
     } while (false);
 

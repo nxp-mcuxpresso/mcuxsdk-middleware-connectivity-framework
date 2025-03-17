@@ -13,17 +13,17 @@
 
 #include "fsl_common.h"
 #include "fsl_adapter_rpmsg.h"
+#include "fwk_config.h"
 #include "fwk_platform_ble.h"
 #include "fwk_platform.h"
 #include "fwk_platform_ics.h"
 #include "FunctionLib.h"
-#include "HWParameter.h"
 #include "RNG_Interface.h"
 #include "fwk_debug.h"
 #include "controller_api.h"
 
-#if defined(gMWS_Enabled_d) && (gMWS_Enabled_d == 1)
-#include "MWS.h"
+#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
+#include "HWParameter.h"
 #endif
 
 #ifdef SERIAL_BTSNOOP
@@ -38,9 +38,9 @@
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
-#define PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE (BLE_MAC_ADDR_SZ - MAC_ADDR_OUI_PART_SIZE)
-#define PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE  MAC_ADDR_OUI_PART_SIZE
-#define PLATFORM_BLE_BD_ADDR_FULL_SIZE      BLE_MAC_ADDR_SZ
+#define PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE 3U
+#define PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE  3U
+#define PLATFORM_BLE_BD_ADDR_FULL_SIZE      6U
 
 #ifndef PLATFORM_BLE_HCI_TIMEOUT_MS
 #define PLATFORM_BLE_HCI_TIMEOUT_MS 200U
@@ -215,15 +215,9 @@ int PLATFORM_InitBle(void)
         PLATFORM_FwkSrvSetRfSfcConfig((void *)&sfcConfig, (uint16_t)sizeof(sfc_config_t));
 #endif
 
-#if defined(gMWS_Enabled_d) && (gMWS_Enabled_d == 1)
-        MWS_Init();
-#endif
-
-#if !defined(FPGA_SUPPORT) || (FPGA_SUPPORT == 0)
         /* Send chip revision (A0 or A1) to NBU */
         status = PLATFORM_SendChipRevision();
         CHECK_AND_RAISE_ERROR(status, -6);
-#endif
 
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
         PLATFORM_SendWakeupDelay(BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT);
@@ -233,7 +227,6 @@ int PLATFORM_InitBle(void)
         PLATFORM_LoadHwParams();
 
         PLATFORM_SetBleMaxTxPower(gAppMaxTxPowerDbm_c);
-
         /* Initialize log handle for second core */
         BOARD_DBGCONFIGINITNBU(TRUE);
         // DBG_LOG_DUMP();
@@ -294,6 +287,7 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
 
 void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
 {
+#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
     hardwareParameters_t *pHWParams = NULL;
     uint32_t              status;
 
@@ -325,6 +319,9 @@ void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
         (void)NV_WriteHWParameters();
         EnableGlobalIRQ(regPrimask);
     }
+#else
+    PLATFORM_GenerateNewBDAddr(bleDeviceAddress);
+#endif
 }
 
 int32_t PLATFORM_EnableBleSecureKeyManagement(void)
@@ -398,6 +395,7 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
 
 static void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
 {
+#ifndef LATENCY_TESTS
     uint8_t ldo_ana_trim;
 
     if (max_tx_power == 0)
@@ -418,9 +416,11 @@ static void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
         }
         ldo_ana_trim = 15U;
     }
-
     /* configure max tx power in controller */
     (void)Controller_SetMaxTxPower(max_tx_power, ldo_ana_trim);
+#else
+    (void)max_tx_power;
+#endif
 }
 
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT

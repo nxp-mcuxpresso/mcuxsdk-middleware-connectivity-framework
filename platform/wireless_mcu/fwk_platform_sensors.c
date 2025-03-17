@@ -9,6 +9,8 @@
 
 #include "fsl_common.h"
 #include "fwk_platform_sensors.h"
+
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 #include "fwk_platform_ics.h"
 #include "fwk_platform.h"
 #include "board_utility.h"
@@ -87,6 +89,10 @@ void ADC0_IRQHandler(void)
 
     SDK_ISR_EXIT_BARRIER;
 }
+
+/* -------------------------------------------------------------------------- */
+/*                              Public functions                              */
+/* -------------------------------------------------------------------------- */
 
 bool PLATFORM_IsAdcInitialized(void)
 {
@@ -202,3 +208,50 @@ static void PLATFORM_TemperatureReadyWorkHandler(fwk_work_t *work)
         }
     }
 }
+#else
+
+bool PLATFORM_IsAdcInitialized(void)
+{
+    return true;
+}
+
+void PLATFORM_InitAdc(void)
+{
+}
+
+void PLATFORM_DeinitAdc(void)
+{
+}
+
+void PLATFORM_StartBatteryMonitor(void)
+{
+}
+
+void PLATFORM_GetBatteryLevel(uint8_t *battery_level)
+{
+    *battery_level = (uint8_t)PLATFORM_SENSOR_UNKNOWN_BATTERY_LVL;
+}
+
+void PLATFORM_StartTemperatureMonitor(void)
+{
+}
+
+void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
+{
+    *temperature_value = (int32_t)PLATFORM_SENSOR_UNKNOWN_TEMPERATURE;
+}
+
+void PLATFORM_SaveAdcContext(void)
+{
+}
+
+void PLATFORM_RestoreAdcContext(void)
+{
+}
+
+void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
+{
+    (void)cb;
+}
+
+#endif

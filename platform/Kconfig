@@ -18,7 +18,8 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.platform
         || MCUX_HW_DEVICE_MIMXRT1171 || MCUX_HW_DEVICE_MIMXRT1172 \
         || MCUX_HW_DEVICE_MIMXRT1173 || MCUX_HW_DEVICE_MIMXRT1175 \
         || MCUX_HW_DEVICE_MIMXRT1176 \
-        || MCUX_HW_DEVICE_MIMXRT1061 || MCUX_HW_DEVICE_MIMXRT1062
+        || MCUX_HW_DEVICE_MIMXRT1061 || MCUX_HW_DEVICE_MIMXRT1062 \
+        || MCUX_HW_DEVICE_KW43B43ZC7 || MCUX_HW_DEVICE_KW43B43ZC7_NBU
 
 if MCUX_COMPONENT_middleware.wireless.framework.platform
 
@@ -95,6 +96,34 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     select MCUX_COMPONENT_component.flash_adapter
     depends on MCUX_HW_DEVICE_MCXW236B || MCUX_HW_DEVICE_MCXW235B
 
+config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
+    bool "KW43x family"
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
+    select MCUX_COMPONENT_component.osa
+    #select MCUX_COMPONENT_driver.ltc
+    #select MCUX_COMPONENT_driver.ccm32k
+    #select MCUX_COMPONENT_driver.spc
+    #select MCUX_COMPONENT_driver.trdc
+    #select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
+    #select MCUX_COMPONENT_component.flash_adapter
+    select  MCUX_COMPONENT_middleware.multicore.rpmsg-lite
+    select MCUX_COMPONENT_component.rpmsg_adapter
+    select MCUX_COMPONENT_middleware.multicore.mcmgr
+    select MCUX_COMPONENT_component.timer_manager
+    depends on MCUX_HW_DEVICE_KW43B43ZC7
+
+config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
+    bool "KW43x NBU family"
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
+    select MCUX_COMPONENT_component.osa
+    #select MCUX_COMPONENT_driver.ltc
+    #select MCUX_COMPONENT_driver.ccm32k
+    #select MCUX_COMPONENT_driver.spc
+    select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
+    select MCUX_COMPONENT_component.rpmsg_adapter
+    select MCUX_COMPONENT_middleware.multicore.mcmgr
+    depends on MCUX_HW_DEVICE_KW43B43ZC7_NBU
+
 config MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x
     bool "RW61x family"
     select MCUX_COMPONENT_component.timer_manager
@@ -155,11 +184,14 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.mbedtls_config
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ble
     bool "BLE"
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       BLE platform APIs.
 
@@ -169,8 +201,9 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
-
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       Sensor platform APIs.
 
@@ -179,7 +212,9 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       Inter core service (ICS) platform APIs min order to manage communication between the 2 cores.
 
@@ -207,7 +242,9 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
+               MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23 || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       Random Number Generator platform APIs.
 
@@ -235,16 +272,11 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.genfsk
     depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       GenFSK platform APIs.
-
-config MCUX_COMPONENT_middleware.wireless.framework.platform.mws
-    bool "Coexistence (MWS)"
-    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
-    help
-      Coexistence platform parameters APIs.
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ot
     bool "OpenThread"

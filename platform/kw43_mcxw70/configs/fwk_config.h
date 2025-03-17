@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -29,7 +29,7 @@
  *********************************************************************/
 
 #if !defined(gPlatformUseHwParameter_d)
-#define gPlatformUseHwParameter_d 1
+#define gPlatformUseHwParameter_d 0
 #endif
 /*
  * gHwParamsProdDataMainFlashMode_c HWParameters PROD_DATA remain at top of main flash,
@@ -75,10 +75,9 @@
  *     flash space reserved for PROD_DATA.
  */
 #ifndef gHwParamsProdDataPlacement_c
-/* Place HW Parameter section to IFR on KW47,MCXW72 */
 //#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlashMode_c
-//#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
-#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
+#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
+//#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
 #endif
 
 #if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlashMode_c)
@@ -146,8 +145,11 @@
 
 /* On wireless_mcu platform the only source of entropy disponible is the S200 */
 #ifndef gRngUseSecureSubSystem_d
-#define gRngUseSecureSubSystem_d 1
+#define gRngUseSecureSubSystem_d 0
 #endif
+
+/* Use the RNG HAL API from the SDK */
+#define gRngUseRngAdapter_c 1
 
 /*********************************************************************
  *        SecLib
@@ -182,9 +184,5 @@
 #ifndef gPlatformIcsUseWorkqueueRxProcessing_d
 #define gPlatformIcsUseWorkqueueRxProcessing_d 1
 #endif
-
-/* Address which can trigger a dummy interrupt on NBU. Used in PLATFORM_RemoteActiveReq() to ensure code is executed on
- * NBU when trying to access to its power domain. In some corner cases NBU could become irresponsive if the NBU power domain was woken up without executing any code on the core  */
-#define gPlatformNbuWakeUpInterruptAddr 0x48949410U
 
 #endif /* _FWK_CONFIG_H_ */

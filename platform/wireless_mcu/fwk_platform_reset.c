@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2023 NXP                               */
-/*                            All rights reserved.                            */
+/*                        Copyright 2023, 2025 NXP                            */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -29,9 +28,6 @@
 
 /* Program wake reset after 10ms */
 #define RESET_WAKE_DELAY MILLISECONDS_TO_32kTICKS(10u)
-
-#define PLATFORM_SOC_IRQ_START (uint8_t) CTI_IRQn
-#define PLATFORM_SOC_IRQ_END   (uint8_t) Reserved91_IRQn
 
 /* Binding beetween WUU register and LPTMR modules */
 #define PLATFORM_WUU_MOD_LPTMR_IDX 0u
@@ -92,7 +88,7 @@ static const cmc_power_domain_config_t CmcDeepPowerDownModeCfg = {
 
 static void PLATFORM_DisableAllIrqs(void)
 {
-    for (uint8_t irq = PLATFORM_SOC_IRQ_START; irq <= PLATFORM_SOC_IRQ_END; irq++)
+    for (uint8_t irq = 0u; irq <= (NUMBER_OF_INT_VECTORS - 16u); irq++)
     {
         NVIC_DisableIRQ((IRQn_Type)irq);
         NVIC_ClearPendingIRQ((IRQn_Type)irq);
@@ -121,7 +117,7 @@ static void PLATFORM_ShutdownRadio(void)
     }
 
     /* Configure the RF_CMC1 where the NBU, FRO and flash are not used */
-    RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_CK(0x2);
+    RF_CMC1->RADIO_LP |= RF_CMC_RADIO_LP_SHUTDOWN;
 
     /* Force low power entry request to the radio domain */
     RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);

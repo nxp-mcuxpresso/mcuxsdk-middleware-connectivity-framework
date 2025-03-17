@@ -281,12 +281,10 @@ int PLATFORM_SendChipRevision(void)
     {
         chip_rev = 1u;
     }
-#if !defined(FPGA_SUPPORT) || (FPGA_SUPPORT == 0)
     else if (chip_rev_reg == DEVICE_REVISION_A2)
     {
         chip_rev = 2u;
     }
-#endif
     else
     {
         /* MISRA compliance */

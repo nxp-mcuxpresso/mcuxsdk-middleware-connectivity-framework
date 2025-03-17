@@ -362,7 +362,9 @@ static void PLATFORM_RxNbuVersionRequest(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxXtal32MTrimIndication(uint8_t *data, uint32_t len)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     PLATFORM_SetXtal32MhzTrim(data[1]);
+#endif
     (void)len;
 }
 
@@ -419,7 +421,9 @@ static void PLATFORM_RxNbuSecureModeRequest(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuWakeUpDelayLpoCycle(uint8_t *data, uint32_t len)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     PLATFORM_SetWakeupDelay(data[1]);
+#endif
 }
 
 static void PLATFORM_RxNbuFrequencyConstraint(uint8_t *data, uint32_t len)
@@ -429,6 +433,7 @@ static void PLATFORM_RxNbuFrequencyConstraint(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     sfc_config_t sfc_config;
     uint32_t     data_len     = len - 1U;
     uint32_t     size_to_copy = (data_len < sizeof(sfc_config_t)) ? data_len : sizeof(sfc_config_t);
@@ -436,11 +441,14 @@ static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
     memset(&sfc_config, 0U, sizeof(sfc_config_t));
     memcpy(&sfc_config, (sfc_config_t *)&data[1], size_to_copy);
     SFC_UpdateConfig((const sfc_config_t *)&sfc_config);
+#endif
 }
 
 static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
     SFC_EnableNotification(data[1]);
+#endif
 }
 
 static void PLATFORM_RxRngReseed(uint8_t *data, uint32_t len)

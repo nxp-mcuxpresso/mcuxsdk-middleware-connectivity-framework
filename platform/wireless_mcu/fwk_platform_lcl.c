@@ -7,9 +7,6 @@
 #include "fwk_platform_lcl.h"
 #include "fwk_platform_definitions.h"
 #include "FunctionLib.h"
-#if defined(gMWS_Enabled_d) && (gMWS_Enabled_d > 0)
-#include "MWS.h"
-#endif
 #include "RNG_Interface.h"
 
 #if defined(gAppLowpowerEnabled_d) && (gAppLowpowerEnabled_d > 0)

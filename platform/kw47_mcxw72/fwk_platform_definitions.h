@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -160,5 +160,7 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define PLATFORM_SELECT_RAM_RET_START_IDX 5U
 #define PLATFORM_SELECT_RAM_RET_END_IDX   9U
 #endif /* gPlatformShutdownEccRamInLowPower */
+
+#define RF_CMC_RADIO_LP_SHUTDOWN RF_CMC1_RADIO_LP_CK(0x2);
 
 #endif /* _FWK_PLAT_DEFS_H_ */
