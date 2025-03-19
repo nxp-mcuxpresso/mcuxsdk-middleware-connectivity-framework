@@ -151,6 +151,9 @@
 /* Use the RNG HAL API from the SDK */
 #define gRngUseRngAdapter_c 1
 
+/* do not use TRNG in RNG for now */
+#undef FSL_FEATURE_SOC_TRNG_COUNT
+
 /*********************************************************************
  *        SecLib
  *********************************************************************/
