@@ -9,12 +9,12 @@
  ********************************************************************************** */
 #include <stdalign.h>
 #include <stdint.h>
+#include "fwk_config.h"
 #include "RNG_Interface.h"
 #include "FunctionLib.h"
 #include "fsl_common.h" /* includes fsl_device_registers.h */
 #include "fsl_os_abstraction.h"
 #include "fwk_platform_rng.h"
-#include "fwk_config.h"
 
 #ifndef gRngUseSecLib_d
 #define gRngUseSecLib_d 1
