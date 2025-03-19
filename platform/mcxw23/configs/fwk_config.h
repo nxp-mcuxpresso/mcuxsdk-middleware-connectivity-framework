@@ -9,6 +9,11 @@
 
 #include "fwk_platform_definitions.h"
 
+#define gPlatformRamStartAddress_c   (0x20004000U)
+#define gPlatformRamEndAddress_c     (0x2001FFFF)
+#define gPlatformFlashStartAddress_c (0)
+#define gPlatformFlashEndAddress_c   (FSL_FEATURE_SYSCON_FLASH_SIZE_BYTES - 1)
+
 /*! *********************************************************************************
  *   RNG Module Configuration
  ********************************************************************************** */

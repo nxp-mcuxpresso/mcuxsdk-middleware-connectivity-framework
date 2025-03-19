@@ -10,6 +10,7 @@
 #include "fsl_common.h"
 #include "fsl_rom_api.h"
 #include "fsl_trng.h"
+#include "fsl_power.h"
 #include "ble_controller.h"
 #include "fsl_debug_console.h"
 #include "fsl_component_timer_manager.h"
@@ -126,6 +127,11 @@ void PLATFORM_InitBle(void)
     }
 }
 
+bool PLATFORM_CheckNextBleConnectivityActivity(void)
+{
+    return true;
+}
+
 uint64_t PLATFORM_GetTimeStamp(void)
 {
 #ifdef TIMER_PORT_TYPE_CTIMER
@@ -165,6 +171,11 @@ void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
     }
 }
 
+void PLATFORM_ResetCpu(void)
+{
+    POWER_Reset();
+}
+
 int PLATFORM_SendRngSeed(uint8_t *seed, uint16_t seed_size)
 {
     /* Not implemented */
@@ -177,4 +188,14 @@ int PLATFORM_RequestRngSeed(void)
 {
     /* Not implemented */
     return 1;
+}
+
+void PLATFORM_RemoteActiveReq(void)
+{
+    /* Not implemented */
+}
+
+void PLATFORM_RemoteActiveRel(void)
+{
+    /* Not implemented */
 }
