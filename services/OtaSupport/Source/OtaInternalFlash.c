@@ -187,6 +187,7 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
     ota_flash_status_t status = kStatus_OTA_Flash_Fail;
     do
     {
+        uint8_t            remain_till_end_of_phrase = 0u;
         hal_flash_status_t st;
         if (!OtaCheckRangeBelongsToPartition(offs, NoOfBytes))
         {
@@ -205,17 +206,23 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
 #if (gEepromParams_WriteAlignment_c > 1)
         if (mWriteBuffLevel != 0U)
         {
-            if ((offs >= mWriteBuffOffs) && (offs < mWriteBuffOffs + gEepromParams_WriteAlignment_c))
+            /* There was something pending in mWriteBuff already */
+            if ((offs >= mWriteBuffOffs) && (offs < mWriteBuffOffs + sizeof(mWriteBuff)))
             {
-                uint32_t offset = offs - mWriteBuffOffs;
-                uint32_t size   = gEepromParams_WriteAlignment_c - offset;
-
-                FLib_MemCpy(&mWriteBuff[offset], Outbuf, size);
-                offs += size;
-                Outbuf += size;
-                if (NoOfBytes > size)
+                /* The offset We mean to write to belongs to the in mWriteBuff phrase buffer */
+                uint32_t phrase_offset;
+                uint32_t size_to_copy;
+                phrase_offset             = (offs - mWriteBuffOffs);
+                remain_till_end_of_phrase = (sizeof(mWriteBuff) - phrase_offset);
+                /* Copy bytes from buffer to staging buffer where we accumulate a whole phrase  */
+                size_to_copy = MIN(NoOfBytes, remain_till_end_of_phrase);
+                FLib_MemCpy(&mWriteBuff[phrase_offset], Outbuf, size_to_copy);
+                mWriteBuffLevel += size_to_copy;
+                offs += size_to_copy;
+                Outbuf += size_to_copy;
+                if (NoOfBytes > size_to_copy)
                 {
-                    NoOfBytes -= size;
+                    NoOfBytes -= size_to_copy;
                 }
                 else
                 {
@@ -224,8 +231,16 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
             }
             else
             {
-                uint8_t size = gEepromParams_WriteAlignment_c - mWriteBuffLevel;
-                FLib_MemSet(&mWriteBuff[mWriteBuffLevel], 0xFF, (uint32_t)size);
+                /* The offset we are accessing does not belong to the phrase currently opened : Pad remainder of phrase
+                 * with 0xff */
+                FLib_MemSet(&mWriteBuff[mWriteBuffLevel], 0xFF, (uint32_t)sizeof(mWriteBuff) - mWriteBuffLevel);
+                mWriteBuffLevel = sizeof(mWriteBuff);
+            }
+            if (mWriteBuffLevel < sizeof(mWriteBuff))
+            {
+                /* Exit without performing any write */
+                status = kStatus_OTA_Flash_Success;
+                break;
             }
 
             st = HAL_FlashProgramUnaligned(PHYS_ADDR(mWriteBuffOffs), sizeof(mWriteBuff), mWriteBuff);
