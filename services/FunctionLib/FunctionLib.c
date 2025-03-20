@@ -75,7 +75,7 @@
  ********************************************************************************** */
 void FLib_MemCpy(void *pDst, const void *pSrc, uint32_t cBytes)
 {
-#if gFLib_CheckBufferOverflow_d && defined(MEM_TRACKING)
+#if gFLib_CheckBufferOverflow_d
     (void)MEM_BufferCheck(pDst, cBytes);
 #endif
 
@@ -123,7 +123,7 @@ void FLib_MemCpyAligned32bit(void *to_ptr, const void *from_ptr, register uint32
 
     register uint32_t loops;
 
-#if gFLib_CheckBufferOverflow_d && defined(MEM_TRACKING)
+#if gFLib_CheckBufferOverflow_d
     (void)MEM_BufferCheck(to_ptr, number_of_bytes);
 #endif
 
@@ -235,7 +235,7 @@ void FLib_MemCpyDir(void *pBuf1, void *pBuf2, bool_t dir, uint32_t n)
  ********************************************************************************** */
 void FLib_MemCpyReverseOrder(void *pDst, const void *pSrc, uint32_t cBytes)
 {
-#if gFLib_CheckBufferOverflow_d && defined(MEM_TRACKING)
+#if gFLib_CheckBufferOverflow_d
     (void)MEM_BufferCheck(pDst, cBytes);
 #endif
     if (cBytes != 0UL)
@@ -373,7 +373,7 @@ bool_t FLib_MemCmpToVal(const void *pAddr, uint8_t val, uint32_t len)
  ********************************************************************************** */
 void FLib_MemSet(void *pData, uint8_t value, uint32_t cBytes)
 {
-#if gFLib_CheckBufferOverflow_d && defined(MEM_TRACKING)
+#if gFLib_CheckBufferOverflow_d
     (void)MEM_BufferCheck(pData, cBytes);
 #endif
 #if gUseToolchainMemFunc_d
@@ -425,7 +425,7 @@ void FLib_MemSet32Aligned(void *pData, uint32_t value, uint32_t cWords)
  ********************************************************************************** */
 void FLib_MemInPlaceCpy(void *pDst, void *pSrc, uint32_t cBytes)
 {
-#if gFLib_CheckBufferOverflow_d && defined(MEM_TRACKING)
+#if gFLib_CheckBufferOverflow_d
     (void)MEM_BufferCheck(pDst, cBytes);
 #endif
     if (pDst != pSrc)
