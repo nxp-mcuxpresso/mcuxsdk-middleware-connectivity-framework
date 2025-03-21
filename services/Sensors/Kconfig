@@ -7,6 +7,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.sensors
     bool "Sensors for Battery/Temperature measurements"
     select MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
     select MCUX_COMPONENT_component.osa
+    imply MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     depends on MCUX_COMPONENT_middleware.wireless.framework.platform
     help
       Sensors APIs for Battery/Temperature measurements.
