@@ -70,14 +70,14 @@
  *   - gHwParamsProdDataMainFlash_c if you mean to remain backward compatible.
  *   - gHwParamsProdDataMainFlash2IfrMode_c if you wish to conserve previous
  *     HWParameter setting (MAC addresses, xtal trimming data) during migration phase.
- *   - gHwParamsProdDataPlacementIfrMode_c for new devices or once gHwParamsProdDataMainFlash2IfrMode_c
+ *   - gHwParamsProdDataIfrMode_c for new devices or once gHwParamsProdDataMainFlash2IfrMode_c
  *     mode has populated the IFR with legacy values. -> after this phase update linker script to remove
  *     flash space reserved for PROD_DATA.
  */
 #ifndef gHwParamsProdDataPlacement_c
 //#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlashMode_c
-#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
-//#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
+//#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
+#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
 #endif
 
 #if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlashMode_c)
