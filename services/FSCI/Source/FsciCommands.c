@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2018, 2022-2024 NXP
+ * Copyright 2016-2018, 2022-2025 NXP
  * All rights reserved.
  *
  * \file
@@ -33,7 +33,9 @@
 #include "fwk_timer_manager.h"
 #endif
 
+#if defined(gPlatformHasNbu_d) && (gPlatformHasNbu_d == 1)
 #include "fwk_platform_ics.h"
+#endif
 
 #if gFSCI_IncludeMacCommands_c
 #include "FsciMacCommands.h"
@@ -214,7 +216,9 @@ static const gFsciOpCode_t FSCI_ReqOCtable[] = {
     {mFsciGetUniqueId_c, FSCI_ReadUniqueId},
     {mFsciGetMcuId_c, FSCI_ReadMCUId},
     {mFsciGetSwVersions_c, FSCI_ReadModVer},
+#if defined(gPlatformHasNbu_d) && (gPlatformHasNbu_d == 1)
     {mFsciGetNbuVersion_c, FSCI_ReadNbuVer},
+#endif
 
 #if defined(gFSCI_MemAllocTest_Enabled_d) && (gFSCI_MemAllocTest_Enabled_d)
     {mFSCIMemAllocTestReq_c, FSCI_MemAllocTest},
@@ -1120,6 +1124,7 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
     return status;
 }
 
+#if defined(gPlatformHasNbu_d) && (gPlatformHasNbu_d == 1)
 /*! *********************************************************************************
 * \brief  This function reads NBU version information located retrieving it from
           NBU processor and passes it on over the serial interface
@@ -1196,6 +1201,7 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
 
     return status;
 }
+#endif /* #if defined(gPlatformHasNbu_d) && (gPlatformHasNbu_d == 1) */
 
 #if defined(gFSCI_MemAllocTest_Enabled_d) && (gFSCI_MemAllocTest_Enabled_d)
 /*! *********************************************************************************
