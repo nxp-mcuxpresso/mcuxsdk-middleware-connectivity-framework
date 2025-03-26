@@ -185,6 +185,14 @@ void PLATFORM_DeinitTimerManager(void);
 
 #endif
 
+/*!
+ * \brief  get 4 words of information that uniquely identifies the MCU
+ *
+ * \param[out] aOutUid16B pointer to UID bytes
+ * \param[out] pOutLen pointer to UID length
+ */
+void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
+
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */

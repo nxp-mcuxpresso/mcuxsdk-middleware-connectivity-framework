@@ -306,6 +306,24 @@ void PLATFORM_DeinitTimerManager(void)
 }
 #endif
 
+/* get 4 words of information that uniquely identifies the MCU */
+void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
+{
+    uint32_t uid[4] = {0};
+
+    /* Get the MCU uid */
+    uid[0] = MSCM->UID[0];
+    uid[1] = MSCM->UID[1];
+    uid[2] = MSCM->UID[2];
+    uid[3] = MSCM->UID[3];
+
+    FLib_MemCpy(aOutUid16B, (uint8_t *)uid, sizeof(uid));
+    /* Get the uid length */
+    *pOutLen = (uint8_t)sizeof(uid);
+
+    return;
+}
+
 /************************************************************************************
  * Private functions
  ************************************************************************************/
