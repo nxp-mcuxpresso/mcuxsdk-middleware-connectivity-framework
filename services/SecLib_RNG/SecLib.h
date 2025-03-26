@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2024 NXP
+ * Copyright 2016-2025 NXP
  * All rights reserved.
  *
  * \file
@@ -84,6 +84,11 @@
 /*! Enable or disable SHA1 functionality in the SecLib module. */
 #ifndef gSecLibSha1Enable_d
 #define gSecLibSha1Enable_d 0
+#endif
+
+/*! Enable or disable Bluetooth LE debug keys functionality */
+#ifndef gSecLibUseBleDebugKeys_d
+#define gSecLibUseBleDebugKeys_d 0
 #endif
 
 /*! Number of bytes in an S200 blob */

@@ -101,7 +101,19 @@ static size_t  ecdhKeyPairBlobSize = (3 * ECP256_COORDINATE_LEN) + BLOB_DATA_OVE
 static uint8_t ecdhKeyPairBlob[(3 * ECP256_COORDINATE_LEN) + BLOB_DATA_OVERLAY_BYTE_LEN];
 
 static bool_t IsSecLibEcdhContextInit = false;
-
+#if (gSecLibUseBleDebugKeys_d == 1)
+/*! Bluetooth LE debug keys as specified in section 2.3.5.6.1 vol. 3, part H of the Bluetooth Core specification version 5.4 */
+static const ecp256KeyPair_t mBleDebugKeyPair = {
+    .public_key.components_8bit.x = {0x20, 0xb0, 0x03, 0xd2, 0xf2, 0x97, 0xbe, 0x2c, 0x5e, 0x2c, 0x83,
+                                     0xa7, 0xe9, 0xf9, 0xa5, 0xb9, 0xef, 0xf4, 0x91, 0x11, 0xac, 0xf4,
+                                     0xfd, 0xdb, 0xcc, 0x03, 0x01, 0x48, 0x0e, 0x35, 0x9d, 0xe6},
+    .public_key.components_8bit.y = {0xdc, 0x80, 0x9c, 0x49, 0x65, 0x2a, 0xeb, 0x6d, 0x63, 0x32, 0x9a,
+                                     0xbf, 0x5a, 0x52, 0x15, 0x5c, 0x76, 0x63, 0x45, 0xc2, 0x8f, 0xed,
+                                     0x30, 0x24, 0x74, 0x1c, 0x8e, 0xd0, 0x15, 0x89, 0xd2, 0x8b},
+    .private_key.raw_8bit         = {0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38, 0x74, 0xc9, 0xb3,
+                                     0xe3, 0xd2, 0x10, 0x3f, 0x50, 0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40,
+                                     0xb7, 0x99, 0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd}};
+#endif /* gSecLibUseBleDebugKeys_d */
 /*! *********************************************************************************
 *************************************************************************************
 * Public prototypes
@@ -1352,7 +1364,7 @@ void HMAC_SHA256(const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uin
 secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPrivateKey_t *pOutPrivateKey)
 {
     secResultType_t ret = gSecSuccess_c;
-
+#if (gSecLibUseBleDebugKeys_d == 0)
     uint8_t *wrk_buf = NULL;
 
     SECLIB_MUTEX_LOCK();
@@ -1398,8 +1410,58 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 
     } while (false);
     SECLIB_MUTEX_UNLOCK();
-
     (void)MEM_BufferFree(wrk_buf);
+#else  /* gSecLibUseBleDebugKeys_d */
+    SECLIB_MUTEX_LOCK();
+    do
+    {
+        if (pECPKeyPair != NULL)
+        {
+            break;
+        }
+
+        g_ECP_KeyPair.keyId = KEY_ID_BLE0;
+        pECPKeyPair         = &g_ECP_KeyPair;
+
+        if ((CRYPTO_InitHardware()) != kStatus_Success)
+        {
+            break;
+        }
+
+        if (sss_sscp_key_object_init(&pECPKeyPair->OwnKey, &g_keyStore) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        if (sss_sscp_key_object_allocate_handle(&pECPKeyPair->OwnKey, KEY_ID_BLE0, kSSS_KeyPart_Pair,
+                                                kSSS_CipherType_EC_NIST_P, 96u,
+                                                mSecLibKeyPropCryptoAlgoAll_c) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        if (sss_sscp_key_store_set_key(&g_keyStore, &pECPKeyPair->OwnKey, (const uint8_t *)&mBleDebugKeyPair, 96u, 256u,
+                                       kSSS_KeyPart_Pair) != kStatus_SSS_Success)
+        {
+            break;
+        }
+
+        if (sss_sscp_key_store_export_key(&g_keyStore, &pECPKeyPair->OwnKey, ecdhKeyPairBlob, &ecdhKeyPairBlobSize,
+                                          kSSS_blobType_ELKE_blob) != kStatus_SSS_Success)
+        {
+            RAISE_ERROR(ret, gSecError_c);
+        }
+
+        IsSecLibEcdhContextInit = true;
+    } while (false);
+    SECLIB_MUTEX_UNLOCK();
+
+    /* The NCCL output is BE and BLE expected LE */
+    ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, (const uint8_t *)&mBleDebugKeyPair.public_key);
+    ECP256_coordinate_copy_and_change_endianness((uint8_t *)pOutPrivateKey,
+                                                 (const uint8_t *)&mBleDebugKeyPair.private_key);
+    (void)g_ECP_KeyPair;
+#endif /* gSecLibUseBleDebugKeys_d */
 
     return ret;
 }
