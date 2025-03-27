@@ -105,4 +105,12 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
     #select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     #select MCUX_COMPONENT_device.utility
 
+config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
+    select MCUX_COMPONENT_component.flash_adapter
+
+config MCUX_COMPONENT_middleware.wireless.framework.platform.ota
+    select MCUX_COMPONENT_component.flash_adapter
+    select MCUX_COMPONENT_driver.gpio
+    select MCUX_COMPONENT_driver.port
+
 endif
