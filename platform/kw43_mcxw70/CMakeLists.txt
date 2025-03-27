@@ -4,8 +4,6 @@
 if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70)
     mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/../wireless_mcu)
 
-    #mcux_set_list(KW43_FAMILY "KW43B43ZC7xxxA")
-
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
         mcux_add_source(SOURCES
             configs/fwk_config.h
@@ -21,9 +19,8 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70)
             DEVICE_IDS ${KW43_FAMILY}
         )
 
-        # to be done with linker symbol ?
         mcux_add_macro(
-            REMOTE_CORE_BOOT_ADDRESS=0x00121C00
+            REMOTE_CORE_BOOT_ADDRESS=0x02128000
         )
     endif()
 endif()
