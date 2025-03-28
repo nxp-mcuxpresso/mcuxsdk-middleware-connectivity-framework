@@ -61,8 +61,6 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.reset
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ota
     select MCUX_COMPONENT_component.flash_adapter
-    select MCUX_COMPONENT_driver.gpio
-    select MCUX_COMPONENT_driver.port
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.lcl
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
@@ -110,7 +108,5 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ota
     select MCUX_COMPONENT_component.flash_adapter
-    select MCUX_COMPONENT_driver.gpio
-    select MCUX_COMPONENT_driver.port
 
 endif

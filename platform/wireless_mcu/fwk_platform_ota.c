@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 - 2023 NXP
+ * Copyright 2020 - 2025 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -8,9 +8,6 @@
 #include "board.h"
 #include "fwk_platform_ota.h"
 #include "fsl_adapter_flash.h"
-#include "fsl_gpio.h"
-#include "fsl_port.h"
-#include "pin_mux.h"
 #include "fwk_hal_macros.h"
 #include "EmbeddedTypes.h"
 #include "fwk_platform_definitions.h"
