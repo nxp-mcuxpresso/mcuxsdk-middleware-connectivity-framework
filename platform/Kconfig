@@ -30,7 +30,6 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
     bool "KW45x, K32W1x, MCXW71x families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
-    select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_driver.trdc
@@ -49,7 +48,6 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
     bool "KW45x, MCXW71x NBU families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
-    select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
@@ -61,7 +59,6 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
     bool "KW47x, MCXW72x families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
-    select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_driver.trdc
@@ -78,7 +75,6 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
     bool "KW47x, MCXW72x NBU families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
-    select MCUX_COMPONENT_driver.ltc
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
@@ -100,7 +96,6 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
     bool "KW43x family"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
-    #select MCUX_COMPONENT_driver.ltc
     #select MCUX_COMPONENT_driver.ccm32k
     #select MCUX_COMPONENT_driver.spc
     #select MCUX_COMPONENT_driver.trdc
@@ -116,7 +111,6 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     bool "KW43x NBU family"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
-    #select MCUX_COMPONENT_driver.ltc
     #select MCUX_COMPONENT_driver.ccm32k
     #select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
