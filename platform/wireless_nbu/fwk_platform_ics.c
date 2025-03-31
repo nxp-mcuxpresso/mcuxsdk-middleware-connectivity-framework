@@ -1,7 +1,5 @@
 /*
- * Copyright 2021, 2024 NXP
- * All rights reserved.
- *
+ * Copyright 2021, 2024-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -94,12 +92,6 @@ const static hal_rpmsg_config_t fwkRpmsgConfig = {
     .remote_addr = 110,
 };
 
-__attribute__((weak)) void RNG_SetExternalSeed(uint8_t *external_seed);
-__attribute__((weak)) void RNG_SetExternalSeed(uint8_t *external_seed)
-{
-    (void)external_seed; /* Stub of the RNG_SetExternalSeed() function */
-}
-
 static void (*PLATFORM_RxCallbackService[gFwkSrvHost2NbuLast_c - gFwkSrvHost2NbuFirst_c - 1U])(uint8_t *data,
                                                                                                uint32_t len) = {
     PLATFORM_RxNbuVersionRequest,
@@ -120,6 +112,8 @@ static rx_work_t rx_work = {
     .work.handler = PLATFORM_RxWorkHandler,
 };
 #endif
+
+static seed_ready_event_callback_t seed_ready_callback = (seed_ready_event_callback_t)NULL;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -233,6 +227,11 @@ int PLATFORM_FwkSrvRequestNewTemperature(uint32_t periodic_interval_ms)
 {
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuRequestNewTemperature_c, (void *)&periodic_interval_ms,
                                      sizeof(uint32_t));
+}
+
+void PLATFORM_RegisterSetNewSeed(seed_ready_event_callback_t cb)
+{
+    seed_ready_callback = cb;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -453,5 +452,8 @@ static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxRngReseed(uint8_t *data, uint32_t len)
 {
-    RNG_SetExternalSeed(&data[1]);
+    if (seed_ready_callback != NULL && len > 1U)
+    {
+        (void)seed_ready_callback(&data[1]);
+    }
 }

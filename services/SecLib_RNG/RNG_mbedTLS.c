@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2024 NXP
- * All rights reserved.
+ * Copyright 2016-2025 NXP
  *
  * \file
  *
@@ -15,10 +14,13 @@
 #include "fwk_platform.h"
 #include "fwk_platform_rng.h"
 #include "fwk_platform_crypto.h"
-
 #include "mbedtls/entropy.h"
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/md.h"
+
+#if defined(gPlatformHasNbu_d) || defined(gPlatformIsNbu_d)
+#include "fwk_platform_ics.h"
+#endif
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -119,6 +121,13 @@ int RNG_Init(void)
 
         RNG_MUTEX_LOCK();
 
+#if defined(gPlatformHasNbu_d)
+        PLATFORM_RegisterReceivedSeedRequest(&RNG_NotifyReseedNeeded);
+#endif
+
+#if defined(gPlatformIsNbu_d)
+        PLATFORM_RegisterSetNewSeed(&RNG_SetExternalSeed);
+#endif
         mbedtls_entropy_init(&mRngEntropyCtx);
         mbedtls_hmac_drbg_init(&mRngHmacDrbgCtx);
 

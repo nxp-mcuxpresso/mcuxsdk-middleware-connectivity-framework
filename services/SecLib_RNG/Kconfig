@@ -8,6 +8,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.seclib_rng
     #select MCUX_COMPONENT_component.messaging
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.framework.platform.rng
+    imply MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     depends on MCUX_COMPONENT_middleware.wireless.framework.platform
     help
       Crypto algorithms API and Random number generator APIs to connectivity applications.

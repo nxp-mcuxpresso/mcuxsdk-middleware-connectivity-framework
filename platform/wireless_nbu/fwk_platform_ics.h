@@ -1,7 +1,5 @@
 /*
- * Copyright 2021, 2024 NXP
- * All rights reserved.
- *
+ * Copyright 2021, 2024-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -80,6 +78,8 @@ typedef enum
     gFwkSrvRngReseed_c                          = 0x8BU,
     gFwkSrvHost2NbuLast_c                       = 0x8CU,
 } eFwkSrvMsgType;
+
+typedef int (*seed_ready_event_callback_t)(uint8_t *external_seed);
 
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
@@ -161,5 +161,13 @@ int PLATFORM_RequestRngSeedToHost(void);
  * \return int 0 if success, -1 if no memory available, -2 if sending error.
  */
 int PLATFORM_FwkSrvRequestNewTemperature(uint32_t periodic_interval_ms);
+
+/*!
+ * \brief Register function callback called when external seed is ready on NBU
+ *
+ * \param[in] cb callback that will be used when external seed is ready on NBU
+ *
+ */
+void PLATFORM_RegisterSetNewSeed(seed_ready_event_callback_t cb);
 
 #endif /* __FWK_PLATFORM_ICS_H__ */

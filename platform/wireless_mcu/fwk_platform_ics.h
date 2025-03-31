@@ -118,6 +118,7 @@ typedef void (*nbu_issue_callback_t)(void);
 typedef void (*nbu_security_event_callback_t)(uint32_t securityEventBitmask);
 typedef void (*nbu_temp_req_event_callback_t)(uint32_t periodic_interval_ms);
 typedef void (*PLATFORM_FroDebugCallback_t)(uint16_t freq, int16_t ppm_mean, int16_t ppm, uint16_t fro_trim);
+typedef int (*nbu_seed_request_event_callback_t)(void);
 
 /* -------------------------------------------------------------------------- */
 /*                              Public prototypes                             */
@@ -236,6 +237,14 @@ void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t
  * \param[in] enable
  */
 void PLATFORM_EnableFroNotification(int8_t enable);
+
+/*!
+ * \brief Register function callback called when NBU requested seed
+ *
+ * \param[in] cb callback that will be used when NBU requested seed
+ *
+ */
+void PLATFORM_RegisterReceivedSeedRequest(nbu_seed_request_event_callback_t cb);
 
 /*!
  * @}  end of FWK_Platform_ICS addtogroup

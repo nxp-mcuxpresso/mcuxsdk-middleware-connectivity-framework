@@ -119,12 +119,6 @@ static nbu_temp_req_event_callback_t nbu_request_temperature_callback = (nbu_tem
 static const FwkSrv_LowPowerConstraintCallbacks_t *pLowPowerConstraintCallbacks =
     (const FwkSrv_LowPowerConstraintCallbacks_t *)NULL;
 
-__attribute__((weak)) int RNG_NotifyReseedNeeded(void);
-__attribute__((weak)) int RNG_NotifyReseedNeeded(void)
-{
-    return 1; /* Stub of the RNG_NotifyReseedNeeded() function */
-}
-
 /* Array of pointer of function used in PLATFORM_FwkSrv_RxCallBack() */
 static void (*PLATFORM_RxCallbackService[gFwkSrvNbu2HostLast_c - gFwkSrvNbu2HostFirst_c - 1U])(uint8_t *data,
                                                                                                uint32_t len) = {
@@ -146,6 +140,8 @@ static rx_work_t rx_work = {
     .work.handler = PLATFORM_RxWorkHandler,
 };
 #endif
+
+static nbu_seed_request_event_callback_t nbu_seed_req_callback = (nbu_seed_request_event_callback_t)NULL;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -479,6 +475,11 @@ void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t
 #endif
 }
 
+void PLATFORM_RegisterReceivedSeedRequest(nbu_seed_request_event_callback_t cb)
+{
+    nbu_seed_req_callback = cb;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
@@ -664,7 +665,10 @@ static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t
 
 static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len)
 {
-    RNG_NotifyReseedNeeded();
+    if (nbu_seed_req_callback != NULL)
+    {
+        (void)nbu_seed_req_callback();
+    }
     NOT_USED(data);
     NOT_USED(len);
 }

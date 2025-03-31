@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2019, 2023-2024 NXP
- * All rights reserved.
+ * Copyright 2016-2017, 2019, 2023-2025 NXP
  *
  * \file
  *
@@ -15,6 +14,10 @@
 #include "fsl_common.h" /* includes fsl_device_registers.h */
 #include "fsl_os_abstraction.h"
 #include "fwk_platform_rng.h"
+
+#if defined(gPlatformHasNbu_d) || defined(gPlatformIsNbu_d)
+#include "fwk_platform_ics.h"
+#endif
 
 #ifndef gRngUseSecLib_d
 #define gRngUseSecLib_d 1
@@ -190,7 +193,13 @@ int RNG_Init(void)
         {
             break;
         }
+#if defined(gPlatformHasNbu_d)
+        PLATFORM_RegisterReceivedSeedRequest(&RNG_NotifyReseedNeeded);
+#endif
 
+#if defined(gPlatformIsNbu_d)
+        PLATFORM_RegisterSetNewSeed(&RNG_SetExternalSeed);
+#endif
         rng_ctx.mPrngIsSeeded  = FALSE;
         rng_ctx.needReseed     = FALSE;
         rng_ctx.mPRNG_Requests = gRngMaxRequests_d;
