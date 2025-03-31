@@ -149,6 +149,8 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define PLATFORM_SELECT_RAM_RET_END_IDX   6U
 #endif /* gPlatformShutdownEccRamInLowPower */
 
+#define SPC_TEST_ADDR            (SPC0_BASE + 0xf0u)
+#define SPC_TRIM_LOCK            (SPC0_BASE + 0x18u)
 #define RF_CMC_RADIO_LP_SHUTDOWN RF_CMC1_RADIO_LP_CK(0x2);
 
 #endif /* _FWK_PLAT_DEFS_H_ */

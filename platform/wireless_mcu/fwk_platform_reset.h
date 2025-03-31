@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                             Copyright 2023 NXP                             */
-/*                            All rights reserved.                            */
+/*                          Copyright 2023, 2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -22,14 +21,22 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#include "fwk_config.h"
+
 /* -------------------------------------------------------------------------- */
 /*                                Public Macros                               */
 /* -------------------------------------------------------------------------- */
+
+#ifndef gPlatResetMethod_c
+/* Default choice for platform reset method */
+#define gPlatResetMethod_c gUseResetByNvicReset_c
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                             Public APIs                                    */
 /* -------------------------------------------------------------------------- */
 
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
 /*!
  * \brief  Trigger a deep power down reset.
  *
@@ -43,7 +50,9 @@ void PLATFORM_ForceDeepPowerDownReset(void);
  *
  */
 void PLATFORM_CheckAndForceDeepPowerDownResetOnResetPin(void);
+#endif
 
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByLvdForce_c)
 /*!
  * \brief  Shutdown radio then trigger an LVD reset
  *
@@ -55,6 +64,7 @@ void PLATFORM_ForceLvdReset(void);
  *
  */
 void PLATFORM_ForceLvdResetFromResetPin(void);
+#endif
 
 /*!
  * \brief  Trigger a plain system reset.

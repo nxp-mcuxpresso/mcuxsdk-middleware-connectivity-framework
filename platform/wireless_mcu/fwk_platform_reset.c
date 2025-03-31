@@ -11,13 +11,12 @@
 
 #include "fwk_platform_reset.h"
 
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
 /* SDK drivers */
-#include "fsl_spc.h"
 #include "fsl_wuu.h"
-#include "fsl_cmc.h"
 #include "fsl_lptmr.h"
-#include "fsl_spc.h"
-#include "fwk_config.h"
+#include "fsl_cmc.h"
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -34,13 +33,21 @@
 
 #define TS_READ_ADDR ((volatile uint64_t *)(void *)TSTMR0)
 
-#ifndef gPlatResetMethod_c
-/* Default choice for platform reset method */
-#define gPlatResetMethod_c gUseResetByNvicReset_c
+/* -------------------------------------------------------------------------- */
+/*                               Private memory                               */
+/* -------------------------------------------------------------------------- */
+
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
+static const cmc_power_domain_config_t CmcDeepPowerDownModeCfg = {
+    .clock_mode = kCMC_GateAllSystemClocksEnterLowPowerMode,
+    /* force main and wake domain in deep power down mode */
+    .main_domain = kCMC_DeepPowerDown,
+    .wake_domain = kCMC_DeepPowerDown,
+};
 #endif
 
 /* -------------------------------------------------------------------------- */
-/*                             Private prototypes                             */
+/*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
 
 static bool IsTimeoutExpired(uint64_t timestamp, uint64_t delayUs)
@@ -79,13 +86,8 @@ static void DelayUs(uint64_t delayUs)
     WaitTimeout(*TS_READ_ADDR, delayUs);
 }
 
-static const cmc_power_domain_config_t CmcDeepPowerDownModeCfg = {
-    .clock_mode = kCMC_GateAllSystemClocksEnterLowPowerMode,
-    /* force main and wake domain in deep power down mode */
-    .main_domain = kCMC_DeepPowerDown,
-    .wake_domain = kCMC_DeepPowerDown,
-};
-
+#if defined(gPlatResetMethod_c) && \
+    ((gPlatResetMethod_c == gUseResetByLvdForce_c) || (gPlatResetMethod_c == gUseResetByDeepPowerDown_c))
 static void PLATFORM_DisableAllIrqs(void)
 {
     for (uint8_t irq = 0u; irq <= (NUMBER_OF_INT_VECTORS - 16u); irq++)
@@ -122,7 +124,9 @@ static void PLATFORM_ShutdownRadio(void)
     /* Force low power entry request to the radio domain */
     RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);
 }
+#endif /* (gPlatResetMethod_c == gUseResetByLvdForce_c) || (gPlatResetMethod_c == gUseResetByDeepPowerDown_c) */
 
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
 static void PLATFORM_DisableWakeSources(void)
 {
     WUU0->PE1  = 0U;
@@ -179,6 +183,10 @@ static void PLATFORM_LaunchLpTmrWake(uint32_t nb_32kticks_to_reset)
     (void)EnableIRQ(LPTMR0_IRQn);
 }
 
+/* -------------------------------------------------------------------------- */
+/*                              Public functions                              */
+/* -------------------------------------------------------------------------- */
+
 void PLATFORM_ForceDeepPowerDownReset(void)
 {
     (void)__set_BASEPRI(0);
@@ -215,9 +223,9 @@ void PLATFORM_CheckAndForceDeepPowerDownResetOnResetPin(void)
         PLATFORM_ForceDeepPowerDownReset();
     }
 }
+#endif /* (gPlatResetMethod_c == gUseResetByDeepPowerDown_c) */
 
-#define SPC_TEST_ADDR (SPC0_BASE + 0xf0u)
-#define SPC_TRIM_LOCK (SPC0_BASE + 0x18u)
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByLvdForce_c)
 void PLATFORM_ForceLvdReset(void)
 {
     (void)__set_BASEPRI(0);
@@ -247,6 +255,7 @@ void PLATFORM_ForceLvdResetFromResetPin(void)
         PLATFORM_ForceLvdReset();
     }
 }
+#endif
 
 void PLATFORM_NvicSystemReset(void)
 {
@@ -259,9 +268,9 @@ void PLATFORM_NvicSystemReset(void)
 
 void PLATFORM_ResetCpu(void)
 {
-#if defined   gPlatResetMethod_c && (gPlatResetMethod_c == gUseResetByLvdForce_c)
+#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByLvdForce_c)
     PLATFORM_ForceLvdReset();
-#elif defined gPlatResetMethod_c && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
+#elif defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
     PLATFORM_ForceDeepPowerDownReset();
 #else
     PLATFORM_NvicSystemReset();
