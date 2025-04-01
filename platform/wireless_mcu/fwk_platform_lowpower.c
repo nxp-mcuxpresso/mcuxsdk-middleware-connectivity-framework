@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2024 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2021-2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -10,7 +9,7 @@
 
 #include <stdbool.h>
 
-#include "fwk_platform_definitions.h"
+#include "fwk_config.h"
 #include "fwk_platform.h"
 #include "fwk_platform_lowpower.h"
 #include "fwk_platform_ics.h"

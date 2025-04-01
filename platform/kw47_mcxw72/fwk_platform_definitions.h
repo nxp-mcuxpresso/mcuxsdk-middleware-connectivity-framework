@@ -86,15 +86,6 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
  *        RAM settings
  *********************************************************************/
 
-/*! Enable/Disable shutdown of ECC RAM banks during low power period like Deep Sleep or Power Down
- *  Shutting down ECC RAM banks allows to save about 1uA
- *  The RAM banks can be selectively reinitialized by calling MEM_ReinitRamBank API
- *  The MemoryManagerLight will call this API when allocating a new block in the heap
- *  Defining this flag to 0 will make the system shutdown only the non-ecc banks */
-#ifndef gPlatformShutdownEccRamInLowPower
-#define gPlatformShutdownEccRamInLowPower 1
-#endif
-
 #define PLATFORM_ADDRESS_SECURE_MASK (0x10000000U)
 
 #define gPlatformRamStartAddress_c (0x20000000U)
@@ -148,18 +139,6 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define PLATFORM_BANK_IS_ECC TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE
 
 #define PLATFORM_VBAT_LDORAM_IDX PLATFORM_STCM8_IDX
-
-#if defined(gPlatformShutdownEccRamInLowPower) && (gPlatformShutdownEccRamInLowPower > 0)
-/* In this configuration, all RAM banks can be shutdown during low power if not used
- * The ECC RAM banks can be selectively reinitialized with MEM_ReinitRamBank API
- * This API is also used by the Memory Manager Light */
-#define PLATFORM_SELECT_RAM_RET_START_IDX 0U
-#define PLATFORM_SELECT_RAM_RET_END_IDX   10U
-#else
-/* STCM3, STCM4, STCM5, STCM6, STCM7 are non-ECC RAM banks*/
-#define PLATFORM_SELECT_RAM_RET_START_IDX 5U
-#define PLATFORM_SELECT_RAM_RET_END_IDX   9U
-#endif /* gPlatformShutdownEccRamInLowPower */
 
 #define SPC_TEST_ADDR            (SPC0_BASE + 0xf0u)
 #define SPC_TRIM_LOCK            (SPC0_BASE + 0x18u)

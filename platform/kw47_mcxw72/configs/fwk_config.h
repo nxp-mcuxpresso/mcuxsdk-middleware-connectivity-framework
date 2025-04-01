@@ -190,4 +190,27 @@
  * NBU when trying to access to its power domain. In some corner cases NBU could become irresponsive if the NBU power domain was woken up without executing any code on the core  */
 #define gPlatformNbuWakeUpInterruptAddr 0x48949410U
 
+/*! Enable/Disable shutdown of ECC RAM banks during low power period like Deep Sleep or Power Down
+ *  Shutting down ECC RAM banks allows to save about 1uA
+ *  The RAM banks can be selectively reinitialized by calling MEM_ReinitRamBank API
+ *  The MemoryManagerLight will call this API when allocating a new block in the heap
+ *  Defining this flag to 0 will make the system shutdown only the non-ecc banks */
+#ifndef gPlatformShutdownEccRamInLowPower
+#define gPlatformShutdownEccRamInLowPower 1
+#endif
+
+#if defined(gPlatformShutdownEccRamInLowPower) && (gPlatformShutdownEccRamInLowPower > 0)
+/* In this configuration, all RAM banks can be shutdown during low power if not used
+ * The ECC RAM banks can be selectively reinitialized with MEM_ReinitRamBank API
+ * This API is also used by the Memory Manager Light */
+#define PLATFORM_SELECT_RAM_RET_START_IDX 0U
+#define PLATFORM_SELECT_RAM_RET_END_IDX   10U
+#else
+/* STCM3, STCM4, STCM5, STCM6, STCM7 are non-ECC RAM banks
+ * NOTE: the following values should be aligned with PLATFORM_BANK_IS_ECC definition
+ */
+#define PLATFORM_SELECT_RAM_RET_START_IDX 5U
+#define PLATFORM_SELECT_RAM_RET_END_IDX   9U
+#endif /* gPlatformShutdownEccRamInLowPower */
+
 #endif /* _FWK_CONFIG_H_ */
