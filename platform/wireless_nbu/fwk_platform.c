@@ -307,7 +307,7 @@ void PLATFORM_DeinitTimerManager(void)
 #endif
 
 /* get 4 words of information that uniquely identifies the MCU */
-void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
+int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
 {
     uint32_t uid[4] = {0};
 
@@ -321,7 +321,7 @@ void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
     /* Get the uid length */
     *pOutLen = (uint8_t)sizeof(uid);
 
-    return;
+    return 0;
 }
 
 /************************************************************************************

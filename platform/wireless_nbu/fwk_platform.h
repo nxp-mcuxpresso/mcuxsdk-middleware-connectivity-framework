@@ -190,8 +190,10 @@ void PLATFORM_DeinitTimerManager(void);
  *
  * \param[out] aOutUid16B pointer to UID bytes
  * \param[out] pOutLen pointer to UID length
+ *
+ * \return int 0 if success, negative value if error.
  */
-void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
+int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
 
 #if defined(__cplusplus)
 }
