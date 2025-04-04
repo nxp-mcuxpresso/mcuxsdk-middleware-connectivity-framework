@@ -47,12 +47,8 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
     bool "KW45x, MCXW71x NBU families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa
-    select MCUX_COMPONENT_driver.ccm32k
-    select MCUX_COMPONENT_driver.spc
-    select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
-    select MCUX_COMPONENT_component.rpmsg_adapter
-    select MCUX_COMPONENT_middleware.multicore.mcmgr
+    select MCUX_COMPONENT_middleware.wireless.xcvr
+    imply MCUX_COMPONENT_component.timer_manager
     depends on MCUX_HW_DEVICE_KW45B41Z83_NBU
 
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
@@ -74,12 +70,8 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
     bool "KW47x, MCXW72x NBU families"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa
-    select MCUX_COMPONENT_driver.ccm32k
-    select MCUX_COMPONENT_driver.spc
-    select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
-    select MCUX_COMPONENT_component.rpmsg_adapter
-    select MCUX_COMPONENT_middleware.multicore.mcmgr
+    select MCUX_COMPONENT_middleware.wireless.xcvr
+    imply MCUX_COMPONENT_component.timer_manager
     depends on MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_MCXW727C
     depends on MCUX_HW_DEVICE_KW47B42ZB7_CORE_ID_cm33_core1 || MCUX_HW_DEVICE_MCXW727C_CORE_ID_cm33_core1
 
@@ -110,12 +102,8 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     bool "KW43x NBU family"
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
-    select MCUX_COMPONENT_component.osa
-    #select MCUX_COMPONENT_driver.ccm32k
-    #select MCUX_COMPONENT_driver.spc
-    select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
-    select MCUX_COMPONENT_component.rpmsg_adapter
-    select MCUX_COMPONENT_middleware.multicore.mcmgr
+    select MCUX_COMPONENT_middleware.wireless.xcvr
+    imply MCUX_COMPONENT_component.timer_manager
     depends on MCUX_HW_DEVICE_KW43B43ZC7_NBU
 
 config MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x

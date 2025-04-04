@@ -7,9 +7,10 @@ if MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.framework.sfc
-    select MCUX_COMPONENT_middleware.wireless.framework.workq
-    select MCUX_COMPONENT_component.lists
     select MCUX_COMPONENT_component.rpmsg_adapter
+    imply MCUX_COMPONENT_middleware.wireless.framework.workq
+    imply MCUX_COMPONENT_component.mem_manager
+    imply MCUX_COMPONENT_component.lists
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ble
     select MCUX_COMPONENT_component.rpmsg_adapter
@@ -31,8 +32,9 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.framework.sfc
     select MCUX_COMPONENT_component.rpmsg_adapter
-    select MCUX_COMPONENT_component.wireless.framework.platform.sensors
-    select MCUX_COMPONENT_middleware.wireless.framework.workq
+    imply MCUX_COMPONENT_middleware.wireless.framework.workq
+    imply MCUX_COMPONENT_component.mem_manager
+    imply MCUX_COMPONENT_component.lists
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ble
     select MCUX_COMPONENT_component.rpmsg_adapter
