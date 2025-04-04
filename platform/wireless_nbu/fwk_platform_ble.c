@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2022 NXP                          */
-/*                            All rights reserved.                            */
+/*                        Copyright 2021-2022, 2025 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -22,12 +21,6 @@ static RPMSG_HANDLE_DEFINE(hciRpmsgHandle);
 const static hal_rpmsg_config_t hciRpmsgConfig = {
     .local_addr  = 30,
     .remote_addr = 40,
-};
-
-static RPMSG_HANDLE_DEFINE(mwsRpmsgHandle);
-const static hal_rpmsg_config_t mwsRpmsgConfig = {
-    .local_addr  = 70,
-    .remote_addr = 80,
 };
 
 static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
@@ -67,7 +60,6 @@ void PLATFORM_InitBle(void)
 #if (defined(gPlatformUseLptmr_d)) && (gPlatformUseLptmr_d == 1U)
     /* Init lptmr2*/
     PLATFORM_InitTimerManager();
-
 #endif
 }
 
@@ -88,21 +80,6 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
     PLATFORM_RemoteActiveRel();
 
     return 0;
-}
-
-void PLATFORM_InitMwsRpmsg(void)
-{
-    if (kStatus_HAL_RpmsgSuccess !=
-        HAL_RpmsgInit((hal_rpmsg_handle_t)mwsRpmsgHandle, (hal_rpmsg_config_t *)&mwsRpmsgConfig))
-    {
-        assert(0);
-        return;
-    }
-}
-
-hal_rpmsg_handle_t PLATFORM_GetMwsRpmsgHandle(void)
-{
-    return (hal_rpmsg_handle_t)mwsRpmsgHandle;
 }
 
 /* -------------------------------------------------------------------------- */

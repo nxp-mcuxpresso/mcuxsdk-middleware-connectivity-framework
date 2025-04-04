@@ -1,6 +1,5 @@
 /*
- * Copyright 2020 NXP
- * All rights reserved.
+ * Copyright 2020, 2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -48,9 +47,6 @@ void PLATFORM_SetHciRxCallback(void (*callback)(uint8_t packetType, uint8_t *dat
  * \return int 0 if success, negative value if error
  */
 int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len);
-
-void               PLATFORM_InitMwsRpmsg(void);
-hal_rpmsg_handle_t PLATFORM_GetMwsRpmsgHandle(void);
 
 #if defined(__cplusplus)
 }
