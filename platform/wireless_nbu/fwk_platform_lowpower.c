@@ -42,7 +42,7 @@ static void PLATFORM_HandleLowPowerEntry(void);
 static void PLATFORM_HandleWFI(void);
 static int  PLATFORM_LowPowerModeAllowed(void);
 static bool PLATFORM_IsRemoteAllowingLowPower(void);
-static bool PLATFORM_IsBleAllowingLowPower(void);
+static bool PLATFORM_IsBleAllowingLowPower(uint32_t *outSleepTime);
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
 static bool PLATFORM_Is_15_4_AllowingLowPower(void);
 #endif
@@ -125,22 +125,9 @@ void PLATFORM_EnterLowPower(void)
     }
     else if (stateAllowed == 1)
     {
-        uint32_t sleepTime = LL_API_SCHED_GetSleepTime();
-
         // PWR_DBG_LOG("WFI only is allowed");
 
-        if (sleepTime < bleMinimalSleepTimeAllowedHs)
-        {
-            /* Go to WFI only if the sleep time is short
-             * When the LL is done with an activity, the sleep time can be higher than bleMinimalSleepTimeAllowedHs
-             * meaning we can go to deep sleep, but the LL sched still needs to update its internal state machine so
-             * _ROM_LL_SCHED_IsSleepAllowed returns true
-             * In such case, if we go to WFI, then we will stay to WFI until the next interrupt, even if we could
-             * already go to deep sleep
-             * This condition helps to avoid this case and will let the device loop in idle until the LL sched is
-             * correctly updated */
-            PLATFORM_HandleWFI();
-        }
+        PLATFORM_HandleWFI();
     }
     else
     {
@@ -280,7 +267,8 @@ static void PLATFORM_HandleWFI(void)
  */
 static int PLATFORM_LowPowerModeAllowed(void)
 {
-    int ret = 0;
+    int      ret          = 0;
+    uint32_t bleSleepTime = 0U;
 
     do
     {
@@ -290,10 +278,25 @@ static int PLATFORM_LowPowerModeAllowed(void)
             ret = 1;
             break;
         }
-        else if (PLATFORM_IsBleAllowingLowPower() == false)
+        else if (PLATFORM_IsBleAllowingLowPower(&bleSleepTime) == false)
         {
-            /* BLE may not be ready for low power */
-            ret = 1;
+            if (bleSleepTime > bleMinimalSleepTimeAllowedHs)
+            {
+                /* Disallow WFI when the LL sleep time is large enough but the LL is still not ready for deep sleep
+                 * When the LL is done with an activity, the sleep time can be higher than bleMinimalSleepTimeAllowedHs
+                 * meaning we can go to deep sleep, but the LL sched still needs to update its internal state machine so
+                 * LL_API_SCHED_IsSleepAllowed can return true
+                 * In such case, if we go to WFI, then we will stay in WFI until the next interrupt, even if we could
+                 * already go to deep sleep
+                 * This condition helps to avoid this case and will let the device loop in idle until the LL sched is
+                 * correctly updated */
+                ret = -1;
+            }
+            else
+            {
+                /* BLE sleep is not allowed or sleep time not large enough */
+                ret = 1;
+            }
             break;
         }
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
@@ -355,7 +358,7 @@ static bool PLATFORM_IsRemoteAllowingLowPower(void)
  * \return true
  * \return false
  */
-static bool PLATFORM_IsBleAllowingLowPower(void)
+static bool PLATFORM_IsBleAllowingLowPower(uint32_t *outSleepTime)
 {
     bool ret = true;
 
@@ -366,6 +369,11 @@ static bool PLATFORM_IsBleAllowingLowPower(void)
 #if defined(gPlatformLowpowerCheckHciPendingCommand) && (gPlatformLowpowerCheckHciPendingCommand == 1)
         uint8_t pendingCmd = LL_API_BLE_HCI_GetNofPendingCommand();
 #endif
+
+        if (outSleepTime != NULL)
+        {
+            *outSleepTime = sleepTime;
+        }
 
         if (sleepAllowed == 1u)
         {
