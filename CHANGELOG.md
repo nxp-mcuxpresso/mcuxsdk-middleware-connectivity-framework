@@ -1,8 +1,38 @@
 
 ## Connectivity framework CHANGELOG
+### 7.0.2 revA mcux SDK 25.06.00
+
+**Supported platforms:**
+- Same as 25.03.00 release
+
+#### Major Changes
+- [KW45/MCXW71] HW parameters placement now located in IFR section.  Flash storage is not longer used:
+    - Compilation: Macro `gHwParamsProdDataPlacement_c` changed from `gHwParamsProdDataMainFlash2IfrMode_c` to `gHwParamsProdDataIfrMode_c`
+- [KW47] NBU: Add new fwk_platform_dcdc.[ch] files to allow DCDC stepping by using SPC high power mode. This requires new API in board_dcdc.c files. Please refer to new compilation MACROs `gBoardDcdcRampTrim_c` and `gBoardDcdcEnableHighPowerModeOnNbu_d` in board_platform.h files located in kw47evk, kw47loc, frdmmcxw72 board folders.
+- [KW45/MCXW71/KW47/MCXW72] Trigger an interrupt each time App core calls `PLATFORM_RemoteActiveReq()` to access NBU power domain in order to restart NBU core for domain low power process
+
+#### Minor Changes (bug fixes)
+##### Services
+- [SecLib_RNG]
+    - Rename `mSecLibMutexId` mutex to `mSecLibSssMutexId` in SecLib_sss.c
+    - Remove `MEM_TRACKING` flag from RNG.c
+    - Implement port to fsl_adapter_rng.h API using `gRngUseRngAdapter_c` compil Macro from RNG.c
+    - Add support for BLE debug Keys in SecLi and SecLin_sss.c with `gSecLibUseBleDebugKeys_d` - for Debug only
+- [FSCI] Add queue mechanism to prevent corruption of FSCI global variableAllow the application to override the trig sample number parameter when `gFsciOverRpmsg_c` is set to 1
+- [DBG][btsnoop] Add a mechanism to dump raw HCI data via UART using `SBTSNOOP_MODE_RAW`
+- [OTA]
+  - OtaInternalFlash.c: Take into account chunks smaller than a flash phrase worth
+  - fwk_platform_ot.c: dependencies and include files to gpio, port, pin_mux removed
+
+##### Platform specific
+- [kw45_mcxw71][kw47_mcxw72]
+  - fwk_platform_reset.h : add compil Macro `gUseResetByLvdForce_c` and `gUseResetByDeepPowerDown_c` to avoid compile the code if not supported on some platforms
+  - New compile Flag `gPlatformHasNbu_d`
+  - Rework FRO32K notification service for MISRA fix
+
 ### 7.0.1 RFP mcux SDK 25.03.00
 
-**Supported platforms:** 
+**Supported platforms:**
 - KW45x, KW47x, MCXW71, MCXW72, K32W1x
 - RW61x
 - RT595, RT1060, RT1170
@@ -12,9 +42,9 @@
 - [General] Various MISRA/Coverity fixes in framework: NVM, RNG, LowPower, SecLib and platform files
 
 ##### Services
-- [SecLib_RNG] fix return status from RNG_GetTrueRandomNumber() function: return correctly gRngSuccess_d when RNG_entropy_func() function is successful
+- [SecLib_RNG] fix return status from `RNG_GetTrueRandomNumber()` function: return correctly `gRngSuccess_d` when `RNG_entropy_func()` function is successful
 - [SFC] Allow the application to override the trig sample number parameter
-- [Settings] Re-define the framework settings API name to avoid double definition when gSettingsRedefineApiName_c flag is defined
+- [Settings] Re-define the framework settings API name to avoid double definition when `gSettingsRedefineApiName_c` flag is defined
 
 ##### Platform specific
   - [wireless_mcu] fwk_platform_sensors update :
@@ -25,7 +55,7 @@
 
 ### 7.0.1 revB mcux SDK 25.03.00
 
-**Supported platforms:** 
+**Supported platforms:**
 - KW45x, KW47x, MCXW71, MCXW72, K32W1x
 - RW61x
 - RT595, RT1060, RT1170
