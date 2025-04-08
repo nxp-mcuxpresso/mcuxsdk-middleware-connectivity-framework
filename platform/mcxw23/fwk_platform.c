@@ -26,10 +26,12 @@
 #ifdef TIMER_PORT_TYPE_CTIMER
 #ifndef SOC_CTIMER_INSTANCE
 #define SOC_CTIMER_INSTANCE 0U
+#define SOC_CTIMER_BASE     CTIMER0
 #endif
 #else
 #ifndef SOC_OSTIMER_INSTANCE
 #define SOC_OSTIMER_INSTANCE 0U
+#define SOC_OSTIMER_BASE     OSTIMER
 #endif
 #endif /* TIMER_PORT_TYPE_CTIMER */
 
@@ -135,9 +137,10 @@ bool PLATFORM_CheckNextBleConnectivityActivity(void)
 uint64_t PLATFORM_GetTimeStamp(void)
 {
 #ifdef TIMER_PORT_TYPE_CTIMER
-    return (uint64_t)(CTIMER_GetTimerCountValue(SOC_CTIMER_INSTANCE) / CLOCK_GetCTimerClkFreq(0));
+    return (uint64_t)(CTIMER_GetTimerCountValue(SOC_CTIMER_BASE) / CLOCK_GetCTimerClkFreq(0));
 #else
-    return (uint64_t)(OSTIMER_GetCurrentTimerValue(OSTIMER) / CLOCK_GetOSTimerClkFreq());
+
+    return (uint64_t)(OSTIMER_GetCurrentTimerValue(SOC_OSTIMER_BASE) / CLOCK_GetOSTimerClkFreq());
 #endif /* TIMER_PORT_TYPE_CTIMER */
 }
 
