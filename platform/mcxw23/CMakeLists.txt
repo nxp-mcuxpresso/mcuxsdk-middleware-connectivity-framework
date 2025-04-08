@@ -44,9 +44,18 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
     endif()
 
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.reset)
-        mcux_add_source(
+      mcux_add_source(
         SOURCES
         ../wireless_mcu/fwk_platform_reset.h
+        DEVICE_IDS ${MCXW23_FAMILY}
+        CORE_IDS "cm33"
+      )
+    endif()
+
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ota)
+      mcux_add_source(SOURCES
+        ../mcxw23/fwk_platform_ota.c
+        ../include/fwk_platform_ota.h
         DEVICE_IDS ${MCXW23_FAMILY}
         CORE_IDS "cm33"
       )

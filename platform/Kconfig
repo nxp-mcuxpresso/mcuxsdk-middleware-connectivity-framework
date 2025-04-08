@@ -214,7 +214,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
     bool "Internal flash"
     depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     help
       Internal Flash platform APIs.
 
@@ -287,7 +288,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.ota
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.rt1170 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.rt1060 || \
-                MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
+                MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     help
       Over-The-Air firmware update platform APIs.
 

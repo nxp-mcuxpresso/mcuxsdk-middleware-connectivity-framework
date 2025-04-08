@@ -187,7 +187,6 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
     ota_flash_status_t status = kStatus_OTA_Flash_Fail;
     do
     {
-        uint8_t            remain_till_end_of_phrase = 0u;
         hal_flash_status_t st;
         if (!OtaCheckRangeBelongsToPartition(offs, NoOfBytes))
         {
@@ -209,6 +208,7 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
             /* There was something pending in mWriteBuff already */
             if ((offs >= mWriteBuffOffs) && (offs < mWriteBuffOffs + sizeof(mWriteBuff)))
             {
+                uint8_t remain_till_end_of_phrase = 0u;
                 /* The offset We mean to write to belongs to the in mWriteBuff phrase buffer */
                 uint32_t phrase_offset;
                 uint32_t size_to_copy;
