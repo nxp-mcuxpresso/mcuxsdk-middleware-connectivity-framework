@@ -175,6 +175,10 @@ static void PLATFORM_HandleLowPowerEntry(void)
         SysTick->CTRL = 0U;
         SysTick->VAL  = SysTick->LOAD;
 
+        /* Clear pending status of the systick interrupt to avoid having an unrequired wakeup if the systick was pending
+         * before disabling it */
+        SCB->ICSR |= SCB_ICSR_PENDSTCLR_Msk;
+
         SCB->SCR &= ~SCB_SCR_SLEEPONEXIT_Msk;
         SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
