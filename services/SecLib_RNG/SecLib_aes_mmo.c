@@ -57,8 +57,6 @@ typedef struct
 *************************************************************************************
 ********************************************************************************** */
 
-static void AesMmoBlockUpdate(tuAES_Block *puHash, tuAES_Block *puBlock);
-
 /*! *********************************************************************************
 *************************************************************************************
 * Public APIs implementation
@@ -118,6 +116,39 @@ void AES_MMO_Init(void *pContext)
     context->totalBytes = 0u;
 
     FLib_MemSet(context->digest.au8, 0u, sizeof(context->digest));
+}
+
+/****************************************************************************
+ *
+ * \brief  Perform an MMO Block Update on the hash
+ *         H[j] = E(H[j-1], M[j]) ^ M[j]
+ *         where E(K,x) = AES-128 block cipher, K=key, x=text
+ *
+ *  Uses the AES_128_Encrypt function from SecLib.c
+ *
+ * \param[in/out] puHash MMO output buffer
+ * \param[in]     puBlock Block to hash
+ *
+ * \return none
+ *
+ * Note: This function works on 32 bit aligned input and output. The alignment has been
+ * taken care of by the caller.
+ *
+ *
+ ****************************************************************************/
+void AES_MMO_BlockUpdate(tuAES_Block *puHash, tuAES_Block *puBlock)
+{
+    tuAES_Block uOut = {.au32 = {0uL}};
+
+    /* Block cipher using Hash as key */
+    AES_128_Encrypt((uint8_t *)puBlock, (uint8_t *)puHash, (uint8_t *)&uOut);
+
+    /* Prepare next hash as (result XOR block) */
+    for (uint8_t i = 0u; i < AES_MMO_BLOCK_SIZE / 4u; i++)
+    {
+        uOut.au32[i] ^= puBlock->au32[i];
+        puHash->au32[i] = uOut.au32[i];
+    }
 }
 
 /*! *********************************************************************************
@@ -186,7 +217,7 @@ void AES_MMO_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
                 uint8_t copyBytes = free_space_in_context_buffer;
 
                 FLib_MemCpy(&context->buffer.au8[context->bytes], pData, copyBytes);
-                AesMmoBlockUpdate(&context->digest, &context->buffer);
+                AES_MMO_BlockUpdate(&context->digest, &context->buffer);
                 pData += copyBytes;
                 numBytes -= copyBytes;
                 context->bytes = 0u;
@@ -195,7 +226,7 @@ void AES_MMO_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
             while (numBytes >= AES_MMO_BLOCK_SIZE)
             {
                 FLib_MemCpy(&context->buffer.au8, pData, AES_MMO_BLOCK_SIZE);
-                AesMmoBlockUpdate(&context->digest, &context->buffer);
+                AES_MMO_BlockUpdate(&context->digest, &context->buffer);
                 pData += AES_MMO_BLOCK_SIZE;
                 numBytes -= AES_MMO_BLOCK_SIZE;
             }
@@ -256,7 +287,7 @@ void AES_MMO_HashFinish(void *pContext, uint8_t *pOutput)
             *pu8Buf++ = 0u;
         }
 
-        AesMmoBlockUpdate(&context->digest, &context->buffer);
+        AES_MMO_BlockUpdate(&context->digest, &context->buffer);
 
         /* Reset padding and buffer pointer for final block */
         pu8Buf = &context->buffer.au8[0];
@@ -286,7 +317,7 @@ void AES_MMO_HashFinish(void *pContext, uint8_t *pOutput)
         *pu8Buf++ = 0u;
     }
 
-    AesMmoBlockUpdate(&context->digest, &context->buffer);
+    AES_MMO_BlockUpdate(&context->digest, &context->buffer);
 
     /* Copy the generated hash to the indicated output location */
     FLib_MemCpy(pOutput, context->digest.au8, AES_MMO_HASH_SIZE);
@@ -453,35 +484,3 @@ void HMAC_AES_MMO(const uint8_t *pKey, uint16_t keyLen, const uint8_t *pData, ui
 * Private functions
 *************************************************************************************
 ********************************************************************************** */
-/****************************************************************************
- *
- * \brief  Perform an MMO Block Update on the hash
- *         H[j] = E(H[j-1], M[j]) ^ M[j]
- *         where E(K,x) = AES-128 block cipher, K=key, x=text
- *
- *  Uses the AES_128_Encrypt function from SecLib.c
- *
- * \param[in/out] puHash MMO output buffer
- * \param[in]     puBlock Block to hash
- *
- * \return none
- *
- * Note: This function works on 32 bit aligned input and output. The alignment has been
- * taken care of by the caller.
- *
- *
- ****************************************************************************/
-static void AesMmoBlockUpdate(tuAES_Block *puHash, tuAES_Block *puBlock)
-{
-    tuAES_Block uOut = {.au32 = {0uL}};
-
-    /* Block cipher using Hash as key */
-    AES_128_Encrypt((uint8_t *)puBlock, (uint8_t *)puHash, (uint8_t *)&uOut);
-
-    /* Prepare next hash as (result XOR block) */
-    for (uint8_t i = 0u; i < AES_MMO_BLOCK_SIZE / 4u; i++)
-    {
-        uOut.au32[i] ^= puBlock->au32[i];
-        puHash->au32[i] = uOut.au32[i];
-    }
-}

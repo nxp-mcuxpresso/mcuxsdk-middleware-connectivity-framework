@@ -959,6 +959,26 @@ void AES_MMO_CloneCtx(void *pDestCtx, void *pSourceCtx);
  ********************************************************************************** */
 void AES_MMO_Init(void *pContext);
 
+/****************************************************************************
+ *
+ * \brief  Perform an MMO Block Update on the hash
+ *         H[j] = E(H[j-1], M[j]) ^ M[j]
+ *         where E(K,x) = AES-128 block cipher, K=key, x=text
+ *
+ *  Uses the AES_128_Encrypt function from SecLib.c
+ *
+ * \param[in/out] puHash MMO output buffer
+ * \param[in]     puBlock Block to hash
+ *
+ * \return none
+ *
+ * Note: This function works on 32 bit aligned input and output. The alignment has been
+ * taken care of by the caller.
+ *
+ *
+ ****************************************************************************/
+void AES_MMO_BlockUpdate(tuAES_Block *puHash, tuAES_Block *puBlock);
+
 /*! *********************************************************************************
  * \brief  This function performs AES MMO on multiple bytes and updates the context data.
  * It must be called as new data get appended to the data being hashed.
