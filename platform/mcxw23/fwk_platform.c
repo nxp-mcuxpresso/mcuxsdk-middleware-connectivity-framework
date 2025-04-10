@@ -19,7 +19,7 @@
 #else
 #include "fsl_ostimer.h"
 #endif /* TIMER_PORT_TYPE_CTIMER */
-
+#include "fwk_platform_ics.h"
 /* -------------------------------------------------------------------------- */
 /*                                 Definitions                                */
 /* -------------------------------------------------------------------------- */
@@ -201,4 +201,9 @@ void PLATFORM_RemoteActiveReq(void)
 void PLATFORM_RemoteActiveRel(void)
 {
     /* Not implemented */
+}
+
+void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t cb)
+{
+    cb = NULL;
 }

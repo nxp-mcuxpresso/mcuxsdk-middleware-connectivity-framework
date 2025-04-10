@@ -61,4 +61,12 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
       )
     endif()
 
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.sensors)
+        mcux_add_source(SOURCES
+          fwk_platform_sensors.c
+          ../wireless_mcu/fwk_platform_sensors.h
+          DEVICE_IDS ${MCXW23_FAMILY}
+          CORE_IDS "cm33"
+        )
+    endif()
 endif()
