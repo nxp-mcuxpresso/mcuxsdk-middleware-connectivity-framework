@@ -213,4 +213,13 @@
 #define PLATFORM_SELECT_RAM_RET_END_IDX   9U
 #endif /* gPlatformShutdownEccRamInLowPower */
 
+/* Allow verification of FRO6M frequency validity: in some extremely rare situations FRO6M was observed oscillating at 2
+ * MHz instead of 6MHz.
+ * Defining gPlatformEnableFro6MCalLowpower_d as 1 enables an assessment of its value at each wake up by comparing TSTMR tick against core clock.
+ * This FRO6M assessment is performed in parallel of other wake up operations but causes the wake up procedure to last at least 6 usec.
+ */
+#ifndef gPlatformEnableFro6MCalLowpower_d
+#define gPlatformEnableFro6MCalLowpower_d 0
+#endif
+
 #endif /* _FWK_CONFIG_H_ */

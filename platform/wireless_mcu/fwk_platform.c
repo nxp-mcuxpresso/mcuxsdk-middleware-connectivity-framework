@@ -41,6 +41,8 @@
 #include "fwk_debug.h"
 #include "mcmgr_imu_internal.h"
 
+#include "fwk_platform_definitions.h"
+
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
@@ -60,8 +62,8 @@
 #define BOARD_32KHZ_XTAL_CLOAD_DEFAULT 8U
 #endif
 
-/*! @brief Default coarse adjustement config for 32KHz crystal,
-      can be overidden from board_platform.h,
+/*! @brief Default coarse adjustment config for 32KHz crystal,
+      can be overridden from board_platform.h,
       user shall define this flag in board_platform.h file to set an other default value
       Values must be adjusted depending the equivalent series resistance (ESR) of the crystal on the board
 */
@@ -102,6 +104,31 @@
  * the returned status will be negative  */
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
 
+#define TSTMR_MAX_VAL ((uint64_t)0x00FFFFFFFFFFFFFFULL)
+
+#define MRCC_TSTMR_CLK_DIS                   0x00u
+#define MRCC_TSTMR_CLK_EN_NO_LP_STALL        0x01u
+#define MRCC_TSTMR_CLK_EN_LP_STALL_IDLE      0x02u
+#define MRCC_TSTMR_CLK_EN_LP_STALL_DEEPSLEEP 0x03u
+
+/* -------------------------------------------------------------------------- */
+/*                         Private type definitions                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief FRO6M calibration context
+ *
+ */
+typedef struct
+{
+    uint64_t initial_ts;      /*< Timestamp Read from TSTMR L and H */
+    uint32_t core_cycles_1us; /*< Number of cycles per microsecond */
+    uint8_t  ratio;           /*< result of calibration : normally 1 may be 3 if FRO is beating at 2MHz */
+    bool     started;         /*< true if calibration initiated */
+    bool     trcena_state;    /*< tells whether trace was enabled or not */
+    bool     dwt_state;       /*< true whether DWT was enabled already or not */
+} Platform_Fro6MCalCtx_t;
+
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
@@ -111,12 +138,22 @@ static volatile int timer_manager_initialized = 0;
 static int nbu_init    = 0;
 static int nbu_started = 0;
 
+/**
+ * @brief provide FRO6Mhz ratio compared to required 6MHz frequency
+ *
+ */
+static uint8_t fwk_platform_FRO6MHz_ratio = 1u;
+
 /****************** LOWPOWER ***********************/
 /* Number of request for CM3 to remain active */
 static int8_t active_request_nb = 0;
 
 extern PLATFORM_ErrorCallback_t pfPlatformErrorCallback;
 PLATFORM_ErrorCallback_t        pfPlatformErrorCallback = (void *)0;
+
+/* Used and instantiated only if FRO6M calibration is linked */
+static Platform_Fro6MCalCtx_t fro6M_calibration_ctx = {
+    .ratio = 1U, .started = false, .dwt_state = false, .trcena_state = false};
 
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
@@ -138,6 +175,34 @@ static uint64_t u64ReadTimeStamp(void)
     EnableGlobalIRQ(regPrimask);
 
     return (uint64_t)reg_l | (((uint64_t)reg_h) << 32U);
+}
+
+/*!
+ * \brief Compute number of ticks between 2 timestamps expressed in number of TSTM ticks
+ *
+ * \param [in] timestamp0 start timestamp.
+ * \param [in] timestamp1 end timestamp.
+ *
+ * \return uint64_t number of TSTMR ticks
+ *
+ */
+static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
+{
+    uint64_t delta_ticks;
+
+    timestamp0 &= TSTMR_MAX_VAL; /* sanitize arguments */
+    timestamp1 &= TSTMR_MAX_VAL;
+
+    if (timestamp1 >= timestamp0)
+    {
+        delta_ticks = timestamp1 - timestamp0;
+    }
+    else
+    {
+        /* In case the 56-bit counter has wrapped */
+        delta_ticks = TSTMR_MAX_VAL - timestamp0 + timestamp1;
+    }
+    return delta_ticks;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -553,31 +618,67 @@ uint64_t PLATFORM_GetTimeStamp(void)
 
 uint64_t PLATFORM_GetMaxTimeStamp(void)
 {
-    /* Max timestamp counter value (56 bits)
-     * No conversion to us is needed since the timestamp timer runs off the 1 MHz clock*/
-    return ((uint64_t)0xFFFFFFFFFFFFFFU);
+    /* Max timestamp counter value (56 bits) */
+    return TSTMR_MAX_VAL;
 }
 
-bool PLATFORM_IsTimeoutExpired(uint64_t timestamp, uint64_t delayUs)
+/*!
+ * \brief Compute number of microseconds between 2 timestamps expressed in number of TSTM ticks
+ *
+ * \param [in] timestamp0 start timestamp from which duration is assessed.
+ * \param [in] timestamp1 end timestamp till which duration is assessed.
+ *
+ * \return uint64_t number of microseconds
+ *
+ */
+uint64_t PLATFORM_GetTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
 {
-    uint64_t now, duration;
+    uint64_t duration_us;
 
-    now = PLATFORM_GetTimeStamp();
+    duration_us = GetTimeStampDeltaTicks(timestamp0, timestamp1);
 
-    if (now < timestamp)
+    if (fwk_platform_FRO6MHz_ratio > 1U)
     {
-        /* Handle counter wrapping */
-        duration = PLATFORM_GetMaxTimeStamp() - timestamp + now;
+        uint64_t val;
+        /* In a normal situation, the ratio is equal to 1. However in extremely rare cases FRO-6MHz oscillates at
+         *  2MHz instead of 6MHz. A post wakeup calibration is executed to monitor such situation.
+         */
+        assert(fwk_platform_FRO6MHz_ratio == 3U);
+        val = (duration_us & TSTMR_MAX_VAL); /* cannot exceed 2^56 so guaranteed to be smaller than 2^64*/
+        val *= 3U;                           /* Guaranteed to be smaller than 2^58 */
+        duration_us = val;
     }
-    else
-    {
-        duration = now - timestamp;
-    }
+    return duration_us;
+}
+
+/*!
+ * \brief Check if a number of microseconds have elapsed since initial times stamp
+ *
+ * \param [in] initial_timestamp start time stamp from which duration is assessed.
+ * \param [in] delayUs number of microseconds to expire.
+ *
+ */
+bool PLATFORM_IsTimeoutExpired(uint64_t initial_timestamp, uint64_t delayUs)
+{
+    uint64_t duration;
+    uint64_t now = PLATFORM_GetTimeStamp();
+    /* Compute number of microseconds since timestamp till now */
+    duration = PLATFORM_GetTimeStampDeltaUs(initial_timestamp, now);
+
     return (duration >= delayUs);
 }
 
+/*!
+ * \brief Actively wait a number of microseconds to have elapsed since initial times stamp
+ *
+ * \param [in] timestamp start time stamp from which duration is assessed.
+ * \param [in] delayUs number of microseconds to wait
+ *
+ * see PLATFORM_IsTimeoutExpired
+ */
 void PLATFORM_WaitTimeout(uint64_t timestamp, uint64_t delayUs)
 {
+    /* Wait until the number of microseconds elapsed since timestamp */
     while (!(PLATFORM_IsTimeoutExpired(timestamp, delayUs)))
     {
     }
@@ -747,7 +848,7 @@ void PLATFORM_GetResetCause(PLATFORM_ResetStatus_t *reset_status)
         *reset_status = PLATFORM_DeviceReset;
     }
 
-    CMC0->SSRS = 0xFFFFFFFFu; /* clear SSRS register */
+    CMC0->SSRS = 0xFFFFFFFFU; /* clear SSRS register */
 }
 
 void mcmgr_imu_remote_active_rel(void)
@@ -787,4 +888,104 @@ int PLATFORM_ClearIoIsolationFromLowPower(void)
     }
 #endif
     return ret;
+}
+
+int PLATFORM_StartFro6MCalibration(void)
+{
+    Platform_Fro6MCalCtx_t *ctx = &fro6M_calibration_ctx;
+    /* Remember initial state to be able to restore as was */
+    ctx->trcena_state = (bool)((CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk) != 0U);
+    ctx->dwt_state    = (bool)((DWT->CTRL & 1U) != 0U);
+
+    MRCC_TSTMR0_REG = MRCC_MRCC_TSTMR0_CLKSEL_CC(MRCC_TSTMR_CLK_EN_LP_STALL_IDLE);
+
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    ctx->initial_ts = PLATFORM_GetTimeStamp();
+
+    DWT->CYCCNT = 0U;                                   /* Reset cycle counter */
+    DWT->CTRL |= 1U;                                    /* enable cycle counter */
+    ctx->core_cycles_1us = SystemCoreClock / 1000000UL; /* after the start of CYCCNT to consume time */
+
+    ctx->started = true;
+    return 0;
+}
+
+int PLATFORM_EndFro6MCalibration(void)
+{
+    int                     st;
+    Platform_Fro6MCalCtx_t *ctx = &fro6M_calibration_ctx;
+    volatile uint32_t       cyc;
+    uint64_t                now;
+    uint64_t                tstmr_ticks_delta;
+    uint32_t                cyc_for_6us;
+    uint32_t                nb_usec_core;
+    uint32_t                nb_usec_tstmr;
+    uint32_t                ratio;
+    if (ctx->started)
+    {
+        cyc_for_6us = 6u * ctx->core_cycles_1us;
+        do
+        {
+            /* spin here until 6us have elapsed since the DWT->CYCNT reset in PLATFORM_StartFro6MCalibration() */
+            cyc = DWT->CYCCNT;
+        } while (cyc < cyc_for_6us);
+
+        /* Read current TSTMR value */
+        now = PLATFORM_GetTimeStamp();
+
+        /* tstmr_tick_diff should be a number of microseconds if FRO6M has correctly locked */
+        tstmr_ticks_delta = GetTimeStampDeltaTicks(ctx->initial_ts, now);
+
+        if (tstmr_ticks_delta < (uint64_t)UINT32_MAX)
+        {
+            nb_usec_core  = cyc / ctx->core_cycles_1us;
+            nb_usec_tstmr = (uint32_t)tstmr_ticks_delta;
+
+            /* Multiply nb_usec_core by 10 so as to avoid loss of precision when dividing */
+            ratio = (10u * nb_usec_core) / nb_usec_tstmr;
+
+            /* FRO-6M is supposed to oscillate at 6MHz as its name hints : if by lack of luck it has locked on 2MHz,
+             * the actual ratio between the clocks is 6MHz/2MHz i.e. 3.
+             * In the worst case, having waited for a duration of 6us guarantees to have nb_usec_core >= 6.
+             * tstmr_ticks_delta is guaranteed to be greater than 4 if the clock was actually 6MHz.
+             * In the 2MHz case, tstmr_ticks_delta will be comprised between 1 and 3.
+             * Hence the comparison of the ratio with 20.
+             *
+             */
+            if (ratio < 20U)
+            {
+                ctx->ratio = 1U; /* 6MHz Ok */
+            }
+            else
+            {
+                ctx->ratio = 3U; /* 2MHz detected */
+            }
+
+            st = 0;
+        }
+        else
+        {
+            /* Error case the tick difference ought to remain relatively small and remain much smaller than UINT32_MAX
+             */
+            ctx->ratio = 1u; /* 6MHz Ok */
+            st         = 2;
+            assert(tstmr_ticks_delta < (uint64_t)UINT32_MAX);
+        }
+        fwk_platform_FRO6MHz_ratio = ctx->ratio;
+        if (!ctx->trcena_state)
+        {
+            CoreDebug->DEMCR &= ~CoreDebug_DEMCR_TRCENA_Msk;
+            ctx->trcena_state = false;
+        }
+        if (!ctx->dwt_state)
+        {
+            DWT->CTRL &= ~1U;
+        }
+        ctx->started = false;
+    }
+    else
+    {
+        st = 1; /* was not started */
+    }
+    return st;
 }

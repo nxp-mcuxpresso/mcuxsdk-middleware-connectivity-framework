@@ -481,21 +481,32 @@ static void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
 
 uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
 {
-    uint64_t delta = 0U, currentTimestamp = 0U, tstmr0 = 0U, ble_native_timestamp = 0U;
-    uint32_t ll_timing_slot = 0U;
-    uint16_t ll_timing_us   = 0U;
+    uint64_t delta = 0ULL, tstmr0 = 0ULL, ble_native_timestamp = 0ULL;
 
-    if (Controller_GetTimestampEx(&ll_timing_slot, &ll_timing_us, &tstmr0) == KOSA_StatusSuccess)
+    do
     {
+        uint32_t ll_timing_slot = 0U;
+        uint16_t ll_timing_us   = 0U;
+        uint64_t tstmr_delta_us, now;
+        if (Controller_GetTimestampEx(&ll_timing_slot, &ll_timing_us, &tstmr0) != KOSA_StatusSuccess)
+        {
+            break;
+        }
         ble_native_timestamp = (uint64_t)(ll_timing_slot)*625ULL + (uint64_t)(ll_timing_us);
-        currentTimestamp     = PLATFORM_GetTimeStamp();
-
-        delta = (ble_native_timestamp - controllerTimestamp) + (currentTimestamp - tstmr0);
-    }
-    else
-    {
-        delta = 0U;
-    }
+        now                  = PLATFORM_GetTimeStamp();
+        tstmr_delta_us       = PLATFORM_GetTimeStampDeltaUs(tstmr0, now);
+        if (tstmr_delta_us > UINT32_MAX)
+        {
+            /* would denote of an error */
+            break;
+        }
+        if (ble_native_timestamp < controllerTimestamp)
+        {
+            break;
+        }
+        delta = (ble_native_timestamp - controllerTimestamp);
+        delta += tstmr_delta_us;
+    } while (false);
 
     return delta;
 }

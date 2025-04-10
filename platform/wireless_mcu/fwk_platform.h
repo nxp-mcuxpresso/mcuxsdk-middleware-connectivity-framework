@@ -268,9 +268,9 @@ void PLATFORM_RemoteActiveRel(void);
 void PLATFORM_GetResetCause(PLATFORM_ResetStatus_t *reset_status);
 
 /*!
- * \brief Returns current timestamp in us
+ * \brief Returns current timestamp
  *
- * \return uint64_t timestamp in us
+ * \return uint64_t timestamp (raw TSTMR ticks)
  */
 uint64_t PLATFORM_GetTimeStamp(void);
 
@@ -283,15 +283,26 @@ uint64_t PLATFORM_GetTimeStamp(void);
 uint64_t PLATFORM_GetMaxTimeStamp(void);
 
 /*!
+ * \brief Compute number of microseconds between 2 timestamps expressed in number of TSTM ticks
+ *
+ * \param [in] timestamp0 start timestamp from which duration is assessed.
+ * \param [in] timestamp1 end timestamp till which duration is assessed.
+ *
+ * \return uint64_t number of microseconds
+ *
+ */
+uint64_t PLATFORM_GetTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1);
+
+/*!
  * \brief  Tells if the timeout is expired
  *
- * \param[in] timestamp in us
+ * \param[in] initial_timestamp (raw TSTMR value)
  * \param[in] delayUs time delay in us
  *
  * \return bool returns if timeout is expired
  *
  */
-bool PLATFORM_IsTimeoutExpired(uint64_t timestamp, uint64_t delayUs);
+bool PLATFORM_IsTimeoutExpired(uint64_t initial_timestamp, uint64_t delayUs);
 
 /*!
  * \brief  wait for the given delay in us
@@ -305,7 +316,7 @@ void PLATFORM_Delay(uint64_t delayUs);
  * \brief  wait for the given delay in us starting from
  *  given Timestamp. Timestamp shall be get from PLATFORM_GetTimeStamp()
  *
- * \param[in] timestamp in us
+ * \param[in] timestamp (raw TSTMR value)
  * \param[in] delayUs time delay in us
  *
  */
@@ -362,6 +373,22 @@ int PLATFORM_ClearIoIsolationFromLowPower(void);
  *
  */
 void PLATFORM_SetLowPowerFlag(bool PwrDownOngoing);
+
+/*!
+ * \brief Start FRO6M short calibration
+ *
+ * Note: Only useful for KW45 / MCXW71 / KW47 / MCXW72 platforms.
+ *
+ */
+int PLATFORM_StartFro6MCalibration(void);
+
+/*!
+ * \brief End FRO6M short calibration
+ *
+ * Note: Only useful for KW45 / MCXW71 / KW47 / MCXW72 platforms.
+ *
+ */
+int PLATFORM_EndFro6MCalibration(void);
 
 #if defined(__cplusplus)
 }

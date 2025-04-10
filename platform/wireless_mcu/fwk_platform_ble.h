@@ -111,7 +111,7 @@ bool PLATFORM_CheckNextBleConnectivityActivity(void);
  *
  * \param[in] controllerTimestamp value with which we want to calculate the delta timestamp
  *
- * \return uint64_t delta of time, 0U in case of error
+ * \return uint64_t delta of time expressed in microseconds , 0U in case of error
  */
 uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
 

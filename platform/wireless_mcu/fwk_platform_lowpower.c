@@ -96,7 +96,6 @@ void WUU0_IRQHandler(void);
 /* -------------------------------------------------------------------------- */
 /*                             Private variables                              */
 /* -------------------------------------------------------------------------- */
-
 static pm_notify_element_t platformLpNotifyGroup = {
     .notifyCallback = PLATFORM_LowPowerCallback,
     .data           = NULL,
@@ -290,7 +289,7 @@ int PLATFORM_GetDefaultRamBanksRetained(void)
 
     assert(ram_upper_limit > ram_lower_limit);
 
-    /* Go through each selectables RAM banks and check if we can shutdown some
+    /* Go through each selectable RAM bank and check if we can shutdown some
      * of them */
     for (uint8_t i = PLATFORM_SELECT_RAM_RET_START_IDX; i <= PLATFORM_SELECT_RAM_RET_END_IDX; i++)
     {
@@ -341,80 +340,98 @@ static void PLATFORM_InitWakeUpSources(void)
     NVIC_EnableIRQ(WUU0_IRQn);
 }
 
-static status_t PLATFORM_LowPowerCallback(pm_event_type_t eventType, uint8_t powerState, void *data)
+#if defined(gDbg_Enabled_d) && (gDbg_Enabled_d > 0)
+static int lp_nb = 0;
+#endif
+
+static void PLATFORM_EnteringLowPowerCb(uint8_t powerState)
 {
-    (void)data;
+#if defined(gDbg_Enabled_d) && (gDbg_Enabled_d > 0)
+    PWR_DBG_LOG("[%d] evt=%d pwrstate=%d", lp_nb, eventType, powerState);
+#endif
+    if (powerState >= PLATFORM_DEEP_SLEEP_STATE)
+    {
+        /* Platform module can implement platform specific methods to execute
+         * when entering and exiting any low power mode.
+         * Those methods should implement only mandatory procedures for the
+         * platform, compatible with any connectivity protocol */
 
 #if defined(gDbg_Enabled_d) && (gDbg_Enabled_d > 0)
-    static int lp_nb = 0;
-    if (eventType == kPM_EventEnteringSleep)
-    {
-        PWR_DBG_LOG("[%d] evt=%d pwrstate=%d", lp_nb, eventType, powerState);
-    }
-#endif
-    /* Nothing to do on Sleep state (WFI) but only Deeper low power mode */
-    if (powerState < PLATFORM_DEEP_SLEEP_STATE)
-    {
-        /* Nothing to do when entering WFI or Sleep low power state
-            NVIC fully functionnal to trigger upcoming interrupts */
-    }
-    else
-    {
-        if (eventType == kPM_EventEnteringSleep)
-        {
-#if defined(gDbg_Enabled_d) && (gDbg_Enabled_d > 0)
-            /* NXP logging dump */
+        /* NXP logging dump */
 #define DUMP_EVERY_X_TIMES 4
-            static int count = DUMP_EVERY_X_TIMES;
-            if (--count == 0)
-            {
-                DBG_LOG_DUMP();
-                count = DUMP_EVERY_X_TIMES;
-            }
+        static int count = DUMP_EVERY_X_TIMES;
+        if (--count == 0)
+        {
+            DBG_LOG_DUMP();
+            count = DUMP_EVERY_X_TIMES;
+        }
 #endif
-            /* Platform module can implement platform specific methods to execute
-             * when entering and exiting any low power mode.
-             * Those methods should implement only mandatory procedures for the
-             * platform, compatible with any connectivity protocol */
+
 #if 0
+        {
             uint8_t mode;
             mode = PM_GetAllowedLowestPowerMode();
             if (mode  == (PLATFORM_DEEP_POWER_DOWN_STATE))
             {
                 BOARD_DbgStopLoggingTimer();
             }
+        }
 #endif
 
-            PLATFORM_EnterLowPower();
+        PLATFORM_EnterLowPower();
 
-            if (powerState == PLATFORM_POWER_DOWN_STATE)
-            {
-                /* Power gated low power modes often require extra specific
-                 * entry/exit low power procedures, those should be implemented
-                 * in the following PLATFORM API */
-                PLATFORM_EnterPowerDown();
-            }
+        if (powerState == PLATFORM_POWER_DOWN_STATE)
+        {
+            /* Power gated low power modes often require extra specific
+             * entry/exit low power procedures, those should be implemented
+             * in the following PLATFORM API */
+            PLATFORM_EnterPowerDown();
+        }
 
-            if (powerState == PLATFORM_DEEP_POWER_DOWN_STATE)
+        if (powerState == PLATFORM_DEEP_POWER_DOWN_STATE)
+        {
+            /* Perform specific procedures when entering RAMOFF such as
+             * powering off the radio domain */
+            PLATFORM_EnterDeepPowerDown();
+        }
+    }
+}
+
+static void PLATFORM_ExitingLowPowerLpCb(uint8_t powerState)
+{
+#if defined(gPlatformEnableFro6MCalLowpower_d) && (gPlatformEnableFro6MCalLowpower_d > 0)
+    PLATFORM_PowerDomainState_t wakeup_pd_state = PLATFORM_NO_LOWPOWER;
+    /* Exiting low power : read wake power domain state so as to determine
+     * whether FRO6M was cut or not */
+    if (PLATFORM_GetLowpowerMode(PLATFORM_WakeupDomain, &wakeup_pd_state) == PLATFORM_Successful)
+    {
+        if (wakeup_pd_state > PLATFORM_NO_LOWPOWER)
+        {
+            /* FRO6M was cut : calibrate */
+            if (PLATFORM_StartFro6MCalibration() < 0)
             {
-                /* Perform specific procedures when entering RAMOFF such as
-                 * powering off the radio domain */
-                PLATFORM_EnterDeepPowerDown();
+                assert(0);
+                /* might do nothing in release build */
             }
         }
-        else
+    }
+    else
+    {
+        assert(0);
+    }
+#endif
+    /* kPM_EventExitingSleep */
+    if (powerState >= PLATFORM_DEEP_SLEEP_STATE)
+    {
+        /* Check if Main power domain domain really went to Power down,
+         *   powerState variable is just an indication, Lowpower mode could have been skipped by an immediate wakeup
+         */
+        PLATFORM_PowerDomainState_t main_pd_state = PLATFORM_NO_LOWPOWER;
+        if (PLATFORM_GetLowpowerMode(PLATFORM_MainDomain, &main_pd_state) == PLATFORM_Successful)
         {
-            /* Check if Main power domain domain really went to Power down,
-             *   powerState variable is just an indication, Lowpower mode could have been skipped by an immediate wakeup
-             */
-            PLATFORM_PowerDomainState_t main_pd_state = PLATFORM_NO_LOWPOWER;
-            PLATFORM_status_t           status;
-            status = PLATFORM_GetLowpowerMode(PLATFORM_MainDomain, &main_pd_state);
-            assert(status == PLATFORM_Successful);
-            (void)status;
 #if 0
             PLATFORM_PowerDomainState_t   wakeup_pd_state;
-            PLATFORM_GetLowpowerMode(PLATFORM_WakeupDomain, &wakeup_pd_state);
+            (void)PLATFORM_GetLowpowerMode(PLATFORM_WakeupDomain, &wakeup_pd_state);
             PWR_DBG_LOG("main_pd=%d wakeup_pd=%d", main_pd_state, wakeup_pd_state);
 #endif
 
@@ -425,24 +442,52 @@ static status_t PLATFORM_LowPowerCallback(pm_event_type_t eventType, uint8_t pow
                  * in the following PLATFORM API */
                 PLATFORM_ExitPowerDown();
             }
+        }
+        else
+        {
+            assert(0);
+        }
 
-            // DBG_LOG_WAKEUP_CHECK();
+        // DBG_LOG_WAKEUP_CHECK();
 
-            /* Platform specific procedures to execute when exiting low power mode
-             * any low power mode */
-            PLATFORM_ExitLowPower();
+        /* Platform specific procedures to execute when exiting low power mode
+         * any low power mode */
+        PLATFORM_ExitLowPower();
+
+    } /* if (powerState >= PLATFORM_DEEP_SLEEP_STATE) */
+
+#if defined(gPlatformEnableFro6MCalLowpower_d) && (gPlatformEnableFro6MCalLowpower_d > 0)
+    if (wakeup_pd_state > PLATFORM_NO_LOWPOWER)
+    {
+        if (PLATFORM_EndFro6MCalibration() < 0)
+        {
+            assert(false);
+            /* Might do nothing in release mode */
         }
     }
-
+#endif
     /* Debug Only */
 #if defined(gDbg_Enabled_d) && (gDbg_Enabled_d > 0)
     /* On wakeup, display pending interrupts */
-    if (eventType != kPM_EventEnteringSleep)
     {
         lp_nb++;
         BOARD_DbgCheckIrqPending(false);
     }
 #endif
+}
+
+static status_t PLATFORM_LowPowerCallback(pm_event_type_t eventType, uint8_t powerState, void *data)
+{
+    (void)data;
+
+    if (eventType == kPM_EventEnteringSleep)
+    {
+        PLATFORM_EnteringLowPowerCb(powerState);
+    }
+    else /* if (eventType == kPM_EventEnteringSleep) */
+    {
+        PLATFORM_ExitingLowPowerLpCb(powerState);
+    }
 
     return kStatus_Success;
 }
