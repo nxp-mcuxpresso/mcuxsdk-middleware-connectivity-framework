@@ -218,7 +218,7 @@
  * This FRO6M assessment is performed in parallel of other wake up operations but causes the wake up procedure to last at least 6 usec.
  */
 #ifndef gPlatformEnableFro6MCalLowpower_d
-#define gPlatformEnableFro6MCalLowpower_d 0
+#define gPlatformEnableFro6MCalLowpower_d 1
 #endif
 
 #endif /* _FWK_CONFIG_H_ */
