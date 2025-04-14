@@ -180,6 +180,7 @@ extern "C" {
  ********************************************************************************** */
 void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief  This function performs calls the multiplication Callback.
  *
@@ -187,6 +188,7 @@ void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback);
  *
  ********************************************************************************** */
 void SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg);
+#endif
 
 /************************************************************************************
  * \brief Generates a new ECDH P256 Private/Public key pair
@@ -253,6 +255,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
  ************************************************************************************/
 secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /************************************************************************************
  * \brief Free any data allocated in the input structure.
  *
@@ -577,6 +580,7 @@ secEcp256Status_t ECP256_DoublePointMulAdd(
  *
  ********************************************************************************** */
 secEcp256Status_t ECP256_PointInvert(uint32_t *R, uint32_t const *P);
+#endif
 
 /*! *********************************************************************************
  * \brief Return whether point is valid or not, i.e it belongs to the curve
@@ -588,6 +592,7 @@ secEcp256Status_t ECP256_PointInvert(uint32_t *R, uint32_t const *P);
  ********************************************************************************** */
 bool ECP256_PointValid(const ecp256Point_t *P);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief Multiply ECP256R1 point by scalar i.e R = fe * P
  *
@@ -630,6 +635,7 @@ secEcp256Status_t ECP256_GeneratePrivateKey(big_int256_t *pOutPrivateKey);
 secEcp256Status_t ECP256_GenerateKeyPairUltraFast(ecp256Point_t *pOutPublicKey,
                                                   big_int256_t  *pOutPrivateKey,
                                                   void          *pMultiplicationBuffer);
+#endif
 
 #ifdef __cplusplus
 }

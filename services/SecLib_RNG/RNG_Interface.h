@@ -123,6 +123,7 @@ int RNG_GetTrueRandomNumber(uint32_t *pRandomNo);
  ********************************************************************************** */
 int RNG_GetPseudoRandomData(uint8_t *pOut, uint8_t outBytes, uint8_t *pSeed);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief  Returns a pointer to the general PRNG function
  *         Call RNG_SetPseudoRandomNoSeed() before calling this function.
@@ -142,6 +143,7 @@ fpRngPrng_t RNG_GetPrngFunc(void);
  *
  ********************************************************************************** */
 void *RNG_GetPrngContext(void);
+#endif
 
 /*! *********************************************************************************
  * \brief  Initialize seed for the PRNG algorithm with the TRNG available on the platform.

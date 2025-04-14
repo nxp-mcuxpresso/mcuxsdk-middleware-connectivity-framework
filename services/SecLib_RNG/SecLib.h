@@ -207,6 +207,7 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  ********************************************************************************** */
 void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block.
  *
@@ -320,6 +321,7 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
  *
  ********************************************************************************** */
 void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput);
+#endif
 
 #if gSecLibAesOfbEnable_d
 /*! *********************************************************************************
@@ -375,6 +377,7 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
  ********************************************************************************** */
 void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief  This function performs AES 128 CMAC Pseudo-Random Function (AES-CMAC-PRF-128),
  *         according to rfc4615, on a message block.
@@ -461,6 +464,7 @@ secResultType_t AES_128_EAX_Decrypt(const uint8_t *pInput,
                                     uint8_t       *pOutput,
                                     uint8_t       *pTag);
 #endif
+#endif
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CCM on a message block.
@@ -504,6 +508,7 @@ uint8_t AES_128_CCM(const uint8_t *pInput,
                     uint8_t        macSize,
                     uint32_t       flags);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 #if gSecLibSha1Enable_d
 /*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a SHA1 context structure
@@ -634,6 +639,7 @@ void SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes);
  *
  ********************************************************************************** */
 void SHA256_HashFinish(void *pContext, uint8_t *pOutput);
+#endif
 
 /*! *********************************************************************************
  * \brief  This function performs all SHA256 steps on multiple bytes: initialize,
@@ -647,6 +653,7 @@ void SHA256_HashFinish(void *pContext, uint8_t *pOutput);
  ********************************************************************************** */
 void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a HMAC SHA256 context structure
  *
@@ -710,6 +717,7 @@ void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput);
  *
  ********************************************************************************** */
 void HMAC_SHA256(const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
+#endif
 
 /*! *********************************************************************************
  * \brief  This function calculates XOR of individual byte pairs in two uint8_t arrays.
@@ -753,6 +761,7 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
                                                const uint8_t  a2at,
                                                const uint8_t *pA2);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /************************************************************************************
  * \brief Function used to create the mac key and LTK using Bluetooth F5 algorithm.
  *        Version using key blobs and secure bus. Available on EdgeLock only.
@@ -841,6 +850,7 @@ secResultType_t SecLib_DeobfuscateKeySecure(const uint8_t *pBlob, uint8_t *pKey)
  *
  ********************************************************************************** */
 secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pKey, const uint8_t *pR);
+#endif
 
 /*! *********************************************************************************
  * \brief  This function implements the SMP ah cryptographic toolbox function which calculates the
@@ -877,6 +887,7 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
  ************************************************************************************/
 secResultType_t SecLib_GenerateSymmetricKey(const uint32_t keySize, const bool_t blobOutput, void *pOut);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /************************************************************************************
  * \brief Generates an EIRK blob from an ELKE blob or plain text symmetric key.
  *        Only implemented on EdgeLock.
@@ -1086,6 +1097,7 @@ void HMAC_AES_MMO_Finish(void *pContext, uint8_t *pOutput);
  *
  ****************************************************************************/
 void HMAC_AES_MMO(const uint8_t *pKey, uint16_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
+#endif
 
 /*!
  * @}  end of SecLib addtogroup
