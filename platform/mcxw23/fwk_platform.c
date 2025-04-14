@@ -205,5 +205,6 @@ void PLATFORM_RemoteActiveRel(void)
 
 void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t cb)
 {
+    /* Not implemented */
     cb = NULL;
 }

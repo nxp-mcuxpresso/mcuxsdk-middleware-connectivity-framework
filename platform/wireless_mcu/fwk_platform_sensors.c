@@ -229,7 +229,7 @@ void PLATFORM_StartBatteryMonitor(void)
 
 void PLATFORM_GetBatteryLevel(uint8_t *battery_level)
 {
-    *battery_level = (uint8_t)PLATFORM_SENSOR_UNKNOWN_BATTERY_LVL;
+    *battery_level = PLATFORM_SENSOR_UNKNOWN_BATTERY_LVL;
 }
 
 void PLATFORM_StartTemperatureMonitor(void)
