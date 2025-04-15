@@ -30,7 +30,7 @@
 /*!
  * Value used to indicated that temperature is unknown
  */
-#define PLATFORM_SENSOR_UNKNOWN_BATTERY_LVL ((uint8_t)99)
+#define PLATFORM_SENSOR_UNKNOWN_BATTERY_LVL ((uint8_t)99U)
 
 /* -------------------------------------------------------------------------- */
 /*                           Public type definitions                          */

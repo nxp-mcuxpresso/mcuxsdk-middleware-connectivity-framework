@@ -1,14 +1,27 @@
-/*
- * Copyright 2025 NXP
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
+/* -------------------------------------------------------------------------- */
+/*                           Copyright 2025 NXP                               */
+/*                    SPDX-License-Identifier: BSD-3-Clause                   */
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------- */
+/*                                  Includes                                  */
+/* -------------------------------------------------------------------------- */
 #include "fsl_common.h"
 #include "fwk_platform_ota.h"
 #include "fsl_rom_api.h"
 #include "fsl_debug_console.h"
 #include "OtaSupport.h"
 
+/* -------------------------------------------------------------------------- */
+/*                               Private macros                               */
+/* -------------------------------------------------------------------------- */
+#define COPY_BUFFER_SIZE (512U)
+
+#define RAM_FUNC __attribute__((section(".ramfunc"))) __attribute__((used)) __attribute__((noinline))
+
+/* -------------------------------------------------------------------------- */
+/*                         Private memory declarations                        */
+/* -------------------------------------------------------------------------- */
 #if ((defined(__CC_ARM) || defined(__UVISION_VERSION) || defined(__ARMCC_VERSION)))
 extern uint32_t Image$$OTA_region$$ZI$$Base[];
 extern uint32_t Image$$OTA_region$$ZI$$Limit[];
@@ -22,39 +35,31 @@ extern uint32_t INT_STORAGE_SIZE;
 #endif /* ((defined(__CC_ARM) || defined(__UVISION_VERSION) || defined(__ARMCC_VERSION))) */
 
 static flash_config_t s_flashInstance;
+static uint8_t        s_copyBuffer[COPY_BUFFER_SIZE];
 
-const OtaPartition_t *PLATFORM_OtaGetOtaInternalPartitionConfig(void)
-{
-    static const OtaPartition_t int_ota_partition_cfg = {
-        .start_offset   = (uint32_t)&INT_STORAGE_START,
-        .size           = (uint32_t)&INT_STORAGE_SIZE,
-        .sector_size    = FSL_FEATURE_FLASH_SECTOR_SIZE_BYTES,
-        .page_size      = FSL_FEATURE_FLASH_PAGE_SIZE_BYTES,
-        .internal_flash = true,
-        .spi_baudrate   = 0,
-    };
-    return &int_ota_partition_cfg;
-}
+/* -------------------------------------------------------------------------- */
+/*                             Private prototypes                             */
+/* -------------------------------------------------------------------------- */
+static RAM_FUNC status_t Erase(flash_config_t *config, uint32_t start, uint32_t lengthInBytes, uint32_t key);
+static RAM_FUNC status_t Program(flash_config_t *config, uint32_t start, uint8_t *src, uint32_t lengthInBytes);
+static RAM_FUNC void     OtaPanic(void);
+static RAM_FUNC void     CopyAndReboot(const OtaLoaderInfo_t *ota_loader_info);
 
-int PLATFORM_OtaBootDataUpdateOnCommit(const OtaLoaderInfo_t *ota_loader_info)
-{
-    return 0;
-}
-
-#define RAM_FUNC __attribute__((section(".ramfunc"))) __attribute__((used)) __attribute__((noinline))
-
+/* -------------------------------------------------------------------------- */
+/*                              Private functions                             */
+/* -------------------------------------------------------------------------- */
 /* Create custom implementations for FLASH_Erase and FLASH_Program to make sure they are put in RAM */
-RAM_FUNC status_t Erase(flash_config_t *config, uint32_t start, uint32_t lengthInBytes, uint32_t key)
+static RAM_FUNC status_t Erase(flash_config_t *config, uint32_t start, uint32_t lengthInBytes, uint32_t key)
 {
     return BOOTLOADER_API_TREE_POINTER->flashDriver->flash_erase(config, start, lengthInBytes, key);
 }
 
-RAM_FUNC status_t Program(flash_config_t *config, uint32_t start, uint8_t *src, uint32_t lengthInBytes)
+static RAM_FUNC status_t Program(flash_config_t *config, uint32_t start, uint8_t *src, uint32_t lengthInBytes)
 {
     return BOOTLOADER_API_TREE_POINTER->flashDriver->flash_program(config, start, src, lengthInBytes);
 }
 
-RAM_FUNC void OtaPanic(void)
+static RAM_FUNC void OtaPanic(void)
 {
     while (1)
     {
@@ -62,9 +67,7 @@ RAM_FUNC void OtaPanic(void)
     }
 }
 
-#define COPY_BUFFER_SIZE (512U)
-static uint8_t s_copyBuffer[COPY_BUFFER_SIZE];
-RAM_FUNC void  CopyAndReboot(const OtaLoaderInfo_t *ota_loader_info)
+static RAM_FUNC void CopyAndReboot(const OtaLoaderInfo_t *ota_loader_info)
 {
     /* IMPORTANT: Everything in this function has to be executed from RAM because flash will be erased.
        Some functions have not been used on purpose to minimize the functions that need to be placed in RAM (e.g. no
@@ -117,6 +120,28 @@ RAM_FUNC void  CopyAndReboot(const OtaLoaderInfo_t *ota_loader_info)
         ;
     }
 }
+
+/* -------------------------------------------------------------------------- */
+/*                              Public functions                              */
+/* -------------------------------------------------------------------------- */
+const OtaPartition_t *PLATFORM_OtaGetOtaInternalPartitionConfig(void)
+{
+    static const OtaPartition_t int_ota_partition_cfg = {
+        .start_offset   = (uint32_t)&INT_STORAGE_START,
+        .size           = (uint32_t)&INT_STORAGE_SIZE,
+        .sector_size    = FSL_FEATURE_FLASH_SECTOR_SIZE_BYTES,
+        .page_size      = FSL_FEATURE_FLASH_PAGE_SIZE_BYTES,
+        .internal_flash = true,
+        .spi_baudrate   = 0,
+    };
+    return &int_ota_partition_cfg;
+}
+
+int PLATFORM_OtaBootDataUpdateOnCommit(const OtaLoaderInfo_t *ota_loader_info)
+{
+    return 0;
+}
+
 int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
 {
     status_t status;
