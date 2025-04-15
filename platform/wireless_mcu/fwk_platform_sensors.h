@@ -63,6 +63,12 @@ void PLATFORM_InitAdc(void);
 void PLATFORM_DeinitAdc(void);
 
 /*!
+ * \brief Reinitialize ADC after deinit.
+ *
+ */
+void PLATFORM_ReinitAdc(void);
+
+/*!
  * \brief Trig the ADC on the battery.
  *
  */
@@ -91,18 +97,6 @@ void PLATFORM_StartTemperatureMonitor(void);
  * \param  [out] temperature_value       The temperature value is returned by reference in tenths of degree celsius
  */
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value);
-
-/*!
- * \brief Save ADC Context
- *
- */
-void PLATFORM_SaveAdcContext(void);
-
-/*!
- * \brief Restore ADC context
- *
- */
-void PLATFORM_RestoreAdcContext(void);
 
 /*!
  * \brief Register function callback called when temperature measurement is ready

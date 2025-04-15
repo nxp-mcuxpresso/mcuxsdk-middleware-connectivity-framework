@@ -126,6 +126,15 @@ void PLATFORM_DeinitAdc(void)
     BOARD_DeinitAdc();
 }
 
+void PLATFORM_ReinitAdc(void)
+{
+    BOARD_ReinitAdc();
+
+    LPADC_EnableInterrupts(ADC0, (uint32_t)kLPADC_FIFO1WatermarkInterruptEnable);
+    NVIC_SetPriority(ADC0_IRQn, PLATFORM_ADC_IRQ_PRIO);
+    (void)EnableIRQ(ADC0_IRQn);
+}
+
 void PLATFORM_StartBatteryMonitor(void)
 {
     BOARD_AdcSwTrigger(LPADC_BATTERY_MONITOR_CHANNEL);
@@ -149,16 +158,6 @@ void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
         /* Wait until measurement is ready */
     }
     *temperature_value = new_temperature_value;
-}
-
-void PLATFORM_SaveAdcContext(void)
-{
-    BOARD_SaveAdcContext();
-}
-
-void PLATFORM_RestoreAdcContext(void)
-{
-    BOARD_RestoreAdcContext();
 }
 
 void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
@@ -223,6 +222,10 @@ void PLATFORM_DeinitAdc(void)
 {
 }
 
+void PLATFORM_ReinitAdc(void)
+{
+}
+
 void PLATFORM_StartBatteryMonitor(void)
 {
 }
@@ -239,14 +242,6 @@ void PLATFORM_StartTemperatureMonitor(void)
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
 {
     *temperature_value = (int32_t)PLATFORM_SENSOR_UNKNOWN_TEMPERATURE;
-}
-
-void PLATFORM_SaveAdcContext(void)
-{
-}
-
-void PLATFORM_RestoreAdcContext(void)
-{
 }
 
 void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
