@@ -309,29 +309,21 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
         bool process_now = false;
         do
         {
-            if (msg_type != (uint8_t)gFwkSrvHostChipRevision_c)
+            rx_data_t *rx_data = MEM_BufferAlloc(sizeof(rx_data_t) + len);
+
+            if (rx_data == NULL)
             {
-                rx_data_t *rx_data = MEM_BufferAlloc(sizeof(rx_data_t) + len);
-
-                if (rx_data == NULL)
-                {
-                    /* allocation failed - process in the ISR to avoid losing the data
-                     * TODO: use the error callback mechanism to forward the error to the application */
-                    process_now = true;
-                    break;
-                }
-
-                rx_data->data = (uint8_t *)rx_data + sizeof(rx_data_t);
-                rx_data->len  = len;
-                (void)memcpy(rx_data->data, data, len);
-                (void)LIST_AddTail(&rx_work.pending, &rx_data->node);
-                if (WORKQ_Submit(&rx_work.work) < 0)
-                {
-                    process_now = true;
-                    break;
-                }
+                /* allocation failed - process in the ISR to avoid losing the data
+                 * TODO: use the error callback mechanism to forward the error to the application */
+                process_now = true;
+                break;
             }
-            else
+
+            rx_data->data = (uint8_t *)rx_data + sizeof(rx_data_t);
+            rx_data->len  = len;
+            (void)memcpy(rx_data->data, data, len);
+            (void)LIST_AddTail(&rx_work.pending, &rx_data->node);
+            if (WORKQ_Submit(&rx_work.work) < 0)
             {
                 process_now = true;
                 break;
