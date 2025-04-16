@@ -967,7 +967,7 @@ fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint
 /*! *********************************************************************************
  * \brief  This function performs a XOR over the message to compute the CRC
  *
- * \param[in]  pBuffer - pointer to the messae
+ * \param[in]  pBuffer - pointer to the message
  * \param[in]  size - the length of the message
  *
  * \return  the CRC of the message
@@ -976,10 +976,10 @@ fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint
 uint8_t FSCI_computeChecksum(const void *pBuffer, uint16_t size)
 {
     uint16_t index;
-    uint8_t  checksum = 0;
+    uint8_t  checksum = 0u;
 
     /* Compute the CRC from Opcode byte */
-    for (index = 0; index < size; index++)
+    for (index = 0u; index < size; index++)
     {
         checksum ^= ((const uint8_t *)pBuffer)[index];
     }

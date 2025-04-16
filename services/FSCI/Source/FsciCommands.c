@@ -305,7 +305,10 @@ void FSCI_Error(uint8_t errorCode, uint32_t fsciInterface)
     {
         uint16_t checksum_comp_sz = (offsetof(gFsciErrorMsg_t, checksum) - offsetof(gFsciErrorMsg_t, header.opGroup));
         mFsciErrorMsg.status      = errorCode;
-        mFsciErrorMsg.checksum    = FSCI_computeChecksum(&mFsciErrorMsg.header.opGroup, checksum_comp_sz);
+        /* sizeof(gFsciErrorMsg_t) is 7 or 8 depending on length field size : checksum_comp_sz is 4 or 5
+         * and checksum is computed from offset 1  */
+        // coverity[overrun-buffer-arg:FALSE] Out-of-bounds access (OVERRUN) is false positive
+        mFsciErrorMsg.checksum = FSCI_computeChecksum(&mFsciErrorMsg.header.opGroup, checksum_comp_sz);
 
         if (virtInterface != 0u)
         {
