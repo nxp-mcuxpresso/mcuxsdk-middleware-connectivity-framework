@@ -52,6 +52,12 @@ static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
         uint8_t  *p_8             = ptr;
         uint32_t  unaligned_bytes = (uint32_t)ptr % 4;
         uint32_t *p_32;
+
+#if (PLATFORM_ACCESS_ALIGNMENT_CONSTRAINT_LOG == 2u)
+        /* need to respect constraint on direct flash access */
+        unaligned_bytes = 4u - unaligned_bytes;
+#endif
+
         /* Compare byte by byte to 0xff till alignment */
         for (uint32_t i = 0u; i < unaligned_bytes; i++)
         {
