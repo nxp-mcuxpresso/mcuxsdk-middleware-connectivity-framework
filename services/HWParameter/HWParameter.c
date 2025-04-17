@@ -315,6 +315,9 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size)
             }
         }
 
+        /* Coverity claims that callee's buffer array might be overrun but this is wrong,
+         * only up to modulo 16 bytes are ever written to it */
+        // coverity[overrun-call:FALSE]
         status = HAL_FlashProgramUnaligned(PROD_DATA_FLASH_ADDR, size, (uint8_t *)src_data);
         if (kStatus_HAL_Flash_Success != status)
         {
@@ -440,8 +443,11 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
                 p_crc    = &gHardwareParameters[HW_PARAM_CRC_OFFSET];
                 p_crc[0] = (uint8_t)(crc & 0x00ffU);
                 p_crc[1] = (uint8_t)((crc >> 8U) & 0x00ffU);
-                /* The size to be written ios 2 octets after the CRC offset : this works for both legacy and new
+                /* The size to be written is 2 octets after the CRC offset : this works for both legacy and new
                  * structure */
+                /* Coverity claims that callee's buffer array might be overrun but this is wrong,
+                 * only up to modulo 16 bytes are ever written to it */
+                // coverity[overrun-call:FALSE]
                 status = NvWriteProdData(&gHardwareParameters[0], HW_PARAM_CRC_OFFSET + sizeof(uint16_t));
 
                 if (status != gHWParameterSuccess_c)
@@ -550,6 +556,9 @@ uint32_t NV_WriteHWParameters(void)
                     sizeof(mProdDataIdentifier));
 
         /*Re-writing the hardware parameters in Flash*/
+        /* Coverity claims that callee's buffer array might be overrun but this is wrong,
+         * only up to modulo 16 bytes are ever written to it */
+        // coverity[overrun-call:FALSE]
         status = NvWriteProdData(gHardwareParameters_p, HW_PARAM_CRC_OFFSET + sizeof(uint16_t));
 
         EnableGlobalIRQ(regPrimask);
@@ -689,5 +698,8 @@ void HWParametersErase(void)
     gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
 
     /*Re-writing the hardware parameters in Flash*/
+    /* Coverity claims that callee's buffer array might be overrun but this is wrong,
+     * only up to modulo 16 bytes are ever written to it */
+    // coverity[overrun-call:FALSE]
     (void)NvWriteProdData(gHardwareParameters_p, HW_PARAM_CRC_OFFSET + sizeof(uint16_t));
 }
