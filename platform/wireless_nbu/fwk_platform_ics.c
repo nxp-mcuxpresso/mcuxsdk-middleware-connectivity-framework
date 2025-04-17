@@ -171,9 +171,9 @@ int PLATFORM_NotifyNbuInitDone(void)
 
 int PLATFORM_NotifyNbuMemFull(unsigned short poolId, uint16_t bufferSize)
 {
-    NbuDbgMemInfo_t memInfo;
-    memInfo.poolId     = poolId;
-    memInfo.bufferSize = bufferSize;
+    NbuDbgMemInfo_t memInfo = {0}; /* useless but rids of Coverity UNINIT - reserved field remained uninitialized */
+    memInfo.poolId          = poolId;
+    memInfo.bufferSize      = bufferSize;
 
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuMemFullIndication_c, (void *)&memInfo, sizeof(memInfo));
 }
