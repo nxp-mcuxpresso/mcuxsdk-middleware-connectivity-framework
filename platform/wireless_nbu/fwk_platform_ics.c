@@ -215,7 +215,7 @@ int PLATFORM_FwkSrvFroInfo(uint16_t freq, int16_t ppm_mean, int16_t ppm, uint16_
     tab[5] = (uint8_t)(ppm >> 8U);
     tab[6] = (uint8_t)fro_trim;
     tab[7] = (uint8_t)(fro_trim >> 8U);
-    return (PLATFORM_FwkSrvSendPacket(gFwkSrvFroNotification_c, tab, 8 * sizeof(tab)));
+    return (PLATFORM_FwkSrvSendPacket(gFwkSrvFroNotification_c, tab, (uint16_t)sizeof(tab)));
 }
 
 int PLATFORM_RequestRngSeedToHost(void)
