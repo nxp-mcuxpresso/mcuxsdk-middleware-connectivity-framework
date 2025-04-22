@@ -675,13 +675,15 @@ static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len)
 {
+    uint32_t periodic_interval = 0;
+
     if (nbu_request_temperature_callback != NULL)
     {
         assert(len == (sizeof(uint32_t) + 1));
-        /* Data buffer can contain a periodic interval parameter
-         * Ignoring this data as periodic measurement is not supported yet
-         */
-        (*nbu_request_temperature_callback)(0U);
+
+        /* Data corresponds to the periodic measurement interval requested by NBU (in Ms) */
+        FLib_MemCpy((void *)&periodic_interval, (void *)&data[1], sizeof(uint32_t));
+        (*nbu_request_temperature_callback)(periodic_interval);
     }
     (void)len;
     (void)data;
