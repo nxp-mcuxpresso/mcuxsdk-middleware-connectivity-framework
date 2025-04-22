@@ -16,6 +16,7 @@
 #include "fsl_device_registers.h"
 #include "fsl_os_abstraction.h"
 #include "fsl_common.h"
+#include "fsl_component_timer_manager.h"
 #include "fwk_platform_ics.h"
 
 /************************************************************************************
@@ -74,6 +75,10 @@ static volatile sensors_measurement_s measurement_status = MEASUREMENT_IDLE;
  */
 static const Sensors_LowpowerCriticalCBs_t *pfSensorsLowpowerCriticalCallbacks = NULL;
 
+static volatile uint32_t CurrentTemperatureMeasIntervalMs = VALUE_NOT_AVAILABLE_32;
+
+static TIMER_MANAGER_HANDLE_DEFINE(mTempSensorTimer);
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private function
@@ -104,10 +109,35 @@ static int32_t Sensors_ReleaseLpConstraint(int32_t power_mode)
 
 static void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
 {
-    /* periodic measurement not supported yet */
-    assert(temperature_meas_interval_ms == 0);
+    if (temperature_meas_interval_ms == 0U)
+    {
+        /* 0U means that the NBU requests a non periodic oneshot measurement */
+        CurrentTemperatureMeasIntervalMs = VALUE_NOT_AVAILABLE_32;
+    }
+    else
+    {
+        CurrentTemperatureMeasIntervalMs = temperature_meas_interval_ms;
+    }
+    /* trig one shot measurement
+     * SENSORS_RefreshTemperatureValue function will be called once the measurement is ready
+     * and will schedule the next measurement to be done after interval time
+     */
+    (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, 0U);
+}
 
-    SENSORS_TriggerTemperatureMeasurement();
+static void Sensors_TempMeasTimerCallback(void *pParam)
+{
+    (void)pParam;
+
+    if (measurement_status == MEASUREMENT_IDLE)
+    {
+        SENSORS_TriggerTemperatureMeasurement();
+    }
+    else
+    {
+        /* For recovery, retry to trig after 1ms time */
+        (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, 1U);
+    }
 }
 
 static void Sensors_TemperatureReadyCb(int32_t temperature_value)
@@ -129,6 +159,11 @@ void SENSORS_Init(void)
 {
     PLATFORM_InitAdc();
 
+    if (PLATFORM_InitTimerManager() < 0)
+    {
+        assert(0);
+    }
+
 #if gSensorsUseMutex_c
     /*! Initialize the ADC Mutex here. */
     if (KOSA_StatusSuccess != OSA_MutexCreate((osa_mutex_handle_t)mADCMutexId))
@@ -136,6 +171,18 @@ void SENSORS_Init(void)
         assert(0);
     }
 #endif
+
+    if (kStatus_TimerSuccess != TM_Open((timer_handle_t)mTempSensorTimer))
+    {
+        assert(0);
+    }
+
+    if (kStatus_TimerSuccess !=
+        TM_InstallCallback((timer_handle_t)mTempSensorTimer, Sensors_TempMeasTimerCallback, NULL))
+    {
+        assert(0);
+    }
+
     PLATFORM_RegisterNbuTemperatureRequestEventCb(&Sensors_TemperatureReqCb);
     PLATFORM_RegisterTemperatureReadyEventCb(&Sensors_TemperatureReadyCb);
 }
@@ -156,6 +203,9 @@ void SENSORS_Deinit(void)
         assert(0);
     }
 #endif
+
+    (void)TM_Close((timer_handle_t)mTempSensorTimer);
+
     PLATFORM_RegisterNbuTemperatureRequestEventCb(NULL);
     PLATFORM_RegisterTemperatureReadyEventCb(NULL);
     ADC_MUTEX_UNLOCK();
@@ -225,7 +275,21 @@ int32_t SENSORS_RefreshTemperatureValue(void)
     {
         PLATFORM_GetTemperatureValue(&temperature);
         (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
-        LastTemperature    = temperature;
+        LastTemperature = temperature;
+
+        /* Temperature is ready, Stop timer and restart it if a periodic interval is requested */
+        if (CurrentTemperatureMeasIntervalMs != VALUE_NOT_AVAILABLE_32)
+        {
+            /* Restart a oneshot timer with the requested interval.
+             * Timer's timeout callback will trig the measurement.
+             * Timer is restarted each time the temperature is ready to make the measurement periodic.
+             */
+            (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, CurrentTemperatureMeasIntervalMs);
+        }
+        else
+        {
+            (void)TM_Stop((timer_handle_t)mTempSensorTimer);
+        }
         measurement_status = MEASUREMENT_IDLE;
     }
     else
