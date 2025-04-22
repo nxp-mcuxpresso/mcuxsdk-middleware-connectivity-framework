@@ -52,11 +52,12 @@ static OSA_MUTEX_HANDLE_DEFINE(mADCMutexId);
 #define gSensorsAdcCalibrationDurationInMs_c 0U
 #endif
 
-typedef enum _temperature_measurement_s
+typedef enum _sensors_measurement_s
 {
-    TMP_MEASUREMENT_IDLE,
+    MEASUREMENT_IDLE,
     TMP_MEASUREMENT_ONGOING,
-} temperature_measurement_s;
+    BAT_MEASUREMENT_ONGOING,
+} sensors_measurement_s;
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -64,9 +65,9 @@ typedef enum _temperature_measurement_s
 *************************************************************************************
 *********************************************************************************** */
 
-static uint8_t                            LastBatteryLevel   = VALUE_NOT_AVAILABLE_8;
-static int32_t                            LastTemperature    = (int32_t)VALUE_NOT_AVAILABLE_32;
-static volatile temperature_measurement_s temperature_status = TMP_MEASUREMENT_IDLE;
+static uint8_t                        LastBatteryLevel   = VALUE_NOT_AVAILABLE_8;
+static int32_t                        LastTemperature    = (int32_t)VALUE_NOT_AVAILABLE_32;
+static volatile sensors_measurement_s measurement_status = MEASUREMENT_IDLE;
 
 /*!
  * @brief pointer to Callback function structure used to allow / disallow lowpower during Sensors activity
@@ -179,12 +180,26 @@ void Sensors_SetLowpowerCriticalCb(const Sensors_LowpowerCriticalCBs_t *pfCallba
  */
 void SENSORS_TriggerTemperatureMeasurement(void)
 {
-    if (temperature_status == TMP_MEASUREMENT_IDLE)
+    if (measurement_status == MEASUREMENT_IDLE)
     {
-        /* Lock the mutex now, it will be unlocked when the measure in SENSORS_RefreshTemperatureValue() */
+        /* Lock the mutex now to protect from concurrent access */
         ADC_MUTEX_LOCK();
+        SENSORS_TriggerTemperatureMeasurementUnsafe();
+        ADC_MUTEX_UNLOCK();
+    }
+}
+
+/*!
+ * @brief Trig the ADC on the temperature.
+ *
+ *
+ */
+void SENSORS_TriggerTemperatureMeasurementUnsafe(void)
+{
+    if (measurement_status == MEASUREMENT_IDLE)
+    {
+        measurement_status = TMP_MEASUREMENT_ONGOING;
         (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
-        temperature_status = TMP_MEASUREMENT_ONGOING;
         if (false == PLATFORM_IsAdcInitialized())
         {
             PLATFORM_InitAdc();
@@ -203,27 +218,22 @@ int32_t SENSORS_RefreshTemperatureValue(void)
 {
     int32_t temperature;
 
-    /* We are using recursive mutexes so the mutex holder can lock several time the same mutex. This mutex is first
-     * locked in SENSORS_TriggerTemperatureMeasurement(), locking it here a second time ensures the refresh is done by
-     * the current mutex holder.
-     * This mutex must be unlocked twice to be fully available to other tasks. */
+    /* Lock the mutex now to protect from concurrent access */
     ADC_MUTEX_LOCK();
 
-    if (temperature_status == TMP_MEASUREMENT_ONGOING)
+    if (measurement_status == TMP_MEASUREMENT_ONGOING)
     {
         PLATFORM_GetTemperatureValue(&temperature);
-        temperature_status = TMP_MEASUREMENT_IDLE;
-        /* This unlock corresponds to the lock done in SENSORS_TriggerTemperatureMeasurement() */
-        ADC_MUTEX_UNLOCK();
         (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
-        LastTemperature = temperature;
+        LastTemperature    = temperature;
+        measurement_status = MEASUREMENT_IDLE;
     }
     else
     {
         temperature = LastTemperature;
     }
 
-    /* Unlock the mutex again because the mutex can be taken up to 2 times by the same holder */
+    /* Unlock the mutex */
     ADC_MUTEX_UNLOCK();
     return temperature;
 }
@@ -245,14 +255,20 @@ int32_t SENSORS_GetTemperature(void)
  */
 void SENSORS_TriggerBatteryMeasurement(void)
 {
-    ADC_MUTEX_LOCK();
-    (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
-    if (false == PLATFORM_IsAdcInitialized())
+    if (measurement_status == MEASUREMENT_IDLE)
     {
-        PLATFORM_InitAdc();
-        OSA_TimeDelay(gSensorsAdcCalibrationDurationInMs_c);
+        /* Lock the mutex now to protect from concurrent access */
+        ADC_MUTEX_LOCK();
+        measurement_status = BAT_MEASUREMENT_ONGOING;
+        (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
+        if (false == PLATFORM_IsAdcInitialized())
+        {
+            PLATFORM_InitAdc();
+            OSA_TimeDelay(gSensorsAdcCalibrationDurationInMs_c);
+        }
+        PLATFORM_StartBatteryMonitor();
+        ADC_MUTEX_UNLOCK();
     }
-    PLATFORM_StartBatteryMonitor();
 }
 
 /*!
@@ -263,11 +279,21 @@ void SENSORS_TriggerBatteryMeasurement(void)
 uint8_t SENSORS_RefreshBatteryLevel(void)
 {
     uint8_t BatteryLevel;
-    PLATFORM_GetBatteryLevel(&BatteryLevel);
-    (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
+
+    ADC_MUTEX_LOCK();
+    if (measurement_status == BAT_MEASUREMENT_ONGOING)
+    {
+        PLATFORM_GetBatteryLevel(&BatteryLevel);
+        (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
+        LastBatteryLevel   = BatteryLevel;
+        measurement_status = MEASUREMENT_IDLE;
+    }
+    else
+    {
+        BatteryLevel = LastBatteryLevel;
+    }
     ADC_MUTEX_UNLOCK();
 
-    LastBatteryLevel = BatteryLevel;
     return BatteryLevel;
 }
 
