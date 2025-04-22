@@ -7,7 +7,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.platform
     bool "Platform"
     default y
     depends on MCUX_HW_DEVICE_MCXW716C || MCUX_HW_DEVICE_MCXW716A \
-        || MCUX_HW_DEVICE_MCXW236B || MCUX_HW_DEVICE_MCXW235B \
+        || MCUX_HW_DEVICE_MCXW236 || MCUX_HW_DEVICE_MCXW235 \
         || MCUX_HW_DEVICE_KW45B41Z52 || MCUX_HW_DEVICE_KW45B41Z53 \
         || MCUX_HW_DEVICE_KW45B41Z82 || MCUX_HW_DEVICE_KW45B41Z83 \
         || MCUX_HW_DEVICE_K32W1480 \
@@ -82,7 +82,7 @@ config MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_component.flash_adapter
-    depends on MCUX_HW_DEVICE_MCXW236B || MCUX_HW_DEVICE_MCXW235B
+    depends on MCUX_HW_DEVICE_MCXW236 || MCUX_HW_DEVICE_MCXW235
 
 config MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
     bool "KW43x family"
