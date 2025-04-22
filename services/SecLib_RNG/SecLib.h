@@ -703,6 +703,7 @@ void HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
  *
  ********************************************************************************** */
 void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput);
+#endif
 
 /*! *********************************************************************************
  * \brief  This function performs all HMAC SHA256 steps on multiple bytes: initialize,
@@ -717,7 +718,6 @@ void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput);
  *
  ********************************************************************************** */
 void HMAC_SHA256(const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
-#endif
 
 /*! *********************************************************************************
  * \brief  This function calculates XOR of individual byte pairs in two uint8_t arrays.
@@ -933,6 +933,7 @@ secResultType_t SecLib_ExportA2BBlobSecure(const void *pKey, const secInputKeyTy
  *
  ************************************************************************************/
 secResultType_t SecLib_ImportA2BBlobSecure(const uint8_t *pKey, const secInputKeyType_t keyType, uint8_t *pOutKey);
+#endif
 
 /*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a AES MMO context structure
@@ -1097,7 +1098,6 @@ void HMAC_AES_MMO_Finish(void *pContext, uint8_t *pOutput);
  *
  ****************************************************************************/
 void HMAC_AES_MMO(const uint8_t *pKey, uint16_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
-#endif
 
 /*!
  * @}  end of SecLib addtogroup
