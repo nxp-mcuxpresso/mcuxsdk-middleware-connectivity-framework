@@ -16,7 +16,7 @@
 /*                       RF SFC Default parametrization                       */
 /* -------------------------------------------------------------------------- */
 
-#define RF_SFC_MAXIMAL_PPM_TARGET  200U
+#define RF_SFC_MAXIMAL_PPM_TARGET  360U
 #define RF_SFC_MINIMAL_FILTER_SIZE 1U
 #define RF_SFC_MAXIMAL_FILTER_SIZE 256U
 
