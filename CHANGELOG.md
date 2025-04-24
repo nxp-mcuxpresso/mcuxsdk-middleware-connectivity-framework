@@ -1,5 +1,32 @@
 
 ## Connectivity framework CHANGELOG
+### 7.0.2 revB mcux SDK 25.06.00
+
+#### Major Changes
+- [RNG][wireless_mcu][wireless_nbu] Rework RNG seeding on NBU request
+- [wireless_mcu] [LowPower] Add `gPlatformEnableFro6MCalLowpower_d` macro to enable FRO6M frequency verification on exit of Low Power
+  - add `PLATFORM_StartFro6MCalibration()` and `PLATFORM_EndFro6MCalibration()` new function for FRO6M calibration (6MHz or 2Mhz) on wake-up from low power mode.
+  - Enabled by default in fwk_config.h
+- [wireless_nbu][LowPower] Clear pending interrupt status of the systick before going in lowpower - Reduce NBU active time
+- [wireless_nbu] Fix impossibility to go to WFI in combo mode (15.4/BLE)
+- [wireless_mcu] Implement XTAL32M temperature compensation mechanism. 2 new APIs:
+  - `PLATFORM_RegisterXtal32MTempCompLut()`: register the temperature compensation table for XTAL32M.
+  - `PLATFORM_CalibrateXtal32M()`: apply XTAL32M temperature compensation depending on current temperature.
+- [Sensors][wireless_mcu] Add support for periodic temperature measurement. new API:
+  - `SENSORS_TriggerTemperatureMeasurementUnsafe()`: to be called from Interrupt masked critical section, from ISR or when scheduler is stopped
+- [SFC] Change default maximal ppm target of the SFC algorithm from 200 to 360ppm. Impact the SFC algorith of kw45 and mcxw71 platforms, 360ppm was already the default setting for kw47 and mcxw72 platforms
+
+#### Minor Changes (bug fixes)
+- [DBG] Fix FWK_DBG_PERF_DWT_CYCLE_CNT_STOP macro
+- [wireless_nbu] Add `gPlatformIsNbu_d` compile Macro set to 1
+- [wireless_nbu][ics] gFwkSrvHostChipRevision_c can be processed in the system workqueue
+- [kw45_mcxw71][kw47_mcxw72]
+  - Remove LTC dependency from platform in kconfig
+  - `gPlatformShutdownEccRamInLowPower` moved from fwk_platform_definition.h to fwk_confg.h as this is a configuration flag.
+- [wireless_mcu][sensors] Rework and remove unnecessary ADC APIs
+- [wireless_nbu] Add `PLATFORM_GetMCUUid()` function from Chip UID
+- [SecLib] Change `AES_MMO_BlockUpdate()` function from private to public for zigbee.
+
 ### 7.0.2 revA mcux SDK 25.06.00
 
 **Supported platforms:**
