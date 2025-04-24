@@ -144,6 +144,8 @@ static int nbu_started = 0;
  */
 static uint8_t fwk_platform_FRO6MHz_ratio = 1u;
 
+static const xtal_temp_comp_lut_t *pXtal32MTempCompLut = NULL;
+
 /****************** LOWPOWER ***********************/
 /* Number of request for CM3 to remain active */
 static int8_t active_request_nb = 0;
@@ -203,6 +205,55 @@ static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
         delta_ticks = TSTMR_MAX_VAL - timestamp0 + timestamp1;
     }
     return delta_ticks;
+}
+
+static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
+{
+    int     ret = 0;
+    uint8_t cdac_trim_val;
+
+    do
+    {
+        if (lut == NULL)
+        {
+            ret = -1;
+            break;
+        }
+
+        /* if input temperature is below min_temp in the LUT, use a default trim below min temp */
+        if (temperature < lut->min_temp_degc)
+        {
+            cdac_trim_val = lut->trim_below_min_temp;
+        }
+        else
+        {
+            /* if input temperature is above max_temp in the LUT, use a default trim above max temp */
+            if (temperature > lut->max_temp_degc)
+            {
+                cdac_trim_val = lut->trim_above_max_temp;
+            }
+            else
+            {
+                /* calculate index in the LUT to use based in the min_temp and temp_step */
+                int index = ((int)temperature - (int)lut->min_temp_degc) / (int)lut->temp_step_degc;
+                if ((index < PLATFORM_XTAL_TEMP_COMP_LUT_SIZE) && (index >= 0))
+                {
+                    cdac_trim_val = lut->xtal_trim_lut[index];
+                }
+                else
+                {
+                    ret = -1;
+                    break;
+                }
+            }
+        }
+
+        /* Update the XTAL32M trim
+         * TODO: replace by a command sent to the NBU so the NBU can perform the update at the most optimal time */
+        PLATFORM_SetXtal32MhzTrim(cdac_trim_val, FALSE);
+    } while (false);
+
+    return ret;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -988,4 +1039,30 @@ int PLATFORM_EndFro6MCalibration(void)
         st = 1; /* was not started */
     }
     return st;
+}
+
+void PLATFORM_RegisterXtal32MTempCompLut(const xtal_temp_comp_lut_t *lut)
+{
+    pXtal32MTempCompLut = lut;
+}
+
+int PLATFORM_CalibrateXtal32M(int16_t temperature)
+{
+    int ret = 0;
+
+    do
+    {
+        if (pXtal32MTempCompLut == NULL)
+        {
+            ret = 1;
+            break;
+        }
+
+        if (PLATFORM_SetXtalTempComp(pXtal32MTempCompLut, temperature) < 0)
+        {
+            ret = -1;
+        }
+    } while (false);
+
+    return ret;
 }

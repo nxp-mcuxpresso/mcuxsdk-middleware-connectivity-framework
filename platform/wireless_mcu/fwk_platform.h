@@ -62,6 +62,14 @@
 /* Value of LowPower flag word to notify NBU core that Host core has initiated PowerDown */
 #define PLATFORM_HOST_USE_POWER_DOWN (0xA5A5A5A5U)
 
+#ifndef PLATFORM_XTAL_TEMP_COMP_LUT_SIZE
+#define PLATFORM_XTAL_TEMP_COMP_LUT_SIZE (17)
+#endif
+
+/* -------------------------------------------------------------------------- */
+/*                                Public types                                */
+/* -------------------------------------------------------------------------- */
+
 /*!
  * \brief  type definition for the list of reset status
  *
@@ -107,6 +115,22 @@ typedef enum
     PLATFORM_INIT_BLE_ID,
     PLATFORM_SEND_HCI_MESSAGE_ID,
 } PLATFORM_Id_t;
+
+/*!
+ * \brief XTAL temp compensation configuration structure
+ * This structure is used to store the table for temperature compensation of the XTAL trim.
+ */
+typedef struct
+{
+    int16_t min_temp_degc;                  /*!< The temperature corresponding to the first LUT entry, in deg C */
+    int16_t max_temp_degc;                  /*!< The temperature corresponding to the last LUT entry, in deg C */
+    uint8_t trim_below_min_temp;            /*!< The CDAC value to use when temp is below the min temp for the LUT */
+    uint8_t trim_above_max_temp;            /*!< The CDAC value to use when temp is above the max temp for the LUT */
+    int8_t  temp_step_degc;                 /*!< The temperature step between each LUT entry, in deg C */
+    uint8_t xtal_trim_lut
+        [PLATFORM_XTAL_TEMP_COMP_LUT_SIZE]; /*!< The CDAC values for the LUT, stored in ascending temperature,
+                                      from min to max with temp_step increments */
+} xtal_temp_comp_lut_t;
 
 /* -------------------------------------------------------------------------- */
 /*                        Public functions declaration                        */
@@ -389,6 +413,23 @@ int PLATFORM_StartFro6MCalibration(void);
  *
  */
 int PLATFORM_EndFro6MCalibration(void);
+
+/*!
+ * \brief Register XTAL32M temperature compensation LUT.
+ *  This LUT will be used in PLATFORM_CalibrateXtal32M().
+ *
+ * \param[in] lut pointer to the LUT structure.
+ */
+void PLATFORM_RegisterXtal32MTempCompLut(const xtal_temp_comp_lut_t *lut);
+
+/*!
+ * \brief Update the XTAL32M trimming value based on temperature.
+ * The temperature compensation LUT must be registered before with PLATFORM_RegisterXtal32MTempCompLut().
+ *
+ * \param[in] temperature temperature value in degrees C
+ * \return int 0 if success, 1 if no LUT registered, negative value if error.
+ */
+int PLATFORM_CalibrateXtal32M(int16_t temperature);
 
 #if defined(__cplusplus)
 }
