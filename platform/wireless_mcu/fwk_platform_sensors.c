@@ -188,10 +188,23 @@ static void PLATFORM_TemperatureReadyWorkHandler(fwk_work_t *work)
     (void)work;
 
     int32_t temperature_to_send;
+    int16_t xtal_cal_temp;
 
     if (temperature_ready_callback != NULL)
     {
         temperature_ready_callback(new_temperature_value);
+    }
+
+    /* new_temperature_value is in tenth of degrees C, converting to degrees C */
+    xtal_cal_temp = (int16_t)(new_temperature_value / 10);
+
+    /* When a new temperature is available, attempt to calibrate the XTAL32M.
+     * The calibration will be effective if the temperature compensation LUT
+     * was registered previously with PLATFORM_RegisterXtal32MTempCompLut().
+     * If not, the calibration will be ignored. */
+    if (PLATFORM_CalibrateXtal32M(xtal_cal_temp) < 0)
+    {
+        assert(0);
     }
 
     temperature_to_send = new_temperature_value;
