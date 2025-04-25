@@ -605,7 +605,7 @@ void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams)
     rfmc_xo = RFMC->XO_TEST;
 
     rfmc_xo &= ~(RFMC_XO_TEST_CDAC_MASK);
-    rfmc_xo |= RFMC_XO_TEST_CDAC(pHWParams->xtalTrim);
+    rfmc_xo |= RFMC_XO_TEST_CDAC(trimValue);
 
     RFMC->XO_TEST = rfmc_xo;
 }
