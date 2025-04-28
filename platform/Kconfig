@@ -268,6 +268,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.ot
     depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.rw61x || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.rt1170 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.rt1060
     help

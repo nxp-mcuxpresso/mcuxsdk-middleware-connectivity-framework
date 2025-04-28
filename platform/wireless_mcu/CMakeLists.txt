@@ -110,7 +110,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ot)
     mcux_add_source(SOURCES
                             fwk_platform_ot.c
                             fwk_platform_ot.h
-                            DEVICE_IDS ${KW45_FAMILY} ${KW47_FAMILY} ${MCXW71_FAMILY} ${MCXW72_FAMILY}
+                            DEVICE_IDS ${KW45_FAMILY} ${KW47_FAMILY} ${MCXW71_FAMILY} ${MCXW72_FAMILY} ${KW43_FAMILY}
                             CORE_IDS "cm33_core0" "cm33"
     )
 endif()
