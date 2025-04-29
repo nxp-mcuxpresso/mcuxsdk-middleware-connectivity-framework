@@ -78,3 +78,30 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.sw)
         SOURCES RNG.c
     )
 endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
+    
+    set(MBEDTLS3X_PATH "../../../../mbedtls3x")
+    
+    mcux_add_source(
+        SOURCES SecLib_psa.c
+        RNG_psa.c
+        ../../platform/wireless_mcu/configs/Seclib_psa_config.h
+        ${MBEDTLS3X_PATH}/3rdparty/p256-m/p256-m/p256-m.h
+        ${MBEDTLS3X_PATH}/3rdparty/p256-m/p256-m/p256-m.c
+        ${MBEDTLS3X_PATH}/3rdparty/p256-m/p256-m_driver_entrypoints.h
+        ${MBEDTLS3X_PATH}/3rdparty/p256-m/p256-m_driver_entrypoints.c
+    )
+
+    mcux_add_include(
+        INCLUDES
+        ../../platform/wireless_mcu/configs/
+        ${MBEDTLS3X_PATH}/port/rng
+        ${MBEDTLS3X_PATH}/3rdparty/p256-m/p256-m/
+        ${MBEDTLS3X_PATH}/3rdparty/p256-m/
+    )
+    mcux_add_configuration(
+        CC  "-DMBEDTLS_CONFIG_FILE=\\\"Seclib_psa_config.h\\\""
+    )
+    mcux_add_macro(gSecLibUsePsa_d=1)
+endif()
