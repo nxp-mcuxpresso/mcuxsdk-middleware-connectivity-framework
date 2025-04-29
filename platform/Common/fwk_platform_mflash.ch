@@ -175,7 +175,7 @@ int PLATFORM_EraseExternalFlash(uint32_t address, uint32_t size)
  */
 int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t address, bool requestFastRead)
 {
-    status_t st;
+    status_t st = 0;
     (void)requestFastRead;
 
     if (!MFLASH_REMAP_ACTIVE())
