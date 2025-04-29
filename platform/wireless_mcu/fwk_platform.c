@@ -207,6 +207,7 @@ static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
     return delta_ticks;
 }
 
+#if defined(gPlatformUseXtal32MTempComp) && (gPlatformUseXtal32MTempComp > 0)
 static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
 {
     int     ret = 0;
@@ -255,6 +256,7 @@ static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t tem
 
     return ret;
 }
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -1048,6 +1050,7 @@ void PLATFORM_RegisterXtal32MTempCompLut(const xtal_temp_comp_lut_t *lut)
 
 int PLATFORM_CalibrateXtal32M(int16_t temperature)
 {
+#if defined(gPlatformUseXtal32MTempComp) && (gPlatformUseXtal32MTempComp > 0)
     int ret = 0;
 
     do
@@ -1065,4 +1068,9 @@ int PLATFORM_CalibrateXtal32M(int16_t temperature)
     } while (false);
 
     return ret;
+#else
+    (void)pXtal32MTempCompLut;
+    (void)temperature;
+    return 0;
+#endif
 }
