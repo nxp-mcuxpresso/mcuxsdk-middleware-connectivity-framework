@@ -63,6 +63,12 @@ typedef struct
 
 #define PLATFORM_XTAL32M_TRIM_INVALID 0xFFU
 
+#if (defined(FSL_FEATURE_SOC_TSTMR_COUNT) && (FSL_FEATURE_SOC_TSTMR_COUNT > 1))
+#define gPlatformHasTstmr32K_d 1
+#endif
+
+#define TSTMR_MAX_VAL ((uint64_t)0x00FFFFFFFFFFFFFFULL)
+
 /************************************************************************************
  * Private memory declarations
  ************************************************************************************/
@@ -94,6 +100,13 @@ static void PLATFORM_SetClock(uint8_t range);
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
 #endif
 
+/************************************************************************************
+ * Private functions forward declarations
+ ************************************************************************************/
+#if defined     gPlatformHasTstmr32K_d && (gPlatformHasTstmr32K_d > 0)
+static uint64_t u64ReadTimeStamp(TSTMR_Type *base);
+static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1);
+#endif
 /************************************************************************************
  * Public functions
  ************************************************************************************/
@@ -180,6 +193,53 @@ void PLATFORM_SetChipRevision(uint8_t chip_rev_l)
 uint8_t PLATFORM_GetChipRevision(void)
 {
     return chip_revision;
+}
+
+uint64_t PLATFORM_Get32KTimeStamp(void)
+{
+#if defined gPlatformHasTstmr32K_d && (gPlatformHasTstmr32K_d > 0)
+    /* u64ReadTimeStamp mimics TSTMR_ReadTimeStamp(TSTMR0) but copied to avoid dependency
+     * with fsl_tstmr.h not present in include path
+     */
+    return u64ReadTimeStamp(TSTMR1_1);
+#else
+    return 0ULL;
+#endif
+}
+
+/*!
+ * \brief Compute number of microseconds between 2 timestamps expressed in number of TSTM 32kHz ticks
+ *
+ * \param [in] timestamp0 start timestamp from which duration is assessed.
+ * \param [in] timestamp1 end timestamp till which duration is assessed.
+ *
+ * \return uint64_t number of microseconds
+ *
+ */
+uint64_t PLATFORM_Get32kTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
+{
+#if defined gPlatformHasTstmr32K_d && (gPlatformHasTstmr32K_d > 0)
+
+    uint64_t duration_us;
+
+    duration_us = GetTimeStampDeltaTicks(timestamp0, timestamp1);
+    /* Prevent overflow */
+    duration_us &= TSTMR_MAX_VAL;
+    /* Normally useless but let Coverity know that the input is necessarily less than 2^56 */
+    /* Multiply by 1000000 (2^6 * 5^6) and divide by 32768 (2^15) can be be simplified to Multiplication by 125*125 and
+     * division by 512 */
+    /* Multiply by 125, inserting the division by 64 and then multiply again by 125 and finally divide by 8 prevents the
+     * overflow considering the argument is smaller than 2^56
+     */
+    duration_us *= 125ULL; /* Since timestamps are no more than 56 bit wide, multiplying by 125 is smaller than 2^63 */
+    duration_us >>= 6;     /* Dividing by 64 (2^6) yields a result strictly smaller than 2^57 */
+    duration_us *= 125ULL; /* Multiplying by 125 is necessarily strictly smaller than 2^64-1 */
+    duration_us >>= 3;     /* Divide by 8 (2^3)  */
+
+    return duration_us;
+#else
+    return ~0ULL;
+#endif
 }
 
 uint64_t PLATFORM_GetTimeStamp(void)
@@ -342,6 +402,56 @@ int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
 /************************************************************************************
  * Private functions
  ************************************************************************************/
+#if defined     gPlatformHasTstmr32K_d && (gPlatformHasTstmr32K_d > 0)
+static uint64_t u64ReadTimeStamp(TSTMR_Type *base)
+{
+    uint32_t reg_l;
+    uint32_t reg_h;
+    uint32_t regPrimask;
+
+    regPrimask = DisableGlobalIRQ();
+
+    /* A complete read operation should include both TSTMR LOW and HIGH reads. If a HIGH read does not follow a LOW
+     * read, then any other Time Stamp value read will be locked at a fixed value. The TSTMR LOW read should occur
+     * first, followed by the TSTMR HIGH read.
+     * */
+    reg_l = base->L;
+    __DMB();
+    reg_h = base->H;
+
+    EnableGlobalIRQ(regPrimask);
+
+    return (uint64_t)reg_l | (((uint64_t)reg_h) << 32U);
+}
+
+/*!
+ * \brief Compute number of ticks between 2 timestamps expressed in number of TSTMR ticks
+ *
+ * \param [in] timestamp0 start timestamp.
+ * \param [in] timestamp1 end timestamp.
+ *
+ * \return uint64_t number of TSTMR ticks
+ *
+ */
+static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
+{
+    uint64_t delta_ticks;
+
+    timestamp0 &= TSTMR_MAX_VAL; /* sanitize arguments */
+    timestamp1 &= TSTMR_MAX_VAL;
+
+    if (timestamp1 >= timestamp0)
+    {
+        delta_ticks = timestamp1 - timestamp0;
+    }
+    else
+    {
+        /* In case the 56-bit counter has wrapped */
+        delta_ticks = TSTMR_MAX_VAL - timestamp0 + timestamp1 + 1ULL;
+    }
+    return delta_ticks;
+}
+#endif
 
 static void PLATFORM_UpdateFrequency(void)
 {

@@ -118,12 +118,33 @@ uint8_t PLATFORM_GetChipRevision(void);
 uint64_t PLATFORM_GetTimeStamp(void);
 
 /*!
+ * \brief Returns current timestamp in 32kHz ticks
+ *
+ * \return uint64_t timestamp (raw TSTMR 32kHz ticks)
+ * \note implemented on KW43/MCXW70 platforms not KW45, KW47, MCXW71, MCXW72
+ */
+uint64_t PLATFORM_Get32KTimeStamp(void);
+
+/*!
  * \brief Returns the max timestamp value that can be returned by PLATFORM_GetTimeStamp
  *        Can be used by the user to handle timestamp wrapping
  *
  * \return uint64_t the max timestamp value
  */
 uint64_t PLATFORM_GetMaxTimeStamp(void);
+
+/*!
+ * \brief Compute number of microseconds between 2 timestamps expressed in number of 32kHz TSTMR ticks
+ *
+ * \param [in] timestamp0 start timestamp from which duration is assessed.
+ * \param [in] timestamp1 end timestamp till which duration is assessed.
+ *
+ * \return uint64_t number of microseconds - May return ~0ULL if not implemented.
+ *
+ *  \note only implemented on platforms having a 32kHz TSTMR instance (KW43/MCXW70)
+ *
+ */
+uint64_t PLATFORM_Get32kTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1);
 
 /*!
  * \brief  wait for the given delay in us
