@@ -185,6 +185,73 @@ int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t address,
         st = 0;
     }
     else
+#if (PLATFORM_ACCESS_ALIGNMENT_CONSTRAINT_LOG == 2u)
+    /* Need to check source address alignment on platforms requiring it */
+    {
+        /* temporary buffer size has to be multiple of 4! */
+        uint32_t tmp_buf[64 / sizeof(uint32_t)];
+        uint32_t chunkAlign_cnt = 0;
+        uint32_t offset         = address;
+        uint8_t *dst_ptr        = dest;
+
+        /* Correction for unaligned start address offset*/
+        if (length > 0u && (address % 4u != 0u))
+        {
+            uint32_t cor         = address % 4u;
+            uint32_t restTo4     = 4u - cor;
+            uint32_t segment_len = (length >= 4u ? restTo4 : length);
+
+            /* read whole 4B and copy desired segment to destination*/
+            st = mflash_drv_read(offset - cor, tmp_buf, 4u);
+
+            if (st != kStatus_Success)
+            {
+                return (int)st;
+            }
+
+            memcpy(dst_ptr, (uint8_t *)tmp_buf + cor, segment_len);
+
+            /* correct offset address, destination pointer and remaining data size */
+            offset += restTo4;
+            dst_ptr += restTo4;
+            if (restTo4 > length)
+            {
+                length = 0u;
+            }
+            else
+            {
+                length -= restTo4;
+            }
+        }
+
+        while (length > 0u)
+        {
+            size_t chunk = (length > sizeof(tmp_buf)) ? sizeof(tmp_buf) : length;
+            /* mflash demands size to be in multiples of 4 */
+            size_t chunkAlign4 = (chunk + 3u) & (~3u);
+
+            /* directly copy into destination if address and data size is aligned */
+            if ((uint32_t)dst_ptr % 4u == 0u && chunk % 4u == 0u)
+            {
+                st = mflash_drv_read(offset, (uint32_t *)(dst_ptr + chunkAlign_cnt * sizeof(tmp_buf)), chunkAlign4);
+            }
+            else
+            {
+                st = mflash_drv_read(offset, tmp_buf, chunkAlign4);
+                memcpy(dst_ptr + chunkAlign_cnt * sizeof(tmp_buf), (uint8_t *)tmp_buf, chunk);
+            }
+
+            if (st != kStatus_Success)
+            {
+                return (int)st;
+            }
+
+            length -= chunk;
+            offset += chunk;
+            chunkAlign_cnt++;
+        }
+    }
+#else
         do
         {
             uint8_t *p_dst;
@@ -255,6 +322,7 @@ int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t address,
             }
             st = 0;
         } while (false);
+#endif
 
     return (int)st;
 }
