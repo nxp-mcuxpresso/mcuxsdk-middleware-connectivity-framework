@@ -1,6 +1,5 @@
 /*
- * Copyright 2020-2023 NXP
- * All rights reserved.
+ * Copyright 2020-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -66,7 +65,10 @@ void PLATFORM_RemoteActiveReqWithoutDelay(void);
 void PLATFORM_RemoteActiveRel(void);
 
 /*!
- * \brief  Get Xtal 32MHz trim value
+ * \brief Returns the last XTAL32M applied by PLATFORM_UpdateXtal32MTrim().
+ * Note: this might not be accurate if the XTAL32M was updated by another
+ * API or by the host core. We want to avoid reading directly the RFMC
+ * because we would need to wake up the host core, increasing the power consumption.
  *
  * \return trimming value of the Xtal 32MHz
  *
@@ -74,12 +76,23 @@ void PLATFORM_RemoteActiveRel(void);
 uint8_t PLATFORM_GetXtal32MhzTrim(void);
 
 /*!
- * \brief  Set Xtal 32MHz trim value
+ * \brief Register a new XTAL32M trimming value.
+ * Note: the trimming value won't be applied immediately, it will only register the value.
+ * The new trimming value will be applied by PLATFORM_UpdateXtal32MTrim().
+ * We can't update the XTAL32M right now because the radio might be active
+ * The XTAL32M trimming must be updated during the optimal window
  *
  * \param[in] trim  trimming value to be set
  *
  */
 void PLATFORM_SetXtal32MhzTrim(uint8_t trim);
+
+/*!
+ * \brief Apply a new XTAL32M trimming value if a new trimming was registered
+ * with PLATFORM_SetXtal32MhzTrim()
+ *
+ */
+void PLATFORM_UpdateXtal32MTrim(void);
 
 /*!
  * \brief  Set chip revision

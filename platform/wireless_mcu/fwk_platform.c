@@ -249,9 +249,11 @@ static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t tem
             }
         }
 
-        /* Update the XTAL32M trim
-         * TODO: replace by a command sent to the NBU so the NBU can perform the update at the most optimal time */
-        PLATFORM_SetXtal32MhzTrim(cdac_trim_val, FALSE);
+        /* Send the new trimming value to the NBU
+         * The NBU will perform the update at the most optimal time, if possible.
+         * Depending on the radio activity, this update can happen late or never.
+         * This is a suggestion to the NBU to replace the trimming value, not a guarantee. */
+        ret = PLATFORM_SendNBUXtal32MTrim(cdac_trim_val);
     } while (false);
 
     return ret;

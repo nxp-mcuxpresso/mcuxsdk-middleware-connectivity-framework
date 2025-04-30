@@ -247,6 +247,20 @@ void PLATFORM_EnableFroNotification(int8_t enable);
 void PLATFORM_RegisterReceivedSeedRequest(nbu_seed_request_event_callback_t cb);
 
 /*!
+ * \brief Send a XTAL32M trimming value to the NBU.
+ * The trimming update will be performed by the NBU at the optimal time.
+ * While the update can be done by the Host core, this method is preferred
+ * because changing the trimming value during radio activity can degrade performances.
+ * The NBU will determine the best window to update the XTAL32M trimming value.
+ * Therefore, calling this function doesn't mean the new trimming value will be applied
+ * immediately, take it as a suggestion to the NBU.
+ *
+ * \param[in] trim the new XTAL32M trimming value
+ * \return int same as PLATFORM_FwkSrvSendPacket()
+ */
+int PLATFORM_SendNBUXtal32MTrim(uint8_t trim);
+
+/*!
  * @}  end of FWK_Platform_ICS addtogroup
  */
 /*!

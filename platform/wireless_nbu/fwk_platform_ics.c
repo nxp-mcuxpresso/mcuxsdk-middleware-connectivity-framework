@@ -353,10 +353,8 @@ static void PLATFORM_RxNbuVersionRequest(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxXtal32MTrimIndication(uint8_t *data, uint32_t len)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
-    PLATFORM_SetXtal32MhzTrim(data[1]);
-#endif
     (void)len;
+    PLATFORM_SetXtal32MhzTrim(data[1]);
 }
 
 static void PLATFORM_RxNbuApiRequest(uint8_t *data, uint32_t len)

@@ -1,6 +1,5 @@
 /*
- * Copyright 2020-2021 NXP
- * All rights reserved.
+ * Copyright 2020-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -62,6 +61,8 @@ typedef struct
 
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
 
+#define PLATFORM_XTAL32M_TRIM_INVALID 0xFFU
+
 /************************************************************************************
  * Private memory declarations
  ************************************************************************************/
@@ -70,10 +71,12 @@ typedef struct
 /* We have to adapt the divide register of the FRO depending the frequency of the core to keep a frequency for flash APB
  * clock & RF_CMC clock between 16MHz and 32MHz */
 static const uint8_t PLATFORM_FroDiv[] = {1U, 1U, 2U, 2U, 3U};
-
-/* Tells if the 32MHz Xtal trim value has been updated by CM33 (HWParameters) */
-static bool_t xtal32MhzTrimInitialized = FALSE;
 #endif
+
+/* tracks the last XTAL32M trimming value updated with PLATFORM_UpdateXtal32MTrim function */
+static uint8_t lastXtal32MTrim = PLATFORM_XTAL32M_TRIM_INVALID;
+/* saves a new XTAL32M trimming value to be applied when possible with PLATFORM_UpdateXtal32MTrim function */
+static uint8_t newXtal32MTrim = PLATFORM_XTAL32M_TRIM_INVALID;
 
 static volatile int8_t active_request_nb = 0;
 static uint8_t         chip_revision     = 0xFFU;
@@ -131,29 +134,41 @@ void PLATFORM_RemoteActiveRel(void)
 #endif
 }
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 uint8_t PLATFORM_GetXtal32MhzTrim(void)
 {
-    uint8_t ret = 0xFFU;
-
-    if (xtal32MhzTrimInitialized == TRUE)
-    {
-        ret = XCVR_GetXtalTrim();
-    }
-
-    return ret;
+    /* The current XTAL32M trimming value is supposed to be the last trimming
+     * applied with PLATFORM_UpdateXtal32MTrim().
+     * Note that this might not be accurate if the XTAL32M was updated by another
+     * API or by the host core.
+     * We want to avoid reading directly the RFMC because we would need to wake up
+     * the host core and therefore increase the power consumption. */
+    return lastXtal32MTrim;
 }
 
 void PLATFORM_SetXtal32MhzTrim(uint8_t trim)
 {
-    XCVR_SetXtalTrim(trim);
+    /* Register the new trimming value
+     * The trimming will be updated with PLATFORM_UpdateXtal32MTrim()
+     * We can't update the XTAL32M right now because the radio might be active
+     * The XTAL32M trimming must be updated during the optimal window */
+    newXtal32MTrim = trim & (RFMC_XO_TEST_CDAC_MASK >> RFMC_XO_TEST_CDAC_SHIFT);
+}
 
-    if (xtal32MhzTrimInitialized == FALSE)
+void PLATFORM_UpdateXtal32MTrim(void)
+{
+    uint32_t rfmc_xo;
+
+    if (newXtal32MTrim != lastXtal32MTrim)
     {
-        xtal32MhzTrimInitialized = TRUE;
+        PLATFORM_RemoteActiveReq();
+        rfmc_xo = RFMC->XO_TEST;
+        rfmc_xo &= ~(RFMC_XO_TEST_CDAC_MASK);
+        rfmc_xo |= RFMC_XO_TEST_CDAC(newXtal32MTrim);
+        RFMC->XO_TEST   = rfmc_xo;
+        lastXtal32MTrim = newXtal32MTrim;
+        PLATFORM_RemoteActiveRel();
     }
 }
-#endif
 
 void PLATFORM_SetChipRevision(uint8_t chip_rev_l)
 {

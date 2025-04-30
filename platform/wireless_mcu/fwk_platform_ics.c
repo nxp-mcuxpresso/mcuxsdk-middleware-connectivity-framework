@@ -480,6 +480,11 @@ void PLATFORM_RegisterReceivedSeedRequest(nbu_seed_request_event_callback_t cb)
     nbu_seed_req_callback = cb;
 }
 
+int PLATFORM_SendNBUXtal32MTrim(uint8_t trim)
+{
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvXtal32MTrimIndication_c, &trim, (uint16_t)sizeof(trim));
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
