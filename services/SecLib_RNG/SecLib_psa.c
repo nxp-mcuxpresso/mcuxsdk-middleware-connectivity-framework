@@ -19,13 +19,13 @@
 
 #include <stdint.h>
 #include "EmbeddedTypes.h"
+#include "fwk_config.h"
 #include "SecLib.h"
 #include "psa/crypto.h"
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
 #include "psa/crypto_extra.h"
-#include "entropy_poll.h"
-#include "p256-m_driver_entrypoints.h"
+#include "fsl_component_mem_manager.h"
 #include "p256-m.h"
 #include "FunctionLib.h"
 #include "fwk_platform_crypto.h"
@@ -39,14 +39,15 @@
 ********************************************************************************** */
 #define KEY_ID_BLE0 0x426c6530
 
-#define RAISE_ERROR(st, expected)                \
-    if (st != expected)                          \
-    {                                            \
-        PRINTF(                                  \
-            "\tassertion failed at %s:%d - "     \
-            "actual:-%d expected:-%d\r\n",       \
-            __FILE__, __LINE__, -st, -expected); \
-        break;                                   \
+#define RAISE_ERROR(st, expected)                                \
+    if ((st) != (expected))                                      \
+    {                                                            \
+        if (PRINTF("\tassertion failed at %s:%d - "              \
+                   "actual:-%d expected:-%d\r\n",                \
+                   __FILE__, __LINE__, -(st), -(expected)) > -1) \
+        {                                                        \
+            break;                                               \
+        }                                                        \
     }
 
 /*! *********************************************************************************
@@ -108,6 +109,7 @@ void SecLib_Init(void)
     psa_status_t status;
     do
     {
+        /* initialize psa crypto*/
         status = psa_crypto_init();
         RAISE_ERROR(status, PSA_SUCCESS)
     } while (false);
@@ -126,6 +128,7 @@ void SecLib_ReInit(void)
  ********************************************************************************** */
 void SecLib_DeInit(void)
 {
+    /* Deinitialize cryptographic hardware.*/
     (void)PLATFORM_TerminateCrypto();
 }
 
@@ -148,19 +151,13 @@ void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback)
 void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
 {
     const psa_algorithm_t alg        = PSA_ALG_SHA_256;
-    size_t                hashLength = 0;
+    size_t                hashLength = 0U; /* Initialize hash length to 0 */
     psa_status_t          status;
-    psa_hash_operation_t  op = psa_hash_operation_init();
 
     do
     {
-        status = psa_hash_setup(&op, alg);
-        RAISE_ERROR(status, PSA_SUCCESS);
-
+        /* SHA 256 computation */
         status = psa_hash_compute(alg, pData, numBytes, pOutput, SHA256_HASH_SIZE, &hashLength);
-        RAISE_ERROR(status, PSA_SUCCESS);
-
-        status = psa_hash_abort(&op);
         RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
 }
@@ -201,27 +198,24 @@ void SecLib_XorN(uint8_t *pDst, const uint8_t *pSrc, uint8_t n)
  ********************************************************************************** */
 void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
 {
-    enum
-    {
-        block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES),
-        key_bits   = AES_128_KEY_BYTE_LEN,
-    };
-    const psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
+    size_t                key_bits = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
+    psa_status_t          status;
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
 
-    psa_status_t         status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t         key        = 0;
-    size_t               output_len = 0;
-
+    /* key initialisation before import */
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
 
     do
     {
-        status = psa_import_key(&attributes, pKey, key_bits, &key);
+        status = psa_import_key(&attributes, pKey, key_bits, &key); /* import the key in psa and get its id */
         RAISE_ERROR(status, PSA_SUCCESS);
 
+        /* execute encryption with ECB NO PADDING */
         status = psa_cipher_encrypt(key, alg, pInput, AES_BLOCK_SIZE, pOutput, AES_BLOCK_SIZE, &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
@@ -248,31 +242,29 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  ********************************************************************************** */
 void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
 {
-    enum
-    {
-        block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES),
-        key_bits   = AES_128_KEY_BYTE_LEN,
-    };
-    const psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
+    size_t                key_bits = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
+    psa_status_t          status;
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
 
-    psa_status_t         status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t         key        = 0;
-    size_t               output_len = 0;
-
+    /* key initialisation before import */
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
 
     do
     {
+        /* import pKey and get the address of the imported key */
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
+        /* execute the encryption with our key*/
         status = psa_cipher_encrypt(key, alg, pInput, inputLen, pOutput, inputLen, &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
-        status = psa_destroy_key(key);
+        status = psa_destroy_key(key); /* destroy key after use */
         RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
 }
@@ -291,18 +283,14 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
  ********************************************************************************** */
 void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
 {
-    enum
-    {
-        block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES),
-        key_bits   = AES_128_KEY_BYTE_LEN,
-    };
-    const psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
+    size_t                key_bits = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
+    psa_status_t          status;
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
 
-    psa_status_t         status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t         key        = 0;
-    size_t               output_len = 0;
-
+    /* key initialisation before import */
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
@@ -312,9 +300,11 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
+        /* decrypt using ECB NO PADDING */
         status = psa_cipher_decrypt(key, alg, pInput, AES_BLOCK_SIZE, pOutput, AES_128_BLOCK_SIZE, &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
+        /* destroy key after use */
         status = psa_destroy_key(key);
         RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
@@ -334,19 +324,15 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
+#ifdef FSL_FEATURE_SOC_AES_HW
 void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
 {
-    enum
-    {
-        block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES),
-        key_bits   = AES_128_KEY_BYTE_LEN,
-    };
-    const psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
-
-    psa_status_t         status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t         key        = 0;
-    size_t               output_len = 0;
+    size_t                key_bits = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
+    psa_status_t          status;
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
 
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_algorithm(&attributes, alg);
@@ -364,6 +350,7 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
         RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
 }
+#endif
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CMAC on a message block accepting input data
@@ -384,18 +371,14 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
  ********************************************************************************** */
 void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
 {
-    enum
-    {
-        block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES),
-        key_bits   = AES_128_KEY_BYTE_LEN,
-    };
-    const psa_algorithm_t alg = PSA_ALG_CMAC;
+    size_t                key_bits = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg      = PSA_ALG_CMAC; /* Set algorithm to cmac */
+    psa_status_t          status;
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
 
-    psa_status_t         status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t         key        = 0;
-    size_t               output_len = 0;
-
+    /* key initialisation before import */
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
@@ -405,18 +388,18 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
-        psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
+        psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT; /* init cmac operation */
 
-        status = psa_mac_sign_setup(&operation, key, alg);
+        status = psa_mac_sign_setup(&operation, key, alg);      /* setup function */
         RAISE_ERROR(status, PSA_SUCCESS);
 
         /* Walk the input buffer from the end to the start and reverse the blocks
          * before calling the CMAC update function. */
-        uint8_t reversedBlock[AES_128_BLOCK_SIZE] = {0};
+        uint8_t reversedBlock[AES_128_BLOCK_SIZE] = {0U};
         pInput += inputLen;
         do
         {
-            uint32_t currentCmacInputBlkLen = 0;
+            uint32_t currentCmacInputBlkLen = 0U;
             if (inputLen < AES_128_BLOCK_SIZE)
             {
                 /* If this is the first and single block it is legal for it to have an input length of 0
@@ -432,15 +415,18 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
             /* Copy the input block to the reversed CMAC input buffer */
             FLib_MemCpyReverseOrder(reversedBlock, pInput, currentCmacInputBlkLen);
 
+            /* compute mac operation on a block */
             status = psa_mac_update(&operation, reversedBlock, currentCmacInputBlkLen);
             RAISE_ERROR(status, PSA_SUCCESS);
 
         } while (inputLen != 0U);
 
-        status = psa_mac_sign_finish(&operation, pOutput, PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, key_bits, alg), &output_len);
+        size_t macLen =
+            16U; /* value of PSA_MAC_LENGTH(PSA_KEY_TYPE_AES, key_bits, alg) but macro has multiple misras; */
+        status = psa_mac_sign_finish(&operation, pOutput, macLen, &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
-        status = psa_destroy_key(key);
+        status = psa_destroy_key(key); /* destroy key after use */
         RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
 }
@@ -462,18 +448,14 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
  ********************************************************************************** */
 void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
 {
-    enum
-    {
-        block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES),
-        key_bits   = AES_128_KEY_BYTE_LEN,
-    };
-    const psa_algorithm_t alg = PSA_ALG_CMAC;
+    size_t                key_bits = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg      = PSA_ALG_CMAC; /* set algorithm to cmac */
+    psa_status_t          status;
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
 
-    psa_status_t         status;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t         key        = 0;
-    size_t               output_len = 0;
-
+    /* key initialisation before import */
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
@@ -483,12 +465,135 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
+        /* compute mac operation on pInput */
         status = psa_mac_compute(key, alg, pInput, inputLen, pOutput, AES_BLOCK_SIZE, &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
-        status = psa_destroy_key(key);
+        status = psa_destroy_key(key); /* destroy key after use */
         RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
+}
+
+/*! *********************************************************************************
+ * \brief  This function performs AES-128-CCM on a message block.
+ *
+ * \param[in]  pInput       Pointer to the location of the input message (plaintext or ciphertext).
+ *
+ * \param[in]  inputLen     Length of the input plaintext in bytes when encrypting.
+ *                          Length of the input ciphertext without the MAC length when decrypting.
+ *
+ * \param[in]  pAuthData    Pointer to the additional authentication data.
+ *
+ * \param[in]  authDataLen  Length of additional authentication data.
+ *
+ * \param[in]  pNonce       Pointer to the Nonce.
+ *
+ * \param[in]  nonceSize    The size of the nonce (7-13).
+ *
+ * \param[in]  pKey         Pointer to the location of the 128-bit key.
+ *
+ * \param[out]  pOutput     Pointer to the location to store the plaintext data when decrypting.
+ *                          Pointer to the location to store the ciphertext data when encrypting.
+ *
+ * \param[out]  pCbcMac     Pointer to the location to store the Message Authentication Code (MAC) when encrypting.
+ *                          Pointer to the location where the received MAC can be found when decrypting.
+ *
+ * \param[in]  macSize     The size of the MAC.
+ *
+ * \param[in]  flags       Select encrypt/decrypt operations (gSecLib_CCM_Encrypt_c, gSecLib_CCM_Decrypt_c)
+ *
+ * \return 0 if encryption/decryption was successful; otherwise, error code for failed encryption/decryption
+ *
+ * \remarks At decryption, MIC fail is also signalled by returning a non-zero value.
+ *
+ ********************************************************************************** */
+uint8_t AES_128_CCM(const uint8_t *pInput,
+                    uint16_t       inputLen,
+                    const uint8_t *pAuthData,
+                    uint16_t       authDataLen,
+                    const uint8_t *pNonce,
+                    uint8_t        nonceSize,
+                    const uint8_t *pKey,
+                    uint8_t       *pOutput,
+                    uint8_t       *pCbcMac,
+                    uint8_t        macSize,
+                    uint32_t       flags)
+{
+    size_t               key_bits   = AES_128_KEY_BYTE_LEN;
+    psa_algorithm_t      alg        = PSA_ALG_CCM;
+    uint8_t             *buff       = MEM_BufferAlloc((uint32_t)(inputLen + (uint32_t)macSize));
+    psa_status_t         status     = PSA_ERROR_GENERIC_ERROR;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t         key        = 0U;
+    size_t               output_len = 0U;
+
+    if (buff != NULL && pInput != NULL && pAuthData != NULL && pNonce != NULL && pOutput != NULL && pCbcMac != NULL)
+    {
+        /* set key usage depending on flags */
+        if ((flags & gSecLib_CCM_Decrypt_c) != 0U)
+        {
+            psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
+        }
+        else
+        {
+            psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+        }
+
+        /* set the mac size of the algorithm to macSize, without this default is 32 */
+        alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(alg, (uint32_t)macSize);
+
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+
+        do
+        {
+            status = psa_import_key(&attributes, pKey, key_bits, &key);
+            RAISE_ERROR(status, PSA_SUCCESS);
+
+            if ((flags & gSecLib_CCM_Decrypt_c) != 0U)
+            {
+                /* combine pInput and pCbcMac in a buffer to comply with PSA prototype psa_aead_decrypt */
+                FLib_MemCpy(buff, pInput, inputLen);
+                FLib_MemCpy(buff + inputLen, pCbcMac, macSize);
+                status = psa_aead_decrypt(key, alg, pNonce, nonceSize, pAuthData, authDataLen, buff,
+                                          (uint32_t)(inputLen + (uint32_t)macSize), pOutput,
+                                          PSA_AEAD_DECRYPT_OUTPUT_MAX_SIZE(inputLen), &output_len);
+            }
+            else
+            {
+                status = psa_aead_encrypt(key, alg, pNonce, nonceSize, pAuthData, authDataLen, pInput, inputLen, buff,
+                                          (uint32_t)(inputLen + (uint32_t)macSize), &output_len);
+                /* split output buffer in pOutput and pCbcMac */
+                FLib_MemCpy(pOutput, buff, inputLen);
+                FLib_MemCpy(pCbcMac, buff + inputLen, macSize);
+            }
+            RAISE_ERROR(status, PSA_SUCCESS);
+
+            status = psa_destroy_key(key); /* destroy key after use */
+            RAISE_ERROR(status, PSA_SUCCESS);
+
+            (void)MEM_BufferFree(buff);
+        } while (false);
+    }
+    return (status == PSA_SUCCESS) ? (uint8_t)gSecSuccess_c : (uint8_t)gSecError_c;
+}
+
+/************************************************************************************
+ * \brief Checks whether a public key is valid (point is on the curve).
+ *
+ * \return TRUE if valid, FALSE if not
+ *
+ ************************************************************************************/
+bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey)
+{
+    bool_t ret = false;
+
+    if (ECP256_LePointValid(pKey))
+    {
+        ret = true;
+    }
+
+    return ret;
 }
 
 /************************************************************************************
@@ -502,7 +607,7 @@ secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
     return ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint,
                                   pDhKeyData->keepInternalBlob);
 }
-#include "fsl_component_mem_manager.h"
+
 /************************************************************************************
  * \brief Computes the Diffie-Hellman Key for an ECDH P256 key pair.
  *
@@ -572,8 +677,9 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
         if (psa_pECPKeyPair != NULL)
         {
             /* Once the key oject gets destroyed context is not ready anymore */
-            psa_destroy_key(psa_pECPKeyPair->OwnKey);
-            FLib_MemSet(psa_pECPKeyPair, 0, sizeof(psa_ecp256_context_t));
+            st = psa_destroy_key(psa_pECPKeyPair->OwnKey);
+            RAISE_ERROR(st, PSA_SUCCESS)
+            FLib_MemSet(psa_pECPKeyPair, 0U, sizeof(psa_ecp256_context_t));
             psa_pECPKeyPair = NULL;
         }
 
@@ -629,12 +735,11 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
 
     do
     {
-        uint8_t tempOut[16];
+        uint8_t tempOut[16] = {0u};
 
         /*! Check for NULL output pointers and return with proper status if this is the case. */
         if ((NULL == pMacKey) || (NULL == pLtk) || (NULL == pN1) || (NULL == pN2) || (NULL == pA1) || (NULL == pA2))
         {
-            result = gSecBadArgument_c;
             break;
         }
 
@@ -699,9 +804,9 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
 secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, const uint8_t *pR)
 {
     secResultType_t result           = gSecError_c;
-    uint8_t         tempAddrPart[16] = {0};
-    uint8_t         tempOutHash[16];
-    uint8_t         tempKey[16];
+    uint8_t         tempAddrPart[16] = {0u};
+    uint8_t         tempOutHash[16]  = {0u};
+    uint8_t         tempKey[16]      = {0u};
     do
     {
         /*! Check for NULL output pointers and return with proper status if this is the case. */
