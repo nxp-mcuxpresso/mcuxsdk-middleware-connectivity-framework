@@ -10,8 +10,11 @@
 
 #include <stdarg.h>
 #include "fwk_platform_crypto.h"
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 #include "els_pkc_mbedtls.h"
-
+#else
+#include "mcux_psa_els_pkc_common_init.h"
+#endif
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
