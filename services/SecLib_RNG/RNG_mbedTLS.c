@@ -304,8 +304,6 @@ int RNG_GetPseudoRandomData(uint8_t *pOut, uint8_t outBytes, uint8_t *pSeed)
             drbgResult = mbedtls_hmac_drbg_random(&mRngHmacDrbgCtx, pOut, outBytes);
             RNG_MUTEX_UNLOCK();
 
-            rng_ctx.mPRNG_Requests++;
-
             if (drbgResult != 0)
             {
                 ret = gRngInternalError_d;
