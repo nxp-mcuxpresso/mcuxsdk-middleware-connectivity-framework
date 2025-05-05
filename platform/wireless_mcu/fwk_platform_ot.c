@@ -66,7 +66,7 @@ int PLATFORM_InitOT(void)
         CHECK_AND_RAISE_ERROR(status, -5);
 #endif
 
-#if USE_NBU
+#if USE_NBU && !NBU_15_4_ONLY
         /* Send chip revision (A0 or A1) to NBU */
         status = PLATFORM_SendChipRevision();
         CHECK_AND_RAISE_ERROR(status, -6);
