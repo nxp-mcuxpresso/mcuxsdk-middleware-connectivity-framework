@@ -9,6 +9,7 @@
  ************************************************************************************/
 
 #include "sensors.h"
+#include "fwk_workq.h"
 
 #include "fwk_platform.h"
 #include "fwk_platform_sensors.h"
@@ -79,6 +80,12 @@ static volatile uint32_t CurrentTemperatureMeasIntervalMs = VALUE_NOT_AVAILABLE_
 
 static TIMER_MANAGER_HANDLE_DEFINE(mTempSensorTimer);
 
+static void Sensors_PeriodicTempWorkHandler(fwk_work_t *work);
+
+static fwk_work_t periodic_temp_trig_work = {
+    .handler = Sensors_PeriodicTempWorkHandler,
+};
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private function
@@ -122,13 +129,29 @@ static void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
      * SENSORS_RefreshTemperatureValue function will be called once the measurement is ready
      * and will schedule the next measurement to be done after interval time
      */
-    (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, 0U);
+    if (WORKQ_Submit(&periodic_temp_trig_work) < 0)
+    {
+        assert(0);
+    }
 }
 
 static void Sensors_TempMeasTimerCallback(void *pParam)
 {
     (void)pParam;
 
+    if (WORKQ_Submit(&periodic_temp_trig_work) < 0)
+    {
+        assert(0);
+    }
+}
+
+static void Sensors_TemperatureReadyCb(int32_t temperature_value)
+{
+    (void)SENSORS_RefreshTemperatureValue();
+}
+
+static void Sensors_PeriodicTempWorkHandler(fwk_work_t *work)
+{
     if (measurement_status == MEASUREMENT_IDLE)
     {
         SENSORS_TriggerTemperatureMeasurement();
@@ -138,11 +161,6 @@ static void Sensors_TempMeasTimerCallback(void *pParam)
         /* For recovery, retry to trig after 1ms time */
         (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, 1U);
     }
-}
-
-static void Sensors_TemperatureReadyCb(int32_t temperature_value)
-{
-    (void)SENSORS_RefreshTemperatureValue();
 }
 
 /************************************************************************************
@@ -179,6 +197,13 @@ void SENSORS_Init(void)
 
     if (kStatus_TimerSuccess !=
         TM_InstallCallback((timer_handle_t)mTempSensorTimer, Sensors_TempMeasTimerCallback, NULL))
+    {
+        assert(0);
+    }
+    /* The workqueue is used to post and execute the temperature
+     * trigger function upon periodic timer timeout events.
+     */
+    if (WORKQ_InitSysWorkQ() < 0)
     {
         assert(0);
     }

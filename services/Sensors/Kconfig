@@ -8,6 +8,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.sensors
     select MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
     select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_component.timer_manager
+    select MCUX_COMPONENT_middleware.wireless.framework.workq
     imply MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     depends on MCUX_COMPONENT_middleware.wireless.framework.platform
     help
