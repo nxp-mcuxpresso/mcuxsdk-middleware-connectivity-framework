@@ -17,7 +17,9 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/md.h"
-
+#if !defined(gPlatformIsNbu_d)
+#include "fwk_workq.h"
+#endif
 #if defined(gPlatformHasNbu_d) || defined(gPlatformIsNbu_d)
 #include "fwk_platform_ics.h"
 #endif
@@ -58,6 +60,17 @@ typedef struct rng_ctx_t
 
 /*! *********************************************************************************
 *************************************************************************************
+* Private prototypes
+*************************************************************************************
+********************************************************************************** */
+
+static int RNG_entropy_func(void *data, unsigned char *output, size_t len);
+#if !defined(gPlatformIsNbu_d)
+static void RNG_seed_needed_handler(fwk_work_t *work);
+#endif
+
+/*! *********************************************************************************
+*************************************************************************************
 * Private memory declarations
 *************************************************************************************
 ********************************************************************************** */
@@ -74,19 +87,17 @@ static RNG_context_t rng_ctx = {
     .mNeedReseed        = FALSE,
 };
 
+#if !defined(gPlatformIsNbu_d)
+static fwk_work_t seed_needed_work = {
+    .handler = RNG_seed_needed_handler,
+};
+#endif
+
 /*! *********************************************************************************
 *************************************************************************************
 * Public prototypes
 *************************************************************************************
 ********************************************************************************** */
-
-/*! *********************************************************************************
-*************************************************************************************
-* Private prototypes
-*************************************************************************************
-********************************************************************************** */
-
-static int RNG_entropy_func(void *data, unsigned char *output, size_t len);
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -116,7 +127,15 @@ int RNG_Init(void)
             result = gRngSuccess_d;
             break;
         }
-
+#if !defined(gPlatformIsNbu_d)
+        /* The workqueue is used to post and schedule seed
+         * trig upon user demand using RNG_NotifyReseedNeeded().
+         */
+        if (WORKQ_InitSysWorkQ() < 0)
+        {
+            break;
+        }
+#endif
         (void)SecLibMutexCreate();
 
         RNG_MUTEX_LOCK();
@@ -440,8 +459,14 @@ int RNG_SetSeed(void)
 
 int RNG_NotifyReseedNeeded(void)
 {
+    int status = 1;
+
     rng_ctx.mNeedReseed = TRUE;
-    return 1;
+
+#if !defined(gPlatformIsNbu_d)
+    status = WORKQ_Submit(&seed_needed_work);
+#endif
+    return status;
 }
 
 bool_t RNG_IsReseedNeeded(void)
@@ -508,4 +533,14 @@ static int RNG_entropy_func(void *data, unsigned char *output, size_t len)
 
     return result;
 }
+
+#if !defined(gPlatformIsNbu_d)
+static void RNG_seed_needed_handler(fwk_work_t *work)
+{
+    if (rng_ctx.mNeedReseed == TRUE)
+    {
+        (void)RNG_SetSeed();
+    }
+}
+#endif
 /********************************** EOF ***************************************/

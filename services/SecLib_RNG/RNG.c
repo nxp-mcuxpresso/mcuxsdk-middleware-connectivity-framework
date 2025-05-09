@@ -14,7 +14,9 @@
 #include "fsl_common.h" /* includes fsl_device_registers.h */
 #include "fsl_os_abstraction.h"
 #include "fwk_platform_rng.h"
-
+#if !defined(gPlatformIsNbu_d)
+#include "fwk_workq.h"
+#endif
 #if defined(gPlatformHasNbu_d) || defined(gPlatformIsNbu_d)
 #include "fwk_platform_ics.h"
 #endif
@@ -117,20 +119,6 @@ typedef struct rng_ctx_t
 
 /*! *********************************************************************************
 *************************************************************************************
-* Private memory declarations
-*************************************************************************************
-********************************************************************************** */
-
-static RNG_context_t rng_ctx = {
-    .Initialized                               = FALSE,
-    .mPrngIsSeeded                             = FALSE,
-    .needReseed                                = FALSE,
-    .PrngSeed[0 ... mPRNG_NoOfLongWords_c - 1] = 0U,
-    .mPRNG_Requests                            = gRngMaxRequests_d,
-};
-
-/*! *********************************************************************************
-*************************************************************************************
 * Public prototypes
 *************************************************************************************
 ********************************************************************************** */
@@ -161,6 +149,29 @@ static void     Rng_save_seed_to_flash(uint32_t seed);
 #endif
 
 static int RNG_GetPseudoRandomDataWithContext(void *ctx_data, unsigned char *output, size_t len);
+#if !defined(gPlatformIsNbu_d)
+static void RNG_seed_needed_handler(fwk_work_t *work);
+#endif
+
+/*! *********************************************************************************
+*************************************************************************************
+* Private memory declarations
+*************************************************************************************
+********************************************************************************** */
+
+static RNG_context_t rng_ctx = {
+    .Initialized                               = FALSE,
+    .mPrngIsSeeded                             = FALSE,
+    .needReseed                                = FALSE,
+    .PrngSeed[0 ... mPRNG_NoOfLongWords_c - 1] = 0U,
+    .mPRNG_Requests                            = gRngMaxRequests_d,
+};
+
+#if !defined(gPlatformIsNbu_d)
+static fwk_work_t seed_needed_work = {
+    .handler = RNG_seed_needed_handler,
+};
+#endif
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -186,6 +197,15 @@ int RNG_Init(void)
             status = gRngSuccess_d;
             break;
         }
+#if !defined(gPlatformIsNbu_d)
+        /* The workqueue is used to post and schedule seed
+         * trig upon user demand using RNG_NotifyReseedNeeded().
+         */
+        if (WORKQ_InitSysWorkQ() < 0)
+        {
+            break;
+        }
+#endif
         /* Create mutex here in case it was not done already.
          * Does nothing without error otherwise.
          */
@@ -576,13 +596,26 @@ int RNG_SetSeed(void)
 int RNG_NotifyReseedNeeded(void)
 {
     int status;
-    /* On NBU side, PLATFORM_RequestRngSeed sends an RPMSG to the Host core,
-     * however on the the Host side, RNG_NotifyReseedNeeded is also called from ISR
-     * but PLATFORM_RequestRngSeed just returns 1 */
-    status = PLATFORM_RequestRngSeed();
-    assert(status >= 0);
-    rng_ctx.needReseed = TRUE;
 
+    do
+    {
+        /* On NBU side, PLATFORM_RequestRngSeed sends an RPMSG to the Host core,
+         * however on the the Host side, RNG_NotifyReseedNeeded is also called from ISR
+         * but PLATFORM_RequestRngSeed just returns 1 */
+        status = PLATFORM_RequestRngSeed();
+        if (status < 0)
+        {
+            break;
+        }
+        rng_ctx.needReseed = TRUE;
+#if !defined(gPlatformIsNbu_d)
+        status = WORKQ_Submit(&seed_needed_work);
+        if (status < 0)
+        {
+            break;
+        }
+#endif
+    } while (false);
     return status;
 }
 
@@ -1054,4 +1087,13 @@ static uint32_t RNG_LCG(uint32_t prev_state)
 }
 #endif
 
+#if !defined(gPlatformIsNbu_d)
+static void RNG_seed_needed_handler(fwk_work_t *work)
+{
+    if (rng_ctx.needReseed == TRUE)
+    {
+        (void)RNG_SetSeed();
+    }
+}
+#endif
 /********************************** EOF ***************************************/
