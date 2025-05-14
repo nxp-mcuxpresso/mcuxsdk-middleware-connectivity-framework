@@ -1,6 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2019-2022 NXP
- * All rights reserved.
+ * Copyright 2019-2022,2025 NXP
  *
  * \file
  *
@@ -475,7 +474,7 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
             /* If ECC error detected, need to erase  */
             if (status == gHWParameterError_c)
             {
-                if (HAL_FlashEraseSector(MAIN_FLASH_PROD_DATA_ADDR, PLATFORM_INTFLASH_SECTOR_SIZE) !=
+                if (HAL_FlashEraseSector(PROD_DATA_FLASH_ADDR, PLATFORM_INTFLASH_SECTOR_SIZE) !=
                     kStatus_HAL_Flash_Success)
                 {
                     status = gHWParameterError_c;
