@@ -108,6 +108,12 @@ extern osa_status_t SecLibMutexUnlock(void);
     }
 #endif
 
+#define AES_BLOCK_ALIGN_MASK (0x0000000fUL)
+/* Compute number of whole AES block bytes */
+#define AES_WHOLE_BLOCK_BYTES(_LEN_) ((uint32_t)(_LEN_) & ~AES_BLOCK_ALIGN_MASK)
+/* Compute number of residual bytes constituting a partial AES block */
+#define AES_PARTIAL_BLOCK_BYTES(_LEN_) ((uint32_t)(_LEN_)&AES_BLOCK_ALIGN_MASK)
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private prototypes
@@ -778,7 +784,7 @@ secResultType_t AES_128_CBC_Encrypt(
     {
         if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
             /* If the input length is not a non zero multiple of AES 128 block size,  return */
-            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+            (inputLen < AES_BLOCK_SIZE) || (AES_PARTIAL_BLOCK_BYTES(inputLen) != 0U))
         {
             ret = gSecBadArgument_c;
             break;
@@ -850,7 +856,7 @@ secResultType_t AES_128_CBC_Decrypt(
     {
         if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
             /* If the input length is not a non zero multiple of AES 128 block size,  return */
-            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+            (inputLen < AES_BLOCK_SIZE) || (AES_PARTIAL_BLOCK_BYTES(inputLen) != 0U))
         {
             ret = gSecBadArgument_c;
             break;
@@ -931,7 +937,7 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
         uint8_t last_blk_msg_sz;
         uint8_t last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
         /* compute new length */
-        roundedLen      = (inputLen / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+        roundedLen      = AES_WHOLE_BLOCK_BYTES(inputLen);
         last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
         /* Perform AES-CBC operation on whole AES blocks */
         if (AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
@@ -989,17 +995,20 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
             returned an error.
             Yet the test below is to prevent a false MISRA error detection.
             */
-            if ((inputLen >= AES_BLOCK_SIZE) && (inputLen % AES_BLOCK_SIZE == 0u))
+            if ((inputLen >= AES_BLOCK_SIZE) && (AES_PARTIAL_BLOCK_BYTES(inputLen) == 0u))
             {
                 uint8_t *p_last_block = &pOutput[inputLen - AES_BLOCK_SIZE];
                 padding_len           = SecLib_DePadding(p_last_block);
                 if ((padding_len > 0u) && (padding_len <= AES_BLOCK_SIZE))
                 {
+                    /* Safe: inputLen is a multiple of AES_BLOCK_SIZE and >= AES_BLOCK_SIZE,
+                    padding_len is in [1..AES_BLOCK_SIZE], so subtraction cannot underflow */
                     newLen = inputLen - (uint32_t)padding_len;
                 }
             }
         }
     }
+    /* coverity [return_overflow:FALSE] see above */
     return newLen;
 }
 
@@ -1213,7 +1222,7 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
     n            = (uint16_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
-    residual_len = (uint8_t)(inputLen % AES_BLOCK_SIZE);
+    residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
 
     if (n == 0u)
     {
@@ -1297,7 +1306,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
     n            = (uint16_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
-    residual_len = (uint8_t)(inputLen % AES_BLOCK_SIZE);
+    residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
 
     if (n == 0u)
     {
@@ -3027,7 +3036,7 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
     AES_128_CMAC_Generate_Subkey(CMAC_p->Key, K1, K2);
 
     n            = (uint8_t)((CMAC_p->Len + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
-    residual_len = (uint8_t)(CMAC_p->Len % AES_BLOCK_SIZE);
+    residual_len = (uint8_t)(AES_PARTIAL_BLOCK_BYTES(CMAC_p->Len));
 
     if (n == 0u)
     {

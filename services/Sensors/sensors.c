@@ -98,6 +98,7 @@ static int32_t Sensors_SetLpConstraint(int32_t power_mode)
     if ((pfSensorsLowpowerCriticalCallbacks != NULL) &&
         (pfSensorsLowpowerCriticalCallbacks->SensorsEnterLowpowerCriticalFunc != NULL))
     {
+        /* Register Low Power constraints for sensors */
         status = pfSensorsLowpowerCriticalCallbacks->SensorsEnterLowpowerCriticalFunc(power_mode);
     }
     return status;
@@ -105,10 +106,11 @@ static int32_t Sensors_SetLpConstraint(int32_t power_mode)
 static int32_t Sensors_ReleaseLpConstraint(int32_t power_mode)
 {
     int32_t status = -1;
-    ;
+
     if ((pfSensorsLowpowerCriticalCallbacks != NULL) &&
         (pfSensorsLowpowerCriticalCallbacks->SensorsExitLowpowerCriticalFunc != NULL))
     {
+        /* Unregister Low Power constraints for sensors */
         status = pfSensorsLowpowerCriticalCallbacks->SensorsExitLowpowerCriticalFunc(power_mode);
     }
     return status;
@@ -125,7 +127,7 @@ static void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
     {
         CurrentTemperatureMeasIntervalMs = temperature_meas_interval_ms;
     }
-    /* trig one shot measurement
+    /* trigger one shot measurement
      * SENSORS_RefreshTemperatureValue function will be called once the measurement is ready
      * and will schedule the next measurement to be done after interval time
      */
@@ -138,7 +140,7 @@ static void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
 static void Sensors_TempMeasTimerCallback(void *pParam)
 {
     (void)pParam;
-
+    /* Submit temperature measurement job on timer expiration */
     if (WORKQ_Submit(&periodic_temp_trig_work) < 0)
     {
         assert(0);
@@ -158,9 +160,30 @@ static void Sensors_PeriodicTempWorkHandler(fwk_work_t *work)
     }
     else
     {
-        /* For recovery, retry to trig after 1ms time */
+        /* For recovery, retry to trigger after 1ms time */
         (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, 1U);
     }
+}
+
+static timer_status_t Sensors_InitTimer(void)
+{
+    timer_status_t st;
+    do
+    {
+        /* Open timer */
+        st = TM_Open((timer_handle_t)mTempSensorTimer);
+        if (kStatus_TimerSuccess != st)
+        {
+            break;
+        }
+        /* Register temperature measurement callback */
+        st = TM_InstallCallback((timer_handle_t)mTempSensorTimer, Sensors_TempMeasTimerCallback, NULL);
+        if (kStatus_TimerSuccess != st)
+        {
+            break;
+        }
+    } while (false);
+    return st;
 }
 
 /************************************************************************************
@@ -190,16 +213,11 @@ void SENSORS_Init(void)
     }
 #endif
 
-    if (kStatus_TimerSuccess != TM_Open((timer_handle_t)mTempSensorTimer))
+    if (kStatus_TimerSuccess != Sensors_InitTimer())
     {
         assert(0);
     }
 
-    if (kStatus_TimerSuccess !=
-        TM_InstallCallback((timer_handle_t)mTempSensorTimer, Sensors_TempMeasTimerCallback, NULL))
-    {
-        assert(0);
-    }
     /* The workqueue is used to post and execute the temperature
      * trigger function upon periodic timer timeout events.
      */
@@ -245,6 +263,7 @@ void SENSORS_Deinit(void)
  */
 void Sensors_SetLowpowerCriticalCb(const Sensors_LowpowerCriticalCBs_t *pfCallback)
 {
+    /* Register Low Power callbacks */
     pfSensorsLowpowerCriticalCallbacks = pfCallback;
 }
 
@@ -277,6 +296,7 @@ void SENSORS_TriggerTemperatureMeasurementUnsafe(void)
         (void)Sensors_SetLpConstraint(gSensorsLpConstraint_c);
         if (false == PLATFORM_IsAdcInitialized())
         {
+            /* Initialize ADC if not done yet */
             PLATFORM_InitAdc();
             OSA_TimeDelay(gSensorsAdcCalibrationDurationInMs_c);
         }
@@ -306,7 +326,7 @@ int32_t SENSORS_RefreshTemperatureValue(void)
         if (CurrentTemperatureMeasIntervalMs != VALUE_NOT_AVAILABLE_32)
         {
             /* Restart a oneshot timer with the requested interval.
-             * Timer's timeout callback will trig the measurement.
+             * Timer's timeout callback will trigger the measurement.
              * Timer is restarted each time the temperature is ready to make the measurement periodic.
              */
             (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, CurrentTemperatureMeasIntervalMs);

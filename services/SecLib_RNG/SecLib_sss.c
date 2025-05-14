@@ -78,6 +78,12 @@ extern osa_status_t SecLibMutexUnlock(void);
 #define gSecLibUseDspExtension_d 0
 #endif
 
+#define AES_BLOCK_ALIGN_MASK (0x0000000fUL)
+/* Compute number of whole AES block bytes */
+#define AES_WHOLE_BLOCK_BYTES(_LEN_) ((uint32_t)(_LEN_) & ~AES_BLOCK_ALIGN_MASK)
+/* Compute number of residual bytes constituting a partial AES block */
+#define AES_PARTIAL_BLOCK_BYTES(_LEN_) ((uint32_t)(_LEN_)&AES_BLOCK_ALIGN_MASK)
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private type definitions
@@ -356,7 +362,7 @@ secResultType_t AES_128_CBC_Encrypt(
     {
         if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
             /* If the input length is not a non zero multiple of AES 128 block size,  return */
-            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+            (inputLen < AES_BLOCK_SIZE) || (AES_PARTIAL_BLOCK_BYTES(inputLen) != 0U))
         {
             ret = gSecBadArgument_c;
             break;
@@ -415,7 +421,7 @@ secResultType_t AES_128_CBC_Decrypt(
         aes_context_t ctx;
         if ((pInput == NULL) || (pInitVector == NULL) || (pKey == NULL) || (pOutput == NULL) ||
             /* If the input length is not a non zero multiple of AES 128 block size,  return */
-            (inputLen < AES_BLOCK_SIZE) || ((inputLen % AES_BLOCK_SIZE) != 0U))
+            (inputLen < AES_BLOCK_SIZE) || (AES_PARTIAL_BLOCK_BYTES(inputLen) != 0U))
         {
             ret = gSecBadArgument_c;
             break;
@@ -477,7 +483,7 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
         uint8_t last_blk_msg_sz;
         uint8_t last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
         /* compute new length */
-        roundedLen      = (inputLen / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+        roundedLen      = AES_WHOLE_BLOCK_BYTES(inputLen);
         last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
         /* Perform AES-CBC operation on whole AES blocks */
         if (AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
@@ -535,17 +541,20 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
             returned an error.
             Yet the test below is to prevent a false MISRA error detection.
             */
-            if ((inputLen >= AES_BLOCK_SIZE) && (inputLen % AES_BLOCK_SIZE == 0u))
+            if ((inputLen >= AES_BLOCK_SIZE) && (AES_PARTIAL_BLOCK_BYTES(inputLen) == 0u))
             {
                 uint8_t *p_last_block = &pOutput[inputLen - AES_BLOCK_SIZE];
                 padding_len           = SecLib_DePadding(p_last_block);
                 if ((padding_len > 0u) && (padding_len <= AES_BLOCK_SIZE))
                 {
+                    /* Safe: inputLen is a multiple of AES_BLOCK_SIZE and >= AES_BLOCK_SIZE,
+                    padding_len is in [1..AES_BLOCK_SIZE], so subtraction cannot underflow */
                     newLen = inputLen - (uint32_t)padding_len;
                 }
             }
         }
     }
+    /* coverity [return_overflow:FALSE] see above */
     return newLen;
 }
 
@@ -778,6 +787,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     }
     else
     {
+        /* Round allocated size to the upper multiple of AES_128_BLOCK_SIZE */
         reversedMsg = (uint8_t *)MEM_BufferAlloc(((inputLen + 15U) >> 4) << 4);
         /* Some MEM_BufferAlloc implementations return a NULL pointer for a 0 length allocation */
     }
@@ -785,11 +795,11 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     if (reversedMsg != NULL)
     {
         uint8_t *p   = &reversedMsg[0];
-        size_t   cnt = inputLen;
+        uint32_t cnt = inputLen;
         pInput += cnt;
         do
         {
-            uint32_t currentCmacInputBlkLen = 0;
+            uint32_t currentCmacInputBlkLen = 0UL;
             if (cnt < AES_128_BLOCK_SIZE)
             {
                 /* If this is the first and single block it is legal for it to have an input length of 0

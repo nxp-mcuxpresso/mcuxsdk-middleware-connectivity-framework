@@ -234,6 +234,9 @@ void AES_MMO_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
             if (numBytes > 0u)
             {
                 context->bytes = (uint8_t)(numBytes & 0xffu);
+                /* Coverity False positive : free_space_in_context_buffer can only but remain less than 16 so numBytes
+                 * cannot underflow */
+                /* coverity [ overflow_sink:FALSE] */
                 FLib_MemCpy(context->buffer.au8, pData, numBytes);
             }
         }

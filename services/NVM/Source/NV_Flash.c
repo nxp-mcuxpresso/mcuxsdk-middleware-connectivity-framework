@@ -135,7 +135,7 @@
 
 #define INT_FLASH_PHRASE_SZ_LOG2 4U /* Internal Flash phrase is 16 bytes */
 
-#define ROUND_FLOOR(_X_, _SHIFT_) ((((uint32_t)_X_) >> (_SHIFT_)) << (_SHIFT_))
+#define ROUND_FLOOR(_X_, _SHIFT_) (((uint32_t)_X_) & ((1 << (_SHIFT_)) - 1U))
 
 #if defined(__GNUC__)
 #ifndef gNvmErasePartitionWhenFlashing_c
@@ -3242,7 +3242,8 @@ NVM_STATIC void InitNVMConfig(void)
 
 /******************************************************************************
  * Name: NvUpdateSize
- * Description: Updates the size to be a multiple of 4 or 8 depending on the flash controller
+ * Description: Updates the size to be a multiple of the flash controller
+ * phrase size (4, 8 or 16)
  * Parameter(s): [IN] size - size to be updated
  * Return: the computed size
  *****************************************************************************/
@@ -4132,7 +4133,7 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
             /* check if the destination is longword aligned or not */
             if (misalignedBytes != 0U)
             {
-                /* align to previous 32 bit boundary */
+                /* align to previous phrase boundary */
                 dstAddress &= ((uint32_t) ~(uint32_t)((uint32_t)PGM_SIZE_BYTE - 1UL));
 
                 /* compute the loop end */
@@ -4156,7 +4157,7 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
                     NV_FlashProgramUnaligned(dstAddress, (uint16_t)sizeof(cacheBuffer), (uint8_t *)cacheBuffer, TRUE);
                 if (gNVM_OK_c == status)
                 {
-                    /* align to next 32 bit boundary */
+                    /* align to next phrase boundary */
                     dstAddress += (uint32_t)sizeof(cacheBuffer);
                 }
             }
@@ -4164,10 +4165,20 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
             if (gNVM_OK_c == status)
             {
                 /* write to Flash destination page the rest of the aligned data */
-                uint16_t sz      = (uint16_t)((uint32_t)diffSize - (uint32_t)innerOffset);
-                uint8_t *src_ptr = (uint8_t *)pNVM_DataTable[srcTblEntryIdx].pData +
-                                   (diffIdx * pNVM_DataTable[srcTblEntryIdx].ElementSize) + innerOffset;
-                status = NV_FlashProgramUnaligned(dstAddress, sz, src_ptr, TRUE);
+                if (diffSize >= innerOffset)
+                {
+                    /* Always true but please coverity */
+                    uint16_t sz      = diffSize - innerOffset;
+                    uint8_t *src_ptr = (uint8_t *)pNVM_DataTable[srcTblEntryIdx].pData +
+                                       (diffIdx * pNVM_DataTable[srcTblEntryIdx].ElementSize) + innerOffset;
+
+                    status = NV_FlashProgramUnaligned(dstAddress, sz, src_ptr, TRUE);
+                }
+                else
+                {
+                    assert(0);
+                    ;
+                }
             }
         }
         else
@@ -4240,7 +4251,7 @@ NVM_STATIC void NvInternalRecordsUpdate(uint32_t              srcMetaAddr,
 {
     NVM_RecordMetaInfo_t metaInfo    = {0U};
     uint32_t             metaAddress = srcMetaAddr;
-
+    uint16_t             ownerRecordId;
 #if gNvDualImageSupport_d
     NVM_DataEntry_t flashDataEntry;
     /* if the srcTblEntryIdx is invalid, it means the entry may is from NVM, then size should from NVM entry  */
@@ -4248,7 +4259,7 @@ NVM_STATIC void NvInternalRecordsUpdate(uint32_t              srcMetaAddr,
     {
         /* get current meta information */
         (void)NvGetMetaInfo(mNvActivePageId, metaAddress, &metaInfo);
-        /* get Entey table from NVM*/
+        /* get Entry table from NVM*/
         (void)NvGetTableEntry(metaInfo.fields.NvmDataEntryID, &flashDataEntry);
         /* clear the records offsets buffer */
         FLib_MemSet(maNvRecordsCpyOffsets, 0U, (uint32_t)sizeof(uint16_t) * flashDataEntry.ElementsCount);
@@ -4265,8 +4276,11 @@ NVM_STATIC void NvInternalRecordsUpdate(uint32_t              srcMetaAddr,
     }
 #endif /* gNvDualImageSupport_d */
 
-    while (metaAddress > (uint32_t)ownerRecordMetaInfo)
+    ownerRecordId = ownerRecordMetaInfo->fields.NvmDataEntryID;
+    for (metaAddress = srcMetaAddr; metaAddress > (uint32_t)ownerRecordMetaInfo;
+         metaAddress -= sizeof(NVM_RecordMetaInfo_t))
     {
+        uint16_t elt_index;
         /* get meta information */
         (void)NvGetMetaInfo(mNvActivePageId, metaAddress, &metaInfo);
 
@@ -4274,19 +4288,17 @@ NVM_STATIC void NvInternalRecordsUpdate(uint32_t              srcMetaAddr,
         if ((metaInfo.fields.NvValidationStartByte != metaInfo.fields.NvValidationEndByte) ||
             (metaInfo.fields.NvValidationStartByte != gValidationByteSingleRecord_c))
         {
-            metaAddress -= sizeof(NVM_RecordMetaInfo_t);
             continue;
         }
-
+        elt_index = metaInfo.fields.NvmElementIndex;
 #if gNvDualImageSupport_d
         if (srcTblEntryIdx == gNvInvalidTableEntryIndex_c)
         {
             /* if the srcTblEntryIdx is invalid, it means the entry may is from NVM, then not need if the element still
              * belongs to an valid RAM  */
-            if (metaInfo.fields.NvmElementIndex >= flashDataEntry.ElementsCount)
+            if (elt_index >= flashDataEntry.ElementsCount)
             {
-                /* JIA:maybe something wrong*/
-                metaAddress -= sizeof(NVM_RecordMetaInfo_t);
+                /* maybe something wrong*/
                 continue;
             }
         }
@@ -4294,25 +4306,26 @@ NVM_STATIC void NvInternalRecordsUpdate(uint32_t              srcMetaAddr,
         {
 #endif /* gNvDualImageSupport_d */
             /* check if the element still belongs to an valid RAM table entry */
-            if (metaInfo.fields.NvmElementIndex >= pNVM_DataTable[srcTblEntryIdx].ElementsCount)
+            if (elt_index >= pNVM_DataTable[srcTblEntryIdx].ElementsCount)
             {
                 /* the FLASH element is no longer a current RAM table entry element */
-                metaAddress -= sizeof(NVM_RecordMetaInfo_t);
                 continue;
             }
 #if gNvDualImageSupport_d
         }
 #endif /* gNvDualImageSupport_d */
         /* found a new single record not copied */
-        if ((metaInfo.fields.NvmDataEntryID == ownerRecordMetaInfo->fields.NvmDataEntryID) &&
-            (0U == maNvRecordsCpyOffsets[metaInfo.fields.NvmElementIndex]))
+        if (metaInfo.fields.NvmDataEntryID == ownerRecordId)
         {
-            /* Coverity: Speculative execution data leak
-             * Insert a barrier between the comparison and the memory accesses to prevent speculative execution */
-            __DSB();
-            maNvRecordsCpyOffsets[metaInfo.fields.NvmElementIndex] = metaInfo.fields.NvmRecordOffset;
+            if (0U == maNvRecordsCpyOffsets[elt_index])
+            {
+                /* Coverity: Speculative execution data leak
+                 * Insert a barrier between the comparison and the memory accesses to prevent speculative execution */
+                __DSB();
+                maNvRecordsCpyOffsets[elt_index] = metaInfo.fields.NvmRecordOffset;
+            }
         }
-        metaAddress -= sizeof(NVM_RecordMetaInfo_t);
+        /* continue */
     }
 }
 
@@ -5826,6 +5839,9 @@ NVM_STATIC bool_t NvMetaAndRecordAddressRegulate(uint32_t  pageFreeSpace,
         /* empty page, first write */
 
         /* set new record address */
+        /* Coverity false positive: mNvVirtualPageProperty[mNvActivePageId].NvRawSectorEndAddress is already sanitized
+         * and great enough to prevent wrapping */
+        /* coverity[cert_int30_c_violation:FALSE] */
         *newRecordAddress = mNvVirtualPageProperty[mNvActivePageId].NvRawSectorEndAddress - sizeof(NVM_TableInfo_t) -
                             realRecordSize + 1U;
 
@@ -6595,15 +6611,16 @@ NVM_STATIC uint8_t GetRandomRange(uint8_t low, uint8_t high)
 #if defined gNvSalvageFromEccFault_d && (gNvSalvageFromEccFault_d > 0)
 static void Nv_ReportEccFault(uint32_t fault_address, int rNw)
 {
-#if defined gNvSalvageFromEccFault_d && (gNvSalvageFromEccFault_d > 0)
+    /* If a callback was registered prior to report address and direction of flash operation read or write */
     if (nv_fault_report_cb != NULL)
     {
         (*nv_fault_report_cb)(fault_address, rNw);
     }
-#else
-    NOT_USED(fault_address);
-    NOT_USED(rNw);
-#endif
+    else
+    {
+        NOT_USED(fault_address);
+        NOT_USED(rNw);
+    }
 }
 #endif
 
@@ -6685,10 +6702,10 @@ NVM_STATIC NVM_Status_t NV_FlashRead(uint32_t flash_addr, uint8_t *ram_buf, size
 #if defined             gNvVerifyReadBackAfterProgram_d && (gNvVerifyReadBackAfterProgram_d > 0)
 NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, size_t size, bool_t catch_ecc_err)
 {
-    NVM_Status_t st           = gNVM_OK_c;
-    uint32_t     remaining_sz = size;
-    uint32_t     offset       = 0U;
-    uint8_t      phrase[PGM_SIZE_BYTE];
+    NVM_Status_t st                    = gNVM_OK_c;
+    uint32_t     remaining_sz          = size;
+    uint32_t     offset                = 0U;
+    uint8_t      phrase[PGM_SIZE_BYTE] = {0};
 
     NOT_USED(catch_ecc_err);
 
@@ -6715,6 +6732,7 @@ NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, 
         else
 #endif
         {
+            /* coverity [overflow_sink:FALSE] */ /* read_sz cannot underflow */
             if (HAL_FlashRead(addr, read_sz, &phrase[0]) != kStatus_HAL_Flash_Success)
             {
                 /* HAL_FlashRead always returns kStatus_HAL_Flash_Success, so not really attainable */

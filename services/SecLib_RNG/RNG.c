@@ -609,6 +609,7 @@ int RNG_NotifyReseedNeeded(void)
         }
         rng_ctx.needReseed = TRUE;
 #if !defined(gPlatformIsNbu_d)
+        /* On MCU, submit a seed request to work queue  */
         status = WORKQ_Submit(&seed_needed_work);
         if (status < 0)
         {
@@ -621,6 +622,7 @@ int RNG_NotifyReseedNeeded(void)
 
 bool_t RNG_IsReseedNeeded(void)
 {
+    /* Return whether reseeding is required or not */
     return rng_ctx.needReseed;
 }
 
@@ -628,6 +630,7 @@ int RNG_SetExternalSeed(uint8_t *external_seed)
 {
     int status = gRngInternalError_d;
     FLib_MemCpy(rng_ctx.PrngSeed, external_seed, mPRNG_NoOfBytes_c);
+    /* Inject entropy from externeal seed octet string */
     status = PLATFORM_SendRngSeed(external_seed, mPRNG_NoOfBytes_c);
     if (status >= 0)
     {
@@ -1092,6 +1095,7 @@ static uint32_t RNG_LCG(uint32_t prev_state)
 #if !defined(gPlatformIsNbu_d)
 static void RNG_seed_needed_handler(fwk_work_t *work)
 {
+    /* Execute ressed request from WorkQ */
     if (rng_ctx.needReseed == TRUE)
     {
         (void)RNG_SetSeed();
