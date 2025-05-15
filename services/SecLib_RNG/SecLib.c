@@ -1205,14 +1205,14 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     uint8_t K1[16] = {0};
     uint8_t K2[16] = {0};
 
-    uint8_t  n;
+    uint16_t n;
     uint32_t i;
     uint8_t  flag;
     uint8_t  residual_len;
 
     AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-    n            = (uint8_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
+    n            = (uint16_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
     residual_len = (uint8_t)(inputLen % AES_BLOCK_SIZE);
 
     if (n == 0u)
@@ -1289,14 +1289,14 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     uint8_t K1[16] = {0};
     uint8_t K2[16] = {0};
 
-    uint8_t  n;
+    uint16_t n;
     uint32_t i;
     uint8_t  flag;
     uint8_t  residual_len;
 
     AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-    n            = (uint8_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
+    n            = (uint16_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
     residual_len = (uint8_t)(inputLen % AES_BLOCK_SIZE);
 
     if (n == 0u)
