@@ -6,6 +6,7 @@
 #define _HAL_MACROS_H_
 
 #include <stdint.h>
+#include <assert.h>
 
 /* Required for __REV definition */
 #include "cmsis_compiler.h"
@@ -211,5 +212,44 @@ static inline uint8_t __hal_ctz(uint32_t x)
         CONTAINER_OF_VALIDATE(_PTR_, _TYPE_, _FIELD_)                        \
         ((_TYPE_ *)(void *)(((char *)(_PTR_)) - offsetof(_TYPE_, _FIELD_))); \
     })
+
+static inline uint32_t HAL_GetPowerOfTwoShift(uint32_t x)
+{
+    uint32_t ret;
+    uint32_t clz_result;
+    uint32_t shift_nbr;
+
+    if (x <= 1U)
+    {
+        ret = 0U;
+    }
+    else
+    {
+        assert(x <= ((0xFFFFFFFFU >> 1) + 1U));
+
+        /* Use Count Leading Zeros to round x to the smallest power of two greater than or equal to x */
+        clz_result = (uint32_t)HAL_CLZ(x - 1U);
+        shift_nbr  = (uint32_t)32U - clz_result;
+
+        x = (uint32_t)1U << shift_nbr;
+
+        /* Use Count Trailing Zeros to get the shift */
+        ret = HAL_CTZ(x);
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Computes the shift count needed to represent a number as a power of two.
+ *
+ * This function calculates the number of right shifts required to reduce a power-of-two
+ * number equal to or greater than the input value `x` down to 1.
+ *
+ * @param x Input value.
+ * @return uint32_t Number of shifts.
+ */
+
+#define HAL_GETPOWEROF2SHIFT(x) HAL_GetPowerOfTwoShift(x)
 
 #endif

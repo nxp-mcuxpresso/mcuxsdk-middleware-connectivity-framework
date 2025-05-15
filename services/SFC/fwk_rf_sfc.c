@@ -88,7 +88,6 @@ static void     SFC_Calibrate(void);
 static void     SFC_MeasureCallback(status_t status);
 static int32_t  SFC_ComputeMMA(int32_t sample);
 static void     SFC_ResetFilterState(void);
-static uint32_t SFC_GetPowerOfTwoShift(uint32_t x);
 static uint32_t SFC_GetTimestamp(void);
 
 /* -------------------------------------------------------------------------- */
@@ -215,7 +214,7 @@ void SFC_Init(void)
     SFC_Enable(true);
 
     /* Initialize the filter shift based on the default filter size */
-    sfcHandle.filterState.shift = SFC_GetPowerOfTwoShift(sfcConfig.filterSize);
+    sfcHandle.filterState.shift = HAL_GETPOWEROF2SHIFT(sfcConfig.filterSize);
 
     PLATFORM_RemoteActiveReq();
 
@@ -432,7 +431,7 @@ void SFC_UpdateConfig(const sfc_config_t *config)
 
         /* Update the filter properties and reset it */
         sfcConfig.filterSize        = filterSize;
-        sfcHandle.filterState.shift = SFC_GetPowerOfTwoShift(sfcConfig.filterSize);
+        sfcHandle.filterState.shift = HAL_GETPOWEROF2SHIFT(sfcConfig.filterSize);
         SFC_ResetFilterState();
     }
 
@@ -714,28 +713,6 @@ static void SFC_ResetFilterState(void)
 {
     sfcHandle.filterState.sampleNumber = 0U;
     sfcHandle.filterState.sum          = 0;
-}
-
-static uint32_t SFC_GetPowerOfTwoShift(uint32_t x)
-{
-    uint32_t ret;
-
-    if (x <= 1)
-    {
-        ret = 0U;
-    }
-    else
-    {
-        assert(x <= ((0xFFFFFFFFU >> 1) + 1U));
-
-        /* Use Count Leading Zeros to round x to the smallest power of two greater than or equal to x */
-        x = 1U << (32U - HAL_CLZ(x - 1U));
-
-        /* Use Count Trailing Zeros to get the shift */
-        ret = HAL_CTZ(x);
-    }
-
-    return ret;
 }
 
 extern void LL_API_GetBleTiming(uint32_t *pNativeClock, uint16_t *pNativeClockOffset);
