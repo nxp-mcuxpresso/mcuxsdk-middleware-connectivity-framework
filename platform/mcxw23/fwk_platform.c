@@ -54,16 +54,6 @@ void PLATFORM_InitTimerManager(void)
         timerConfig.clockSrcSelect        = 0;
         timerConfig.hardwareTimerAlwaysOn = true;
 
-#if SOC_CTIMER_INSTANCE == 0U
-#if SDK_OS_FREE_RTOS
-        /* The interrupt may never be higher than configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY to prevent
-         * memory corruption */
-        NVIC_SetPriority(CTIMER0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 2);
-#endif /* SDK_OS_FREE_RTOS */
-#else  /* SOC_CTIMER_INSTANCE */
-#error Adapt the IRQn to match the CTIMER instance
-#endif /* SOC_CTIMER_INSTANCE */
-
         status = TM_Init(&timerConfig);
         assert_equal(kStatus_TimerSuccess, status);
         (void)status;
