@@ -5,6 +5,7 @@ mcux_set_list(RW61x_FAMILY "RW610 RW612")
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
     mcux_add_source(SOURCES
+        configs/fwk_config.h
         fwk_platform_definitions.h
         fwk_platform.c
         fwk_platform.h
@@ -15,7 +16,6 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
 
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls)
         mcux_add_source(SOURCES
-            configs/fwk_config.h
             configs/rw61x-mbedtls-config.h
             configs/SecLib_mbedtls_config.h
             DEVICE_IDS ${RW61x_FAMILY}
