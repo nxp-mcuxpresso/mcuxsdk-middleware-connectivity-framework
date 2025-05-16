@@ -2810,7 +2810,7 @@ static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey
     }
 
     /* DHkey object from pDhKeyData->outPoint can be deleted here */
-    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreNoDefragment);
+    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreDefragment);
 
     SECLIB_MUTEX_UNLOCK();
 
