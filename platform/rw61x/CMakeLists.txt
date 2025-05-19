@@ -22,6 +22,13 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
         )
     endif()
 
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
+        mcux_add_source(SOURCES
+            configs/SecLib_psa_config.h
+            DEVICE_IDS ${RW61x_FAMILY}
+        )
+    endif()
+
     mcux_add_include(INCLUDES
         .
         configs

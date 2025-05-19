@@ -22,5 +22,17 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72)
             configs
             DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
         )
+
+        if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
+            mcux_add_source(SOURCES
+                ../wireless_mcu/configs/SecLib_psa_config.h
+                DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
+                CORE_IDS "cm33_core0" "cm33"
+            )
+            mcux_add_include(INCLUDES
+                ../wireless_mcu/configs
+                DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
+            )
+        endif()
     endif()
 endif()
