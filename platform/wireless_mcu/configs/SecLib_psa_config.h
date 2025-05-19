@@ -25,8 +25,8 @@
  *  limitations under the License.
  */
 
-#ifndef MCUX_MBEDTLS_PSA_CRYPTO_CONFIG_H
-#define MCUX_MBEDTLS_PSA_CRYPTO_CONFIG_H
+#ifndef SECLIB_PSA_CONFIG_H
+#define SECLIB_PSA_CONFIG_H
 
 /**
  * This is an optional version symbol that enables compatibility handling of
@@ -693,15 +693,4 @@
 #define MBEDTLS_PLATFORM_FREE_MACRO \
     MEM_BufferFree /**< Default free macro to use, can be undefined. See MBEDTLS_PLATFORM_STD_FREE for requirements. */
 
-#include "mcux_mbedtls_accelerator_config.h"
-
-/* Target and application specific configurations
- *
- * Allow user to override any previous default.
- *
- */
-#if defined(MBEDTLS_USER_CONFIG_FILE)
-#include MBEDTLS_USER_CONFIG_FILE
-#endif
-
-#endif /* MCUX_MBEDTLS_PSA_CRYPTO_CONFIG_H */
+#endif             /* SECLIB_PSA_CONFIG_H */
