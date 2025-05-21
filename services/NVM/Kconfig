@@ -74,6 +74,8 @@ config gNvSalvageFromEccFault_d
     help
         (y/n - Perform NVM operations with ECC fault interception)
         No prefix in generated macro
+    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
 
 config gNvFragmentation_Enabled_d
     bool "Enable NVM defragmentation"
