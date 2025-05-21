@@ -1,4 +1,4 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/Common)
@@ -7,6 +7,7 @@ mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/DBG)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/FunctionLib)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/HWParameter)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/ModuleInfo)
+mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/MWSCoexistence)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/NVM)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/OtaSupport)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/PDM)
