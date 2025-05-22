@@ -255,7 +255,6 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
  ************************************************************************************/
 secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /************************************************************************************
  * \brief Free any data allocated in the input structure.
  *
@@ -288,6 +287,7 @@ secResultType_t ECDH_P256_ComputeA2BKeySecure(const ecdhPublicKey_t *pInPeerPubl
  ************************************************************************************/
 secResultType_t ECDH_P256_FreeE2EKeyDataSecure(ecdhDhKey_t *pE2EKeyData);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief ECP256R1 generate public from private key passed as argument
  *

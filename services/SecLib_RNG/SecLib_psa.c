@@ -838,3 +838,107 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
     } while (false);
     return result;
 }
+
+void ECDH_P256_FreeDhKeyDataSecure(computeDhKeyParam_t *pDhKeyData)
+{
+    NOT_USED(pDhKeyData);
+}
+
+secResultType_t SecLib_DeriveBluetoothSKDSecure(const uint8_t *pInSKD,
+                                                const uint8_t *pLtkBlob,
+                                                bool_t         bOpenKey,
+                                                uint8_t       *pOutSKD)
+{
+    NOT_USED(pInSKD);
+    NOT_USED(pLtkBlob);
+    NOT_USED(bOpenKey);
+    NOT_USED(pOutSKD);
+
+    return gSecError_c;
+}
+
+secResultType_t SecLib_ObfuscateKeySecure(const uint8_t *pKey, uint8_t *pBlob, const uint8_t blobType)
+{
+    NOT_USED(pKey);
+    NOT_USED(pBlob);
+    NOT_USED(blobType);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_DeobfuscateKeySecure(const uint8_t *pBlob, uint8_t *pKey)
+{
+    NOT_USED(pBlob);
+    NOT_USED(pKey);
+    return gSecError_c;
+}
+
+secResultType_t ECDH_P256_ComputeA2BKeySecure(const ecdhPublicKey_t *pInPeerPublicKey, ecdhDhKey_t *pOutE2EKey)
+{
+    NOT_USED(pInPeerPublicKey);
+    NOT_USED(pOutE2EKey);
+    return gSecError_c;
+}
+
+secResultType_t ECDH_P256_FreeE2EKeyDataSecure(ecdhDhKey_t *pE2EKeyData)
+{
+    NOT_USED(pE2EKeyData);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_ExportA2BBlobSecure(const void *pKey, const secInputKeyType_t keyType, uint8_t *pOutKey)
+{
+    NOT_USED(pKey);
+    NOT_USED(keyType);
+    NOT_USED(pOutKey);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_ImportA2BBlobSecure(const uint8_t *pKey, const secInputKeyType_t keyType, uint8_t *pOutKey)
+{
+    NOT_USED(pKey);
+    NOT_USED(keyType);
+    NOT_USED(pOutKey);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_GenerateBluetoothF5KeysSecure(uint8_t       *pMacKey,
+                                                     uint8_t       *pLtk,
+                                                     const uint8_t *pW,
+                                                     const uint8_t *pN1,
+                                                     const uint8_t *pN2,
+                                                     const uint8_t  a1at,
+                                                     const uint8_t *pA1,
+                                                     const uint8_t  a2at,
+                                                     const uint8_t *pA2)
+{
+    NOT_USED(pMacKey);
+    NOT_USED(pLtk);
+    NOT_USED(pW);
+    NOT_USED(pN1);
+    NOT_USED(pN2);
+    NOT_USED(a1at);
+    NOT_USED(pA1);
+    NOT_USED(a2at);
+    NOT_USED(pA2);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pKey, const uint8_t *pR)
+{
+    NOT_USED(pHash);
+    NOT_USED(pKey);
+    NOT_USED(pR);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_GenerateBluetoothEIRKBlobSecure(const void  *pIRK,
+                                                       const bool_t blobInput,
+                                                       const bool_t generateDKeyIRK,
+                                                       uint8_t     *pOutEIRKblob)
+{
+    NOT_USED(pIRK);
+    NOT_USED(blobInput);
+    NOT_USED(generateDKeyIRK);
+    NOT_USED(pOutEIRKblob);
+    return gSecError_c;
+}

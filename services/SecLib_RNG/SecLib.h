@@ -761,7 +761,6 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
                                                const uint8_t  a2at,
                                                const uint8_t *pA2);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /************************************************************************************
  * \brief Function used to create the mac key and LTK using Bluetooth F5 algorithm.
  *        Version using key blobs and secure bus. Available on EdgeLock only.
@@ -850,7 +849,6 @@ secResultType_t SecLib_DeobfuscateKeySecure(const uint8_t *pBlob, uint8_t *pKey)
  *
  ********************************************************************************** */
 secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pKey, const uint8_t *pR);
-#endif
 
 /*! *********************************************************************************
  * \brief  This function implements the SMP ah cryptographic toolbox function which calculates the
@@ -887,7 +885,6 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
  ************************************************************************************/
 secResultType_t SecLib_GenerateSymmetricKey(const uint32_t keySize, const bool_t blobOutput, void *pOut);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /************************************************************************************
  * \brief Generates an EIRK blob from an ELKE blob or plain text symmetric key.
  *        Only implemented on EdgeLock.
@@ -933,7 +930,6 @@ secResultType_t SecLib_ExportA2BBlobSecure(const void *pKey, const secInputKeyTy
  *
  ************************************************************************************/
 secResultType_t SecLib_ImportA2BBlobSecure(const uint8_t *pKey, const secInputKeyType_t keyType, uint8_t *pOutKey);
-#endif
 
 /*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a AES MMO context structure
