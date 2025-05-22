@@ -633,6 +633,7 @@ int RNG_SetExternalSeed(uint8_t *external_seed)
     {
         rng_ctx.mPRNG_Requests = 1U;
         rng_ctx.mPrngIsSeeded  = TRUE;
+        rng_ctx.needReseed     = FALSE;
         status                 = gRngSuccess_d;
     }
     else
@@ -980,7 +981,7 @@ static int RNG_Specific_Init(uint32_t *pSeed)
             break;
         }
 
-        if (RNG_Specific_GetRandomData((uint8_t *)pSeed, mPRNG_NoOfBytes_c) != 0)
+        if (RNG_Specific_GetRandomData((uint8_t *)pSeed, mPRNG_NoOfBytes_c) <= 0)
         {
             ret = gRngInternalError_d;
             break;
@@ -1017,6 +1018,7 @@ static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
                 ret = gRngInternalError_d;
                 break;
             }
+            ret = (int)outBytes;
         }
     } while (false);
 
