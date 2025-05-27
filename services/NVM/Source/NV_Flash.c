@@ -135,7 +135,7 @@
 
 #define INT_FLASH_PHRASE_SZ_LOG2 4U /* Internal Flash phrase is 16 bytes */
 
-#define ROUND_FLOOR(_X_, _SHIFT_) (((uint32_t)_X_) & ((1 << (_SHIFT_)) - 1U))
+#define ROUND_FLOOR(_X_, _SHIFT_) ((((uint32_t)_X_) >> (_SHIFT_)) << (_SHIFT_))
 
 #if defined(__GNUC__)
 #ifndef gNvmErasePartitionWhenFlashing_c
