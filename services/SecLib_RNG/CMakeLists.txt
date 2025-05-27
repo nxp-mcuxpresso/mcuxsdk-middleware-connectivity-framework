@@ -87,8 +87,10 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
             RNG_psa.c
     )
 
+    # replace the original config file with ours
+    mcux_remove_macro("-DMBEDTLS_CONFIG_FILE=\\\"mcux_mbedtls_psa_crypto_config.h\\\"")
     mcux_add_configuration(
-        CC  "-DMBEDTLS_USER_CONFIG_FILE=\\\"SecLib_psa_config.h\\\""
+        CC  "-DMBEDTLS_CONFIG_FILE=\\\"SecLib_psa_config.h\\\""
     )
     mcux_add_macro(gSecLibUsePsa_d=1)
 endif()

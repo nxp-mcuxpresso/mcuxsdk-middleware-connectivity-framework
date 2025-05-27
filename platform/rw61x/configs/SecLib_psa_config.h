@@ -1,28 +1,10 @@
-/**
- * \file config.h
+/*!
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
  *
- * \brief Configuration options (set of defines)
+ * \file SecLib_psa_config.h
+ * \brief Config file used as MBEDTLS_CONFIG_FILE for SecLib PSA port
  *
- *  This set of compile-time options may be used to enable
- *  or disable features selectively, and reduce the global
- *  memory footprint.
- */
-/*
- *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *  Copyright 2022 NXP. Not a Contribution
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
  */
 
 #ifndef SECLIB_PSA_CONFIG_H
@@ -129,106 +111,6 @@
 #endif
 
 /**
- * \def MBEDTLS_AES_ALT
- *
- * MBEDTLS__MODULE_NAME__ALT: Uncomment a macro to let Mbed TLS use your
- * alternate core implementation of a symmetric crypto, an arithmetic or hash
- * module (e.g. platform specific assembly optimized implementations). Keep
- * in mind that the function prototypes should remain the same.
- *
- * This replaces the whole module. If you only want to replace one of the
- * functions, use one of the MBEDTLS__FUNCTION_NAME__ALT flags.
- *
- * Example: In case you uncomment MBEDTLS_AES_ALT, Mbed TLS will no longer
- * provide the "struct mbedtls_aes_context" definition and omit the base
- * function declarations and implementations. "aes_alt.h" will be included from
- * "aes.h" to include the new function definitions.
- *
- * Uncomment a macro to enable alternate implementation of the corresponding
- * module.
- *
- * \warning   MD5, DES and SHA-1 are considered weak and their
- *            use constitutes a security risk. If possible, we recommend
- *            avoiding dependencies on them, and considering stronger message
- *            digests and ciphers instead.
- *
- */
-//#define MBEDTLS_AES_ALT
-//#define MBEDTLS_ARIA_ALT
-//#define MBEDTLS_CAMELLIA_ALT
-//#define MBEDTLS_CCM_ALT
-//#define MBEDTLS_CHACHA20_ALT
-//#define MBEDTLS_CHACHAPOLY_ALT
-//#define MBEDTLS_CMAC_ALT
-//#define MBEDTLS_DES_ALT
-//#define MBEDTLS_DHM_ALT
-//#define MBEDTLS_ECJPAKE_ALT
-//#define MBEDTLS_GCM_ALT
-//#define MBEDTLS_NIST_KW_ALT
-//#define MBEDTLS_MD5_ALT
-//#define MBEDTLS_POLY1305_ALT
-//#define MBEDTLS_RIPEMD160_ALT
-//#define MBEDTLS_RSA_ALT
-//#define MBEDTLS_SHA1_ALT
-//#define MBEDTLS_SHA256_ALT
-//#define MBEDTLS_SHA512_ALT
-
-/**
- * \def MBEDTLS_SHA256_PROCESS_ALT
- *
- * MBEDTLS__FUNCTION_NAME__ALT: Uncomment a macro to let Mbed TLS use you
- * alternate core implementation of symmetric crypto or hash function. Keep in
- * mind that function prototypes should remain the same.
- *
- * This replaces only one function. The header file from Mbed TLS is still
- * used, in contrast to the MBEDTLS__MODULE_NAME__ALT flags.
- *
- * Example: In case you uncomment MBEDTLS_SHA256_PROCESS_ALT, Mbed TLS will
- * no longer provide the mbedtls_sha1_process() function, but it will still provide
- * the other function (using your mbedtls_sha1_process() function) and the definition
- * of mbedtls_sha1_context, so your implementation of mbedtls_sha1_process must be compatible
- * with this definition.
- *
- * \note If you use the AES_xxx_ALT macros, then it is recommended to also set
- *       MBEDTLS_AES_ROM_TABLES in order to help the linker garbage-collect the AES
- *       tables.
- *
- * Uncomment a macro to enable alternate implementation of the corresponding
- * function.
- *
- * \warning   MD5, DES and SHA-1 are considered weak and their use
- *            constitutes a security risk. If possible, we recommend avoiding
- *            dependencies on them, and considering stronger message digests
- *            and ciphers instead.
- *
- * \warning   If both MBEDTLS_ECDSA_SIGN_ALT and MBEDTLS_ECDSA_DETERMINISTIC are
- *            enabled, then the deterministic ECDH signature functions pass the
- *            the static HMAC-DRBG as RNG to mbedtls_ecdsa_sign(). Therefore
- *            alternative implementations should use the RNG only for generating
- *            the ephemeral key and nothing else. If this is not possible, then
- *            MBEDTLS_ECDSA_DETERMINISTIC should be disabled and an alternative
- *            implementation should be provided for mbedtls_ecdsa_sign_det_ext().
- *
- */
-//#define MBEDTLS_MD5_PROCESS_ALT
-//#define MBEDTLS_RIPEMD160_PROCESS_ALT
-//#define MBEDTLS_SHA1_PROCESS_ALT
-//#define MBEDTLS_SHA256_PROCESS_ALT
-//#define MBEDTLS_SHA512_PROCESS_ALT
-//#define MBEDTLS_DES_SETKEY_ALT
-//#define MBEDTLS_DES_CRYPT_ECB_ALT
-//#define MBEDTLS_DES3_CRYPT_ECB_ALT
-//#define MBEDTLS_AES_SETKEY_ENC_ALT
-//#define MBEDTLS_AES_SETKEY_DEC_ALT
-//#define MBEDTLS_AES_ENCRYPT_ALT
-//#define MBEDTLS_AES_DECRYPT_ALT
-//#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
-//#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
-//#define MBEDTLS_ECDSA_VERIFY_ALT
-//#define MBEDTLS_ECDSA_SIGN_ALT
-//#define MBEDTLS_ECDSA_GENKEY_ALT
-
-/**
  * \def MBEDTLS_ENTROPY_HARDWARE_ALT
  *
  * Uncomment this macro to let Mbed TLS use your own implementation of a
@@ -275,20 +157,7 @@
  */
 /* Short Weierstrass curves (supporting ECP, ECDH, ECDSA) */
 /* All except MBEDTLS_ECP_DP_SECP256R1_ENABLED are disabled in mbed-crypto - NXP */
-//#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
-//#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
-//#define MBEDTLS_ECP_DP_SECP384R1_ENABLED
-//#define MBEDTLS_ECP_DP_SECP521R1_ENABLED
-//#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
-//#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
-//#define MBEDTLS_ECP_DP_SECP256K1_ENABLED
-//#define MBEDTLS_ECP_DP_BP256R1_ENABLED
-//#define MBEDTLS_ECP_DP_BP384R1_ENABLED
-//#define MBEDTLS_ECP_DP_BP512R1_ENABLED
-/* Montgomery curves (supporting ECP) */
-//#define MBEDTLS_ECP_DP_CURVE25519_ENABLED
-//#define MBEDTLS_ECP_DP_CURVE448_ENABLED
 
 /**
  * \def MBEDTLS_ECP_NIST_OPTIM
@@ -638,26 +507,6 @@
 #define MBEDTLS_PSA_CRYPTO_C
 
 /**
- * \def MBEDTLS_RSA_C
- *
- * Enable the RSA public-key cryptosystem.
- *
- * Module:  library/rsa.c
- *          library/rsa_alt_helpers.c
- * Caller:  library/pk.c
- *          library/psa_crypto.c
- *          library/ssl_tls.c
- *          library/ssl*_client.c
- *          library/ssl*_server.c
- *
- * This module is used by the following key exchanges:
- *      RSA, DHE-RSA, ECDHE-RSA, RSA-PSK
- *
- * Requires: MBEDTLS_BIGNUM_C, MBEDTLS_OID_C
- */
-//#define MBEDTLS_RSA_C
-
-/**
  * \def MBEDTLS_NO_PLATFORM_ENTROPY
  *
  * Do not use built-in platform entropy functions.
@@ -693,4 +542,34 @@
 #define MBEDTLS_PLATFORM_FREE_MACRO \
     MEM_BufferFree /**< Default free macro to use, can be undefined. See MBEDTLS_PLATFORM_STD_FREE for requirements. */
 
-#endif             /* SECLIB_PSA_CONFIG_H */
+/**
+ * Uncomment the macro to let Mbed TLS use your alternate implementation of
+ * mbedtls_platform_gmtime_r(). This replaces the default implementation in
+ * platform_util.c.
+ *
+ * gmtime() is not a thread-safe function as defined in the C standard. The
+ * library will try to use safer implementations of this function, such as
+ * gmtime_r() when available. However, if Mbed TLS cannot identify the target
+ * system, the implementation of mbedtls_platform_gmtime_r() will default to
+ * using the standard gmtime(). In this case, calls from the library to
+ * gmtime() will be guarded by the global mutex mbedtls_threading_gmtime_mutex
+ * if MBEDTLS_THREADING_C is enabled. We recommend that calls from outside the
+ * library are also guarded with this mutex to avoid race conditions. However,
+ * if the macro MBEDTLS_PLATFORM_GMTIME_R_ALT is defined, Mbed TLS will
+ * unconditionally use the implementation for mbedtls_platform_gmtime_r()
+ * supplied at compile time.
+ */
+#define MBEDTLS_PLATFORM_GMTIME_R_ALT
+
+#include "mcux_mbedtls_accelerator_config.h"
+
+/* Target and application specific configurations
+ *
+ * Allow user to override any previous default.
+ *
+ */
+#if defined(MBEDTLS_USER_CONFIG_FILE)
+#include MBEDTLS_USER_CONFIG_FILE
+#endif
+
+#endif /* SECLIB_PSA_CONFIG_H */
