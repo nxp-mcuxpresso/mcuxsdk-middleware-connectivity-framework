@@ -18,6 +18,9 @@
 #define LCL_RFGPO_3_0  1U /* use RF_GPO[3:0] */
 #define LCL_RFGPO_7_4  2U /* use RF_GPO[7:4] */
 
+#if !defined(NDEBUG) || defined(HCIBB_ENABLE_DEBUG_FEATURES)
+#define ENABLE_DTEST
+#endif
 /*******************************************************************************
  * API
  ******************************************************************************/

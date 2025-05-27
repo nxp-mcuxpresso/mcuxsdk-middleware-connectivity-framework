@@ -220,7 +220,7 @@ static uint8_t       rfmcGpoOBE = 0U;               /* the current COEXT_RFGPO_O
 /*******************************************************************************
  *  private functions
  ******************************************************************************/
-#if !defined(NDEBUG)
+#ifdef ENABLE_DTEST
 static void dtest_pins_init(uint32_t option)
 {
     if ((option & DTEST0) != 0U) /* PTC0 alt 8 */
@@ -750,7 +750,7 @@ uint8_t PLATFORM_InitLcl(void)
 #endif
     uint8_t status = PLATFORM_InitLclRfGpo(rfgpo_id);
 
-#if !defined(NDEBUG)
+#ifdef ENABLE_DTEST
     /* Enable DTEST when building debug target */
     PLATFORM_InitLclDtest();
 #endif
