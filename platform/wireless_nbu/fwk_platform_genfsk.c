@@ -47,7 +47,7 @@ void PLATFORM_SetGenfskMaxTxPower(int8_t max_tx_power)
 
 #if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
     /* Configure SPC high power mode depending the targeted tx power and if the application core is allowing it */
-    PLATFORM_ConfigureSpcHighPowerMode(power_dBm);
+    PLATFORM_ConfigureSpcHighPowerMode(max_tx_power);
 #endif
 
     XCVR_setLdoAntTrim(ldo_ana_trim);
