@@ -365,7 +365,7 @@ static void FSCI_Task(osa_task_param_t argument)
             /* Process the client packet */
             (void)FSCI_ProcessRxPkt(mFsciClientPacketInfo.pFsciPacketToProcess, mFsciClientPacketInfo.fsciInterface);
 
-#else /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
+#else  /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
             /* Check for all existing messages in queue */
             if (MSG_QueueGetHead(&mFsciInputQueue) != NULL)
             {
@@ -383,13 +383,11 @@ static void FSCI_Task(osa_task_param_t argument)
                     (void)MSG_Free(pMsgOut);
                 }
 
-#if defined(SDK_OS_FREE_RTOS) || defined(FSL_RTOS_THREADX)
                 /* Signal the main_thread again if there are more messages pending */
                 if (MSG_QueueGetHead(&mFsciInputQueue) != NULL)
                 {
                     (void)OSA_EventSet((osa_event_handle_t)mFsciTaskEventId, (uint32_t)gFSCI_ClientPacketReady_c);
                 }
-#endif /* defined(SDK_OS_FREE_RTOS) || defined(FSL_RTOS_THREADX) */
             }
 #endif /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
         }
