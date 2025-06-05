@@ -83,6 +83,9 @@ typedef enum
     gOtaInternalFlashError_c,
     gOtaImageTooLarge_c,
     gOtaImageInvalid_c,
+    gOtaDataWritePending_c,
+    gOtaFlashOperationError_c,
+
 } otaResult_t;
 
 /*! Prototype of ota_completion callback */
@@ -216,16 +219,24 @@ otaResult_t OTA_StartImage(uint32_t length);
 otaResult_t OTA_PushImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImageLength, uint32_t *pImageOffset);
 
 /*! *********************************************************************************
- * \brief  Read and copy from previous pushed chunks (Flash or RAM) to RAM pointed by pData
+ * \brief  Reads and copies previously pushed chunks (from Flash or RAM) into RAM location
+   pointed by pData.
  *
- * \param[in] pData          pointer to the data chunk, to be allocated by caller
- * \param[in] length         the length of the data chunk
+ * This function pulls data that was earlier pushed using OTA_PushImageChunk().
+ * If some of the pushed chunks are still temporarily stored in RAM, the function will
+ * fetch the data from those staging buffers as needed.
+ *
+ * \param[in] pData          Pointer to the buffer where the data chunk will be copied.asm
+ *                           This buffer must be allocated by the caller.
+ * \param[in] length         Size of the data chunk to retrieve
  * \param[in] pImageOffset   if it is not null contains the current offset of the image
  *
  * \return
- *  - gOtaInvalidParam_c: pData is NULL or the resulting image would be bigger than the
- *       final image length specified with OTA_StartImage()
- *  - gOtaInvalidOperation_c: the process is not started
+ *  - gOtaInvalidParam_c: pData is NULL or the resulting image would exceed the final
+ *    image length specified with OTA_StartImage()
+ *  - gOtaInvalidOperation_c: The OTA process has not been started.
+ *  - gOtaDataWritePending_c: Not an error; warns that some data was were read from the
+ *                            staging buffers, instead of flash.
  *
  ********************************************************************************** */
 otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImageOffset);
