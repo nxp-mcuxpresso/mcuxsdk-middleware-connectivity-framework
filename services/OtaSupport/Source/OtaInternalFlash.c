@@ -141,8 +141,8 @@ static ota_flash_status_t InternalFlash_Init(void)
         FLib_MemSet(mEepromEraseBitmap, 0x00, StorageBitmapSize * 4U);
 #if (gEepromParams_WriteAlignment_c > 1)
         FLib_MemSet(mWriteBuff, 0xff, gEepromParams_WriteAlignment_c);
-        mWriteBuffLevel = 0;
-        mWriteBuffOffs  = 0;
+        mWriteBuffLevel = 0U;
+        mWriteBuffOffs  = 0U;
 #endif
 
         status = (ota_flash_status_t)HAL_FlashInit();
@@ -208,14 +208,16 @@ static ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
             /* There was something pending in mWriteBuff already */
             if ((offs >= mWriteBuffOffs) && (offs < mWriteBuffOffs + sizeof(mWriteBuff)))
             {
-                uint8_t remain_till_end_of_phrase = 0u;
-                /* The offset We mean to write to belongs to the in mWriteBuff phrase buffer */
+                uint32_t remain_till_end_of_phrase = 0u;
+                /* The target offset for writing resides within the mWriteBuff phrase buffer */
                 uint32_t phrase_offset;
                 uint32_t size_to_copy;
+                /* The check (offs >= mWriteBuffOffs) ascertains that phrase_offset will not wrap around */
                 phrase_offset             = (offs - mWriteBuffOffs);
                 remain_till_end_of_phrase = (sizeof(mWriteBuff) - phrase_offset);
                 /* Copy bytes from buffer to staging buffer where we accumulate a whole phrase  */
                 size_to_copy = MIN(NoOfBytes, remain_till_end_of_phrase);
+                /* coverity [overflow_sink:FALSE] */
                 FLib_MemCpy(&mWriteBuff[phrase_offset], Outbuf, size_to_copy);
                 mWriteBuffLevel += size_to_copy;
                 offs += size_to_copy;
@@ -347,8 +349,7 @@ static ota_flash_status_t InternalFlash_FlushWriteBuffer(void)
  ***********************************************************************************/
 static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf)
 {
-    union physical_address read_address;
-    ota_flash_status_t     status = kStatus_OTA_Flash_Success;
+    ota_flash_status_t status = kStatus_OTA_Flash_Success;
 
     if (!OtaCheckRangeBelongsToPartition(offs, NoOfBytes))
     {
@@ -356,18 +357,31 @@ static ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t of
     }
     else
     {
+#if (gEepromParams_WriteAlignment_c > 1)
+        /* Part of the data may have to be read from flash */
+        uint32_t end_offs          = offs + NoOfBytes;
+        uint32_t end_offs_inRam    = mWriteBuffOffs + mWriteBuffLevel;
+        uint32_t index_in_read_buf = 0U;
+        while (offs < end_offs)
+        {
+            if ((offs >= mWriteBuffOffs) && (offs < end_offs_inRam))
+            {
+                uint32_t internal_ram_idx = offs - mWriteBuffOffs;
+                inbuf[index_in_read_buf]  = mWriteBuff[internal_ram_idx];
+            }
+            else
+            {
+                inbuf[index_in_read_buf] = *(uint8_t *)PHYS_ADDR(offs);
+            }
+            index_in_read_buf++;
+            offs++;
+        }
+#else
+        /* Read data from flash, there is no staging buffer */
+        union physical_address read_address;
+
         read_address.value = PHYS_ADDR(offs);
         FLib_MemCpy(inbuf, read_address.pointer, NoOfBytes);
-
-#if (gEepromParams_WriteAlignment_c > 1)
-        /* Copy data from write buffer if needed */
-        for (uint32_t i = 0; i < mWriteBuffLevel; i++)
-        {
-            if ((mWriteBuffOffs + i) >= offs && (mWriteBuffOffs + i) < (offs + NoOfBytes))
-            {
-                inbuf[mWriteBuffOffs - offs + i] = mWriteBuff[i];
-            }
-        }
 #endif
     }
 
@@ -396,6 +410,8 @@ static ota_flash_status_t InternalFlash_EraseBlockBySectorNumber(uint32_t blk_nb
     ota_flash_status_t status = kStatus_OTA_Flash_Error;
     hal_flash_status_t st;
     assert(blk_nb < (ota_internal_partition->size / ota_internal_partition->sector_size));
+    /* blk_nb is constrained to remain smaller than the number of sectors in the partition no possible overflow */
+    /* coverity [overflow_sink:FALSE] */
     st = HAL_FlashEraseSector(PHYS_ADDR(blk_nb * ota_internal_partition->sector_size),
                               ota_internal_partition->sector_size);
     if (kStatus_HAL_Flash_Success == st)
@@ -439,8 +455,10 @@ static ota_flash_status_t InternalFlash_PrepareForWrite(uint32_t NoOfBytes, uint
     for (i = offs / ota_internal_partition->sector_size; i < endBlk; i++)
     {
         /* Check if the block was previously erased */
+        /* coverity[overflow : FALSE] - i is bounded by endBlk which is derived from valid flash size */
         if ((mEepromEraseBitmap[i / 32U] & ((uint32_t)1U << (i % 32U))) == 0U)
         {
+            /* coverity[overflow_sink : FALSE] */
             status = InternalFlash_EraseBlockBySectorNumber(i);
             if (kStatus_OTA_Flash_Success != status)
             {

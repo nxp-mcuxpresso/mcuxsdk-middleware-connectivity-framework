@@ -307,9 +307,10 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
             while (NoOfBytes > 0U)
             {
                 uint32_t sizeToCopy;
-                uint32_t pageId               = offs / OTA_WRITE_BUFFER_SIZE;
-                uint32_t pageOffs             = pageId * OTA_WRITE_BUFFER_SIZE;
-                uint32_t pageEndOffs          = (pageId + 1U) * OTA_WRITE_BUFFER_SIZE - 1U;
+                uint32_t pageId   = offs / OTA_WRITE_BUFFER_SIZE;
+                uint32_t pageOffs = pageId * OTA_WRITE_BUFFER_SIZE;
+                /* Coverity [overflow:FALSE] */ /* pageEndOffs cannot overflow */
+                uint32_t pageEndOffs          = pageOffs + OTA_WRITE_BUFFER_SIZE - 1U;
                 uint32_t remainingBytesInPage = pageEndOffs - offs + 1U;
                 uint32_t offset               = offs - pageOffs;
                 bool     isWriteBufferFull    = false;
@@ -327,6 +328,7 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
                 }
 
                 /* Copy the data to write in the buffer */
+                /* Coverity [overflow_sink:FALSE] */ /* offset is guaranteed to be less than OTA_WRITE_BUFFER_SIZE */
                 FLib_MemCpy(&ctx.mWriteBuffer[offset], Outbuf, sizeToCopy);
                 ctx.mWriteBufferIndex += sizeToCopy;
 
