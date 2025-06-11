@@ -24,6 +24,7 @@
 - [platform][mflash] Ensured proper address alignment for external flash reads in `PLATFORM_ReadExternalFlash()` when required by platform constraints.
 - [RNG] Corrected reseed flag behavior in `RNG_GetPseudoRandomData()` after reaching `gRngMaxRequests_d` threshold.
 - [platform][mflash] Fixed uninitialized variable issue in `PLATFORM_ReadExternalFlash()`.
+- [platform][wireless_nbu] Fixed an issue on KW47 where PLATFORM_InitFro192M incorrectly reads IFR1 from a hardcoded flash address (0x48000), leading to unstable FRO192M trimming. The function is now conditionally compiled for KW45 only.
 
 ### 7.0.2 revB mcux SDK 25.06.00
 
@@ -153,7 +154,7 @@
 
 ### 7.0.0 mcux SDK 24.12.00
 
-**Supported platforms:** 
+**Supported platforms:**
 - KW45x, KW47x, MCXW71, MCXW72, K32W1x
 - RW61x
 - RT595, RT1060, RT1170
