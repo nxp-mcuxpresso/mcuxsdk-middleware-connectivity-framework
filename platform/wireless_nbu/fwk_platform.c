@@ -277,9 +277,9 @@ void PLATFORM_Delay(uint64_t delayUs)
     PLATFORM_WaitTimeout(PLATFORM_GetTimeStamp(), delayUs);
 }
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 void PLATFORM_InitFro192M(void)
 {
+#ifdef KW45B41Z83_NBU_SERIES
     uint64_t soctrim1_01;
     uint32_t ifr1_soctrim1_0 = IFR1->SOCTRIM1.PHRASE[0];
     uint32_t ifr1_soctrim1_1 = IFR1->SOCTRIM1.PHRASE[1];
@@ -306,8 +306,8 @@ void PLATFORM_InitFro192M(void)
     FRO192M0->FROTRIM = FRO192M_FROTRIM_TRIMTEMP((uint32_t)((soctrim1_01 >> 22) & 0x3FU)) |
                         FRO192M_FROTRIM_TRIMCOAR((uint32_t)((soctrim1_01 >> 28) & 0x3FU)) |
                         FRO192M_FROTRIM_TRIMFINE((uint32_t)((soctrim1_01 >> 34) & 0xFFU));
-}
 #endif
+}
 
 void PLATFORM_SetFrequencyConstraintFromHost(uint8_t freq_constraint)
 {
