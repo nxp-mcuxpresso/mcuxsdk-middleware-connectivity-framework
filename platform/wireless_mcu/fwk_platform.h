@@ -65,6 +65,10 @@
 #define PLATFORM_XTAL_TEMP_COMP_LUT_SIZE (17)
 #endif
 
+#define PLATFORM_RADIO_ACTIVE            (-2)
+#define PLATFORM_RADIO_SWITCHING_TO_IDLE (-1)
+#define PLATFORM_RADIO_IDLE_FOREVER      (INT32_MAX)
+
 /* -------------------------------------------------------------------------- */
 /*                                Public types                                */
 /* -------------------------------------------------------------------------- */
@@ -456,6 +460,16 @@ void PLATFORM_RegisterXtal32MTempCompLut(const xtal_temp_comp_lut_t *lut);
  * \return int 0 if success, 1 if no LUT registered, negative value if error.
  */
 int PLATFORM_CalibrateXtal32M(int16_t temperature);
+
+/*!
+ * \brief Get whether connectivity Idle state (mainly radio) and duration
+ *
+ * \return -2 if connectivity LL/15.4 mac is active (busy)
+ *         -1 still active but switching to Idle state
+ *         >0  if Idle.  The value provides the Idle time duration in 32Khz ticks
+ *         INT32_MAX for undefined Idle time (no next activity scheduled)
+ */
+int PLATFORM_GetRadioIdleDuration32K(void);
 
 #if defined(__cplusplus)
 }

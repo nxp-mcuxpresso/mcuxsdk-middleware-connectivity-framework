@@ -10,6 +10,7 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70)
             configs/rpmsg_config.h
             configs/SecLib_mbedtls_config.h
             fwk_platform_definitions.h
+            ../../../framework_private/platform/kw43_mcxw70/fwk_platform_kw43_mcxw70.c
             DEVICE_IDS ${KW43_FAMILY}
         )
 

@@ -100,6 +100,7 @@ int32_t PLATFORM_EnableBleSecureKeyManagement(void);
 
 /*!
  * \brief Check if there is a pending connectivity activity
+ * \note  Deprecated - shall use PLATFORM_GetRadioIdleDuration32K() API instead
  *
  * \return bool true  : No next connectivity activity
  *                 false : Pending connectivity activity

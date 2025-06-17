@@ -13,6 +13,7 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71)
             configs/rpmsg_config.h
             configs/SecLib_mbedtls_config.h
             fwk_platform_definitions.h
+            fwk_platform_kw45_mcxw71.c
             DEVICE_IDS ${KW45_FAMILY} ${MCXW71_FAMILY}
             CORE_IDS "cm33_core0" "cm33"
         )

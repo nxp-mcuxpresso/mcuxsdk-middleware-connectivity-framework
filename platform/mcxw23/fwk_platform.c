@@ -203,3 +203,9 @@ void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t
     /* Not implemented */
     (void)cb;
 }
+
+int PLATFORM_GetRadioIdleDuration32K(void)
+{
+    /* TODO */
+    return PLATFORM_RADIO_IDLE_FOREVER;
+}
