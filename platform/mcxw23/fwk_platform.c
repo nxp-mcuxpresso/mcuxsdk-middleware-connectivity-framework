@@ -14,6 +14,7 @@
 #include "ble_controller.h"
 #include "fsl_debug_console.h"
 #include "fsl_component_timer_manager.h"
+#include "fwk_platform.h"
 #ifdef TIMER_PORT_TYPE_CTIMER
 #include "fsl_ctimer.h"
 #else
@@ -40,7 +41,7 @@
 /* -------------------------------------------------------------------------- */
 
 #ifdef TIMER_PORT_TYPE_CTIMER
-void PLATFORM_InitTimerManager(void)
+int PLATFORM_InitTimerManager(void)
 {
     /*Initialize timer manager*/
     timer_config_t timerConfig;
@@ -59,9 +60,11 @@ void PLATFORM_InitTimerManager(void)
         (void)status;
         timer_manager_initialized = 1;
     }
+
+    return 0;
 }
 #else
-void PLATFORM_InitTimerManager(void)
+int PLATFORM_InitTimerManager(void)
 {
     /*Initialize timer manager*/
     timer_config_t timerConfig;
@@ -84,6 +87,8 @@ void PLATFORM_InitTimerManager(void)
         (void)status;
         timer_manager_initialized = 1;
     }
+
+    return 0;
 }
 #endif /*TIMER_PORT_TYPE_CTIMER*/
 
@@ -143,9 +148,9 @@ uint64_t PLATFORM_GetMaxTimeStamp(void)
 #endif /* TIMER_PORT_TYPE_CTIMER */
 }
 
-void PLATFORM_Delay(uint32_t delayUs)
+void PLATFORM_Delay(uint64_t delayUs)
 {
-    SDK_DelayAtLeastUs(delayUs, SystemCoreClock);
+    SDK_DelayAtLeastUs((uint32_t)delayUs, SystemCoreClock);
 }
 
 void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)

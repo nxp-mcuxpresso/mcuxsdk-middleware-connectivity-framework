@@ -9,6 +9,6 @@
 
 #include "fsl_device_registers.h"
 
-#define FWK_MCXW32_FAMILIES 1
+#define FWK_MCXW23_FAMILIES 1
 
 #endif /* _FWK_PLAT_DEFS_H_ */
