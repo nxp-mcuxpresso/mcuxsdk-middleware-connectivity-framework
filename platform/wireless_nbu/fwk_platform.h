@@ -34,6 +34,18 @@ extern "C" {
 /* -------------------------------------------------------------------------- */
 
 /*!
+ * \brief Reset all platform variables to their initial state.
+ * This function only resets the software state, no hardware reset is performed.
+ * Also, only variables that don't need synchronization with the host will be reset.
+ *
+ * \note This function is thread-safe but not protected against interrupts
+ * with higher priority than PLATFORM_MAX_INTERRUPT_PRIORITY. Do not call
+ * this function from higher priority interrupt contexts.
+ *
+ */
+void PLATFORM_ResetContext(void);
+
+/*!
  * \brief  Request main domain to be active
  *
  *  On return from this function, the main domain and all its HW ressources can be accessed safely
@@ -93,6 +105,30 @@ void PLATFORM_SetXtal32MhzTrim(uint8_t trim);
  *
  */
 void PLATFORM_UpdateXtal32MTrim(void);
+
+/*!
+ * \brief Lock the XTAL32M trimming to prevent updates
+ *
+ * Increments the lock counter to prevent XTAL32M trimming updates
+ * through PLATFORM_UpdateXtal32MTrim().
+ *
+ * \note This function is thread-safe but not protected against interrupts
+ * with higher priority than PLATFORM_MAX_INTERRUPT_PRIORITY. Do not call
+ * this function from higher priority interrupt contexts.
+ */
+void PLATFORM_LockXtal32MTrim(void);
+
+/*!
+ * \brief Unlock the XTAL32M trimming to allow updates
+ *
+ * Decrements the lock counter. When the counter reaches zero,
+ * XTAL32M trimming updates through PLATFORM_UpdateXtal32MTrim() are allowed.
+ *
+ * \note This function is thread-safe but not protected against interrupts
+ * with higher priority than PLATFORM_MAX_INTERRUPT_PRIORITY. Do not call
+ * this function from higher priority interrupt contexts.
+ */
+void PLATFORM_UnlockXtal32MTrim(void);
 
 /*!
  * \brief  Set chip revision

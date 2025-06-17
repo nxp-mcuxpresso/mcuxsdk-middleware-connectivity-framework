@@ -82,7 +82,8 @@ static const uint8_t PLATFORM_FroDiv[] = {1U, 1U, 2U, 2U, 3U};
 /* tracks the last XTAL32M trimming value updated with PLATFORM_UpdateXtal32MTrim function */
 static uint8_t lastXtal32MTrim = PLATFORM_XTAL32M_TRIM_INVALID;
 /* saves a new XTAL32M trimming value to be applied when possible with PLATFORM_UpdateXtal32MTrim function */
-static uint8_t newXtal32MTrim = PLATFORM_XTAL32M_TRIM_INVALID;
+static uint8_t         newXtal32MTrim  = PLATFORM_XTAL32M_TRIM_INVALID;
+static volatile int8_t xtal32MTrimLock = 0;
 
 static volatile int8_t active_request_nb = 0;
 static uint8_t         chip_revision     = 0xFFU;
@@ -110,6 +111,16 @@ static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
 /************************************************************************************
  * Public functions
  ************************************************************************************/
+
+void PLATFORM_ResetContext(void)
+{
+    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+
+    /* Reset XTAL32M trim related variables */
+    xtal32MTrimLock = 0;
+
+    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+}
 
 void PLATFORM_RemoteActiveReq(void)
 {
@@ -171,7 +182,7 @@ void PLATFORM_UpdateXtal32MTrim(void)
 {
     uint32_t rfmc_xo;
 
-    if (newXtal32MTrim != lastXtal32MTrim)
+    if ((newXtal32MTrim != lastXtal32MTrim) && (xtal32MTrimLock == 0))
     {
         PLATFORM_RemoteActiveReq();
         rfmc_xo = RFMC->XO_TEST;
@@ -181,6 +192,25 @@ void PLATFORM_UpdateXtal32MTrim(void)
         lastXtal32MTrim = newXtal32MTrim;
         PLATFORM_RemoteActiveRel();
     }
+}
+
+void PLATFORM_LockXtal32MTrim(void)
+{
+    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+
+    xtal32MTrimLock++;
+
+    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+}
+
+void PLATFORM_UnlockXtal32MTrim(void)
+{
+    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+
+    xtal32MTrimLock--;
+    assert(xtal32MTrimLock >= 0);
+
+    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
 }
 
 void PLATFORM_SetChipRevision(uint8_t chip_rev_l)

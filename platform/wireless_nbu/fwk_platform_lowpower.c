@@ -114,6 +114,9 @@ void PLATFORM_EnterLowPower(void)
         /* Indicate remote CPU the radio is going to low power */
         PLATFORM_RemoteLowPowerIndication(true);
 
+        /* Check and update the XTAL32M CDAC if needed */
+        PLATFORM_UpdateXtal32MTrim();
+
         /* Configure RAM retention */
         PLATFORM_ConfigureRamRetention();
 
