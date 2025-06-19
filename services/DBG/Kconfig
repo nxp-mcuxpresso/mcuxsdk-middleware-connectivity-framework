@@ -6,4 +6,37 @@ menu "Framework Debug"
 rsource "sbtsnoop/Kconfig"
 rsource "SWO/Kconfig"
 
+config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers
+    bool "Fault Handlers for debug"
+    select MCUX_COMPONENT_component.osa
+    help
+      Saves the various Fault Status and Address Registers to help decode
+      cause of the fault.
+
+if MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers
+
+choice MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.selection
+    prompt "Fault handler selection APP / NBU Core"
+    config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.nbu_core
+        bool "Fault Handlers for NBU core"
+        depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
+                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
+    config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.app_core
+        bool "Fault Handlers for APP core"
+        depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
+                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
+                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
+        select MCUX_COMPONENT_utility.debug_console_lite
+endchoice
+
+config gDBG_LogInLinkLayerDebugStructEnabled_d
+    bool "For NBU usage to Log coredump data in LL RAM"
+    default y if MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.nbu_core
+    help
+        No debug console is available on NBU core, this allows the data to be stored directly to RAM.
+        No prefix in generated macro
+
+endif
+
 endmenu
