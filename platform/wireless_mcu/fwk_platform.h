@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2020-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2020-2023, 2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -366,6 +365,12 @@ void PLATFORM_Delay(uint64_t delayUs);
  *
  */
 void PLATFORM_WaitTimeout(uint64_t timestamp, uint64_t delayUs);
+
+/*!
+ * \brief  Set Core LDO normal voltage level and normal drive strength
+ *
+ */
+void PLATFORM_SetLdoCoreNormalDriveVoltage(void);
 
 /*!
  * \brief  Set the frequency constraint to the nbu for the host

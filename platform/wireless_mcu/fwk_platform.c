@@ -967,6 +967,16 @@ void mcmgr_imu_remote_active_req(void)
     PLATFORM_RemoteActiveReq();
 }
 
+void PLATFORM_SetLdoCoreNormalDriveVoltage(void)
+{
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+    spc_active_mode_core_ldo_option_t ldoOption;
+    ldoOption.CoreLDOVoltage       = kSPC_CoreLDO_NormalVoltage;
+    ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+    (void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
+#endif /* !defined(FPGA_TARGET) || (FPGA_TARGET == 0) */
+}
+
 void PLATFORM_SetNbuConstraintFrequency(PLATFORM_NbuConstraintFrequency_t freq_constraint)
 {
     (void)PLATFORM_FwkSrvSendPacket(gFwkSrvNbuUpdateFrequencyConstraintFromHost, &freq_constraint,
