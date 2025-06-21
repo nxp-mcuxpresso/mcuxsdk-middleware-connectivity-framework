@@ -111,8 +111,7 @@ static uint32_t SFC_GetTimestamp(void);
  * can take up to 2 periods of sync before starting counting so it must be larger than expected otherwise it could reach
  * its target before the CUT, leading to a timeout
  */
-#if (!defined(gNbuDisableLowpower_d) || (gNbuDisableLowpower_d == 0)) && \
-    (!defined(gNbuJtagCapability) || (gNbuJtagCapability == 0))
+#if (!defined(gNbuDisableLowpower_d) || (gNbuDisableLowpower_d == 0))
 static const sfa_config_t measureConfigurationTrig = {
     .mode                  = kSFA_FrequencyMeasurement0,
     .cutSelect             = kSFA_CUTSelect0, // 32K_CLK
@@ -127,7 +126,7 @@ static const sfa_config_t measureConfigurationTrig = {
     .cutTarget             = 64U,    // ~1.95ms @ 32768Hz
     .refTarget             = 68000U, // ~2.12ms @ 32MHz
 };
-#endif                               /* gNbuDisableLowpower_d gNbuJtagCapability */
+#endif                               /* gNbuDisableLowpower_d */
 
 /*!
  * \brief SFA measure configuration used to measure FRO32K clock compared to
@@ -522,8 +521,7 @@ static void SFC_StartCalibration(void)
 
     if (sfcHandle.enable == true)
     {
-#if (!defined(gNbuDisableLowpower_d) || (gNbuDisableLowpower_d == 0)) && \
-    (!defined(gNbuJtagCapability) || (gNbuJtagCapability == 0))
+#if (!defined(gNbuDisableLowpower_d) || (gNbuDisableLowpower_d == 0))
         if (sfcHandle.ppmTargetReached == true)
         {
             if (((RF_CMC1->RADIO_LP & RF_CMC1_RADIO_LP_BLE_WKUP_MASK) == 0U) &&
@@ -543,7 +541,7 @@ static void SFC_StartCalibration(void)
             }
         }
         else
-#endif /* gNbuDisableLowpower_d gNbuJtagCapability */
+#endif /* gNbuDisableLowpower_d */
         {
             /* Until the frequency is not within the ppm target, we use the direct measurement configuration
              * The SFC will measure and calibration the FRO consecutively until the ppm target is reached
