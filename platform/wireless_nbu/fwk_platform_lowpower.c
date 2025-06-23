@@ -55,7 +55,7 @@ static int  PLATFORM_SwitchSleepClockSource(bool switchTo32k);
 /* -------------------------------------------------------------------------- */
 static bool     initialized                  = false;
 static uint8_t  chipRevision                 = 0xFFU;
-static uint8_t  delayLpoCycle                = 0x2U;
+static uint8_t  delayLpoCycle                = 0x3U;
 static uint32_t bleMinimalSleepTimeAllowedHs = BLE_MINIMAL_SLEEP_TIME_ALLOWED;
 
 /* -------------------------------------------------------------------------- */

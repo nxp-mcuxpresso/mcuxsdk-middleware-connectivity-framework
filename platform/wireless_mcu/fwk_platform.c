@@ -81,7 +81,9 @@
 
 /*! @brief Delay from the 32MHz wake up of the LL to wake up the radio domain in number of 30.5us period */
 #if !defined(BOARD_RADIO_DOMAIN_WAKE_UP_DELAY)
-#define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x10U
+/* This value is incompatible with delayLpoCycle set to 2. Refer to BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT to check if the
+ * value has been overridden */
+#define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x16U
 #endif
 
 #if !defined(TSTMR_CLOCK_FREQUENCY_MHZ) || (TSTMR_CLOCK_FREQUENCY_MHZ != 1U)
