@@ -1,4 +1,25 @@
 ## Connectivity framework CHANGELOG
+
+### 7.0.3 revA mcux SDK 25.06.00
+
+#### Major Changes
+
+- [wireless_nbu] Enhanced XTAL32M trimming handling: updates are applied when requested by the application core and the NBU enters low-power mode, ensuring no interference from ongoing radio activity. Introduced new APIs to lock (`PLATFORM_LockXtal32MTrim()`) and unlock XTAL32M (`PLATFORM_UnlockXtal32MTrim()`) trimming updates using a counter-based mechanism. Also added a reset API (`PLATFORM_ResetContext()`) for platform-specific variables (currently limited to the trimming lock).
+- [wireless_mcu] Introduced a new API, `PLATFORM_SetLdoCoreNormalDriveVoltage()`, to enable support for NBU clock frequency at 64 MHz, as required by BLE channel sounding applications.
+- [wireless_mcu][wireless_nbu] Increased delayLpoCycle default from 2 to 3 to address link layer instabilities in low-power NBU use cases. Adjusted BOARD_RADIO_DOMAIN_WAKE_UP_DELAY from 0x10 to 0x16 to balance power consumption and stability. ⚠️ NBU may malfunction if delayLpoCycle (or BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT) is set to 2 while BOARD_RADIO_DOMAIN_WAKE_UP_DELAY is 0x16.
+
+#### Minor Changes (bug fixes)
+
+- [WorkQ] Increased stack size when RNG use mbedtls port and coverage is enabled.
+- [FSCI] Resolved an issue where messages remained unprocessed in the queue by ensuring `OSA_EventSet()` is triggered when pending messages are detected.
+- [OTA] Fixed a bug in in `OTA_PullImageChunk()` that prevented retrieval of data previously received via `OTA_PushImageChunk()` when still buffered in RAM during posted operations.
+- [OTA] Various MISRA and coverity fixes.
+- [mcxw23] Fixed an unused variable warning in `PLATFORM_RegisterNbuTemperatureRequestEventCb()` API.
+- [SFC] Remove obsolete flag `gNbuJtagCapability`.
+- [wireless_mcu] Introduced new API `PLATFORM_GetRadioIdleDuration32K()`. Deprecated `PLATFORM_CheckNextBleConnectivityActivity()` API.
+- [mcxw23] Aligned platform-specific implementations with the corresponding prototypes defined in wireless_mcu.
+- [DBG] Cleaned up fwk_fault_handler.c.
+
 ### 7.0.2 RFP mcux SDK 25.06.00
 
 #### Major Changes
