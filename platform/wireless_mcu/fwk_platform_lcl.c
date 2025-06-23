@@ -890,7 +890,7 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     {
         status = 0U;
 
-#if !defined(NDEBUG)
+#ifdef ENABLE_DTEST
         PLATFORM_Init_Dtest_TX_RX_EN(); /* Enable DTEST when building debug target */
 #endif
     }
@@ -951,7 +951,7 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
         /* configure RF_GPO pins for the output signals */
         status = PLATFORM_FEM_pin_init(rfgpo_sel, pa_fem_settings.ant_sel_pins_enable);
 
-#if !defined(NDEBUG)
+#ifdef ENABLE_DTEST
         PLATFORM_Init_Dtest_TX_RX_EN(); /* Enable DTEST when building debug target */
 #endif
     }
