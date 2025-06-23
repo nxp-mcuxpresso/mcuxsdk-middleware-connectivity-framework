@@ -58,6 +58,15 @@ typedef struct
         SensorsExitLowpowerCriticalFunc;  /*!< function callback pointer to reenable lowpower */
 } Sensors_LowpowerCriticalCBs_t;
 
+/*!
+ * \brief Structure containing Sensors module statistics
+ */
+typedef struct
+{
+    uint32_t temperatureMeasurementCount; /*!< Number of completed temperature measurements */
+    uint32_t batteryMeasurementCount;     /*!< Number of completed battery measurements */
+} sensors_statistics_t;
+
 /************************************************************************************
 *************************************************************************************
 * Public prototypes
@@ -143,6 +152,16 @@ uint8_t SENSORS_RefreshBatteryLevel(void);
  * \retval uint8_t Battery level
  */
 uint8_t SENSORS_GetBatteryLevel(void);
+
+/*!
+ * \brief Get current statistics from the Sensors module
+ *
+ * \param[out] statistics Pointer to statistics structure to be filled
+ *
+ * \return 0 on success or a negative value if an error occurs.
+ * \note gSensorsEnableStatistics shall be enabled to support statistics
+ */
+int8_t SENSORS_GetStatistics(sensors_statistics_t *statistics);
 
 /*! @}*/
 #endif /* _SENSORS_H_ */

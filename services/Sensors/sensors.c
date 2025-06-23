@@ -19,6 +19,7 @@
 #include "fsl_common.h"
 #include "fsl_component_timer_manager.h"
 #include "fwk_platform_ics.h"
+#include "fwk_hal_macros.h"
 
 /************************************************************************************
 *************************************************************************************
@@ -54,6 +55,10 @@ static OSA_MUTEX_HANDLE_DEFINE(mADCMutexId);
 #define gSensorsAdcCalibrationDurationInMs_c 0U
 #endif
 
+#ifndef gSensorsEnableStatistics
+#define gSensorsEnableStatistics 0U
+#endif
+
 typedef enum _sensors_measurement_s
 {
     MEASUREMENT_IDLE,
@@ -67,9 +72,15 @@ typedef enum _sensors_measurement_s
 *************************************************************************************
 *********************************************************************************** */
 
-static uint8_t                        LastBatteryLevel   = VALUE_NOT_AVAILABLE_8;
-static int32_t                        LastTemperature    = (int32_t)VALUE_NOT_AVAILABLE_32;
+static uint8_t LastBatteryLevel = VALUE_NOT_AVAILABLE_8;
+static int32_t LastTemperature  = (int32_t)VALUE_NOT_AVAILABLE_32;
+
 static volatile sensors_measurement_s measurement_status = MEASUREMENT_IDLE;
+
+#if defined(gSensorsEnableStatistics) && (gSensorsEnableStatistics > 0U)
+/* Module statistics */
+static sensors_statistics_t sensors_statistics = {.temperatureMeasurementCount = 0U, .batteryMeasurementCount = 0U};
+#endif
 
 /*!
  * @brief pointer to Callback function structure used to allow / disallow lowpower during Sensors activity
@@ -116,7 +127,7 @@ static int32_t Sensors_ReleaseLpConstraint(int32_t power_mode)
     return status;
 }
 
-static void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
+STATIC void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
 {
     if (temperature_meas_interval_ms == 0U)
     {
@@ -335,6 +346,13 @@ int32_t SENSORS_RefreshTemperatureValue(void)
         {
             (void)TM_Stop((timer_handle_t)mTempSensorTimer);
         }
+#if defined(gSensorsEnableStatistics) && (gSensorsEnableStatistics > 0U)
+        /* Saturating statistic increment */
+        if (sensors_statistics.temperatureMeasurementCount < UINT32_MAX)
+        {
+            sensors_statistics.temperatureMeasurementCount++;
+        }
+#endif
         measurement_status = MEASUREMENT_IDLE;
     }
     else
@@ -394,7 +412,14 @@ uint8_t SENSORS_RefreshBatteryLevel(void)
     {
         PLATFORM_GetBatteryLevel(&BatteryLevel);
         (void)Sensors_ReleaseLpConstraint(gSensorsLpConstraint_c);
-        LastBatteryLevel   = BatteryLevel;
+        LastBatteryLevel = BatteryLevel;
+#if defined(gSensorsEnableStatistics) && (gSensorsEnableStatistics > 0U)
+        /* Saturating increment */
+        if (sensors_statistics.batteryMeasurementCount < UINT32_MAX)
+        {
+            sensors_statistics.batteryMeasurementCount++;
+        }
+#endif
         measurement_status = MEASUREMENT_IDLE;
     }
     else
@@ -415,4 +440,33 @@ uint8_t SENSORS_GetBatteryLevel(void)
 {
     assert(LastBatteryLevel != VALUE_NOT_AVAILABLE_8);
     return LastBatteryLevel;
+}
+
+/*!
+ * @brief Get current statistics from the Sensors module
+ *
+ * @param[out] statistics Pointer to statistics structure to be filled
+ *
+ * @return 0 on success or a negative value if an error occurs.
+ */
+int8_t SENSORS_GetStatistics(sensors_statistics_t *statistics)
+{
+    int8_t status = 0;
+
+    if (statistics != NULL)
+    {
+#if defined(gSensorsEnableStatistics) && (gSensorsEnableStatistics > 0U)
+        ADC_MUTEX_LOCK();
+        *statistics = sensors_statistics; /* Copy the entire structure */
+        ADC_MUTEX_UNLOCK();
+#else
+        status = -1;
+#endif
+    }
+    else
+    {
+        status = -2;
+    }
+
+    return status;
 }
