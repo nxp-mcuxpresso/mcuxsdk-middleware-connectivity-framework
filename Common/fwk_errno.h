@@ -14,9 +14,9 @@
  * GCC defines the POSIX codes, so no need to define them here for this toolchain */
 #include <errno.h>
 
-#if defined(__IAR_SYSTEMS_ICC__)
+#if defined(__IAR_SYSTEMS_ICC__) || defined(__CC_ARM) || defined(__ARMCC_VERSION)
 
-/* IAR toolchain doesn't define POSIX error codes, so we re-define those we need for this toolchain */
+/* IAR and MDK toolchains don't define POSIX error codes, so we re-define those we need */
 
 #ifndef ENOMEM
 #define ENOMEM 12 /* Not enough space */
@@ -30,6 +30,6 @@
 #define EINVAL 22 /* Invalid argument */
 #endif
 
-#endif /* __IAR_SYSTEMS_ICC__ */
+#endif /* defined(__IAR_SYSTEMS_ICC__) || defined(__CC_ARM) || defined(__ARMCC_VERSION) */
 
 #endif /* _FWK_ERRNO_H_ */
