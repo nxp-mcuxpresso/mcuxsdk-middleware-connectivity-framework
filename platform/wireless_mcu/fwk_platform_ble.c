@@ -11,6 +11,7 @@
  * BOARD_FRO32K_PPM_TARGET and BOARD_FRO32K_FILTER_SIZE for fro32k calibration settings */
 #include "board_platform.h"
 
+#include "fwk_hal_macros.h"
 #include "fsl_common.h"
 #include "fsl_adapter_rpmsg.h"
 #include "fwk_config.h"
@@ -83,10 +84,18 @@
 #define PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS 1000U
 #define PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER          3U
 
+/* 30 bit max value : timestamp is originally a 32bit integer counting quarter microseconds,
+ * thence the loss of 2 bits when converted to microseconds.
+ */
+#define PLATFORM_BLE_TIMESTAMP_MAX 0x3fffffffUL        /* 30 bit max value : 0x3fffffffUL */
+#define PLATFORM_BLE_SLOT_MAX      0x7fffffffUL        /* 31 bit max value :  */
+#define PLATFORM_BLE_SLOT_USEC     625U                /* BLE slot is 625 usec */
+#define PLATFORM_TSTMR_MASK        0xFFFFFFFFFFFFFFULL /* 56 bit max value */
+
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
-static const uint8_t gBD_ADDR_OUI_c[PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
+STATIC const uint8_t gBD_ADDR_OUI_c[PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
 
 /* RPMSG related variables */
 
@@ -158,7 +167,7 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
  *
  * \param[in] max_tx_power Desired max TX power in dBm
  */
-static void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power);
+STATIC void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power);
 
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
 /*!
@@ -174,7 +183,29 @@ static void PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu);
  * \param[in] Provide pointer to buffer location when the BD address should be stored
  *
  */
-static void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress);
+STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress);
+
+/*!
+ * \brief Compute time elapsed since ll_ts (timestamp from Rx PDU descriptor) and time retrieved by core#0
+ *         by means of Controller_GetTimestampEx API
+ * \param[in]  ll_ts initial timestamp value (usec unit)
+ * \param[in]  ll_slot_cnt BLE slot counter (625usec) value returned by Controller_GetTimestampEx
+ * \param[in]  ll_slot_offset_usec microsecond offset in slot returned by Controller_GetTimestampEx.
+ *             must be in the range [0..624].
+ * \return number of microseconds elapsed between ll_ts and moment when Controller_GetTimestampEx was queried.
+ */
+STATIC uint32_t PLATFORM_ComputeTimeDiffFromBleSlotAndSlotOffset(uint32_t ll_ts,
+                                                                 uint32_t ll_slot_cnt,
+                                                                 uint16_t ll_slot_offset_usec);
+
+/*!
+ * \brief Compute TSTMR ticks elapsed between call to Controller_GetTimestampEx and now.
+ *
+ * \param[in]  tstmr0 timestamp value returned by NBU when it treated the request from Controller_GetTimestampEx.
+ *
+ * \return number of microseconds elapsed between tstmr0 and now.
+ */
+STATIC uint32_t PLATFORM_ComputeTimeDiffNbu2HostTstmr(uint64_t tstmr0);
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -187,7 +218,7 @@ int PLATFORM_InitBle(void)
     do
     {
         /* When waking up from deep power down mode (following Deep power down reset), it is necessary to release IO
-         * isolations. this is usually done in Low power initialization but it is necessay also
+         * isolation. this is usually done in Low power initialization but it is necessary also
          * to be done if the Application does not support low power */
         (void)PLATFORM_ClearIoIsolationFromLowPower();
 
@@ -205,7 +236,7 @@ int PLATFORM_InitBle(void)
         CHECK_AND_RAISE_ERROR(status, -4);
 
         /* Initialize PLatform Service intercore channel
-         *  Used to retrieve NBU version information but not retricted to this sole use.
+         *  Used to retrieve NBU version information but not restricted to this sole use.
          */
         status = PLATFORM_FwkSrvInit();
         CHECK_AND_RAISE_ERROR(status, -5);
@@ -339,6 +370,57 @@ bool PLATFORM_CheckNextBleConnectivityActivity(void)
     return true;
 }
 
+uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
+{
+    uint64_t delta = 0ULL;
+
+    do
+    {
+        uint64_t tstmr0         = 0ULL; /* TSTMR timestamp at which NBU returned HSLOT and quarter microsec */
+        uint32_t ll_timing_slot = 0UL;  /* NBU HSLOT counter converted to count of slots */
+        uint16_t ll_timing_us   = 0U;
+        uint32_t tstmr_delta_us;
+        uint32_t ll_time_diff;
+
+        /* coverity[assume] controllerTimestamp <= PLATFORM_BLE_TIMESTAMP_MAX */
+        /* controllerTimestamp is guaranteed to be < 2^30 by design */
+        if (controllerTimestamp > PLATFORM_BLE_TIMESTAMP_MAX)
+        {
+            break;
+        }
+        if (Controller_GetTimestampEx(&ll_timing_slot, &ll_timing_us, &tstmr0) != KOSA_StatusSuccess)
+        {
+            break;
+        }
+        /* Sanitize returned timestamp value, although not really useful since overflow would happen after 2284 years */
+        tstmr0 &= PLATFORM_TSTMR_MASK;
+
+        /* Controller_GetTimestampEx returns slot counter after conversion from half-slot, so a number smaller than
+         * 2^31. Likewise number of microseconds is bounded by 625.
+         * In order to have an arithmetic compatible with NBU, convert usec back to quarter usec and slots to half-slots.
+         */
+        ll_time_diff =
+            PLATFORM_ComputeTimeDiffFromBleSlotAndSlotOffset(controllerTimestamp, ll_timing_slot, ll_timing_us);
+        if (ll_time_diff == UINT32_MAX)
+        {
+            delta = 0ULL;
+            break;
+        }
+
+        /* Time differences are only ever computed over relatively small numbers that fit in a 32 bit variable
+         */
+        tstmr_delta_us = PLATFORM_ComputeTimeDiffNbu2HostTstmr(tstmr0);
+        if (tstmr_delta_us == UINT32_MAX)
+        {
+            delta = 0ULL;
+            break;
+        }
+        delta = (uint64_t)tstmr_delta_us + (uint64_t)ll_time_diff;
+    } while (false);
+    /* if delta time difference is 0 it points out an error */
+    return delta;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
@@ -393,7 +475,7 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
     return kStatus_HAL_RL_RELEASE;
 }
 
-static void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
+STATIC void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
 {
 #ifndef LATENCY_TESTS
     uint8_t ldo_ana_trim;
@@ -431,7 +513,7 @@ static void PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu)
 }
 #endif
 
-static void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
+STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
 {
     uint8_t macAddr[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE] = {0U};
 
@@ -479,34 +561,94 @@ static void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
                 PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
 }
 
-uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
+/*!
+ * \brief Compute TSTMR ticks elapsed between call to Controller_GetTimestampEx and now.
+ *
+ * \param[in]  tstmr0 timestamp value returned by NBU when it treated the request from Controller_GetTimestampEx.
+ *
+ * \return number of microseconds elapsed between tstmr0 and now.
+ */
+STATIC uint32_t PLATFORM_ComputeTimeDiffNbu2HostTstmr(uint64_t tstmr0)
 {
-    uint64_t delta = 0ULL, tstmr0 = 0ULL, ble_native_timestamp = 0ULL;
+    uint64_t tstmr_delta_us, now;
 
-    do
+    /* Get current TSTMR value */
+    now = PLATFORM_GetTimeStamp();
+    /* Compute difference with timestamp reported by NBU when queried by Controller_GetTimestampEx */
+    tstmr_delta_us = PLATFORM_GetTimeStampDeltaUs(tstmr0, now);
+
+    /* Disregard large values because between the time reported by the call to Controller_GetTimestampEx
+     * and the moment it gets treated, only a small delay can have elapsed. */
+    if (tstmr_delta_us > UINT32_MAX)
     {
-        uint32_t ll_timing_slot = 0U;
-        uint16_t ll_timing_us   = 0U;
-        uint64_t tstmr_delta_us, now;
-        if (Controller_GetTimestampEx(&ll_timing_slot, &ll_timing_us, &tstmr0) != KOSA_StatusSuccess)
-        {
-            break;
-        }
-        ble_native_timestamp = (uint64_t)(ll_timing_slot)*625ULL + (uint64_t)(ll_timing_us);
-        now                  = PLATFORM_GetTimeStamp();
-        tstmr_delta_us       = PLATFORM_GetTimeStampDeltaUs(tstmr0, now);
-        if (tstmr_delta_us > UINT32_MAX)
-        {
-            /* would denote of an error */
-            break;
-        }
-        if (ble_native_timestamp < controllerTimestamp)
-        {
-            break;
-        }
-        delta = (ble_native_timestamp - controllerTimestamp);
-        delta += tstmr_delta_us;
-    } while (false);
+        tstmr_delta_us = UINT32_MAX;
+    }
 
-    return delta;
+    tstmr_delta_us &= 0xffffffffULL;
+    return (uint32_t)tstmr_delta_us;
+}
+
+/*!
+ * \brief Compute time elapsed since ll_ts (timestamp from Rx PDU descriptor) and time retrieved by core#0
+ *         by means of Controller_GetTimestampEx API
+ * \param[in]  ll_ts initial timestamp value (usec unit)
+ * \param[in]  ll_slot_cnt BLE slot counter (625usec) value returned by Controller_GetTimestampEx
+ * \param[in]  ll_slot_offset_usec microsecond offset in slot returned by Controller_GetTimestampEx.
+ *             must be in the range [0..624].
+ * \return number of microseconds elapsed between ll_ts and moment when Controller_GetTimestampEx was queried.
+ */
+STATIC uint32_t PLATFORM_ComputeTimeDiffFromBleSlotAndSlotOffset(uint32_t ll_ts,
+                                                                 uint32_t ll_slot_cnt,
+                                                                 uint16_t ll_slot_offset_usec)
+{
+    /* Controller_GetTimestampEx returns slot counter after conversion from half-slot, so a number smaller than
+     * 2^31. Likewise number of microseconds is bounded by 625.
+     * In order to have an arithmetic compatible with NBU, convert usec back to quarter usec and slots to half-slots.
+     */
+    uint64_t tmp;
+    uint32_t time_diff;
+    uint32_t curr_ll_ts;
+    uint32_t ll_timing_qus;
+
+    /* Sanitize all parameters */
+    if ((ll_slot_offset_usec >= PLATFORM_BLE_SLOT_USEC) || (ll_slot_cnt > PLATFORM_BLE_SLOT_MAX) ||
+        (ll_ts > PLATFORM_BLE_TIMESTAMP_MAX))
+    {
+        time_diff = ~0UL; /* Return max value to indicate error */
+    }
+    else
+    {
+        /* coverity[assume] ll_slot_cnt <= PLATFORM_BLE_SLOT_MAX  */
+        ll_slot_cnt &= PLATFORM_BLE_SLOT_MAX;
+
+        /* Convert offset to quarter microseconds */
+        ll_timing_qus = 4U * (uint32_t)ll_slot_offset_usec;
+
+        /* Compute total time in quarter microseconds */
+        tmp = (uint64_t)ll_slot_cnt * 2500ULL; /* 625us * 4 */
+        tmp += (uint64_t)(ll_timing_qus);
+        /* tmp number of quarter microseconds is in the range [0..0x4e200000000], which fits in 41 bits */
+        /* Convert back to usec */
+        tmp >>= 2;
+        /* mask out upper 34 MSB bits */
+        tmp &= (uint64_t)PLATFORM_BLE_TIMESTAMP_MAX;
+
+        curr_ll_ts = (uint32_t)tmp;
+
+        /* Compute time difference, handling wraparound */
+        if (ll_ts <= curr_ll_ts)
+        {
+            /* coverity[overflow:FALSE] */
+            /* the condition (ll_ts <= curr_ll_ts) guarantees that this expression remains positive */
+            time_diff = (curr_ll_ts - ll_ts);
+        }
+        else
+        {
+            /* wrap occurred */
+            uint64_t extended_diff = (uint64_t)PLATFORM_BLE_TIMESTAMP_MAX + 1ULL + curr_ll_ts - ll_ts;
+            time_diff              = (uint32_t)extended_diff;
+        }
+    }
+    /* coverity[return_overflow:FALSE] */
+    return time_diff;
 }

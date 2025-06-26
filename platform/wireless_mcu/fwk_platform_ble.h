@@ -108,11 +108,12 @@ int32_t PLATFORM_EnableBleSecureKeyManagement(void);
 bool PLATFORM_CheckNextBleConnectivityActivity(void);
 
 /*!
- * \brief Get timestamp value of time between the current value of the clock and the argument of this function
+ * \brief Get number of microseconds elapsed between current value (now) and the argument of this function.
  *
- * \param[in] controllerTimestamp value with which we want to calculate the delta timestamp
+ * \param[in] controllerTimestamp timestamp coming from BLE link layer controller expressed in microseconds.
+ *            This value is in the range [0 .. 2^30-1]
  *
- * \return uint64_t delta of time expressed in microseconds , 0U in case of error
+ * \return uint64_t time difference expressed in microseconds, 0U in case of error.
  */
 uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
 
