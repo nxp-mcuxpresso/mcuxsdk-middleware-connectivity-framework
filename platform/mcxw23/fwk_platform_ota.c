@@ -142,6 +142,11 @@ int PLATFORM_OtaBootDataUpdateOnCommit(const OtaLoaderInfo_t *ota_loader_info)
     return 0;
 }
 
+int PLATFORM_OtaClearBootInterface(void)
+{
+    return 0;
+}
+
 int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
 {
     status_t status;
