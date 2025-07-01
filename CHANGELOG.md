@@ -155,23 +155,23 @@
       - Unified the APIs behaviour between mbedtls and non mbedtls variants.
   - RNG/mbedtls : Prevent `RNG_Init()` from corrupting RNG entropy context if called more than once.
   - RNG/mbedtls: fixed `RNG_GetTrueRandomNumber()` to return a proper `mbedtls_entropy_func()` result.
-  - [SecLib_RNG] Use defragmetation option when freeing key object in SecLib_sss to avoid leak in S200 memory
-  - [SecLib_RNG] Add new API ECP256_IsKeyValid() to check whether a public key is valid
-  - [OtaSupport] Update return status to OTA_Flash_Success when success at the end of InternalFlash_WriteData() and InternalFlash_FlushWriteBuffer() APIs
-  - [WorQ] Implementing a simple workqueue service to the framework
-  - [SFC] Keep using immediate measurement for some measurement before switching to configuration trig to confirm the calibration made
-  - [DBG] Adding modules to framework DBG :
-    - sbtsnoop
-    - SWO
-  - [Common] Fix HAL_CTZ and HAL_RBIT IAR versions
-  - [LowPower] Fix wrong tick error calculation in case of infinite timeout
-  - [Settings] Add new macro gSettingsRedefineApiName_c to avoid multiple definition of settings API when using connectivity framework repo
+  - Use defragmetation option when freeing key object in SecLib_sss to avoid leak in S200 memory
+  - Add new API ECP256_IsKeyValid() to check whether a public key is valid
+- [OtaSupport] Update return status to OTA_Flash_Success when success at the end of InternalFlash_WriteData() and InternalFlash_FlushWriteBuffer() APIs
+- [WorQ] Implementing a simple workqueue service to the framework
+- [SFC] Keep using immediate measurement for some measurement before switching to configuration trig to confirm the calibration made
+- [DBG] Adding modules to framework DBG :
+  - sbtsnoop
+  - SWO
+- [Common] Fix HAL_CTZ and HAL_RBIT IAR versions
+- [LowPower] Fix wrong tick error calculation in case of infinite timeout
+- [Settings] Add new macro gSettingsRedefineApiName_c to avoid multiple definition of settings API when using connectivity framework repo
 
 ##### Platform specific
-  - [KW47/MCXW72] Change xtal cload default value from 4 to 8 in order to increase the precision of the link layer timebase in NBU
-  - [wireless_mcu] [wireless_nbu] Use new WorkQ service to process framework intercore messages
-  - [rw61x] Fix HCI message sending failure in some corner case by releasing controller wakes up after that the host has send its HCI message
-  - [MCXW23] Adding the initial support of MCXW23 into the framework
+- [KW47/MCXW72] Change xtal cload default value from 4 to 8 in order to increase the precision of the link layer timebase in NBU
+- [wireless_mcu] [wireless_nbu] Use new WorkQ service to process framework intercore messages
+- [rw61x] Fix HCI message sending failure in some corner case by releasing controller wakes up after that the host has send its HCI message
+- [MCXW23] Adding the initial support of MCXW23 into the framework
 
 ### 7.0.0 mcux SDK 24.12.00
 
