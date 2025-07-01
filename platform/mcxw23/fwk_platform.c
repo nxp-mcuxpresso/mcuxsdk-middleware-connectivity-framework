@@ -11,8 +11,6 @@
 #include "fsl_rom_api.h"
 #include "fsl_trng.h"
 #include "fsl_power.h"
-#include "ble_controller.h"
-#include "fsl_debug_console.h"
 #include "fsl_component_timer_manager.h"
 #include "fwk_platform.h"
 #ifdef TIMER_PORT_TYPE_CTIMER
@@ -91,43 +89,6 @@ int PLATFORM_InitTimerManager(void)
     return 0;
 }
 #endif /*TIMER_PORT_TYPE_CTIMER*/
-
-void PLATFORM_InitBle(void)
-{
-    flash_config_t flashInstance;
-    uint8_t        bdAddr[6];
-    status_t       status;
-
-    status = FLASH_Init(&flashInstance);
-    assert_equal(status, kStatus_Success);
-
-    if (status == kStatus_Success)
-    {
-        uint32_t location = kFFR_BdAddrLocationCmpa | kFFR_BdAddrLocationNmpa | kFFR_BdAddrLocationUuid;
-        status            = FFR_GetBdAddress(&flashInstance, bdAddr, &location);
-        assert_equal(status, kStatus_Success);
-        PRINTF("Using bdAddr from %s\r\n", location == kFFR_BdAddrLocationCmpa ? "CMPA" :
-                                           location == kFFR_BdAddrLocationNmpa ? "NMPA" :
-                                                                                 "UUID");
-    }
-
-    if (status == kStatus_Success)
-    {
-        status = BLEController_WriteBdAddr(bdAddr);
-        assert_equal(status, kBLEC_Success);
-        PRINTF("bd_addr = ");
-        for (int32_t i = 5; i >= 0; i--)
-        {
-            PRINTF("%s%x%s", bdAddr[i] < 0x10 ? "0" : "", bdAddr[i], i ? ":" : "");
-        }
-        PRINTF("\r\n");
-    }
-}
-
-bool PLATFORM_CheckNextBleConnectivityActivity(void)
-{
-    return true;
-}
 
 uint64_t PLATFORM_GetTimeStamp(void)
 {

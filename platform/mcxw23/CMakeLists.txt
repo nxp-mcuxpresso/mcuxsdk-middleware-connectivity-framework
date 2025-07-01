@@ -38,6 +38,7 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
         mcux_add_source(
             SOURCES
             ../wireless_mcu/fwk_platform_ble.h
+            fwk_platform_ble.c
             DEVICE_IDS ${MCXW23_FAMILY}
             CORE_IDS "cm33_core0"
         )
