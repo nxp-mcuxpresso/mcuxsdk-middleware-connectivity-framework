@@ -29,8 +29,10 @@
 #define StorageBitmapSize \
     ((FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE - 1U) / (FSL_FEATURE_FLASH_PFLASH_SECTOR_SIZE * 32U) + 1U)
 
-#if defined FSL_FEATURE_FLASH_PFLASH_PHRASE_SIZE
+#if defined(FSL_FEATURE_FLASH_PFLASH_PHRASE_SIZE)
 #define gEepromParams_WriteAlignment_c FSL_FEATURE_FLASH_PFLASH_PHRASE_SIZE
+#elif defined(FSL_FEATURE_FLASH_PHRASE_SIZE_BYTES) /* Different naming for W23 */
+#define gEepromParams_WriteAlignment_c FSL_FEATURE_FLASH_PHRASE_SIZE_BYTES
 #endif
 
 #ifndef gEepromParams_WriteAlignment_c

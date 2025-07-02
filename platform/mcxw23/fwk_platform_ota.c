@@ -160,7 +160,9 @@ int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
         status = FLASH_Init(&s_flashInstance);
         assert_equal(status, kStatus_Success);
         (void)status;
+#if !defined(FWK_UNIT_TEST)
         CopyAndReboot(ota_loader_info);
+#endif
     }
     else
     {
