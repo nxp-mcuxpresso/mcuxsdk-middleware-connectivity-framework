@@ -122,7 +122,9 @@ otaResult_t OTA_Initialize(void)
     do
     {
         OtaImgState_t img_state;
-        if (mOtaHdl.FwUpdImageState != OtaImgState_None)
+        /* OTA_GetImgState update FwUpdImageState value,
+         * call OTA_CancelImage only if OTA initialization has been done */
+        if (mOtaHdl.Initialized)
         {
             OTA_CancelImage();
             break;
