@@ -11,6 +11,7 @@
 #include "fsl_rom_api.h"
 #include "fsl_debug_console.h"
 #include "OtaSupport.h"
+#include "fwk_platform_definitions.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -36,6 +37,15 @@ extern uint32_t INT_STORAGE_SIZE;
 
 static flash_config_t s_flashInstance;
 static uint8_t        s_copyBuffer[COPY_BUFFER_SIZE];
+
+static const OtaPartition_t ext_ota_partition_cfg = {
+    .start_offset   = 0,
+    .size           = PLATFORM_EXTFLASH_TOTAL_SIZE, //8M
+    .sector_size    = PLATFORM_EXTFLASH_SECTOR_SIZE,
+    .page_size      = PLATFORM_EXTFLASH_PAGE_SIZE,
+    .internal_flash = false,
+    .spi_baudrate   = MHz(24),
+};
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -199,35 +209,5 @@ int PLATFORM_OtaCheckImageValidity(const uint8_t *data, uint32_t size)
 
 const OtaPartition_t *PLATFORM_OtaGetOtaExternalPartitionConfig(void)
 {
-    return NULL;
-}
-
-int PLATFORM_InitExternalFlash(void)
-{
-    return 0;
-}
-
-bool PLATFORM_IsExternalFlashSectorBlank(uint32_t address)
-{
-    return 0;
-}
-
-int PLATFORM_EraseExternalFlash(uint32_t address, uint32_t size)
-{
-    return 0;
-}
-
-int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t address, bool requestFastRead)
-{
-    return 0;
-}
-
-int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address)
-{
-    return 0;
-}
-
-int PLATFORM_IsExternalFlashBusy(bool *isBusy)
-{
-    return 0;
+    return &ext_ota_partition_cfg;
 }

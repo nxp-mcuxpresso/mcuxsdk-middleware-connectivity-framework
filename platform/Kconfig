@@ -208,7 +208,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
                 MCUX_PRJSEG_middleware.wireless.framework.platform.rt1170 || \
-                MCUX_PRJSEG_middleware.wireless.framework.platform.rt1060
+                MCUX_PRJSEG_middleware.wireless.framework.platform.rt1060 || \
+                MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23
     help
       External Flash platform APIs.
 
