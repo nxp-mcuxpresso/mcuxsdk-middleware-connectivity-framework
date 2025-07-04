@@ -181,7 +181,7 @@ bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
     {
         uint32_t read_sz;
         read_sz = MIN(remaining_sz, PLATFORM_EXTFLASH_PAGE_SIZE);
-        if (kStatus_Success != Nor_Flash_Read(&norHandle, address, (uint8_t *)read_buf, len))
+        if (kStatus_Success != Nor_Flash_Read(&norHandle, address, (uint8_t *)read_buf, read_sz))
         {
             ret = false;
         }
@@ -216,5 +216,5 @@ bool PLATFORM_IsExternalFlashSectorBlank(uint32_t address)
     /* Start from address of sector containing argument address */
     uint32_t sect_addr = _SECTOR_ADDR(address);
 
-    return PLATFORM_ExternalFlashAreaIsBlank(sect_addr, PLATFORM_EXTFLASH_PAGE_SIZE);
+    return PLATFORM_ExternalFlashAreaIsBlank(sect_addr, PLATFORM_EXTFLASH_SECTOR_SIZE);
 }
