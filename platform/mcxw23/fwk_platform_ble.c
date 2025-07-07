@@ -57,3 +57,39 @@ bool PLATFORM_CheckNextBleConnectivityActivity(void)
 {
     return true;
 }
+
+int PLATFORM_GetRadioIdleDuration32K(void)
+{
+    blec_result_t status;
+    int           ret;
+    uint32_t      remainingTimeUs  = 0U;
+    uint32_t      remainingTime32k = 0U;
+
+    do
+    {
+        status = BLEController_GetRemainingTimeForNextEvent(&remainingTimeUs);
+        if (status != kBLEC_Success)
+        {
+            ret = -2;
+            break;
+        }
+
+        if (remainingTimeUs == UINT32_MAX)
+        {
+            ret = PLATFORM_RADIO_IDLE_FOREVER;
+            break;
+        }
+
+        remainingTime32k = USEC_TO_COUNT(remainingTimeUs, 32768U);
+        if (remainingTime32k > INT32_MAX)
+        {
+            ret = PLATFORM_RADIO_IDLE_FOREVER;
+        }
+        else
+        {
+            ret = (int)remainingTime32k;
+        }
+    } while (0);
+
+    return ret;
+}
