@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support)
@@ -20,7 +20,6 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support.external_fla
     mcux_add_source(
         SOURCES Source/OtaExternalFlash.c
     )
-    mcux_add_linker_symbol(SYMBOLS "gUseInternalStorageLink_d=0" )
 endif()
 
 if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support.internal_flash)
