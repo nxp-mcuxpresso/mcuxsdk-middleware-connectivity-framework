@@ -21,6 +21,9 @@
 #define _SECTOR_ADDR(addr) (((addr) & ~(PLATFORM_EXTFLASH_SECTOR_SIZE - 1U)))
 /* _PAGE_ADDR returns the address of page containing address */
 #define _PAGE_ADDR(addr) (((addr) & ~(PLATFORM_EXTFLASH_PAGE_SIZE - 1U)))
+
+#define RAM_FUNC __attribute__((section(".ramfunc"))) __attribute__((used)) __attribute__((noinline))
+
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
@@ -116,17 +119,37 @@ int PLATFORM_EraseExternalFlash(uint32_t address, uint32_t size)
     return (int)st;
 }
 
-int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t offset, bool requestFastRead)
+/* This API is used to copy from the temporary download location from the external flash
+ * to the target location overwriting the ongoing image. This API and all its associated calls
+ * should be loaded and executed from RAM. In total this introduces 960B increase in RAM.
+ * This is a re-implementation of Nor_Flash_Read API with some minor changes to avoid using
+ * memcpy and simplify the placement in RAM.
+ */
+RAM_FUNC int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t offset, bool requestFastRead)
 {
-    status_t st;
+    spifi_command_t         cmd;
+    status_t                status          = kStatus_Success;
+    spifi_mem_nor_handle_t *memSpifiHandler = (spifi_mem_nor_handle_t *)(norHandle.deviceSpecific);
+    SPIFI_Type             *base            = (SPIFI_Type *)norHandle.driverBaseAddr;
     (void)requestFastRead;
 
-    st = (int)Nor_Flash_Read(&norHandle, offset + FSL_FEATURE_SPIFI_START_ADDR, dest, length);
-    if (st != kStatus_Success)
+    cmd.dataLen           = 0;
+    cmd.isPollMode        = false;
+    cmd.direction         = kSPIFI_DataInput;
+    cmd.intermediateBytes = memSpifiHandler->intermediateLen;
+    cmd.format            = memSpifiHandler->readmemCommandFormt;
+    cmd.type              = memSpifiHandler->commandType;
+    cmd.opcode            = memSpifiHandler->commandSet.readMemoryCommand;
+    SPIFI_SetMemoryCommand(base, &cmd);
+
+    for (uint32_t i = 0; i < length; i++)
     {
-        assert(0);
+        dest[i] = *((uint8_t *)(offset + FSL_FEATURE_SPIFI_START_ADDR + i));
     }
-    return (int)st;
+    /* Reset to command mode. */
+    SPIFI_ResetCommand(base);
+
+    return status;
 }
 
 int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address)

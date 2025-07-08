@@ -84,4 +84,8 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
             CORE_IDS "cm33_core0"
         )
     endif()
+
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support.external_flash)
+        mcux_add_macro(gPlatformUseExternalOtaStorage=1)
+    endif()
 endif()

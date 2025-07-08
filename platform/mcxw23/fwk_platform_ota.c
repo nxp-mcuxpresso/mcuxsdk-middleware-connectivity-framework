@@ -12,6 +12,9 @@
 #include "fsl_debug_console.h"
 #include "OtaSupport.h"
 #include "fwk_platform_definitions.h"
+#if defined(gPlatformUseExternalOtaStorage) && (gPlatformUseExternalOtaStorage > 0)
+#include "fwk_platform_extflash.h"
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -107,10 +110,18 @@ static RAM_FUNC void CopyAndReboot(const OtaLoaderInfo_t *ota_loader_info)
         uint32_t chunkSize = MIN(copySize, COPY_BUFFER_SIZE);
         uint32_t writeSize =
             (((chunkSize - 1) / FSL_FEATURE_FLASH_PHRASE_SIZE_BYTES) + 1) * FSL_FEATURE_FLASH_PHRASE_SIZE_BYTES;
-        for (uint32_t i = 0; i < chunkSize; i++)
+#if defined(gPlatformUseExternalOtaStorage) && (gPlatformUseExternalOtaStorage > 0)
+        /* We cannot read directly from the external flash, use PLATFORM_ReadExternalFlash to read chunks (located in
+         * RAM)*/
+        status = PLATFORM_ReadExternalFlash(s_copyBuffer, chunkSize, offset, true);
+        if (kStatus_Success != status)
         {
-            s_copyBuffer[i] = source[i];
+            OtaPanic();
         }
+#else
+        for (uint32_t i = 0; i < chunkSize; i++)
+            s_copyBuffer[i] = source[i];
+#endif
         status = Program(&s_flashInstance, offset, s_copyBuffer, writeSize);
         if (kStatus_Success != status)
         {
