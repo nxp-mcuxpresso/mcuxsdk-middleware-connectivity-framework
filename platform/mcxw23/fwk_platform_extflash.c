@@ -165,9 +165,7 @@ int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address
 
 int PLATFORM_IsExternalFlashBusy(bool *isBusy)
 {
-    /* TODO: not supported yet */
-    *isBusy = false;
-    return 0;
+    return (int)Nor_Flash_Is_Busy(&norHandle, isBusy);
 }
 
 bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
