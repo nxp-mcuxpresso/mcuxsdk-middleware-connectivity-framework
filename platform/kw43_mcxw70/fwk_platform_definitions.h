@@ -130,4 +130,10 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 
 #define MRCC_TSTMR0_REG MRCC->MRCC_TSTMR0_CLKSEL
 
+/*********************************************************************
+ *        LPTMR FPGA settings
+ *********************************************************************/
+#define PLATFORM_TM_CLK_FREQ       16000000U
+#define PLATFORM_TM_STAMP_CLK_FREQ 16000000U
+
 #endif /* _FWK_PLAT_DEFS_H_ */

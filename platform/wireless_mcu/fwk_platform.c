@@ -9,7 +9,7 @@
 
 /* Get some BOARD_***_DEFAULT macro values if defined in board.h for 32kHz settings */
 #include "board_platform.h"
-
+#include "fwk_platform_definitions.h"
 #include "fwk_platform.h"
 #include "fwk_config.h"
 #include "fwk_platform_ics.h"
@@ -40,8 +40,6 @@
 
 #include "fwk_debug.h"
 #include "mcmgr_imu_internal.h"
-
-#include "fwk_platform_definitions.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
