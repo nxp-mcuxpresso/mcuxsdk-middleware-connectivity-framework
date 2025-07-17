@@ -55,9 +55,7 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls)
     mcux_add_source(
         SOURCES RNG_mbedTLS.c
     )
-endif()
 
-if (CONFIG_MCUX_PRJSEG_middleware.wireless.framework.seclib_rng_port.mbedtls)
     mcux_remove_macro("-DMBEDTLS_CONFIG_FILE=\\\"sssapi_mbedtls_config.h\\\"")
     mcux_add_configuration(
         CC  "-DMBEDTLS_CONFIG_FILE=\\\"SecLib_mbedtls_config.h\\\""
@@ -94,13 +92,10 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
             RNG_psa.c
     )
 
-    mcux_add_macro(gSecLibUsePsa_d=1)
-endif()
-
-if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.seclib_rng_port.psa)
     # replace the original config file with ours
     mcux_remove_macro("-DMBEDTLS_CONFIG_FILE=\\\"mcux_mbedtls_psa_crypto_config.h\\\"")
     mcux_add_configuration(
         CC  "-DMBEDTLS_CONFIG_FILE=\\\"SecLib_psa_config.h\\\""
     )
+    mcux_add_macro(gSecLibUsePsa_d=1)
 endif()
