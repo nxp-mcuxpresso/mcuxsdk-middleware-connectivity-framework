@@ -55,11 +55,6 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls)
     mcux_add_source(
         SOURCES RNG_mbedTLS.c
     )
-
-    mcux_remove_macro("-DMBEDTLS_CONFIG_FILE=\\\"sssapi_mbedtls_config.h\\\"")
-    mcux_add_configuration(
-        CC  "-DMBEDTLS_CONFIG_FILE=\\\"SecLib_mbedtls_config.h\\\""
-    )
 endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.secure_subsystem)
