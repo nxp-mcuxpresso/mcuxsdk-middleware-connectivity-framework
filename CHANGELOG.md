@@ -1,12 +1,36 @@
 ## Connectivity framework CHANGELOG
 
-### 7.0.3 revA mcux SDK 25.06.00
+### 7.0.3 revB mcux SDK 25.09.00
+
+#### Major Changes
+
+- [wireless_mcu] Adjusted default value of `BOARD_RADIO_DOMAIN_WAKE_UP_DELAY` from 0x16 to 0x10 to address stability issues observed with the previous setting. This change enhances system reliability but will reduce low-power performance.
+
+#### Minor Changes (bug fixes)
+
+- [Common] Added MDK compatibility for the errno framework header.
+- [mcxw23] Implemented missing `PLATFORM_OtaClearBootInterface()` API.
+- [mcxw23] Refactored fwk_platform.c to separate BLE-specific logic into fwk_platform_ble.c.
+- [OTA] Corrected definition of `gEepromParams_WriteAlignment_c` flag for mcxw23
+- [OTA] Enabled calling `OTA_GetImgState()` prior to `OTA_Initialize()`.
+- [wireless_mcu] Fixed `PLATFORM_IsExternalFlashSectorBlank()` to check the entire sector instead of just one page.
+- [mcxw23] Added support for OTA using external flash.
+- [mcxw23] Introduced `PLATFORM_GetRadioIdleDuration32K()` to estimate time until next radio event.
+- [OTA] Removed `gUseInternalStorageLink_d` linker flag definition when external OTA storage is used.
+- [mcxw23] Extended `CopyAndReboot()` to support external flash OTA.
+- [wireless_mcu] Resolved counter wrap issue in `PLATFORM_GetDeltaTimeStamp()`.
+- [kw43_mcxw70] Defined LPTMR frequency constants in fwk_platform_definitions.h.
+- [kw47_mcxw72] Updated shared memory allocation for RPMsg adapter.
+- [mcxw23] Implement `PLATFORM_IsExternalFlashBusy()` API.
+- [kw45_mcxw71][kw47_mcxw72] Moved RAM bank definitions from the connectivity framework to device-specific definitions.
+
+### 7.0.3 revA mcux SDK 25.09.00
 
 #### Major Changes
 
 - [wireless_nbu] Enhanced XTAL32M trimming handling: updates are applied when requested by the application core and the NBU enters low-power mode, ensuring no interference from ongoing radio activity. Introduced new APIs to lock (`PLATFORM_LockXtal32MTrim()`) and unlock XTAL32M (`PLATFORM_UnlockXtal32MTrim()`) trimming updates using a counter-based mechanism. Also added a reset API (`PLATFORM_ResetContext()`) for platform-specific variables (currently limited to the trimming lock).
 - [wireless_mcu] Introduced a new API, `PLATFORM_SetLdoCoreNormalDriveVoltage()`, to enable support for NBU clock frequency at 64 MHz, as required by BLE channel sounding applications.
-- [wireless_mcu][wireless_nbu] Increased delayLpoCycle default from 2 to 3 to address link layer instabilities in low-power NBU use cases. Adjusted BOARD_RADIO_DOMAIN_WAKE_UP_DELAY from 0x10 to 0x16 to balance power consumption and stability. ⚠️ NBU may malfunction if delayLpoCycle (or BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT) is set to 2 while BOARD_RADIO_DOMAIN_WAKE_UP_DELAY is 0x16.
+- [wireless_mcu][wireless_nbu] Increased delayLpoCycle default from 2 to 3 to address link layer instabilities in low-power NBU use cases. Adjusted `BOARD_RADIO_DOMAIN_WAKE_UP_DELAY` from 0x10 to 0x16 to balance power consumption and stability. ⚠️ NBU may malfunction if delayLpoCycle (or `BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT`) is set to 2 while `BOARD_RADIO_DOMAIN_WAKE_UP_DELAY` is 0x16.
 
 #### Minor Changes (bug fixes)
 
