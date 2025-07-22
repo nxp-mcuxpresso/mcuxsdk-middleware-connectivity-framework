@@ -81,7 +81,7 @@
 #if !defined(BOARD_RADIO_DOMAIN_WAKE_UP_DELAY)
 /* This value is incompatible with delayLpoCycle set to 2. Refer to BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT to check if the
  * value has been overridden */
-#define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x15U
+#define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x10U
 #endif
 
 #if !defined(TSTMR_CLOCK_FREQUENCY_MHZ) || (TSTMR_CLOCK_FREQUENCY_MHZ != 1U)
