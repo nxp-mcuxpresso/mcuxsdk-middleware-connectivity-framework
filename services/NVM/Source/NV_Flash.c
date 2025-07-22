@@ -814,7 +814,7 @@ NVM_STATIC NVM_Status_t NV_FlashRead(uint32_t flash_addr, uint8_t *ram_buf, size
  *               size length to be written
  *               ram_buf source from which data are read and written to flash
  *               catch_ecc_faults if TRUE the data is read back catching ECC faults
- * Return: statuc gNVM_OK_c if OK, gNVM_MetaInfoWriteError_c in case of error.
+ * Return: status gNVM_OK_c if OK, gNVM_MetaInfoWriteError_c in case of error.
  ******************************************************************************/
 NVM_STATIC NVM_Status_t NV_FlashProgram(uint32_t flash_addr, size_t size, uint8_t *ram_buf, bool_t catch_ecc_faults);
 
@@ -1622,6 +1622,7 @@ NVM_STATIC uint32_t NvGetEntryInfoNeedToAddInNVM(void)
 
     return mNvNeedAddEntryCnt;
 }
+
 /******************************************************************************
  * Name: NvSaveAllDataSetEntry
  * Description: Commit Data Entry structures to flash
@@ -1632,12 +1633,11 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
 {
     uint32_t        srcStartAddr;
     uint32_t        srcEndAddr;
-    NVM_EntryInfo_t entryInfo;
-
-    uint16_t     idx, DifIdx;
-    bool_t       isSameEntryFoundInRam; //, isRemainEntry;
-    bool_t       isSaveError;
-    NVM_Status_t status = gNVM_OK_c;
+    NVM_EntryInfo_t entryInfo = {0};
+    uint32_t        dstAddr   = *pDstAddr;
+    bool_t          isSameEntryFoundInRam; //, isRemainEntry;
+    bool_t          isSaveError;
+    NVM_Status_t    status = gNVM_OK_c;
 
     if ((mNvPreviousActivePageId != gVirtualPageNone_c) && (mNvTableSizeInFlash > 0))
     {
@@ -1660,7 +1660,7 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
             }
 
             isSameEntryFoundInRam = FALSE;
-            for (idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
+            for (uint16_t idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
             {
                 assert(NULL != pNVM_DataTable);
                 /* Can skip void entries in the case of Dual Image */
@@ -1687,14 +1687,14 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
                 /* we use entry info from NVM  */
                 /* write the one found in NVM as was already */
             }
-            status = NV_FlashProgram(*pDstAddr, sizeof(NVM_EntryInfo_t), (uint8_t *)&entryInfo, TRUE);
+            status = NV_FlashProgram(dstAddr, sizeof(NVM_EntryInfo_t), (uint8_t *)&entryInfo, TRUE);
             if (gNVM_OK_c != status)
             {
                 break;
             }
 
             /* increment address */
-            *pDstAddr += sizeof(NVM_EntryInfo_t);
+            dstAddr += sizeof(NVM_EntryInfo_t);
             srcStartAddr += sizeof(NVM_EntryInfo_t);
         } while (srcStartAddr < srcEndAddr);
     }
@@ -1706,7 +1706,7 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
         if (mNvNeedAddEntryCnt != 0U)
         {
             isSaveError = FALSE;
-            for (idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
+            for (uint16_t idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
             {
                 /* Can skip void entries in the case of Dual Image */
                 if ((pNVM_DataTable[idx].ElementsCount == 0U) || (pNVM_DataTable[idx].ElementSize == 0U))
@@ -1714,7 +1714,7 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
                     /* skip this entry that is empty */
                     continue;
                 }
-                for (DifIdx = 0U; DifIdx < mNvNeedAddEntryCnt; DifIdx++)
+                for (uint16_t DifIdx = 0U; DifIdx < mNvNeedAddEntryCnt; DifIdx++)
                 {
                     /* different entries from NVM are also saved */
                     if (mNvDiffEntryId[DifIdx] == pNVM_DataTable[idx].DataEntryID)
@@ -1726,13 +1726,13 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
                         entryInfo.fields.NvDataEntryType = pNVM_DataTable[idx].DataEntryType;
                         entryInfo.fields.NvElementsCount = pNVM_DataTable[idx].ElementsCount;
                         entryInfo.fields.NvElementSize   = pNVM_DataTable[idx].ElementSize;
-                        status = NV_FlashProgram(*pDstAddr, sizeof(NVM_EntryInfo_t), (uint8_t *)&entryInfo, TRUE);
+                        status = NV_FlashProgram(dstAddr, sizeof(NVM_EntryInfo_t), (uint8_t *)&entryInfo, TRUE);
                         if (gNVM_OK_c != status)
                         {
                             isSaveError = TRUE;
                             break; /* for loop */
                         }
-                        *pDstAddr += sizeof(NVM_EntryInfo_t);
+                        dstAddr += sizeof(NVM_EntryInfo_t);
                     }
                 }
                 if (isSaveError)
@@ -1747,7 +1747,7 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
             }
         }
     }
-
+    *pDstAddr = dstAddr;
     return status;
 }
 
@@ -5350,7 +5350,8 @@ NVM_STATIC NVM_Status_t NvInternalFormat(uint32_t pageCounterValue)
     mNvActivePageId = gFirstVirtualPage_c;
 
     /* save NV table from RAM memory to FLASH memory */
-    if (gNVM_OK_c != NvSaveRamTable(mNvActivePageId))
+    status = NvSaveRamTable(mNvActivePageId);
+    if (gNVM_OK_c != status)
     {
         status = gNVM_FormatFailure_c;
     }
@@ -5454,9 +5455,8 @@ NVM_STATIC NVM_Status_t NvSaveRamTable(NVM_VirtualPageID_t pageId)
         /*write page counter bottom*/
         FLib_MemSet((uint8_t *)&tbInfo, 0xffU, sizeof(NVM_TableInfo_t));
         tbInfo.fields.NvPageCounter = mNvPageCounter;
-
-        status = NV_FlashProgram((mNvVirtualPageProperty[pageId].NvRawSectorEndAddress - sizeof(NVM_TableInfo_t) + 1U),
-                                 sizeof(NVM_TableInfo_t), (uint8_t *)&tbInfo, TRUE);
+        addr   = (mNvVirtualPageProperty[pageId].NvRawSectorEndAddress - sizeof(NVM_TableInfo_t) + 1U);
+        status = NV_FlashProgram(addr, sizeof(NVM_TableInfo_t), (uint8_t *)&tbInfo, TRUE);
     } while (FALSE);
 
     return status;
@@ -6756,25 +6756,27 @@ NVM_STATIC NVM_Status_t NV_VerifyProgram(uint32_t flash_addr, uint8_t *ram_buf, 
 
 NVM_STATIC NVM_Status_t NV_FlashProgram(uint32_t flash_addr, size_t size, uint8_t *ram_buf, bool_t catch_ecc_faults)
 {
-    NVM_Status_t st = gNVM_OK_c;
-    NOT_USED(catch_ecc_faults);
+    NVM_Status_t       status = gNVM_OK_c;
+    hal_flash_status_t st;
 
-    if (HAL_FlashProgram(flash_addr, size, ram_buf) == kStatus_HAL_Flash_Success)
+    NOT_USED(catch_ecc_faults);
+    st = HAL_FlashProgram(flash_addr, size, ram_buf);
+    if (kStatus_HAL_Flash_Success == st)
     {
 #if defined gNvVerifyReadBackAfterProgram_d && (gNvVerifyReadBackAfterProgram_d > 0)
         /* Read back contents right away : this may cause an ECC Fault but better know it at once. */
-        st = NV_VerifyProgram(flash_addr, ram_buf, size, catch_ecc_faults);
-        if (gNVM_EccFault_c == st)
+        status = NV_VerifyProgram(flash_addr, ram_buf, size, catch_ecc_faults);
+        if (gNVM_EccFault_c == status)
         {
-            st = gNVM_EccFaultWritingMeta_c;
+            status = gNVM_EccFaultWritingMeta_c;
         }
 #endif
     }
     else
     {
-        st = gNVM_MetaInfoWriteError_c;
+        status = gNVM_MetaInfoWriteError_c;
     }
-    return st;
+    return status;
 }
 
 NVM_STATIC NVM_Status_t NV_FlashProgramUnaligned(uint32_t flash_addr,
@@ -8042,11 +8044,11 @@ void NV_ShowFlashTable(bool_t active_only)
             PRINTF("Page%d active\r\n", (int)page_id);
         }
         vpage_prop = &mNvVirtualPageProperty[page_id];
-        PRINTF("\r\n\r\n");
+        PRINTF("\r\n");
         int lg = 0;
         for (address = 0U; address < vpage_prop->NvTotalPageSize; address++)
         {
-            if ((address % 32U == 0U) && (address != 0U))
+            if (address % 16U == 0U)
             {
                 if (lg != 0)
                 {
@@ -8058,7 +8060,7 @@ void NV_ShowFlashTable(bool_t active_only)
             }
             else
             {
-                lg += sprintf(&message[lg], "%02X ", *(uint8_t *)(address + vpage_prop->NvRawSectorStartAddress));
+                lg += sprintf(&message[lg], " %02X", *(uint8_t *)(address + vpage_prop->NvRawSectorStartAddress));
             }
         }
         PRINTF("\r\n\r\n");
