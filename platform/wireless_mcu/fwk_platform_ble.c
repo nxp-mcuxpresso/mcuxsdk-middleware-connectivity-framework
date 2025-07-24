@@ -316,6 +316,13 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
     return status;
 }
 
+int PLATFORM_SendHciMessageAlt(uint8_t packetType, uint8_t *msg, uint32_t len)
+{
+    /* not implemented */
+    assert(0);
+    return -1;
+}
+
 void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
 {
 #if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
