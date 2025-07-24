@@ -289,6 +289,12 @@ int PLATFORM_SendChipRevision(void)
     {
         chip_rev = 2u;
     }
+#if defined(DEVICE_REVISION_A2_1)
+    else if (chip_rev_reg == DEVICE_REVISION_A2_1)
+    {
+        chip_rev = 21u;
+    }
+#endif
     else
     {
         /* MISRA compliance */
