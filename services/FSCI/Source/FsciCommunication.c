@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017,2020 NXP
+ * Copyright 2016-2017,2020, 2025 NXP
  * All rights reserved.
  *
  * \file
@@ -800,6 +800,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
 
 #if (defined gFsciOverRpmsgBridge_c) && (gFsciOverRpmsgBridge_c == 1)
             (void)PLATFORM_SendHciMessage(buffer_ptr, index);
+            (void)MEM_BufferFree(buffer_ptr);
 #else
             /* send message to Serial Manager */
             FSCI_SendPacketToSerialManager(fsciInterface, buffer_ptr, index);
