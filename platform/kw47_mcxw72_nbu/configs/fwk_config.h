@@ -14,6 +14,8 @@
 /* This platform is an NBU domain */
 #define gPlatformIsNbu_d 1
 
+#define FWK_KW47_MCXW72_NBU_FAMILIES 1
+
 /*********************************************************************
  *        SecLib_RNG
  *********************************************************************/

@@ -17,6 +17,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* -------------------------------------------------------------------------- */
+/*                           Public type definitions                          */
+/* -------------------------------------------------------------------------- */
+
 #define PLATFORM_MAX_INTERRUPT_PRIORITY         3U
 #define PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI (PLATFORM_MAX_INTERRUPT_PRIORITY << (8 - __NVIC_PRIO_BITS))
 #define PLATFORM_SET_INTERRUPT_MASK()                       \
@@ -264,6 +268,22 @@ void PLATFORM_DeinitTimerManager(void);
  * \return int 0 if success, negative value if error.
  */
 int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
+
+/*!
+ * @brief Configures the SMU DMEM mapping.
+ *
+ * This function sets the mapping configuration for the SMU (Shared Memory Unit)
+ * DMEM (Data Memory) according to the value found in the linker file.
+ *
+ * @param[in] None
+ *
+ * @return None
+ *
+ * @note This function should be called during platform initialization before
+ *       accessing SMU DMEM regions.
+ */
+
+void PLATFORM_ConfigureSmuDmemMapping(void);
 
 #if defined(__cplusplus)
 }

@@ -5,6 +5,7 @@
  */
 
 /*${header:start}*/
+#include "fwk_config.h"
 #include "fwk_platform.h"
 #include "fwk_debug.h"
 #include "nxp2p4_xcvr.h"
@@ -34,6 +35,14 @@ typedef struct
         volatile uint32_t PHRASE[4];
     } SOCTRIM1; /**< SOCTRIM1 IFR field, offset: 0x1810 */
 } IFR1_Type;
+
+/** SMU DMEM Configuration Entry Typedef */
+typedef struct smu_dmem_config
+{
+    uint32_t dmem_size;       /**< DMEM size in bytes */
+    uint32_t shared_ram_size; /**< Shared RAM size in bytes */
+    uint32_t mapping_value;   /**< Corresponding mapping register value */
+} smu_dmem_config_t;
 
 /************************************************************************************
 *************************************************************************************
@@ -99,6 +108,24 @@ static void PLATFORM_UpdateFrequency(void);
 static void PLATFORM_SetClock(uint8_t range);
 
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
+#endif
+
+#if (defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
+/** SMU DMEM mapping configuration lookup table */
+static const smu_dmem_config_t smu_dmem_lookup_table[] = {
+    {.dmem_size = 0x14000U, .shared_ram_size = 0x14000U, .mapping_value = 0x3e0U}, /* SMU = 80kB,  DMEM = 80kB */
+    {.dmem_size = 0x18000U, .shared_ram_size = 0x10000U, .mapping_value = 0x3f0U}, /* SMU = 64kB,  DMEM = 96kB */
+    {.dmem_size = 0x20000U, .shared_ram_size = 0x8000U, .mapping_value = 0x3f8U},  /* SMU = 32kB,  DMEM = 128kB */
+    {.dmem_size = 0x24000U, .shared_ram_size = 0x4000U, .mapping_value = 0x3fcU},  /* SMU = 16kB,  DMEM = 144kB */
+    {.dmem_size = 0x26000U, .shared_ram_size = 0x2000U, .mapping_value = 0x3feU},  /* SMU = 8kB,   DMEM = 152kB */
+    {.dmem_size = 0x28000U, .shared_ram_size = 0x0000U, .mapping_value = 0x3ffU},  /* SMU = 0kB,   DMEM = 160kB */
+    {.dmem_size = 0x10000U, .shared_ram_size = 0x18000U, .mapping_value = 0x3c0U}, /* SMU = 96kB,  DMEM = 64kB */
+    {.dmem_size = 0x8000U, .shared_ram_size = 0x20000U, .mapping_value = 0x380U},  /* SMU = 128kB, DMEM = 32kB */
+    {.dmem_size = 0x4000U, .shared_ram_size = 0x24000U, .mapping_value = 0x300U},  /* SMU = 144kB, DMEM = 16kB */
+    {.dmem_size = 0x2000U, .shared_ram_size = 0x26000U, .mapping_value = 0x200U},  /* SMU = 152kB, DMEM = 8kB */
+    {.dmem_size = 0x0000U, .shared_ram_size = 0x28000U, .mapping_value = 0x000U}   /* SMU = 160kB, DMEM = 0kB */
+
+};
 #endif
 
 /************************************************************************************
@@ -427,6 +454,67 @@ int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
     *pOutLen = (uint8_t)sizeof(uid);
 
     return 0;
+}
+
+void PLATFORM_ConfigureSmuDmemMapping(void)
+{
+#if (defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
+    /* Object definitions at the top of the function */
+    extern uint32_t m_dmem_start[];
+    extern uint32_t m_dmem_end[];
+    extern uint32_t m_shared_ram_start[];
+    extern uint32_t m_shared_ram_end[];
+
+    const size_t table_size = sizeof(smu_dmem_lookup_table) / sizeof(smu_dmem_lookup_table[0]);
+
+    uint32_t m_dmem_size;
+    uint32_t m_shared_ram_size;
+    uint32_t smuDmemMapping;
+    uint32_t ram_mux_ctrl;
+    size_t   i;
+    bool     config_found;
+
+    /* Ensure the start symbols are correct */
+    if (((uint32_t)&m_dmem_start != 0x140000U) || ((uint32_t)&m_shared_ram_start != 0xB0000000U))
+    {
+        assert(0);
+    }
+
+    m_dmem_size       = (uint32_t)&m_dmem_end - (uint32_t)&m_dmem_start + 1U;
+    m_shared_ram_size = (uint32_t)&m_shared_ram_end - (uint32_t)&m_shared_ram_start + 1U;
+
+    /* Default value is SMU and DMEM to 80kB both */
+    smuDmemMapping = 0x3e0U;
+    config_found   = false;
+
+    /* Search through lookup table for matching configuration */
+    for (i = 0U; i < table_size; i++)
+    {
+        if ((m_dmem_size == smu_dmem_lookup_table[i].dmem_size) &&
+            (m_shared_ram_size == smu_dmem_lookup_table[i].shared_ram_size))
+        {
+            smuDmemMapping = smu_dmem_lookup_table[i].mapping_value;
+            config_found   = true;
+            break;
+        }
+    }
+
+    /* Assert if no valid configuration found */
+    if (!config_found)
+    {
+        assert(0);
+    }
+
+    ram_mux_ctrl = RF_CMC1->RAM_MUX_CTRL;
+
+    /* Unlock register to perform a write operation later */
+    RF_CMC1->RAM_MUX_CTRL = RF_CMC1_RAM_MUX_CTRL_UNLOCK(5U);
+
+    ram_mux_ctrl &= ~RF_CMC1_RAM_MUX_CTRL_SMU_MEM_SEL_MASK;
+    ram_mux_ctrl |= smuDmemMapping;
+
+    RF_CMC1->RAM_MUX_CTRL = ram_mux_ctrl;
+#endif
 }
 
 /************************************************************************************
