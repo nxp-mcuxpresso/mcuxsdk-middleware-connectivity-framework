@@ -352,6 +352,14 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.dcdc
     help
       DCDC platform APIs.
 
+config MCUX_COMPONENT_middleware.wireless.framework.platform.dbg
+    bool "DBG"
+    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu || \
+               MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
+    help
+      DBG platform APIs.
 
 ###  Compile Flags KConfig definitions  ###
 

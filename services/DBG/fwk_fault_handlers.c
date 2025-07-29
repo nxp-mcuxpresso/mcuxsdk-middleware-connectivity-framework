@@ -18,8 +18,8 @@
 #include "task.h"
 #endif
 #if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-#include "ll_types.h"
-#include "ble_debug_struct.h"
+#include "fwk_debug_struct.h"
+#include "fwk_platform_dbg.h"
 #else
 /* Definition for PRINTF */
 #include "fsl_debug_console.h"
@@ -43,8 +43,6 @@
 /* No debug console on NBU core on KW45 */
 #undef PRINTF
 #define PRINTF(...)
-
-#define _LL_RAM_DBG_START m_sqram_debug_start
 #endif /* gDBG_LogInLinkLayerDebugStructEnabled_d */
 
 #define _STACK_TOP  m_cstack_end
@@ -58,15 +56,10 @@
 extern unsigned int m_text_start;
 extern unsigned int m_text_end;
 extern unsigned int m_cstack_end;
-extern unsigned int m_sqram_debug_start;
 
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
-
-#if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-static DEBUG_STRUCT *debug_info = (DEBUG_STRUCT *)(&_LL_RAM_DBG_START);
-#endif /* gDBG_LogInLinkLayerDebugStructEnabled_d */
 
 static int sys_debug_panic_triggered = 0;
 
@@ -165,30 +158,30 @@ void HardFaultHandler(unsigned long *hardfault_args)
     PRINTF("psr   = 0x%08x\r\n", stacked_psr);
 
 #if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-    debug_info->dbg_info.cust.u.dbg_exception.pc  = stacked_pc;
-    debug_info->dbg_info.cust.u.dbg_exception.lr  = stacked_lr;
-    debug_info->dbg_info.cust.u.dbg_exception.psp = stacked_psp;
-    debug_info->dbg_info.cust.u.dbg_exception.psr = stacked_psr;
-    debug_info->dbg_info.cust.u.dbg_exception.r0  = stacked_r0;
-    debug_info->dbg_info.cust.u.dbg_exception.r1  = stacked_r1;
-    debug_info->dbg_info.cust.u.dbg_exception.r2  = stacked_r2;
-    debug_info->dbg_info.cust.u.dbg_exception.r3  = stacked_r3;
-    debug_info->dbg_info.cust.u.dbg_exception.r4  = stacked_r4;
-    debug_info->dbg_info.cust.u.dbg_exception.r5  = stacked_r5;
-    debug_info->dbg_info.cust.u.dbg_exception.r6  = stacked_r6;
-    debug_info->dbg_info.cust.u.dbg_exception.r7  = stacked_r7;
-    debug_info->dbg_info.cust.u.dbg_exception.r8  = stacked_r8;
-    debug_info->dbg_info.cust.u.dbg_exception.r9  = stacked_r9;
-    debug_info->dbg_info.cust.u.dbg_exception.r10 = stacked_r10;
-    debug_info->dbg_info.cust.u.dbg_exception.r11 = stacked_r11;
-    debug_info->dbg_info.cust.u.dbg_exception.r12 = stacked_r12;
+    NBUDBG_SET_REG(pc, stacked_pc);
+    NBUDBG_SET_REG(lr, stacked_lr);
+    NBUDBG_SET_REG(psp, stacked_psp);
+    NBUDBG_SET_REG(psr, stacked_psr);
+    NBUDBG_SET_REG(r0, stacked_r0);
+    NBUDBG_SET_REG(r1, stacked_r1);
+    NBUDBG_SET_REG(r2, stacked_r2);
+    NBUDBG_SET_REG(r3, stacked_r3);
+    NBUDBG_SET_REG(r4, stacked_r4);
+    NBUDBG_SET_REG(r5, stacked_r5);
+    NBUDBG_SET_REG(r6, stacked_r6);
+    NBUDBG_SET_REG(r7, stacked_r7);
+    NBUDBG_SET_REG(r8, stacked_r8);
+    NBUDBG_SET_REG(r9, stacked_r9);
+    NBUDBG_SET_REG(r10, stacked_r10);
+    NBUDBG_SET_REG(r11, stacked_r11);
+    NBUDBG_SET_REG(r12, stacked_r12);
 #endif /* gDBG_LogInLinkLayerDebugStructEnabled_d */
 
 #if (__CORTEX_M == 33) || (__CORTEX_M == 3)
 
 #if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-    debug_info->dbg_info.cust.exception_id         = __get_IPSR();
-    debug_info->dbg_info.cust.u.dbg_exception.cfsr = SCB->CFSR;
+    NBUDBG_SET_EXCEPTION_ID(__get_IPSR());
+    NBUDBG_SET_REG(cfsr, SCB->CFSR);
 #endif
 
     PRINTF("_CFSR = 0x%08x (Configurable Fault Status Register: UFSR|BFSR|MMSR)\r\n", SCB->CFSR);
@@ -201,14 +194,14 @@ void HardFaultHandler(unsigned long *hardfault_args)
     {
         PRINTF("_MMAR = 0x%08x (MemManage Fault Address Register)\r\n", SCB->MMFAR);
 #if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-        debug_info->dbg_info.cust.u.dbg_exception.u.mmfar = SCB->MMFAR;
+        NBUDBG_SET_XFAR(mmfar, SCB->MMFAR);
 #endif
     }
     if ((SCB->CFSR & SCB_CFSR_BFARVALID_Msk) != 0U)
     {
         PRINTF("_BFAR = 0x%08x (Bus Fault Address Register)\r\n", SCB->BFAR);
 #if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-        debug_info->dbg_info.cust.u.dbg_exception.u.bfar = SCB->BFAR;
+        NBUDBG_SET_XFAR(bfar, SCB->BFAR);
 #endif
     }
     if ((SCB->CFSR & SCB_CFSR_DIVBYZERO_Msk) != 0U)
@@ -243,7 +236,10 @@ void HardFaultHandler(unsigned long *hardfault_args)
         //sys_memory_status(MEM_STAT_ALL);
         PRINTF("\r\n");
     }
-
+#if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
+    /* NBU failure indication to host core */
+    PLATFORM_Nbu2HostFaultIndication();
+#endif
     while (true)
     {
     }

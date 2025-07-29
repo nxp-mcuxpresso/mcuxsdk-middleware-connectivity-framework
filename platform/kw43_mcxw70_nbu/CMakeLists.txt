@@ -16,4 +16,16 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu)
             DEVICE_IDS "KW43B43ZC7xxxA_NBU"
         )
     endif()
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
+        mcux_add_source(SOURCES
+            fwk_platform_dbg.c
+            ../wireless_nbu/fwk_platform_dbg.h
+            DEVICE_IDS "KW43B43ZC7xxxA_NBU"
+        )
+        mcux_add_include(INCLUDES
+            .
+            ../wireless_nbu
+            DEVICE_IDS "KW43B43ZC7xxxA_NBU"
+        )
+    endif()
 endif()

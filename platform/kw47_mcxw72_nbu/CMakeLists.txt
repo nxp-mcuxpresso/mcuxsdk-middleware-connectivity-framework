@@ -42,5 +42,20 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu)
             CORE_IDS "cm33_core1"
         )
     endif()
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
+        mcux_add_source(SOURCES
+            fwk_platform_dbg.c
+            ../wireless_nbu/fwk_platform_dbg.h
+            DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
+            CORE_IDS "cm33_core1"
+        )
+        mcux_add_include(INCLUDES
+            .
+            ../wireless_nbu
+            DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
+            CORE_IDS "cm33_core1"
+        )
+        mcux_add_macro(USE_FWK_DBG_STRUCT=1)
+    endif()
 endif()
 
