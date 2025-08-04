@@ -8,17 +8,7 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu)
         mcux_add_source(SOURCES
             configs/fwk_config.h
             configs/rpmsg_config.h
-            CORE_IDS "cm33_core1"
-        )
-        mcux_add_source(SOURCES
-            configs/fwk_config.h
-            configs/rpmsg_config.h
             DEVICE_IDS "KW45B41Z83xxxA_NBU"
-        )
-        mcux_add_include(INCLUDES
-            .
-            configs
-            CORE_IDS "cm33_core1"
         )
         mcux_add_include(INCLUDES
             .

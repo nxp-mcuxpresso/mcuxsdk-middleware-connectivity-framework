@@ -24,6 +24,7 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
             ../wireless_mcu
             configs
             DEVICE_IDS ${MCXW23_FAMILY}
+            CORE_IDS "cm33_core0"
         )
 
         mcux_add_configuration(CC "-DENABLE_RAM_VECTOR_TABLE")
@@ -46,6 +47,7 @@ if(CONFIG_MCUX_PRJSEG_middleware.wireless.framework.platform.mcxw23)
         mcux_add_include(INCLUDES
             ../wireless_mcu
             DEVICE_IDS ${MCXW23_FAMILY}
+            CORE_IDS "cm33_core0"
         )
     endif()
 
