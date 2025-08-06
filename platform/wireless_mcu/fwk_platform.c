@@ -84,10 +84,6 @@
 #define BOARD_RADIO_DOMAIN_WAKE_UP_DELAY 0x10U
 #endif
 
-#if !defined(TSTMR_CLOCK_FREQUENCY_MHZ) || (TSTMR_CLOCK_FREQUENCY_MHZ != 1U)
-#warning "Warning: TSTMR freq is not 1MHz !"
-#endif
-
 /*! @brief XTAL 32Khz clock source start up timeout */
 #ifndef FWK_PLATFORM_XTAL32K_STARTUP_TIMEOUT
 #define FWK_PLATFORM_XTAL32K_STARTUP_TIMEOUT 10000000
