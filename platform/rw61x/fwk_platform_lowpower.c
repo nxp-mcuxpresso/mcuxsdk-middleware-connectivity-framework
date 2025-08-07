@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2023 NXP                          */
-/*                            All rights reserved.                            */
+/*                         Copyright 2021-2023,2025 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -223,7 +222,7 @@ int PLATFORM_RegisterRtcHandle(platform_rtc_handle_t *handle)
             break;
         }
 
-        if (handle->index > PLATFORM_RTC_HANDLE_MAX)
+        if (handle->index >= PLATFORM_RTC_HANDLE_MAX)
         {
             ret = -2;
             break;
