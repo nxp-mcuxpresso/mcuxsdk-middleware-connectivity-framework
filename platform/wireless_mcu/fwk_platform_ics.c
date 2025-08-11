@@ -18,9 +18,7 @@
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 #include "fwk_workq.h"
-#include "fsl_component_generic_list.h"
-#include "fsl_component_mem_manager.h"
-#include "fwk_hal_macros.h"
+#include "fsl_os_abstraction.h"
 #endif
 
 #if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
@@ -37,6 +35,12 @@
 /* API wait loop counter */
 #define MAX_WAIT_NBU_API_RESPONSE_LOOPS 100000000U
 
+#if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
+#ifndef PLATFORM_ICS_RX_QUEUE_SIZE
+#define PLATFORM_ICS_RX_QUEUE_SIZE 10
+#endif
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                                Private types                               */
 /* -------------------------------------------------------------------------- */
@@ -44,16 +48,9 @@
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 typedef struct
 {
-    list_element_t node;
-    uint32_t       len;
-    uint8_t       *data;
-} rx_data_t;
-
-typedef struct
-{
-    fwk_work_t   work;
-    list_label_t pending;
-} rx_work_t;
+    uint32_t len;
+    uint8_t *data;
+} ics_rx_data_t;
 #endif
 
 typedef struct
@@ -86,7 +83,7 @@ static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len);
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
-static void PLATFORM_RxWorkHandler(fwk_work_t *work);
+static void PLATFORM_IcsRxWorkHandler(fwk_work_t *work);
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -136,9 +133,8 @@ static void (*PLATFORM_RxCallbackService[gFwkSrvNbu2HostLast_c - gFwkSrvNbu2Host
 };
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
-static rx_work_t rx_work = {
-    .work.handler = PLATFORM_RxWorkHandler,
-};
+static OSA_MSGQ_HANDLE_DEFINE(icsMsgQueue, PLATFORM_ICS_RX_QUEUE_SIZE, sizeof(ics_rx_data_t));
+static fwk_work_t ics_work = {.handler = PLATFORM_IcsRxWorkHandler};
 #endif
 
 static nbu_seed_request_event_callback_t nbu_seed_req_callback = (nbu_seed_request_event_callback_t)NULL;
@@ -165,8 +161,22 @@ int PLATFORM_FwkSrvInit(void)
         }
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
-        LIST_Init(&rx_work.pending, 0U);
-        (void)WORKQ_InitSysWorkQ();
+        result = WORKQ_InitSysWorkQ();
+        if (result < 0)
+        {
+            break;
+        }
+
+        /* We are using the OS message queue since it allows to allocate the memory safely (statically or during init)
+         * and then copy ics_rx_data content in ISR context without allocating memory dynamically
+         * This works with the workqueue only if we don't block when calling OSA_MsgQGet() */
+        osa_status_t osa_status = OSA_MsgQCreate(icsMsgQueue, PLATFORM_ICS_RX_QUEUE_SIZE, sizeof(ics_rx_data_t));
+        if (osa_status != KOSA_StatusSuccess)
+        {
+            assert(0);
+            result = -3;
+            break;
+        }
 #endif
 
         if (kStatus_HAL_RpmsgSuccess != HAL_RpmsgInit((hal_rpmsg_handle_t)fwkRpmsgHandle, &rpmsg_config))
@@ -496,21 +506,34 @@ int PLATFORM_SendNBUXtal32MTrim(uint8_t trim)
 /* -------------------------------------------------------------------------- */
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
-static void PLATFORM_RxWorkHandler(fwk_work_t *work)
+static void PLATFORM_IcsRxWorkHandler(fwk_work_t *work)
 {
-    list_element_t *node;
-    rx_data_t      *rx_data;
+    ics_rx_data_t ics_rx_data;
+    osa_status_t  status;
     (void)work;
 
-    node = LIST_RemoveHead(&rx_work.pending);
+    /* Check if there is any message in the queue
+     * Important: do not set a blocking time to prevent blocking the system workqueue */
+    status = OSA_MsgQGet(icsMsgQueue, (void *)&ics_rx_data, 0);
 
-    while (node != NULL)
+    PLATFORM_RemoteActiveReq();
+
+    while (status == KOSA_StatusSuccess)
     {
-        rx_data = CONTAINER_OF(node, rx_data_t, node);
-        PLATFORM_RxCallbackService[rx_data->data[0] - 1U](rx_data->data, rx_data->len);
-        (void)MEM_BufferFree(rx_data);
-        node = LIST_RemoveHead(&rx_work.pending);
+        if ((ics_rx_data.data != NULL) && (ics_rx_data.len > 0U) && FwkSrv_MsgTypeInExpectedSet(ics_rx_data.data[0]))
+        {
+            uint8_t msg_type = ics_rx_data.data[0];
+            PLATFORM_RxCallbackService[msg_type - 1U](ics_rx_data.data, ics_rx_data.len);
+
+            /* Release the buffer from shared memory */
+            (void)HAL_RpmsgFreeRxBuffer(fwkRpmsgHandle, ics_rx_data.data);
+        }
+
+        /* Continue until the queue is empty */
+        status = OSA_MsgQGet(icsMsgQueue, (void *)&ics_rx_data, 0);
     }
+
+    PLATFORM_RemoteActiveRel();
 }
 #endif
 
@@ -524,37 +547,42 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
     {
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
         bool process_now = false;
-        do
+
+        /* Some messages must be processed in ISR context (version and API indications) */
+        if ((msg_type != (uint8_t)gFwkSrvNbuVersionIndication_c) && (msg_type != (uint8_t)gFwkSrvNbuApiIndication_c))
         {
-            if ((msg_type != (uint8_t)gFwkSrvNbuVersionIndication_c) &&
-                (msg_type != (uint8_t)gFwkSrvNbuApiIndication_c))
+            ics_rx_data_t ics_rx_data = {.len = len, .data = data};
+
+            /* Submit to workqueue first, to make sure no errors occur, we push the message to the queue after.
+             * If pushing to the queue fails, the work will be executed but won't do anything, so this is safe.
+             * Since we are in ISR context, the workqueue thread can't execute until we exit from ISR, so this is safe
+             * to do before pushing to the message queue. */
+            if (WORKQ_Submit(&ics_work) < 0)
             {
-                rx_data_t *rx_data = MEM_BufferAlloc(sizeof(rx_data_t) + len);
-
-                if (rx_data == NULL)
-                {
-                    /* allocation failed - process in the ISR to avoid losing the data
-                     * TODO: use the error callback mechanism to forward the error to the application */
-                    process_now = true;
-                    break;
-                }
-
-                rx_data->data = (uint8_t *)rx_data + sizeof(rx_data_t);
-                rx_data->len  = len;
-                (void)memcpy(rx_data->data, data, len);
-                (void)LIST_AddTail(&rx_work.pending, &rx_data->node);
-                if (WORKQ_Submit(&rx_work.work) < 0)
-                {
-                    process_now = true;
-                    break;
-                }
+                /* Process message immediately but assert as this is not a desired path */
+                process_now = true;
+                assert(0);
             }
             else
             {
-                process_now = true;
-                break;
+                osa_status_t status = OSA_MsgQPut(icsMsgQueue, (void *)&ics_rx_data);
+                if (status == KOSA_StatusSuccess)
+                {
+                    /* Submission to workqueue and message queue succeeded, hold the rpmsg buffer in shared memory */
+                    res = kStatus_HAL_RL_HOLD;
+                }
+                else
+                {
+                    /* Process message immediately but assert as this is not a desired path */
+                    process_now = true;
+                    assert(0);
+                }
             }
-        } while (false);
+        }
+        else
+        {
+            process_now = true;
+        }
 
         if (process_now == true)
 #endif
@@ -563,6 +591,8 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
             PLATFORM_RxCallbackService[msg_type - 1U](data, len);
         }
     }
+    (void)param;
+
     return res;
 }
 
