@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # KW45/MCXW71
-if MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu
+if MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
@@ -25,7 +25,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
 endif
 
 # KW47/MCXW72
-if MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
+if MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
@@ -48,7 +48,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
 endif
 
 # KW43/MCXW70
-if MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
+if MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib

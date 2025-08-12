@@ -16,16 +16,16 @@ config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers
 config MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug_on_host
     bool "Extract Debug info from NBU"
     select MCUX_COMPONENT_middleware.wireless.framework.platform.dbg
-    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 # Only supported on KW47-MCXW72 for now
+    depends on MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72 # Only supported on KW47-MCXW72 for now
     help
       Allows host core to extract the various debug info saved by the fault handlers module
       on NBU side.
 
 config MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug
     bool "Share NBU Debug info with host"
-    depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-               MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
+    depends on MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+               MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
+               MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       Allows NBU to share debug info with the host
 
@@ -35,12 +35,12 @@ choice MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug.dbg_struct_sel
     prompt "Debug structure to use"
     config MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug.dbg_struct_legacy
         bool "Legacy debug structure"
-        depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
-                   MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu # TODO: use refactored structure
+        depends on MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+                   MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu # TODO: use refactored structure
     config MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug.dbg_struct
         bool "Refactored debug structure"
-        depends on MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-                   MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72
+        depends on MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
+                   MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
 endchoice
 
 endif
@@ -51,16 +51,16 @@ choice MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.selection
     prompt "Fault handler selection APP / NBU Core"
     config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.nbu_core
         bool "Fault Handlers for NBU core"
-        depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
-                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
-                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70_nbu
+        depends on  MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
+                    MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
+                    MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
         select MCUX_COMPONENT_middleware.wireless.framework.platform.dbg
         select MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug
     config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.app_core
         bool "Fault Handlers for APP core"
-        depends on  MCUX_PRJSEG_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
-                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72 || \
-                    MCUX_PRJSEG_middleware.wireless.framework.platform.kw43_mcxw70
+        depends on  MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
+                    MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72 || \
+                    MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
         select MCUX_COMPONENT_utility.debug_console_lite
 endchoice
 

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-if MCUX_PRJSEG_middleware.wireless.framework.platform.kw47_mcxw72_nbu
+if MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.dcdc
 

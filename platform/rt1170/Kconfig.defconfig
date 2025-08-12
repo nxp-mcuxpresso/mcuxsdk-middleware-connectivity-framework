@@ -1,7 +1,7 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
-if MCUX_PRJSEG_middleware.wireless.framework.platform.rt1170
+if MCUX_COMPONENT_middleware.wireless.framework.platform.rt1170
 
 choice MCUX_COMPONENT_middleware.mbedtls.port.selection
     default MCUX_COMPONENT_middleware.mbedtls.port.ksdk
@@ -13,4 +13,4 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ota
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
 
-endif # MCUX_PRJSEG_middleware.wireless.framework.platform.rt1170
+endif # MCUX_COMPONENT_middleware.wireless.framework.platform.rt1170

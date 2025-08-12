@@ -1,9 +1,9 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 mcux_set_list(RT1060_FAMILY "MIMXRT1061xxxxA MIMXRT1061xxxxB MIMXRT1062xxxxA MIMXRT1062xxxxB")
 
-if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rt1060)
     mcux_add_source(SOURCES
         configs/fwk_config.h
         fwk_platform_definitions.h

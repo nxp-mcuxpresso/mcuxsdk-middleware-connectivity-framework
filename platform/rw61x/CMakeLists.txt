@@ -3,7 +3,7 @@
 
 mcux_set_list(RW61x_FAMILY "RW610 RW612")
 
-if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x)
     mcux_add_source(SOURCES
         configs/fwk_config.h
         fwk_platform_definitions.h
@@ -43,11 +43,11 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
             DEVICE_IDS ${RW61x_FAMILY}
         )
     endif()
-endif()
 
-mcux_add_macro(
-    MBEDTLS_MCUX_ELS_PKC_API
-)
+    mcux_add_macro(
+        MBEDTLS_MCUX_ELS_PKC_API
+    )
+endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.sensors)
     mcux_add_source(SOURCES
