@@ -22,6 +22,9 @@
 #define NBUDBG_SET_XFAR(reg, val)    ((debug_struct)->dbg_info.exception_data.dbg_exception.xfar.reg = (val))
 #define NBUDBG_SET_SHA(val)          ((debug_struct)->nbu_sha1 = (val))
 #define NBUDBG_BLE_STRUCT            debug_struct
+/* Not supported macro */
+#define NBUDBG_SET_HANDLER_MODE_IRQ(irq_nbr)
+#define NBUDBG_SetThreadContext(a, b)
 
 /* -------------------------------------------------------------------------- */
 /*                            Public type definitions                         */
@@ -36,7 +39,7 @@ typedef struct
     } xfar;
     uint32_t pc;
     uint32_t lr;
-    uint32_t psp;
+    uint32_t sp;
     uint32_t psr;
     uint32_t r0;
     uint32_t r1;

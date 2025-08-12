@@ -8,7 +8,6 @@ rsource "SWO/Kconfig"
 
 config MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers
     bool "Fault Handlers for debug"
-    select MCUX_COMPONENT_component.osa
     help
       Saves the various Fault Status and Address Registers to help decode
       cause of the fault.
