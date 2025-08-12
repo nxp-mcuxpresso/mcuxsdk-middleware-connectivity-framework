@@ -186,6 +186,16 @@
 #define gPlatformIcsUseWorkqueueRxProcessing_d 1
 #endif
 
+/* Enable HCI RX processing in the system workqueue thread
+ * If enabled, the HCI transport will use the system workqueue to process its received data. This allows to reduce the
+ * time spent in the ISR and reduces impact on system activities.
+ * Note: the system workqueue requires a dedicated thread, so enabling this feature will consume a bit of RAM for the
+ * thread stack (this can be configured).
+ */
+#ifndef gPlatformHciUseWorkqueueRxProcessing_d
+#define gPlatformHciUseWorkqueueRxProcessing_d 1
+#endif
+
 /* Address which can trigger a dummy interrupt on NBU. Used in PLATFORM_RemoteActiveReq() to ensure code is executed on
  * NBU when trying to access to its power domain. In some corner cases NBU could become irresponsive if the NBU power domain was woken up without executing any code on the core  */
 #define gPlatformNbuWakeUpInterruptAddr 0x48949410U

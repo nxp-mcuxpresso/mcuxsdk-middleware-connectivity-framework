@@ -188,6 +188,16 @@
 #define gPlatformIcsUseWorkqueueRxProcessing_d 1
 #endif
 
+/* Enable HCI RX processing in the system workqueue thread
+ * If enabled, the HCI transport will use the system workqueue to process its received data. This allows to reduce the
+ * time spent in the ISR and reduces impact on system activities.
+ * Note: the system workqueue requires a dedicated thread, so enabling this feature will consume a bit of RAM for the
+ * thread stack (this can be configured).
+ */
+#ifndef gPlatformHciUseWorkqueueRxProcessing_d
+#define gPlatformHciUseWorkqueueRxProcessing_d 1
+#endif
+
 /*! Enable/Disable shutdown of ECC RAM banks during low power period like Deep Sleep or Power Down
  *  Shutting down ECC RAM banks allows to save about 1uA
  *  The RAM banks can be selectively reinitialized by calling MEM_ReinitRamBank API
