@@ -27,6 +27,11 @@
 #include "HWParameter.h"
 #endif
 
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+#include "fwk_workq.h"
+#include "fsl_os_abstraction.h"
+#endif
+
 #ifdef SERIAL_BTSNOOP
 #include "sbtsnoop.h"
 #endif
@@ -92,55 +97,22 @@
 #define PLATFORM_BLE_SLOT_USEC     625U                /* BLE slot is 625 usec */
 #define PLATFORM_TSTMR_MASK        0xFFFFFFFFFFFFFFULL /* 56 bit max value */
 
-/* -------------------------------------------------------------------------- */
-/*                         Private memory declarations                        */
-/* -------------------------------------------------------------------------- */
-STATIC const uint8_t gBD_ADDR_OUI_c[PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
-
-/* RPMSG related variables */
-
-/* Define hci serial manager handle*/
-static RPMSG_HANDLE_DEFINE(hciRpmsgHandle);
-
-/*hci rpmsg configuration*/
-static const hal_rpmsg_config_t hciRpmsgConfig = {
-    .local_addr  = 40,
-    .remote_addr = 30,
-};
-
-static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
-
-#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
-static const sfc_config_t sfcConfig = {
-#ifdef BOARD_FRO32K_PPM_TARGET
-    .ppmTarget = BOARD_FRO32K_PPM_TARGET,
-#else
-    .ppmTarget                = PLATFORM_DEFAULT_FRO32K_PPM_TARGET,
-#endif /* BOARD_FRO32K_PPM_TARGET */
-#ifdef BOARD_FRO32K_FILTER_SIZE
-    .filterSize = BOARD_FRO32K_FILTER_SIZE,
-#else
-    .filterSize               = PLATFORM_DEFAULT_FRO32K_FILTER_SIZE,
-#endif /* BOARD_FRO32K_FILTER_SIZE */
-#ifdef BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS
-    .maxCalibrationIntervalMs = BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
-#else
-    .maxCalibrationIntervalMs = PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
-#endif /* BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS */
-#ifdef BOARD_FRO32K_TRIG_SAMPLE_NUMBER
-    .trigSampleNumber = BOARD_FRO32K_TRIG_SAMPLE_NUMBER
-#else
-    .trigSampleNumber         = PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER,
-#endif /* BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
-};
-#endif /* BOARD_FRO32K_PPM_TARGET || BOARD_FRO32K_FILTER_SIZE ||  BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS || \
-          BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+#ifndef PLATFORM_HCI_RX_QUEUE_SIZE
+#define PLATFORM_HCI_RX_QUEUE_SIZE 10
+#endif
+#endif
 
 /* -------------------------------------------------------------------------- */
-/*                         Public memory declarations                        */
+/*                          Private type definitions                          */
 /* -------------------------------------------------------------------------- */
-extern PLATFORM_ErrorCallback_t pfPlatformErrorCallback;
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+typedef struct
+{
+    uint32_t len;
+    uint8_t *data;
+} hci_rx_data_t;
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -161,6 +133,15 @@ static int PLATFORM_InitHciLink(void);
  * \return hal_rpmsg_return_status_t tells RPMSG to free or hold the buffer
  */
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len);
+
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+/*!
+ * \brief Processes the HCI received data from the workqueue
+ *
+ * \param[in] work pointer to the work item
+ */
+static void PLATFORM_HciRxWorkHandler(fwk_work_t *work);
+#endif
 
 /*!
  * \brief Configure max TX power in dBm for BLE
@@ -206,6 +187,62 @@ STATIC uint32_t PLATFORM_ComputeTimeDiffFromBleSlotAndSlotOffset(uint32_t ll_ts,
  * \return number of microseconds elapsed between tstmr0 and now.
  */
 STATIC uint32_t PLATFORM_ComputeTimeDiffNbu2HostTstmr(uint64_t tstmr0);
+
+/* -------------------------------------------------------------------------- */
+/*                         Private memory declarations                        */
+/* -------------------------------------------------------------------------- */
+STATIC const uint8_t gBD_ADDR_OUI_c[PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
+
+/* RPMSG related variables */
+
+/* Define hci serial manager handle*/
+static RPMSG_HANDLE_DEFINE(hciRpmsgHandle);
+
+/*hci rpmsg configuration*/
+static const hal_rpmsg_config_t hciRpmsgConfig = {
+    .local_addr  = 40,
+    .remote_addr = 30,
+    .callback    = PLATFORM_HciRpmsgRxCallback,
+};
+
+static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
+
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+static OSA_MSGQ_HANDLE_DEFINE(hciMsgQueue, PLATFORM_HCI_RX_QUEUE_SIZE, sizeof(hci_rx_data_t));
+static fwk_work_t hci_work = {.handler = PLATFORM_HciRxWorkHandler};
+#endif
+
+#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
+static const sfc_config_t sfcConfig = {
+#ifdef BOARD_FRO32K_PPM_TARGET
+    .ppmTarget = BOARD_FRO32K_PPM_TARGET,
+#else
+    .ppmTarget                = PLATFORM_DEFAULT_FRO32K_PPM_TARGET,
+#endif /* BOARD_FRO32K_PPM_TARGET */
+#ifdef BOARD_FRO32K_FILTER_SIZE
+    .filterSize = BOARD_FRO32K_FILTER_SIZE,
+#else
+    .filterSize               = PLATFORM_DEFAULT_FRO32K_FILTER_SIZE,
+#endif /* BOARD_FRO32K_FILTER_SIZE */
+#ifdef BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS
+    .maxCalibrationIntervalMs = BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
+#else
+    .maxCalibrationIntervalMs = PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
+#endif /* BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS */
+#ifdef BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+    .trigSampleNumber = BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+#else
+    .trigSampleNumber         = PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER,
+#endif /* BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
+};
+#endif /* BOARD_FRO32K_PPM_TARGET || BOARD_FRO32K_FILTER_SIZE ||  BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS || \
+          BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
+
+/* -------------------------------------------------------------------------- */
+/*                         Public memory declarations                        */
+/* -------------------------------------------------------------------------- */
+extern PLATFORM_ErrorCallback_t pfPlatformErrorCallback;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -440,33 +477,78 @@ static int PLATFORM_InitHciLink(void)
 
     hci_rpmsg_config = hciRpmsgConfig;
 
-    hci_rpmsg_status = HAL_RpmsgInit((hal_rpmsg_handle_t)hciRpmsgHandle, &hci_rpmsg_config);
-    if (hci_rpmsg_status != kStatus_HAL_RpmsgSuccess)
+    do
     {
-        assert(0);
-        status = RAISE_ERROR(hci_rpmsg_status, 1);
-    }
-    /* Set RX Callback */
-    else
-    {
-        hci_rpmsg_status =
-            HAL_RpmsgInstallRxCallback((hal_rpmsg_handle_t)hciRpmsgHandle, PLATFORM_HciRpmsgRxCallback, NULL);
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+        osa_status_t osa_status;
+        status = WORKQ_InitSysWorkQ();
+        if (status < 0)
+        {
+            assert(0);
+            break;
+        }
+
+        /* We are using the OS message queue since it allows to allocate the memory safely (statically or during init)
+         * and then copy hci_rx_data content in ISR context without allocating memory dynamically
+         * This works with the workqueue only if we don't block when calling OSA_MsgQGet() */
+        osa_status = OSA_MsgQCreate(hciMsgQueue, PLATFORM_HCI_RX_QUEUE_SIZE, sizeof(hci_rx_data_t));
+        if (osa_status != KOSA_StatusSuccess)
+        {
+            assert(0);
+            status = RAISE_ERROR(osa_status, 3);
+            break;
+        }
+#endif
+
+        hci_rpmsg_status = HAL_RpmsgInit((hal_rpmsg_handle_t)hciRpmsgHandle, &hci_rpmsg_config);
         if (hci_rpmsg_status != kStatus_HAL_RpmsgSuccess)
         {
             assert(0);
-            status = RAISE_ERROR(hci_rpmsg_status, 2);
+            status = RAISE_ERROR(hci_rpmsg_status, 1);
+            break;
         }
-    }
+
+    } while (false);
+
     return status;
 }
 
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
 {
-    /* len shall be strictly positive as message shall not be empty */
-    assert((len > 0u) && (len <= (uint16_t)UINT16_MAX));
+    hal_rpmsg_return_status_t ret = kStatus_HAL_RL_RELEASE;
 
-    if ((len > 0u) && (len <= (uint16_t)UINT16_MAX) && (hci_rx_callback != NULL))
+    /* len shall be strictly positive as message shall not be empty */
+    assert((len > 0U) && (len <= (uint16_t)UINT16_MAX));
+
+    (void)param;
+
+    if ((len > 0U) && (len <= (uint16_t)UINT16_MAX) && (hci_rx_callback != NULL))
     {
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+        hci_rx_data_t hci_rx_data = {.len = len, .data = data};
+
+        /* Submit to workqueue first, to make sure no errors occur, we push the message to the queue after.
+         * If pushing to the queue fails, the work will be executed but won't do anything, so this is safe.
+         * Since we are in ISR context, the workqueue thread can't execute until we exit from ISR, so this is safe
+         * to do before pushing to the message queue. */
+        if (WORKQ_Submit(&hci_work) < 0)
+        {
+            assert(0);
+        }
+        else
+        {
+            osa_status_t status = OSA_MsgQPut(hciMsgQueue, (void *)&hci_rx_data);
+            if (status == KOSA_StatusSuccess)
+            {
+                /* Submission to workqueue and message queue succeeded, hold the rpmsg buffer in shared memory */
+                ret = kStatus_HAL_RL_HOLD;
+            }
+            else
+            {
+                assert(0);
+            }
+        }
+#else
         PLATFORM_RemoteActiveReq();
 
         hci_rx_callback(data[0], &data[1], (uint16_t)(len - 1U));
@@ -476,11 +558,47 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
 #endif
 
         PLATFORM_RemoteActiveRel();
+#endif
     }
-    (void)param;
 
-    return kStatus_HAL_RL_RELEASE;
+    return ret;
 }
+
+#if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
+static void PLATFORM_HciRxWorkHandler(fwk_work_t *work)
+{
+    hci_rx_data_t hci_rx_data;
+    osa_status_t  status;
+    (void)work;
+
+    /* Check if there is any message in the queue
+     * Important: do not set a blocking time to prevent blocking the system workqueue */
+    status = OSA_MsgQGet(hciMsgQueue, (void *)&hci_rx_data, 0);
+
+    PLATFORM_RemoteActiveReq();
+
+    while (status == KOSA_StatusSuccess)
+    {
+        if ((hci_rx_data.data != NULL) && (hci_rx_data.len > 0U) && (hci_rx_data.len <= (uint16_t)UINT16_MAX) &&
+            (hci_rx_callback != NULL))
+        {
+            hci_rx_callback(hci_rx_data.data[0], &hci_rx_data.data[1], (uint16_t)(hci_rx_data.len - 1U));
+
+#ifdef SERIAL_BTSNOOP
+            sbtsnoop_write_hci_pkt(hci_rx_data.data[0U], 1U, &hci_rx_data.data[1], (uint16_t)(hci_rx_data.len - 1U));
+#endif
+
+            /* Release the buffer from shared memory */
+            (void)HAL_RpmsgFreeRxBuffer(hciRpmsgHandle, hci_rx_data.data);
+        }
+
+        /* Continue until the queue is empty */
+        status = OSA_MsgQGet(hciMsgQueue, (void *)&hci_rx_data, 0);
+    }
+
+    PLATFORM_RemoteActiveRel();
+}
+#endif
 
 STATIC void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
 {
