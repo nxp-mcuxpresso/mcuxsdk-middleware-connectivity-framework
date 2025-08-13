@@ -642,7 +642,7 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
 {
     uint8_t macAddr[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE] = {0U};
 
-#if (gPlatformUseUniqueDeviceIdForBdAddr_d != 0)
+#if defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d == 1)
     /* First need to activate the radio clock */
     PLATFORM_RemoteActiveReq();
     uint32_t uid_lsb = RADIO_CTRL->UID_LSB;
@@ -657,6 +657,19 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
             macAddr[i] = (uint8_t)uid_lsb & 0xffU;
             uid_lsb >>= 8;
         }
+        /* Set 3 LSB from mac address */
+        FLib_MemCpy((void *)bleDeviceAddress, (const void *)macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
+
+        /* Set 3 MSB from OUI */
+        FLib_MemCpy((void *)&bleDeviceAddress[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE], (const void *)gBD_ADDR_OUI_c,
+                    PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
+    }
+    else
+#elif defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d == 2)
+    if (FLib_MemCmpToVal((const void *)IFR_BLE_BD_ADDR, 0xFFU, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == false)
+    {
+        /* Copy BLE BD address from dedicated IFR0 section */
+        FLib_MemCpy((void *)bleDeviceAddress, (const void *)IFR_BLE_BD_ADDR, PLATFORM_BLE_BD_ADDR_FULL_SIZE);
     }
     else
 #endif
@@ -677,13 +690,14 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
 #endif
         assert(num == PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
         (void)num;
-    }
-    /* Set 3 LSB from mac address */
-    FLib_MemCpy((void *)bleDeviceAddress, (const void *)macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
 
-    /* Set 3 MSB from OUI */
-    FLib_MemCpy((void *)&bleDeviceAddress[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE], (const void *)gBD_ADDR_OUI_c,
-                PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
+        /* Set 3 LSB from mac address */
+        FLib_MemCpy((void *)bleDeviceAddress, (const void *)macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
+
+        /* Set 3 MSB from OUI */
+        FLib_MemCpy((void *)&bleDeviceAddress[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE], (const void *)gBD_ADDR_OUI_c,
+                    PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
+    }
 }
 
 /*!
