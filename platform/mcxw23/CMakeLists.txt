@@ -88,4 +88,12 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23)
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.ota_support.external_flash)
         mcux_add_macro(gPlatformUseExternalOtaStorage=1)
     endif()
+
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
+        mcux_add_source(SOURCES
+            configs/SecLib_psa_config.h
+            DEVICE_IDS ${MCXW23_FAMILY}
+            CORE_IDS "cm33_core0"
+        )
+    endif()
 endif()

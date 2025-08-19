@@ -164,3 +164,21 @@ void PLATFORM_RegisterNbuTemperatureRequestEventCb(nbu_temp_req_event_callback_t
     /* Not implemented */
     (void)cb;
 }
+
+int PLATFORM_InitCrypto(void)
+{
+    /* Not implemented */
+    return 0;
+}
+
+int PLATFORM_TerminateCrypto(void)
+{
+    /* Not implemented */
+    return 0;
+}
+
+int PLATFORM_ResetCrypto(void)
+{
+    /* Not implemented */
+    return 0;
+}

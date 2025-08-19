@@ -326,7 +326,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.crypto
     bool "Crypto"
     depends on  MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x || \
                 MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
-                MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
+                MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72 || \
+                MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23
     help
       SecLib SSS crypto APIs.
 
