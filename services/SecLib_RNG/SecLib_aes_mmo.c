@@ -387,34 +387,39 @@ void HMAC_AES_MMO_Init(void *pContext, const uint8_t *pKey, uint16_t keyLen)
     uint8_t                 i;
     HMAC_AES_MMO_context_t *context;
     uint8_t                 HashKeyBuffer[AES_MMO_HASH_SIZE];
+    const uint8_t          *pKeyToUse;
 
     context = (HMAC_AES_MMO_context_t *)pContext;
     FLib_MemSet(HashKeyBuffer, 0u, AES_MMO_HASH_SIZE);
 
     /* If key is longer than block size hash it */
-    if (keyLen > AES_MMO_BLOCK_SIZE)
+    if (keyLen > AES_MMO_HASH_SIZE)
     {
         AES_MMO_Hash(pKey, keyLen, HashKeyBuffer);
-        pKey   = HashKeyBuffer;
-        keyLen = AES_MMO_HASH_SIZE;
+        pKeyToUse = HashKeyBuffer;
+        keyLen    = AES_MMO_HASH_SIZE;
+    }
+    else
+    {
+        pKeyToUse = pKey;
     }
 
     /* Create i_pad */
     for (i = 0u; i < keyLen; i++)
     {
-        context->pad[i] = pKey[i] ^ gHmacIpad_c;
+        context->pad[i] = (pKeyToUse[i] ^ gHmacIpad_c) & 0xFFU;
     }
 
-    for (i = (uint8_t)(keyLen & 0xffu); i < AES_MMO_BLOCK_SIZE; i++)
+    for (i = (uint8_t)(keyLen & 0xffu); i < AES_MMO_HASH_SIZE; i++)
     {
         context->pad[i] = gHmacIpad_c;
     }
     /* start hashing of the i_key_pad */
     AES_MMO_Init(&context->hashCtx);
-    AES_MMO_HashUpdate(&context->hashCtx, context->pad, AES_MMO_BLOCK_SIZE);
+    AES_MMO_HashUpdate(&context->hashCtx, context->pad, AES_MMO_HASH_SIZE);
 
     /* create o_pad by xor-ing pad[i] with 0x36 ^ 0x5C: */
-    for (i = 0u; i < AES_MMO_BLOCK_SIZE; i++)
+    for (i = 0u; i < AES_MMO_HASH_SIZE; i++)
     {
         context->pad[i] ^= (gHmacIpad_c ^ gHmacOpad_c);
     }

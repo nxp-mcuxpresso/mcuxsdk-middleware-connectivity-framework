@@ -294,7 +294,7 @@ int RNG_GetTrueRandomNumber(uint32_t *pRandomNo)
             break;
         }
 
-        rng_ret = RNG_Specific_GetRandomData((uint8_t *)pRandomNo, sizeof(uint32_t));
+        rng_ret = RNG_Specific_GetRandomData((uint8_t *)pRandomNo, (uint16_t)sizeof(uint32_t));
         if (rng_ret <= 0)
         {
             status = gRngInternalError_d;
