@@ -66,7 +66,7 @@ void vPortFree(void *pv)
         vTaskSuspendAll();
         {
             /* free */
-            MEM_BufferFree(pv);
+            (void)MEM_BufferFree(pv);
         }
         (void)xTaskResumeAll();
     }
@@ -75,13 +75,13 @@ void vPortFree(void *pv)
 
 size_t xPortGetFreeHeapSize(void)
 {
-    return -1;
+    return 0U;
 }
 /*-----------------------------------------------------------*/
 
 size_t xPortGetMinimumEverFreeHeapSize(void)
 {
-    return 0;
+    return 0U;
 }
 /*-----------------------------------------------------------*/
 

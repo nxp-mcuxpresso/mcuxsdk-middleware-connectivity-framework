@@ -12,6 +12,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "fwk_platform.h"
+#include "fwk_freertos_utils.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
