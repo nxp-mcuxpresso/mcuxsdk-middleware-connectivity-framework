@@ -917,16 +917,22 @@ void PLATFORM_RemoteActiveRel(void)
 
     OSA_InterruptDisable();
 
-    assert(active_request_nb > 0);
-    active_request_nb--;
-
-    if (active_request_nb == 0)
+    if (active_request_nb > 0)
     {
-        uint32_t rfmc_ctrl;
-        rfmc_ctrl = RFMC->RF2P4GHZ_CTRL;
-        rfmc_ctrl &= ~RFMC_RF2P4GHZ_CTRL_BLE_WKUP_MASK;
-        RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
-        BOARD_DBGLPIOSET(1, 0);
+        active_request_nb--;
+
+        if (active_request_nb == 0)
+        {
+            uint32_t rfmc_ctrl;
+            rfmc_ctrl = RFMC->RF2P4GHZ_CTRL;
+            rfmc_ctrl &= ~RFMC_RF2P4GHZ_CTRL_BLE_WKUP_MASK;
+            RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
+            BOARD_DBGLPIOSET(1, 0);
+        }
+    }
+    else
+    {
+        assert(0);
     }
 
     OSA_InterruptEnable();
