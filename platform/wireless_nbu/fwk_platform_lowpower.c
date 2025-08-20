@@ -448,6 +448,10 @@ static void PLATFORM_RemoteLowPowerIndication(bool enter)
     }
     else
     {
+        /* Notify LL of the NBU wake up */
+        LL_API_NotifyWakeUp();
+        /* Ensure API call completes before updating register and notifying application core*/
+        __ISB();
         /* Indicate to CM33 the radio is awake, so the CM33 can avoid
          * waiting for the radio domain */
         WOR_REGS->WKUP_TIME = 0U;
