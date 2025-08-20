@@ -51,6 +51,63 @@ NbuDbgMemInfo_t;
 
 typedef enum
 {
+    gNbuInfoReserved_c = 0x0U, /* Info starting from 0x00U to 0x54U */
+    /* New Info events to be added here */
+    gNbuWarningReserved_c = 0x55U, /* Warnings starting from 0x55U to 0xA9U */
+    /* New warning events to be added here */
+    gNbuErrorReserved_c = 0xAAU /* Errors starting from 0xAAU */
+    /* New error events to be added here */
+} eNbuEventType;
+
+typedef PACKED_STRUCT
+{
+    union
+    {
+        /* No data for gNbuInfoReserved_c */
+        /* New info data to be added here */
+    };
+}
+NbuInfoData_t;
+
+typedef PACKED_STRUCT
+{
+    union
+    {
+        /* No data for gNbuWarningReserved_c */
+        /* New warnings data to be added here */
+    };
+}
+NbuWarningData_t;
+
+typedef PACKED_STRUCT
+{
+    union
+    {
+        /* No data for gNbuErrorReserved_c */
+        /* New errors data to be added here */
+    };
+}
+NbuErrorData_t;
+
+typedef PACKED_STRUCT
+{
+    eNbuEventType eventType;
+    union
+    {
+        uint8_t          dummy; /* Ensures the union has a consistent non-zero size across compilers */
+        NbuInfoData_t    infoData;
+        NbuWarningData_t warningData;
+        NbuErrorData_t   errorData;
+    };
+}
+NbuEvent_t;
+
+/*! \brief  FWK ICS message type.
+ *
+ *  \details enumarated values for FWK ICS messages
+ */
+typedef enum
+{
     gFwkSrvNbu2HostFirst_c                      = 0U,
     gFwkSrvNbuInitDone_c                        = 0x1U,
     gFwkSrvNbuVersionIndication_c               = 0x2U,
@@ -63,7 +120,8 @@ typedef enum
     gFwkSrvNbuSecurityEventIndication_c         = 0x9U,
     gFwkSrvNbuRequestRngSeed_c                  = 0xAU,
     gFwkSrvNbuRequestNewTemperature_c           = 0xBU,
-    gFwkSrvNbu2HostLast_c                       = 0xCU,
+    gFwkSrvNbuEventIndication_c                 = 0xCU, /*!< Info - Warning - Error indications to Host */
+    gFwkSrvNbu2HostLast_c                       = 0xDU,
     gFwkSrvHost2NbuFirst_c                      = 0x80U,
     gFwkSrvNbuVersionRequest_c                  = 0x81U,
     gFwkSrvXtal32MTrimIndication_c              = 0x82U,
@@ -111,6 +169,16 @@ int PLATFORM_SendNbuVersionIndication(void);
  * \return int 0 if success, -1 if no memory available, -2 if sending error.
  */
 int PLATFORM_NotifyNbuInitDone(void);
+
+/*!
+ * \brief Indicates a NBU event to Host
+ *
+ * Events can be an information, a warning or a system error.
+ *
+ * \param[in] event: NBU event indication info
+ * \return int 0 if success, -1 if no memory available, -2 if sending error, -3 if invalid param.
+ */
+int PLATFORM_NotifyNbuEvent(NbuEvent_t *event);
 
 /*!
  * \brief Send a SetLowPowerConstraint command to the host core

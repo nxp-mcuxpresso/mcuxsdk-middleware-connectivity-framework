@@ -81,6 +81,7 @@ static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t l
 static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len);
+static void PLATFORM_RxFwkSrvNbuEventIndicationService(uint8_t *data, uint32_t len);
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 static void PLATFORM_IcsRxWorkHandler(fwk_work_t *work);
@@ -110,6 +111,7 @@ static volatile uint32_t             m_nbu_api_return_param_len;
 static uint8_t                       m_nbu_api_return_param[NBU_API_MAX_RETURN_PARAM_LENGTH];
 static nbu_memory_error_callback_t   nbu_mem_error_callback           = (nbu_memory_error_callback_t)NULL;
 static nbu_issue_callback_t          nbu_issue_callback               = (nbu_issue_callback_t)NULL;
+static nbu_event_callback_t          nbu_event_callback               = (nbu_event_callback_t)NULL;
 static nbu_security_event_callback_t nbu_security_event_callback      = (nbu_security_event_callback_t)NULL;
 static nbu_temp_req_event_callback_t nbu_request_temperature_callback = (nbu_temp_req_event_callback_t)NULL;
 
@@ -130,6 +132,7 @@ static void (*PLATFORM_RxCallbackService[gFwkSrvNbu2HostLast_c - gFwkSrvNbu2Host
     PLATFORM_RxNbuSecurityEventIndicationService,
     PLATFORM_RxNbuRequestRngSeedService,
     PLATFORM_RxNbuRequestTemperature,
+    PLATFORM_RxFwkSrvNbuEventIndicationService,
 };
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
@@ -476,6 +479,11 @@ void PLATFORM_RegisterNbuIssueCb(nbu_issue_callback_t cb)
     nbu_issue_callback = cb;
 }
 
+void PLATFORM_RegisterNbuEventCb(nbu_event_callback_t cb)
+{
+    nbu_event_callback = cb;
+}
+
 void PLATFORM_RegisterSecurityEventCb(nbu_security_event_callback_t cb)
 {
     nbu_security_event_callback = cb;
@@ -691,6 +699,25 @@ static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t l
     }
     NOT_USED(data);
     NOT_USED(len);
+}
+
+static void PLATFORM_RxFwkSrvNbuEventIndicationService(uint8_t *data, uint32_t len)
+{
+    NbuEvent_t *event;
+
+    if ((data != NULL) && (nbu_event_callback != NULL))
+    {
+        /* Validate packet size: msg_type + sizeof(NbuEvent_t) */
+        if (len == ((uint32_t)sizeof(NbuEvent_t) + 1U))
+        {
+            event = (NbuEvent_t *)(void *)&data[1];
+            (*nbu_event_callback)(event);
+        }
+        else
+        {
+            assert(0);
+        }
+    }
 }
 
 static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t len)

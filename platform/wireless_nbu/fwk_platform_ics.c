@@ -193,6 +193,25 @@ int PLATFORM_NotifyNbuIssue(void)
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuIssueIndication_c, (void *)NULL, 0);
 }
 
+int PLATFORM_NotifyNbuEvent(NbuEvent_t *event)
+{
+    int ret = 0;
+
+    do
+    {
+        if (event == NULL)
+        {
+            ret = -3; /* Invalid param */
+            break;
+        }
+
+        /* returns 0 if success, -1 if no memory available, -2 if sending error */
+        ret = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuEventIndication_c, (void *)event, (uint16_t)sizeof(NbuEvent_t));
+    } while (false);
+
+    return ret;
+}
+
 int PLATFORM_NotifySecurityEvents(uint32_t securityEventBitmask)
 {
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuSecurityEventIndication_c, (void *)&securityEventBitmask,
