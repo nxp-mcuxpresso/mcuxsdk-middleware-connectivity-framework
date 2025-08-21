@@ -22,7 +22,7 @@
 #define gFwkVerMajor_c 7
 #define gFwkVerMinor_c 0
 #define gFwkVerPatch_c 3
-#define gFwkBuildNo_c  0x62 /* ASCII value for caracter "b" */
+#define gFwkBuildNo_c  0
 #define gFwkModuleId_c 0xA3
 /*! \endcond */
 
