@@ -1,5 +1,35 @@
 ## Connectivity framework CHANGELOG
 
+### 7.0.3 RFP mcux SDK 25.09.00
+
+#### Major Changes
+
+- [wireless_mcu] Replaced ICS RX linked list with message queue to eliminate memory allocation in ISR context and enable user callbacks to run in thread context where memory allocation is permitted.
+- [wireless_mcu] Added HCI RX workqueue processing support to reduce ISR execution time and system impact. Feature controlled by `gPlatformHciUseWorkqueueRxProcessing_d` configuration option (enabled by default on kw45_k32w1_mcxw71 and kw47_mcxw72 platforms). When enabled, HCI transport processes received data in system workqueue thread, allowing user callbacks to run in thread context.
+- [wireless_nbu] Introduced `PLATFORM_ConfigureSmuDmemMapping()` API to configure SMU and DMEM sharing on NBU for kw47_mcxw72 platform, using linker file symbols for correct configuration.
+- [mcxw23] Implemented HCI interface using PLATFORM API as preliminary requirement for Zephyr enablement, introducing `PLATFORM_SendHciMessageAlt()` alternative API.
+- [wireless_mcu][wireless_nbu] Added NBU2Host event manager for status indications to host (Information, Warning, Error) sent over RPMSG.
+
+#### Minor Changes
+
+- [wireless_mcu] Fixed variable underflow issue in `PLATFORM_RemoteActiveRel()`.
+- [SecLib_RNG] Fixed escaping local HashKeyBuffer address issue and added missing cast in `RNG_GetTrueRandomNumber()` function.
+- [Common] Fixed heap memory manager return values and added missing include to fwk_freertos_utils.h.
+- [rw61x] Prevented array out of bounds in `PLATFORM_RegisterRtcHandle()`.
+- [FSCI] Fixed memory leak in FSCI module.
+- [NVM] Enhanced debug facilitation by restricting variable scope, assigning return statuses to variables, and fixing display format in `NV_ShowFlashTable()`.
+- [wireless_mcu] Added new chip revision A2.1 support in `PLATFORM_SendChipRevision()` API.
+- [kw47_mcxw72] Implemented BLE BD address retrieval from IFR memory with fallback to OUI + RNG.
+- [DBG] Added ThreadX support to fault handlers and reworked fault handler structure with dedicated RTOS files.
+- [DBG][Common] Added NBU debug support on host side to detect faults and system errors, with debug info extraction capability (limited to MCXW72/KW47).
+- [Common] Platform CMake rework and Kconfig renaming, removing unneeded checks and renaming PRJSEG platform Kconfigs to COMPONENT.
+- [mcxw23] Added experimental SecLib PSA support with additional configuration for MBEDTLS_ECP_C and MBEDTLS_BIGNUM_C.
+- [wireless_mcu] Cleaned CMakeLists.txt to avoid wrong inclusions of files and folders from incorrect platforms.
+- [wireless_mcu][wireless_nbu] Added NBU2Host warning when 32MHz crystal is unready on low power exit.
+- [wireless_mcu][ot] Introduced `gPlatformUseOuiFromIfr` to use OUI from IFR for the extended address (disabled by default). When enabled and IFR is not blank, copies first three bytes to OUI field of extended address, otherwise uses static OUI as fallback.
+- [General] Removed useless warning about TSTMR_CLOCK_FREQUENCY_MHZ definition.
+- [General] Updated framework license and SBOM for 25.09 RFP release.
+
 ### 7.0.3 revB mcux SDK 25.09.00
 
 #### Major Changes
