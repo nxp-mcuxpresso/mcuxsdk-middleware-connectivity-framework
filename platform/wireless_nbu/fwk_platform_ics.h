@@ -54,6 +54,11 @@ typedef enum
     gNbuInfoReserved_c = 0x0U, /* Info starting from 0x00U to 0x54U */
     /* New Info events to be added here */
     gNbuWarningReserved_c = 0x55U, /* Warnings starting from 0x55U to 0xA9U */
+    /* gNbuWarningXtal32MhzNotReadyAtWakeUp mentions that XTAL happens to be unready
+     * after low power exit. This indicates that the NBU requires some time
+     * on LP exit waiting for XTAL to be ready.
+     * 32MHz parameters needs to be checked. Refer to @BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT */
+    gNbuWarningXtal32MhzNotReadyAtWakeUp = 0x56U,
     /* New warning events to be added here */
     gNbuErrorReserved_c = 0xAAU /* Errors starting from 0xAAU */
     /* New error events to be added here */
@@ -74,6 +79,7 @@ typedef PACKED_STRUCT
     union
     {
         /* No data for gNbuWarningReserved_c */
+        /* No data for gNbuWarningXtal32MhzNotReadyAtWakeUp */
         /* New warnings data to be added here */
     };
 }

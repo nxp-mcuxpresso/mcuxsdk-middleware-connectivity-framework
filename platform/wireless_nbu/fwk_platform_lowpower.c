@@ -17,6 +17,8 @@
 #include "fwk_rf_sfc.h"
 #include "controller_api_ll.h"
 #include "fwk_debug.h"
+#include "fwk_workq.h"
+#include "fwk_platform_ics.h"
 #if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
 #include "fwk_platform_dcdc.h"
 #endif
@@ -49,14 +51,18 @@ static bool PLATFORM_Is_15_4_AllowingLowPower(void);
 static void PLATFORM_RemoteLowPowerIndication(bool enter);
 static void PLATFORM_ConfigureRamRetention(void);
 static int  PLATFORM_SwitchSleepClockSource(bool switchTo32k);
+static void PLATFORM_XtalWarningIndicationWorkHandler(fwk_work_t *work);
 
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
-static bool     initialized                  = false;
-static uint8_t  chipRevision                 = 0xFFU;
-static uint8_t  delayLpoCycle                = 0x3U;
-static uint32_t bleMinimalSleepTimeAllowedHs = BLE_MINIMAL_SLEEP_TIME_ALLOWED;
+static bool       initialized                  = false;
+static uint8_t    chipRevision                 = 0xFFU;
+static uint8_t    delayLpoCycle                = 0x3U;
+static uint32_t   bleMinimalSleepTimeAllowedHs = BLE_MINIMAL_SLEEP_TIME_ALLOWED;
+static fwk_work_t xtal_warning_ind_work        = {
+           .handler = PLATFORM_XtalWarningIndicationWorkHandler,
+};
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -98,7 +104,11 @@ void PLATFORM_LowPowerInit(void)
         BTRTU1->BTRTU1_IMR |= BTRTU1_BTRTU1_IMR_T1_INT_MASK;
         NVIC_EnableIRQ(T1_INT_IRQn);
 #endif
-
+        /* WorkQ used to schedule warning/error indications to Host */
+        if (WORKQ_InitSysWorkQ() < 0)
+        {
+            assert(0);
+        }
         initialized = true;
     }
 
@@ -219,9 +229,20 @@ static void PLATFORM_HandleLowPowerEntry(void)
         PLATFORM_EnableSpcHighPowerMode(true);
 #endif
 
-        /* Wait for the XTAL to be ready before running anything else */
-        while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
-            ;
+        if ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
+        {
+            /* This is a critical section. avoid calling RPMSG which may call OS APIs in here */
+            /* Postpone the indication and use workqueue to notify the host that the 32MHz crystal is not ready after
+             * the NBU wakeup */
+            if (WORKQ_Submit(&xtal_warning_ind_work) < 0)
+            {
+                assert(0);
+            }
+            /* Wait for the XTAL to be ready before running anything else */
+            while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
+            {
+            }
+        }
     }
 
     /* Set sleep clock source to auto */
@@ -509,4 +530,17 @@ static int PLATFORM_SwitchSleepClockSource(bool switchTo32k)
     }
 
     return ret;
+}
+
+static void PLATFORM_XtalWarningIndicationWorkHandler(fwk_work_t *work)
+{
+    (void)work;
+    NbuEvent_t event = {};
+
+    event.eventType = gNbuWarningXtal32MhzNotReadyAtWakeUp;
+
+    if (PLATFORM_NotifyNbuEvent(&event) < 0)
+    {
+        assert(0);
+    }
 }
