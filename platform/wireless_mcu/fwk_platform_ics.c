@@ -418,7 +418,15 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
 
         while ((!m_nbu_api_ind_received) && (cnt < MAX_WAIT_NBU_API_RESPONSE_LOOPS))
         {
-            // wait loop
+#if ((!defined(SDK_OS_FREE_RTOS)) && defined(gPlatformIcsUseWorkqueueRxProcessing_d) && \
+     (gPlatformIcsUseWorkqueueRxProcessing_d > 0))
+            /* On bare-metal systems, a deadlock can occur if the NBU exhausts its RPMSG Tx buffers
+             * before PLATFORM_NbuApiReq() is called. The application would block waiting for NBU response,
+             * but NBU cannot respond because the application hasn't processed incoming messages yet.
+             * Calling the ICS work handler here prevents this by freeing RPMSG messages. */
+            PLATFORM_IcsRxWorkHandler((fwk_work_t *)NULL);
+#endif
+            /* wait loop */
             cnt++;
             assert(cnt != MAX_WAIT_NBU_API_RESPONSE_LOOPS);
         }
