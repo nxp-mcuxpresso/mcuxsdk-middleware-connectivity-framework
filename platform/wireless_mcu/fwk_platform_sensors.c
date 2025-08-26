@@ -206,6 +206,7 @@ void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
 #else
     /* Temperature ready event is only supported when gPlatformIcsUseWorkqueueRxProcessing_d is enabled */
     cb = NULL;
+    (void)cb;
 #endif
 }
 
