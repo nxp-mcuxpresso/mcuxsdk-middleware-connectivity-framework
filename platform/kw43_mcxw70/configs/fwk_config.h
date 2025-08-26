@@ -193,9 +193,14 @@
  * time spent in the ISR and reduces impact on system activities.
  * Note: the system workqueue requires a dedicated thread, so enabling this feature will consume a bit of RAM for the
  * thread stack (this can be configured).
+ * It is not supported to use this feature if the application does not run an RTOS, as the workqueue will be unable to preempt other tasks.
  */
 #ifndef gPlatformHciUseWorkqueueRxProcessing_d
+#if (defined(SDK_OS_FREE_RTOS))
 #define gPlatformHciUseWorkqueueRxProcessing_d 1
+#else
+#define gPlatformHciUseWorkqueueRxProcessing_d 0
+#endif
 #endif
 
 /*! Enable/Disable shutdown of ECC RAM banks during low power period like Deep Sleep or Power Down
@@ -220,5 +225,13 @@
 #define PLATFORM_SELECT_RAM_RET_START_IDX 5U
 #define PLATFORM_SELECT_RAM_RET_END_IDX   6U
 #endif /* gPlatformShutdownEccRamInLowPower */
+
+/*********************************************************************
+ *        Configuration check
+ *********************************************************************/
+
+#if (!defined(SDK_OS_FREE_RTOS)) && (gPlatformHciUseWorkqueueRxProcessing_d == 1)
+#error "Using gPlatformHciUseWorkqueueRxProcessing_d feature in baremetal is not supported"
+#endif
 
 #endif /* _FWK_CONFIG_H_ */
