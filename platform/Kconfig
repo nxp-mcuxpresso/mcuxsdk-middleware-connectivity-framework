@@ -64,8 +64,9 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
     select MCUX_COMPONENT_component.rpmsg_adapter
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     select MCUX_COMPONENT_component.timer_manager
-    depends on MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_MCXW727C
-    depends on MCUX_HW_DEVICE_KW47B42ZB7_CORE_ID_cm33_core0 || MCUX_HW_DEVICE_MCXW727C_CORE_ID_cm33_core0
+    depends on MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_MCXW727C || MCUX_HW_DEVICE_KW47B42Z97 || MCUX_HW_DEVICE_KW47B42Z83
+    depends on MCUX_HW_DEVICE_KW47B42ZB7_CORE_ID_cm33_core0 || MCUX_HW_DEVICE_MCXW727C_CORE_ID_cm33_core0 || \
+               MCUX_HW_DEVICE_KW47B42Z97_CORE_ID_cm33_core0 || MCUX_HW_DEVICE_KW47B42Z83_CORE_ID_cm33_core0
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu
     bool "KW47x, MCXW72x NBU families"
