@@ -75,6 +75,12 @@ typedef struct psa_ecp256_context_t
 static psa_ecp256_context_t  psa_g_ECP_KeyPair;
 static psa_ecp256_context_t *psa_pECPKeyPair = ((void *)0);
 
+/*! Callback used to offload Security steps onto application message queue. When it is not set the
+ * multiplication is done using SecLib means */
+extern secLibCallback_t pfSecLibMultCallback;
+
+secLibCallback_t pfSecLibMultCallback = NULL;
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private functions

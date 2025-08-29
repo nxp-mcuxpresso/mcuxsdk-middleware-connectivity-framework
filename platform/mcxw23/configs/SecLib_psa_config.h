@@ -10,6 +10,14 @@
 #ifndef SECLIB_PSA_CONFIG_H
 #define SECLIB_PSA_CONFIG_H
 
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
+/* MDK linker fails to link some PSA crypto functions without this even with the --remove option */
+#define MBEDTLS_ASN1_PARSE_C
+#define MBEDTLS_ASN1_WRITE_C
+#define MBEDTLS_ECDSA_C
+#define MBEDTLS_HMAC_DRBG_C
+#endif
+
 /**
  * This is an optional version symbol that enables compatibility handling of
  * config files.
