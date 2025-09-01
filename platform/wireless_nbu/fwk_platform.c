@@ -83,9 +83,17 @@ typedef struct smu_dmem_config
  ************************************************************************************/
 
 #if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
-/* We have to adapt the divide register of the FRO depending the frequency of the core to keep a frequency for flash APB
- * clock & RF_CMC clock between 16MHz and 32MHz */
-static const uint8_t PLATFORM_FroDiv[] = {1U, 1U, 2U, 2U, 3U};
+/* This array contains the FRODIV values for each FRO range (from 16MHz to 64MHz)
+ * The output clock is provided to flash APB and RC_CMC block, it can't exceed 24MHz
+ * The current mapping is the following:
+ * | CPU | 16M | 24M | 32M | 48M |  64M   |
+ * | APB | 16M | 24M | 16M | 24M | ~21.3M |
+ * A value of:
+ *  0 -> Divide by 1
+ *  1 -> Divide by 2
+ *  2 -> Divide by 3
+ *  3 -> Divide by 4 */
+static const uint8_t PLATFORM_FroDiv[] = {0U, 0U, 1U, 1U, 2U};
 #endif
 
 /* tracks the last XTAL32M trimming value updated with PLATFORM_UpdateXtal32MTrim function */
