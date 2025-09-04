@@ -1590,6 +1590,14 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 #endif
         (void)MEM_BufferFree(buf);
 
+        /* Exports context from HW accelerator, as we may go in low-power mode before calling ECDH_P256_ComputeDhKey()
+         */
+        result = mbedtls_ecdh_export_context(&gEcdhCtx);
+        if (result != 0)
+        {
+            break;
+        }
+
         /* Write the generated Secret Key and Public Key to the designated output locations.
          * The sizes copied should correspond to the sizes of the keys for the P256 curve. */
 
@@ -1663,6 +1671,14 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
 
         pPrngCtx = RNG_GetPrngContext();
         if (NULL == pPrngCtx)
+        {
+            break;
+        }
+
+        /* Ensure the HW accelerator has the correct context, as it may have entered low-power mode between
+         * ECDH_P256_GenerateKeys() and ECDH_P256_ComputeDhKey() */
+        result = mbedtls_ecdh_import_context(&gEcdhCtx);
+        if (result != 0)
         {
             break;
         }
