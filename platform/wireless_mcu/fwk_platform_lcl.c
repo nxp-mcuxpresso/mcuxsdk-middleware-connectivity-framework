@@ -414,7 +414,7 @@ static uint8_t PLATFORM_COEX_pin_init(rfmcGpoCoex_t       rfmcGpoCoex,
             return 1U;
         }
 
-#if (!defined(FPGA_TARGET) || (FPGA_TARGET == 0))
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         if (rf_active_used)
         {
             PORT_SetPinMux(PORTA, 18U, kPORT_MuxAlt6); /* RF_GPO 0 J2-2 RF_ACTIVE */
@@ -451,7 +451,7 @@ static uint8_t PLATFORM_COEX_pin_init(rfmcGpoCoex_t       rfmcGpoCoex,
             return 1U;
         }
 
-#if (!defined(FPGA_TARGET) || (FPGA_TARGET == 0))
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         if (rf_active_used)
         {
             PORT_SetPinMux(PORTD, 1U, kPORT_MuxAlt4); /* RF_GPO 4 J4-1 RF_ACTIVE */
@@ -483,7 +483,7 @@ static uint8_t PLATFORM_COEX_pin_init(rfmcGpoCoex_t       rfmcGpoCoex,
     /* Configure RF_NOT_ALLOWED input pin */
     if (rfmcStatus == gRfmcSuccess_c)
     {
-#if (!defined(FPGA_TARGET) || (FPGA_TARGET == 0))
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         if (coexRfNotAllowPin == coexRfNotAllowPinPta16)
         {
             PORT_SetPinMux(PORTA, 16U, kPORT_MuxAsGpio); /* J1-1, PTA16 */

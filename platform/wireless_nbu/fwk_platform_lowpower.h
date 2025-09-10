@@ -31,4 +31,12 @@ void PLATFORM_EnterLowPower(void);
  */
 void PLATFORM_SetWakeupDelay(uint8_t wakeupDelayReceivedFromHost);
 
+/*!
+ * \brief Set instant of next planned activity in RAM for MCU to check converting from LL number of half-slots.
+ *
+ * \param duration_32kHz_tick number of 32kHz ticks until next NBU activity
+ *
+ */
+void PLATFORM_SetNextNbuActivityDeadline(uint32_t duration_32kHz_tick);
+
 #endif /* _FWK_PLATFORM_LOWPOWER_H_ */

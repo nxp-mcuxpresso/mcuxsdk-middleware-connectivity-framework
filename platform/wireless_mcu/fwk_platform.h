@@ -37,7 +37,9 @@
 #define PLATFORM_TM_INSTANCE 0U
 #endif
 #ifndef PLATFORM_TM_CLK_FREQ
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #define PLATFORM_TM_CLK_FREQ 32768U
+#endif
 #endif
 
 #ifndef PLATFORM_TM_CLK_SELECT
@@ -48,8 +50,11 @@
 #ifndef PLATFORM_TM_STAMP_INSTANCE
 #define PLATFORM_TM_STAMP_INSTANCE 1U
 #endif
+
 #ifndef PLATFORM_TM_STAMP_CLK_FREQ
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #define PLATFORM_TM_STAMP_CLK_FREQ 32768U
+#endif
 #endif
 
 #ifndef PLATFORM_TM_STAMP_CLK_SELECT

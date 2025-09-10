@@ -13,13 +13,13 @@
 #include "fwk_platform.h"
 #include "fwk_config.h"
 #include "fwk_platform_ics.h"
-#if defined(FPGA_TARGET) && (FPGA_TARGET == 1)
+#if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fwk_platform_fpga.h"
 #endif
 
 #include "fsl_tstmr.h"
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
 #include "fsl_trdc.h"
@@ -270,7 +270,7 @@ int PLATFORM_InitNbu(void)
         uint32_t rfmc_ctrl;
         int      cnt = 0;
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
         /* Init TRDC for NBU - Allow NBU to access GPIOD*/
         trdc_non_processor_domain_assignment_t domainAssignment;
@@ -400,7 +400,7 @@ void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
     return;
 }
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 int PLATFORM_InitFro32K(void)
 {
     /* Enable the fro32k and select it as 32k clock source and disable osc32k
@@ -724,7 +724,7 @@ void PLATFORM_Delay(uint64_t delayUs)
 
 void PLATFORM_DisableControllerLowPower(void)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     /* Increase active request number so it is always asserted while Controller
      * is not allowed to go to low power
      * This will avoid going through the wake up procedure each time
@@ -901,12 +901,12 @@ void mcmgr_imu_remote_active_req(void)
 
 void PLATFORM_SetLdoCoreNormalDriveVoltage(void)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     spc_active_mode_core_ldo_option_t ldoOption;
     ldoOption.CoreLDOVoltage       = kSPC_CoreLDO_NormalVoltage;
     ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
     (void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
-#endif /* !defined(FPGA_TARGET) || (FPGA_TARGET == 0) */
+#endif /* FPGA_TARGET */
 }
 
 void PLATFORM_SetNbuConstraintFrequency(PLATFORM_NbuConstraintFrequency_t freq_constraint)
@@ -923,7 +923,7 @@ void PLATFORM_RegisterErrorCallback(PLATFORM_ErrorCallback_t cb)
 int PLATFORM_ClearIoIsolationFromLowPower(void)
 {
     int ret = 0;
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     if ((SPC_CheckPowerDomainLowPowerRequest(SPC0, kSPC_PowerDomain0) == true) &&
         (SPC_GetPowerDomainLowPowerMode(SPC0, kSPC_PowerDomain0) >= kSPC_PowerDownWithSysClockOff))
     {

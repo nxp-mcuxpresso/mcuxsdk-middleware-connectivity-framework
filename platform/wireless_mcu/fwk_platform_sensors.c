@@ -10,7 +10,7 @@
 #include "fsl_common.h"
 #include "fwk_platform_sensors.h"
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fwk_platform_ics.h"
 #include "fwk_platform.h"
 #include "board_utility.h"

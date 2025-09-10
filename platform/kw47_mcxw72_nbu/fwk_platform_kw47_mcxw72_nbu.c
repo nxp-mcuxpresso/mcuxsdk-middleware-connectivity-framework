@@ -58,3 +58,9 @@ uint64_t PLATFORM_Get32KTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp
     /* 32kHz TSTMR not instantiated on KW47 / MCXW72 NBU */
     return 0ULL;
 }
+
+void PLATFORM_SetNextNbuActivityDeadline(uint32_t duration_32kHz_tick)
+{
+    /* KW47 / MCXW72 stub - Not needed */
+    NOT_USED(duration_32kHz_tick);
+}

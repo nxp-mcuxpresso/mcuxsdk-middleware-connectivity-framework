@@ -9,6 +9,11 @@
 #include <stdlib.h>
 
 #include "fwk_config.h"
+#ifndef gUseSfcRf_d
+#define gUseSfcRf_d 1
+#endif
+
+#if defined gUseSfcRf_d && (gUseSfcRf_d > 0)
 #include "fsl_common.h"
 #include "fwk_platform.h"
 #include "fwk_platform_ics.h"
@@ -20,7 +25,6 @@
 #include "fwk_debug.h"
 #include "ll_types.h"
 #include "controller_api_ll.h"
-
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
@@ -732,3 +736,4 @@ static uint32_t SFC_GetTimestamp(void)
 
     return timestampInQuarterUs;
 }
+#endif

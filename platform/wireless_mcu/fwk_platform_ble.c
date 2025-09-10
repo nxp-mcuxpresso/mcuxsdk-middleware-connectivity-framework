@@ -16,6 +16,7 @@
 #include "fsl_adapter_rpmsg.h"
 #include "fwk_config.h"
 #include "fwk_platform_ble.h"
+#include "fwk_platform_definitions.h"
 #include "fwk_platform.h"
 #include "fwk_platform_ics.h"
 #include "FunctionLib.h"
@@ -287,6 +288,10 @@ int PLATFORM_InitBle(void)
         status = PLATFORM_SendChipRevision();
         CHECK_AND_RAISE_ERROR(status, -6);
 
+#if defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0)
+        status = PLATFORM_SetNbuSharedCtxAddress();
+        CHECK_AND_RAISE_ERROR(status, -7);
+#endif
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
         PLATFORM_SendWakeupDelay(BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT);
 #endif
@@ -310,11 +315,30 @@ int PLATFORM_InitBle(void)
     return status;
 }
 
+/*!
+ * \brief Registers HCI RX callback for upper layers, likely called from Host's
+ *        HCI transport layers. The callback is called when PLATFORM has
+ *        received a message from lower transport layers such as RPMSG or UART
+ *
+ * \param[in] callback function pointer to callback. Can be NULL to unregister
+ *            the callback.
+ */
 void PLATFORM_SetHciRxCallback(void (*callback)(uint8_t packetType, uint8_t *data, uint16_t len))
 {
+    /* Assign value to global hci_rx_callback function pointer */
     hci_rx_callback = callback;
 }
 
+/*!
+ * \brief Sends a HCI message to Controller.
+ *        This is usually called from Host's HCI transport layers.
+ *        This allows complete abstraction of physical transport layers from one
+ *        platform to another.
+ *
+ * \param[in] msg pointer to HCI message buffer
+ * \param[in] len size of the message
+ * \return int 0 if success, negative value if error
+ */
 int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
 {
     int status = 0;
@@ -360,6 +384,12 @@ int PLATFORM_SendHciMessageAlt(uint8_t packetType, uint8_t *msg, uint32_t len)
     return -1;
 }
 
+/*!
+ * \brief retrieve BLE device address
+ *
+ * \param[out] bleDeviceAddress pointer to BLE device address bytes
+ *
+ */
 void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
 {
 #if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
@@ -398,20 +428,19 @@ void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
     PLATFORM_GenerateNewBDAddr(bleDeviceAddress);
 #endif
 }
-
+/*!
+ * \brief enable secure key management for BLE.
+ *
+ * \return status of the operation, whether the security enabling was successful (=0) or failed.
+ *
+ */
 int32_t PLATFORM_EnableBleSecureKeyManagement(void)
 {
     int32_t ret = 0;
-
+    /* Send intercore gFwkSrvNbuSecureModeRequest_c message to NBU*/
     ret = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuSecureModeRequest_c, NULL, 0U);
 
     return ret;
-}
-
-bool PLATFORM_CheckNextBleConnectivityActivity(void)
-{
-    DBG_LOG_DUMP();
-    return true;
 }
 
 uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
@@ -465,10 +494,26 @@ uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
     return delta;
 }
 
+/*
+ * Deprecated API.
+ */
+bool PLATFORM_CheckNextBleConnectivityActivity(void)
+{
+    /* Verify whether NBU core#1 has raised a fault report */
+    DBG_LOG_DUMP();
+    /* core#1 unconstrained by core#0 as far as flash modifications are concerned, so return true */
+    return true;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
-
+/*!
+ * \brief Initialize HCI RPMSG interface .
+ *
+ * \return status of the operation, hal_rpmsg_status_t.
+ *
+ */
 static int PLATFORM_InitHciLink(void)
 {
     int                status = 0;

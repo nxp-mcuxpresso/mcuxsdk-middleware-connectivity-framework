@@ -14,7 +14,9 @@
 #include "ll_types.h"
 #include "fwk_platform_lowpower.h"
 #include "fwk_platform.h"
+#if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
 #include "fwk_rf_sfc.h"
+#endif
 #include "controller_api_ll.h"
 #include "fwk_debug.h"
 #include "fwk_workq.h"
@@ -30,7 +32,15 @@ extern bool PHY_XCVR_AllowLowPower(void);
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
-#define BLE_MINIMAL_SLEEP_TIME_ALLOWED         16U
+/* Value form which CONVERT_HALF_SLOTS_2_32KTICKS overflows 32 bits using CONVERT_HALF_SLOTS_2_32KTICKS */
+#define OVF_HALF_SLOTS_2_32KTICKS 419430399UL
+/* Macro converting number of BLE half-slots to number of 32kHz ticks */
+#define CONVERT_HALF_SLOTS_2_32KTICKS(hlf_slot) ((((((hlf_slot) << 2) / 5) << 2) / 5) << 4)
+/* Macro converting number of microseconds  to number of BLE half-slots */
+#define CONVERT_USEC_2_HALF_SLOTS(usec)   (((usec) << 1) / 625)
+#define BLE_MINIMAL_SLEEP_TIME_ALLOWED_HS CONVERT_USEC_2_HALF_SLOTS(5000u) /* 5ms minimal sleep time */
+#define BLE_SLP_WUP_MARGIN_HS             CONVERT_USEC_2_HALF_SLOTS(1875u) /* 1.875ms margin */
+
 #define ST_INIT                                0x11U
 #define HANDLE_INIT                            0x000EU
 #define PLATFORM_SWITCH_SLEEP_CLOCK_TIMEOUT_US 200U
@@ -56,10 +66,11 @@ static void PLATFORM_XtalWarningIndicationWorkHandler(fwk_work_t *work);
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
-static bool       initialized                  = false;
-static uint8_t    chipRevision                 = 0xFFU;
-static uint8_t    delayLpoCycle                = 0x3U;
-static uint32_t   bleMinimalSleepTimeAllowedHs = BLE_MINIMAL_SLEEP_TIME_ALLOWED;
+static bool    initialized   = false;
+static uint8_t chipRevision  = 0xFFU;
+static uint8_t delayLpoCycle = 0x3U;
+/* bleMinimalSleepTimeAllowedHs number of half-slots */
+static uint32_t   bleMinimalSleepTimeAllowedHs = BLE_MINIMAL_SLEEP_TIME_ALLOWED_HS;
 static fwk_work_t xtal_warning_ind_work        = {
            .handler = PLATFORM_XtalWarningIndicationWorkHandler,
 };
@@ -153,12 +164,12 @@ void PLATFORM_EnterLowPower(void)
 void PLATFORM_SetWakeupDelay(uint8_t wakeupDelayReceivedFromHost)
 {
     delayLpoCycle = wakeupDelayReceivedFromHost;
-    /* Configure BLE timer wakeup delay of 3.2Khz period */
+    /* Configure BLE timer wakeup delay of 3.2kHz period */
     BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES = delayLpoCycle;
 
-    /* update variable with wthe wape time of the 32 mHz crystal and few half slot of margin to ensure sleeping and
-     * wakeup timings */
-    bleMinimalSleepTimeAllowedHs = wakeupDelayReceivedFromHost + 6U;
+    /* Update the variable with the wake-up time of the 32 MHz crystal,
+     * adding a margin of a few half-slots to ensure reliable sleep and wake-up timing */
+    bleMinimalSleepTimeAllowedHs = wakeupDelayReceivedFromHost + BLE_SLP_WUP_MARGIN_HS;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -172,10 +183,11 @@ void PLATFORM_SetWakeupDelay(uint8_t wakeupDelayReceivedFromHost)
 
 static void PLATFORM_HandleLowPowerEntry(void)
 {
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     /* Save FRO192M settings before changing it for lowpower */
     uint32_t fro192M_clock_ctrl = FRO192M0->FROCCSR;
     uint32_t fro192M_frodiv     = FRO192M0->FRODIV;
-
+#endif
     /* Force sleep clock source to 32k */
     if (PLATFORM_SwitchSleepClockSource(true) == 0)
     {
@@ -201,11 +213,12 @@ static void PLATFORM_HandleLowPowerEntry(void)
         /* Request low power entry to RFMC */
         RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_SLEEP_EN_MASK;
 
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         /* The host allows the NBU to downgrade its frequency to 16MHz
          * So we can select the 16MHz range and use the highest divider */
         FRO192M0->FROCCSR = 0U;
         FRO192M0->FRODIV  = FRO192M_FRODIV_FRODIV_MASK;
-
+#endif
         /* WFI will trigger low power entry procedure */
         __DSB();
         __WFI();
@@ -215,10 +228,11 @@ static void PLATFORM_HandleLowPowerEntry(void)
         SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
         __ISB();
 
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         /* Restore previous CPU frequency */
         FRO192M0->FROCCSR = fro192M_clock_ctrl;
         FRO192M0->FRODIV  = fro192M_frodiv;
-
+#endif
         /* Unset bit to prevent lowpower now */
         RF_CMC1->RADIO_LP &= ~RF_CMC1_RADIO_LP_SLEEP_EN_MASK;
 
@@ -255,9 +269,10 @@ static void PLATFORM_HandleLowPowerEntry(void)
  */
 static void PLATFORM_HandleWFI(void)
 {
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     uint32_t fro192M_clock_ctrl = FRO192M0->FROCCSR;
     uint32_t fro192M_frodiv     = FRO192M0->FRODIV;
-
+#endif
     /* Make sure core Deep Sleep is disabled */
     SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 
@@ -265,17 +280,20 @@ static void PLATFORM_HandleWFI(void)
     {
         /* The host allows the NBU to downgrade its frequency to 16MHz
          * So we can select the 16MHz range and use the highest divider */
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         FRO192M0->FROCCSR = 0U;
         FRO192M0->FRODIV  = FRO192M_FRODIV_FRODIV_MASK;
-
+#endif
         /* Enter simple WFI to save minimal power */
         __DSB();
         __WFI();
         __ISB();
 
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
         /* Restore previous CPU frequency */
         FRO192M0->FROCCSR = fro192M_clock_ctrl;
         FRO192M0->FRODIV  = fro192M_frodiv;
+#endif
     }
     else
     {
@@ -295,19 +313,23 @@ static void PLATFORM_HandleWFI(void)
  */
 static int PLATFORM_LowPowerModeAllowed(void)
 {
-    int      ret          = 0;
-    uint32_t bleSleepTime = 0U;
-
+    int      ret              = 0;
+    uint32_t slp_nb_32k_ticks = 0U;
     do
     {
+        uint32_t bleSleepTime = ~0U;
+        bool     bleAllowLp   = false;
         if (initialized == false)
         {
             /* Do not allow low power if the module hasn't been initialized */
             ret = 1;
             break;
         }
-        else if (PLATFORM_IsBleAllowingLowPower(&bleSleepTime) == false)
+        bleAllowLp = PLATFORM_IsBleAllowingLowPower(&bleSleepTime);
+        if (bleAllowLp == false)
         {
+            /* BLE is not allowing low power */
+            slp_nb_32k_ticks = 0u;
             if (bleSleepTime > bleMinimalSleepTimeAllowedHs)
             {
                 /* Disallow WFI when the LL sleep time is large enough but the LL is still not ready for deep sleep
@@ -327,32 +349,45 @@ static int PLATFORM_LowPowerModeAllowed(void)
             }
             break;
         }
+        if (bleSleepTime < OVF_HALF_SLOTS_2_32KTICKS) /* */
+        {
+            slp_nb_32k_ticks = CONVERT_HALF_SLOTS_2_32KTICKS(bleSleepTime);
+        }
+        else
+        {
+            slp_nb_32k_ticks = ~0UL;
+        }
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
-        else if (PLATFORM_Is_15_4_AllowingLowPower() == false)
+        if (PLATFORM_Is_15_4_AllowingLowPower() == false)
         {
             /* 15.4 PHY may not be ready for low power */
             ret = 1;
             break;
         }
 #endif
-        else if (PLATFORM_IsRemoteAllowingLowPower() == false)
+        if (PLATFORM_IsRemoteAllowingLowPower() == false)
         {
             /* Remote CPU can prevent low power */
             ret = 1;
             break;
         }
-        else if (SFC_IsBusy() == true)
+#if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
+        /* SFC_Init must have been run to have SFA clock started */
+        if (SFC_IsBusy() == true)
         {
             ret = 1;
             break;
         }
-        else if (SFC_IsMeasureAvailable() == true)
+        if (SFC_IsMeasureAvailable() == true)
         {
             ret = -1;
             break;
         }
+#endif
     } while (false);
-
+    /* Has no effect on KW45 or KW47 : tell main core how much time there is to insert activities that would stall NBU
+     */
+    PLATFORM_SetNextNbuActivityDeadline(slp_nb_32k_ticks);
     return ret;
 }
 
@@ -388,12 +423,15 @@ static bool PLATFORM_IsRemoteAllowingLowPower(void)
  */
 static bool PLATFORM_IsBleAllowingLowPower(uint32_t *outSleepTime)
 {
-    bool ret = true;
-
+    bool     ret       = true;
+    uint32_t sleepTime = 0U;
     do
     {
-        uint8_t  sleepAllowed = LL_API_SCHED_IsSleepAllowed();
-        uint32_t sleepTime    = LL_API_SCHED_GetSleepTime();
+        uint8_t sleepAllowed = LL_API_SCHED_IsSleepAllowed();
+
+        /* sleepTime is expressed in number of half-slots */
+        sleepTime = LL_API_SCHED_GetSleepTime();
+
 #if defined(gPlatformLowpowerCheckHciPendingCommand) && (gPlatformLowpowerCheckHciPendingCommand == 1)
         uint8_t pendingCmd = LL_API_BLE_HCI_GetNofPendingCommand();
 #endif
@@ -403,24 +441,20 @@ static bool PLATFORM_IsBleAllowingLowPower(uint32_t *outSleepTime)
             *outSleepTime = sleepTime;
         }
 
-        if (sleepAllowed == 1u)
-        {
-            PWR_DBG_LOG("Slp allowed, SleepTime=%d pendingCmd=%d", sleepTime, pendingCmd);
-        }
-
-        if (sleepAllowed != 1)
+        if (sleepAllowed != 1u)
         {
             // PWR_DBG_LOG("sleepAllowed %x", sleepAllowed);
             ret = false;
             break;
         }
-        else if (sleepTime <= bleMinimalSleepTimeAllowedHs)
+        PWR_DBG_LOG("Slp allowed, SleepTime=%d pendingCmd=%d", sleepTime, pendingCmd);
+        if (sleepTime <= bleMinimalSleepTimeAllowedHs)
         {
             ret = false;
             break;
         }
 #if defined(gPlatformLowpowerCheckHciPendingCommand) && (gPlatformLowpowerCheckHciPendingCommand == 1)
-        else if (pendingCmd > 0U)
+        if (pendingCmd > 0U)
         {
             /* Some HCI event are not sent directly when receiving an HCI command
              * The HCI task delays the HCI event and increments the number of pending

@@ -282,7 +282,6 @@ int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
  * @note This function should be called during platform initialization before
  *       accessing SMU DMEM regions.
  */
-
 void PLATFORM_ConfigureSmuDmemMapping(void);
 
 #if defined(__cplusplus)

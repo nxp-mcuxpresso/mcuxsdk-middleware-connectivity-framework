@@ -112,7 +112,7 @@ int PLATFORM_OtaBootDataUpdateOnCommit(const OtaLoaderInfo_t *ota_loader_info)
 
 int PLATFORM_OtaClearBootInterface(void)
 {
-#ifndef FPGA_TARGET
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     return (int)HAL_FlashEraseSector((uint32_t)IFR_OTACFG_DATA, sizeof(ifr0_otacfg_data_t));
 #else
     return 0;
@@ -121,7 +121,7 @@ int PLATFORM_OtaClearBootInterface(void)
 
 int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
 {
-#ifndef FPGA_TARGET
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     int st = -1;
 #if defined gOtaCheckEccFaults_d && (gOtaCheckEccFaults_d > 0)
     uint8_t nb_write_attempts = 0u;
@@ -200,7 +200,7 @@ int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
 
 int PLATFORM_OtaClearBootFlags(void)
 {
-#ifndef FPGA_TARGET
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     int st = -1;
     do
     {

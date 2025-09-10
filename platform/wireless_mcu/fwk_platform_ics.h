@@ -163,7 +163,8 @@ typedef enum
     gFwkSrvNbuSetRfSfcConfig_c                  = 0x89U,
     gFwkSrvFroEnableNotification_c              = 0x8AU,
     gFwkSrvRngReseed_c                          = 0x8BU,
-    gFwkSrvHost2NbuLast_c                       = 0x8CU,
+    gFwkSrvHostSetNbuSharedCtxAddr_c            = 0x8CU, /*! Intercore shared context */
+    gFwkSrvHost2NbuLast_c                       = 0x8DU,
 } eFwkSrvMsgType;
 
 typedef int32_t (*fwksrv_lowpower_constraint_func_t)(int32_t power_mode);
@@ -330,6 +331,17 @@ void PLATFORM_RegisterReceivedSeedRequest(nbu_seed_request_event_callback_t cb);
  * \return int same as PLATFORM_FwkSrvSendPacket()
  */
 int PLATFORM_SendNBUXtal32MTrim(uint8_t trim);
+
+/*!
+ * @brief Send address of shared structure to other core.
+ *
+ * @param[in] None
+ *
+ * @return \return int same as PLATFORM_FwkSrvSendPacket() on KW43/MCXW70, -1 error code on other platforms.
+ *
+ * @note This function is implemented on KW43/MCXW70 platform only and has no effect on others.
+ */
+int PLATFORM_SetNbuSharedCtxAddress(void);
 
 /*!
  * @}  end of FWK_Platform_ICS addtogroup

@@ -7,6 +7,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu)
         configs/fwk_config.h
         configs/rpmsg_config.h
         fwk_platform_kw47_mcxw72_nbu.c
+        fwk_platform_definitions.h
         DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
         CORE_IDS "cm33_core1"
     )

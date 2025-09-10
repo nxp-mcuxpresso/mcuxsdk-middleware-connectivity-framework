@@ -19,6 +19,7 @@
 #include "fsl_adapter_rpmsg.h"
 #include "fwk_rf_sfc.h"
 #include "fwk_debug.h"
+#include "fwk_platform_definitions.h"
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 #include "fwk_workq.h"
@@ -57,6 +58,12 @@ typedef struct
 /* declared here to avoid including ble_controller header file */
 extern uint32_t Controller_HandleNbuApiReq(uint8_t *api_return, uint8_t *data, uint32_t data_len);
 extern bool     Controller_EnableSecurityFeature();
+
+#if defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0)
+extern void PLATFORM_RxNbuSharedCtxAddress(uint8_t *data, uint32_t len);
+#else
+static void PLATFORM_RxNbuSharedCtxAddressDummy(uint8_t *data, uint32_t len);
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -105,6 +112,11 @@ static void (*PLATFORM_RxCallbackService[gFwkSrvHost2NbuLast_c - gFwkSrvHost2Nbu
     PLATFORM_RxNbuSfcConfig,
     PLATFORM_RxEnableFroNotification,
     PLATFORM_RxRngReseed,
+#if defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0)
+    PLATFORM_RxNbuSharedCtxAddress,
+#else
+    PLATFORM_RxNbuSharedCtxAddressDummy,
+#endif
 };
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
@@ -429,7 +441,7 @@ static void PLATFORM_RxNbuSecureModeRequest(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuWakeUpDelayLpoCycle(uint8_t *data, uint32_t len)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     PLATFORM_SetWakeupDelay(data[1]);
 #endif
 }
@@ -441,7 +453,7 @@ static void PLATFORM_RxNbuFrequencyConstraint(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
     sfc_config_t sfc_config;
     uint32_t     data_len     = len - 1U;
     uint32_t     size_to_copy = (data_len < sizeof(sfc_config_t)) ? data_len : sizeof(sfc_config_t);
@@ -454,7 +466,7 @@ static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
     SFC_EnableNotification(data[1]);
 #endif
 }
@@ -466,3 +478,12 @@ static void PLATFORM_RxRngReseed(uint8_t *data, uint32_t len)
         (void)seed_ready_callback(&data[1]);
     }
 }
+
+#if !(defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0))
+static void PLATFORM_RxNbuSharedCtxAddressDummy(uint8_t *data, uint32_t len)
+{
+    NOT_USED(data);
+    NOT_USED(len);
+    /* Do nothing */
+}
+#endif

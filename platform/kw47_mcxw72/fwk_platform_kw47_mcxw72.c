@@ -8,6 +8,7 @@
 /* -------------------------------------------------------------------------- */
 
 #include "fwk_platform.h"
+#include "fwk_platform_ics.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -62,4 +63,13 @@ uint64_t PLATFORM_Get32KTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp
     NOT_USED(timestamp1);
     /* 32kHz TSTMR not instantiated on KW47 / MCXW72 */
     return 0ULL; /* Placeholder implementation */
+}
+
+/*
+ * Tell NBU the address in RAM where to write its next activity timestamp.
+ * Not applicable on KW45/MCXW71.
+ */
+int PLATFORM_SetNbuSharedCtxAddress(void)
+{
+    return -1;
 }

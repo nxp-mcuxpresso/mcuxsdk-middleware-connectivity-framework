@@ -11,7 +11,7 @@
 #include "fwk_platform_genfsk.h"
 #include "fwk_platform.h"
 
-#if defined(FPGA_TARGET) && (FPGA_TARGET == 1)
+#if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "hdi.h"
 #endif
 
@@ -42,7 +42,7 @@ void PLATFORM_InitGenfsk(void)
 {
     int status = 0;
 
-#if defined(FPGA_TARGET) && (FPGA_TARGET == 1)
+#if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     /* Select GENFSK radio mode */
     (void)HDI_Init();
     HDI_Set_Mode_Gfsk();

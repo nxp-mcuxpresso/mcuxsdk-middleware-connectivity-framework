@@ -57,6 +57,10 @@ typedef struct smu_dmem_config
 
 #define PLATFORM_HOST_USE_POWER_DOWN (0xA5A5A5A5U)
 
+#if (defined(gPlatformUseLptmr_d)) && (gPlatformUseLptmr_d == 1U)
+#if !(defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
+#error "LPTMR2 only exists on KW47 / MCXW72"
+#endif
 /*! @brief The configuration of timer. */
 #define PLATFORM_TM_INSTANCE 2U
 
@@ -67,6 +71,7 @@ typedef struct smu_dmem_config
 #ifndef PLATFORM_TM_CLK_SELECT
 #define PLATFORM_TM_CLK_SELECT 2U /*Lptmr timer use (kLPTMR_PrescalerClock_2) 32k clock*/
 #endif
+#endif
 
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
 
@@ -76,7 +81,7 @@ typedef struct smu_dmem_config
  * Private memory declarations
  ************************************************************************************/
 
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 /* This array contains the FRODIV values for each FRO range (from 16MHz to 64MHz)
  * The output clock is provided to flash APB and RC_CMC block, it can't exceed 24MHz
  * The current mapping is the following:
@@ -106,7 +111,7 @@ static uint8_t freq_constraint_from_controller = 0U;
 static volatile int timer_manager_initialized = 0;
 
 static void PLATFORM_UpdateFrequency(void);
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 static void PLATFORM_SetClock(uint8_t range);
 
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
@@ -150,21 +155,21 @@ void PLATFORM_ResetContext(void)
 
 void PLATFORM_RemoteActiveReq(void)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     PLATFORM_RemoteActiveReqOptionalDelay(true);
 #endif
 }
 
 void PLATFORM_RemoteActiveReqWithoutDelay(void)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     PLATFORM_RemoteActiveReqOptionalDelay(false);
 #endif
 }
 
 void PLATFORM_RemoteActiveRel(void)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
 
     // PWR_DBG_LOG("<--active_request_nb RELEASE=%d", active_request_nb);
@@ -475,7 +480,7 @@ void PLATFORM_ConfigureSmuDmemMapping(void)
 
 static void PLATFORM_UpdateFrequency(void)
 {
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     /* Take the higher frequency between the constraint set by the controller and the one from the host and apply it */
     uint8_t frequency = (freq_constraint_from_host > freq_constraint_from_controller) ? freq_constraint_from_host :
                                                                                         freq_constraint_from_controller;
@@ -484,7 +489,7 @@ static void PLATFORM_UpdateFrequency(void)
     (void)freq_constraint_from_controller;
 #endif
 }
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 static void PLATFORM_SetClock(uint8_t range)
 {
     uint32_t fro192M_clock_ctrl;

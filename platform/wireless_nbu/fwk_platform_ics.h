@@ -140,7 +140,8 @@ typedef enum
     gFwkSrvNbuSetRfSfcConfig_c                  = 0x89U,
     gFwkSrvFroEnableNotification_c              = 0x8AU,
     gFwkSrvRngReseed_c                          = 0x8BU,
-    gFwkSrvHost2NbuLast_c                       = 0x8CU,
+    gFwkSrvHostSetNbuSharedCtxAddr_c            = 0x8CU,
+    gFwkSrvHost2NbuLast_c                       = 0x8DU,
 } eFwkSrvMsgType;
 
 typedef int (*seed_ready_event_callback_t)(uint8_t *external_seed);

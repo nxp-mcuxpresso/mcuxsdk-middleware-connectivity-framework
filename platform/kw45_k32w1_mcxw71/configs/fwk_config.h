@@ -115,7 +115,7 @@
 #define gUseResetByDeepPowerDown_c 3
 
 #if !defined(gPlatResetMethod_c)
-#if defined(FPGA_TARGET) && (FPGA_TARGET == 1)
+#if ((defined(FPGA_TARGET) && (FPGA_TARGET != 0)))
 #define gPlatResetMethod_c gUseResetByNvicReset_c
 #else
 #define gPlatResetMethod_c gUseResetByDeepPowerDown_c
