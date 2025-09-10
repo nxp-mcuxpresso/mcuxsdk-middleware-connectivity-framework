@@ -17,6 +17,8 @@
 #include "fwk_platform_fpga.h"
 #endif
 
+#include "fsl_tstmr.h"
+
 #if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
@@ -51,7 +53,7 @@
 #endif /* FWK_PLATFORM_XTAL32M_STARTUP_TIMEOUT */
 
 /*! @brief Default load capacitance config for 32KHz crystal,
-      can be overidden from board_platform.h,
+      can be overridden from board_platform.h,
       user shall define this flag in board_platform.h file to set an other default value
       Values must be adjust to minimize the jitter on the crystal. This is to avoid
       a shift of 31.25us on the link layer timebase in NBU.
@@ -100,16 +102,13 @@
  * the returned status will be negative  */
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
 
-#define TSTMR_MAX_VAL ((uint64_t)0x00FFFFFFFFFFFFFFULL)
-
 #define MRCC_TSTMR_CLK_DIS                   0x00u
 #define MRCC_TSTMR_CLK_EN_NO_LP_STALL        0x01u
 #define MRCC_TSTMR_CLK_EN_LP_STALL_IDLE      0x02u
 #define MRCC_TSTMR_CLK_EN_LP_STALL_DEEPSLEEP 0x03u
 
-#if (defined FSL_FEATURE_SOC_TSTMR_COUNT && (FSL_FEATURE_SOC_TSTMR_COUNT > 1))
-#define gPlatformHasTstmr32K_d 1
-#endif
+/* Maximum value of 56 bit counter */
+#define PLATFORM_TSTMR_MAX_VAL ((uint64_t)0x00FFFFFFFFFFFFFFULL)
 
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
@@ -161,27 +160,6 @@ static Platform_Fro6MCalCtx_t fro6M_calibration_ctx = {
 /*                              Private functions                              */
 /* -------------------------------------------------------------------------- */
 
-static uint64_t u64ReadTimeStamp(TSTMR_Type *base)
-{
-    uint32_t reg_l;
-    uint32_t reg_h;
-    uint32_t regPrimask;
-
-    regPrimask = DisableGlobalIRQ();
-
-    /* A complete read operation should include both TSTMR LOW and HIGH reads. If a HIGH read does not follow a LOW
-     * read, then any other Time Stamp value read will be locked at a fixed value. The TSTMR LOW read should occur
-     * first, followed by the TSTMR HIGH read.
-     * */
-    reg_l = base->L;
-    __DMB();
-    reg_h = base->H;
-
-    EnableGlobalIRQ(regPrimask);
-
-    return (uint64_t)reg_l | (((uint64_t)reg_h) << 32U);
-}
-
 /*!
  * \brief Compute number of ticks between 2 timestamps expressed in number of TSTMR ticks
  *
@@ -191,12 +169,12 @@ static uint64_t u64ReadTimeStamp(TSTMR_Type *base)
  * \return uint64_t number of TSTMR ticks
  *
  */
-static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
+static uint64_t GetTstmrDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
 {
     uint64_t delta_ticks;
 
-    timestamp0 &= TSTMR_MAX_VAL; /* sanitize arguments */
-    timestamp1 &= TSTMR_MAX_VAL;
+    timestamp0 &= PLATFORM_TSTMR_MAX_VAL; /* sanitize arguments */
+    timestamp1 &= PLATFORM_TSTMR_MAX_VAL;
 
     if (timestamp1 >= timestamp0)
     {
@@ -205,7 +183,7 @@ static uint64_t GetTimeStampDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
     else
     {
         /* In case the 56-bit counter has wrapped */
-        delta_ticks = TSTMR_MAX_VAL - timestamp0 + timestamp1 + 1ULL;
+        delta_ticks = PLATFORM_TSTMR_MAX_VAL - timestamp0 + timestamp1 + 1ULL;
     }
     return delta_ticks;
 }
@@ -666,28 +644,14 @@ void PLATFORM_DeinitTimerManager(void)
 
 uint64_t PLATFORM_GetTimeStamp(void)
 {
-    /* u64ReadTimeStamp mimics TSTMR_ReadTimeStamp(TSTMR0) but copied to avoid dependency
-     * with fsl_tstmr.h not present in include path
-     */
-    return u64ReadTimeStamp(TSTMR0);
-}
-
-uint64_t PLATFORM_Get32KTimeStamp(void)
-{
-#if defined gPlatformHasTstmr32K_d && (gPlatformHasTstmr32K_d > 0)
-    /* u64ReadTimeStamp mimics TSTMR_ReadTimeStamp(TSTMR0) but copied to avoid dependency
-     * with fsl_tstmr.h not present in include path
-     */
-    return u64ReadTimeStamp(TSTMR1_0);
-#else
-    return 0ULL;
-#endif
+    /* TSTMR0 counts 1MHz ticks */
+    return TSTMR_ReadTimeStamp(TSTMR0);
 }
 
 uint64_t PLATFORM_GetMaxTimeStamp(void)
 {
     /* Max timestamp counter value (56 bits) */
-    return TSTMR_MAX_VAL;
+    return PLATFORM_TSTMR_MAX_VAL;
 }
 
 /*!
@@ -703,7 +667,7 @@ uint64_t PLATFORM_GetTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
 {
     uint64_t duration_us;
 
-    duration_us = GetTimeStampDeltaTicks(timestamp0, timestamp1);
+    duration_us = GetTstmrDeltaTicks(timestamp0, timestamp1);
 
     if (fwk_platform_FRO6MHz_ratio > 1U)
     {
@@ -712,45 +676,11 @@ uint64_t PLATFORM_GetTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
          *  2MHz instead of 6MHz. A post wakeup calibration is executed to monitor such situation.
          */
         assert(fwk_platform_FRO6MHz_ratio == 3U);
-        val = (duration_us & TSTMR_MAX_VAL); /* cannot exceed 2^56 so guaranteed to be smaller than 2^64*/
-        val *= 3U;                           /* Guaranteed to be smaller than 2^58 */
+        val = (duration_us & PLATFORM_TSTMR_MAX_VAL); /* cannot exceed 2^56 so guaranteed to be smaller than 2^64*/
+        val *= 3U;                                    /* Guaranteed to be smaller than 2^58 */
         duration_us = val;
     }
     return duration_us;
-}
-
-/*!
- * \brief Compute number of microseconds between 2 timestamps expressed in number of TSTM 32kHz ticks
- *
- * \param [in] timestamp0 start timestamp from which duration is assessed.
- * \param [in] timestamp1 end timestamp till which duration is assessed.
- *
- * \return uint64_t number of microseconds
- *
- */
-uint64_t PLATFORM_Get32kTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
-{
-#if defined gPlatformHasTstmr32K_d && (gPlatformHasTstmr32K_d > 0)
-    uint64_t duration_us;
-
-    duration_us = GetTimeStampDeltaTicks(timestamp0, timestamp1);
-    /* Prevent overflow */
-    duration_us &= TSTMR_MAX_VAL;
-    /* Normally useless but let Coverity know that the input is necessarily less than 2^56 */
-    /* Multiply by 1000000 (2^6 * 5^6) and divide by 32768 (2^15) can be be simplified to Multiplication by 125*125 and
-     * division by 512 */
-    /* Multiply by 125, inserting the division by 64 and then multiply again by 125 and finally divide by 8 prevents the
-     * overflow considering the argument is smaller than 2^56
-     */
-    duration_us *= 125ULL; /* Since timestamps are no more than 56 bit wide, multiplying by 125 is smaller than 2^63 */
-    duration_us >>= 6;     /* Dividing by 64 (2^6) yields a result strictly smaller than 2^57 */
-    duration_us *= 125ULL; /* Multiplying by 125 is necessarily strictly smaller than 2^64-1 */
-    duration_us >>= 3;     /* Divide by 8 (2^3)  */
-
-    return duration_us;
-#else
-    return ~0ULL;
-#endif
 }
 
 /*!
@@ -1052,7 +982,7 @@ int PLATFORM_EndFro6MCalibration(void)
         now = PLATFORM_GetTimeStamp();
 
         /* tstmr_tick_diff should be a number of microseconds if FRO6M has correctly locked */
-        tstmr_ticks_delta = GetTimeStampDeltaTicks(ctx->initial_ts, now);
+        tstmr_ticks_delta = GetTstmrDeltaTicks(ctx->initial_ts, now);
 
         if (tstmr_ticks_delta < (uint64_t)UINT32_MAX)
         {

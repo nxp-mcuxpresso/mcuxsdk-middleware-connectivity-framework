@@ -184,7 +184,7 @@ uint64_t PLATFORM_GetMaxTimeStamp(void);
  *  \note only implemented on platforms having a 32kHz TSTMR instance (KW43/MCXW70)
  *
  */
-uint64_t PLATFORM_Get32kTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1);
+uint64_t PLATFORM_Get32KTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1);
 
 /*!
  * \brief  wait for the given delay in us

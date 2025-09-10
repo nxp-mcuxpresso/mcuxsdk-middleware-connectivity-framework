@@ -33,6 +33,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_driver.trdc
+    select MCUX_COMPONENT_driver.tstmr
     select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     select MCUX_COMPONENT_component.flash_adapter
     select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
@@ -49,6 +50,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.xcvr
     select MCUX_COMPONENT_middleware.wireless.ble_controller_nbu_interface
+    select MCUX_COMPONENT_driver.tstmr
     depends on MCUX_HW_DEVICE_KW45B41Z83_NBU
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
@@ -58,6 +60,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
     select MCUX_COMPONENT_driver.trdc
+    select MCUX_COMPONENT_driver.tstmr
     select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     select MCUX_COMPONENT_component.flash_adapter
     select MCUX_COMPONENT_middleware.multicore.rpmsg-lite
@@ -74,6 +77,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu
     select MCUX_COMPONENT_middleware.wireless.xcvr
     select MCUX_COMPONENT_middleware.wireless.ble_controller_nbu_interface
     imply MCUX_COMPONENT_component.timer_manager
+    select MCUX_COMPONENT_driver.tstmr
     depends on MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_MCXW727C
     depends on MCUX_HW_DEVICE_KW47B42ZB7_CORE_ID_cm33_core1 || MCUX_HW_DEVICE_MCXW727C_CORE_ID_cm33_core1
 
@@ -95,6 +99,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
     #select MCUX_COMPONENT_driver.trdc
     #select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     #select MCUX_COMPONENT_component.flash_adapter
+    select MCUX_COMPONENT_driver.tstmr
     select  MCUX_COMPONENT_middleware.multicore.rpmsg-lite
     select MCUX_COMPONENT_component.rpmsg_adapter
     select MCUX_COMPONENT_middleware.multicore.mcmgr
@@ -106,6 +111,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.xcvr
     select MCUX_COMPONENT_middleware.wireless.ble_controller_nbu_interface
+    select MCUX_COMPONENT_driver.tstmr
     imply MCUX_COMPONENT_component.timer_manager
     depends on MCUX_HW_DEVICE_KW43B43ZC7_NBU
 

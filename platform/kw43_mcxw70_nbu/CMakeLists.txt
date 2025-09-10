@@ -6,6 +6,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu)
     mcux_add_source(SOURCES
         configs/fwk_config.h
         configs/rpmsg_config.h
+        ../../../framework_private/platform/kw43_mcxw70_nbu/fwk_platform_kw43_mcxw70_nbu.c
         DEVICE_IDS "KW43B43ZC7xxxA_NBU"
     )
     mcux_add_include(INCLUDES

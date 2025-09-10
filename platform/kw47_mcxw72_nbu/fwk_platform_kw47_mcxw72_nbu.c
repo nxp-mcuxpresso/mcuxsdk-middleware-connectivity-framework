@@ -1,3 +1,4 @@
+
 /* -------------------------------------------------------------------------- */
 /*                           Copyright 2025 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
@@ -6,8 +7,9 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
-
 #include "fwk_platform.h"
+#include "EmbeddedTypes.h"
+#include <stdbool.h>
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -28,13 +30,6 @@
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
-
-int PLATFORM_GetRadioIdleDuration32K(void)
-{
-    /* On this platform, Radio NBU is located on separated power domain so no impact on main core */
-    return PLATFORM_RADIO_IDLE_FOREVER;
-}
-
 /*!
  * \brief Get 32kHz timestamp from 32kHz counter
  *
@@ -43,7 +38,7 @@ int PLATFORM_GetRadioIdleDuration32K(void)
  */
 uint64_t PLATFORM_Get32KTimeStamp(void)
 {
-    /* 32kHz TSTMR not instantiated on KW47 / MCXW72 */
+    /* 32kHz TSTMR not instantiated on KW47 / MCXW72 NBU */
     return 0ULL;
 }
 
@@ -60,6 +55,6 @@ uint64_t PLATFORM_Get32KTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp
 {
     NOT_USED(timestamp0);
     NOT_USED(timestamp1);
-    /* 32kHz TSTMR not instantiated on KW47 / MCXW72 */
-    return 0ULL; /* Placeholder implementation */
+    /* 32kHz TSTMR not instantiated on KW47 / MCXW72 NBU */
+    return 0ULL;
 }
