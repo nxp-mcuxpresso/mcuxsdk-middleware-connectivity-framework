@@ -16,6 +16,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rt1060)
         .
         configs
         ../include
+        ../Common
         DEVICE_IDS ${RT1060_FAMILY}
     )
 
@@ -30,6 +31,7 @@ endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ota)
     mcux_add_source(SOURCES
+        ../Common/fwk_platform_mcuboot_ota.ch
         fwk_platform_ota.c
         ../include/fwk_platform_ota.h
         DEVICE_IDS ${RT1060_FAMILY}
@@ -38,6 +40,7 @@ endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash)
     mcux_add_source(SOURCES
+        ../Common/fwk_platform_mflash.ch
         fwk_platform_extflash.c
         ../include/fwk_platform_extflash.h
         DEVICE_IDS ${RT1060_FAMILY}
