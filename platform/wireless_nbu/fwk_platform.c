@@ -258,12 +258,14 @@ uint8_t PLATFORM_GetChipRevision(void)
 
 uint64_t PLATFORM_GetTimeStamp(void)
 {
-    return (uint64_t)COUNT_TO_USEC(SysTick->VAL, CLOCK_GetRfFro192MFreq());
+    uint32_t nbu_freq = PLATFORM_GetNbuFreq();
+    return (uint64_t)COUNT_TO_USEC(SysTick->VAL, nbu_freq);
 }
 
 uint64_t PLATFORM_GetMaxTimeStamp(void)
 {
-    return (uint64_t)COUNT_TO_USEC(SysTick->LOAD, CLOCK_GetRfFro192MFreq());
+    uint32_t nbu_freq = PLATFORM_GetNbuFreq();
+    return (uint64_t)COUNT_TO_USEC(SysTick->LOAD, nbu_freq);
 }
 
 void PLATFORM_WaitTimeout(uint64_t timestamp, uint64_t delayUs)

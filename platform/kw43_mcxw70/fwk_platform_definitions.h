@@ -133,11 +133,12 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 /*********************************************************************
  *        LPTMR FPGA settings
  *********************************************************************/
-#if defined((FPGA_TARGET) && (FPGA_TARGET != 0))
+#if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #undef PLATFORM_TM_CLK_FREQ
 #undef PLATFORM_TM_STAMP_CLK_FREQ
 #define PLATFORM_TM_CLK_FREQ       16000000U
 #define PLATFORM_TM_STAMP_CLK_FREQ 16000000U
+#endif
 
 #define gPlatformHasIntercoreCommonTimestamp_d 1
 

@@ -8,7 +8,7 @@
 /* -------------------------------------------------------------------------- */
 #include "fwk_platform.h"
 #include "EmbeddedTypes.h"
-#include <stdbool.h>
+#include "fsl_clock.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -60,4 +60,9 @@ void PLATFORM_SetNextNbuActivityDeadline(uint32_t duration_32kHz_tick)
 {
     /* KW45 / MCXW71 stub - Not needed */
     NOT_USED(duration_32kHz_tick);
+}
+
+uint32_t PLATFORM_GetNbuFreq(void)
+{
+    return CLOCK_GetRfFro192MFreq();
 }

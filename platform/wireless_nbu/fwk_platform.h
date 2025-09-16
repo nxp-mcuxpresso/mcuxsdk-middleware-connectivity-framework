@@ -270,19 +270,26 @@ void PLATFORM_DeinitTimerManager(void);
 int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
 
 /*!
- * @brief Configures the SMU DMEM mapping.
+ * \brief Configures the SMU DMEM mapping.
  *
  * This function sets the mapping configuration for the SMU (Shared Memory Unit)
  * DMEM (Data Memory) according to the value found in the linker file.
  *
- * @param[in] None
+ * \param[in] None
  *
- * @return None
+ * \return None
  *
- * @note This function should be called during platform initialization before
+ * \note This function should be called during platform initialization before
  *       accessing SMU DMEM regions.
  */
 void PLATFORM_ConfigureSmuDmemMapping(void);
+
+/*!
+ * \brief Get NBU core frequency.
+ *
+ * \return frequency value in Hz.
+ */
+uint32_t PLATFORM_GetNbuFreq(void);
 
 #if defined(__cplusplus)
 }
