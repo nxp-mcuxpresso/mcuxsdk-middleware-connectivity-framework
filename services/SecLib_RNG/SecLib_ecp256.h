@@ -464,6 +464,8 @@ void ECP256_KeyPairSerialize(uint8_t          serialized_key[SEC_ECP256_POINT_LE
 void ECP256_KeyPairDeserialize(ecp256KeyPair_t *keypair,
                                uint8_t          serialized_key[SEC_ECP256_POINT_LEN + SEC_ECP256_SCALAR_LEN]);
 
+#endif
+
 /*! *********************************************************************************
  * \brief Load point structure from octet string
  *
@@ -489,6 +491,7 @@ void ECP256_PointLoad(ecp256Point_t *R, const uint8_t *in, bool change_endiannes
  ********************************************************************************** */
 void ECP256_PointWrite(uint8_t *out, const ecp256Point_t *P, bool change_endianness);
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief Load  scalar and forcing it to belong to field
  *        R = fe mod N

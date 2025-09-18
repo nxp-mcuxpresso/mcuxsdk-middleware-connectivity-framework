@@ -26,7 +26,6 @@
 #include "psa/crypto_values.h"
 #include "psa/crypto_extra.h"
 #include "fsl_component_mem_manager.h"
-#include "p256-m.h"
 #include "FunctionLib.h"
 #include "fwk_platform_crypto.h"
 #include "SecLib_ecp256.h"
@@ -625,32 +624,36 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
                                        ecdhDhKey_t            *pOutDhKey,
                                        const bool_t            keepBlobDhKey)
 {
-    secResultType_t ret = gSecSuccess_c;
-    uint8_t         bufPriv[sizeof(ecdhPrivateKey_t)];
-    uint8_t         bufPub[sizeof(ecdhPublicKey_t)];
+    secResultType_t ret        = gSecSuccess_c;
+    size_t          output_len = 0U;
+    uint8_t         bufPub[sizeof(ecdhPublicKey_t) + 1]; /* +1 for point format byte*/
     uint8_t         bufSecret[sizeof(ecdhDhKey_t)];
     do
     {
+        /* Check if output DH key pointer is valid */
         if (pOutDhKey == NULL)
         {
             ret = gSecError_c;
             break;
         }
 
+        /* Validate that the peer public key is a valid point on the curve */
         if (!ECP256_LePointValid(pInPeerPublicKey))
         {
             ret = gSecInvalidPublicKey_c;
             break;
         }
 
-        /*little-indian to big-indian*/
-        ECP256_PointCopy_and_change_endianness(bufPub, pInPeerPublicKey->raw);
-        ECP256_coordinate_copy(bufPriv, psa_pECPKeyPair->PrivateKey->raw_8bit);
+        /* Convert little-endian to big-endian format for PSA API */
+        ECP256_PointWrite(bufPub, pInPeerPublicKey, true);
 
-        psa_status_t status = p256_ecdh_shared_secret(bufSecret, (uint8_t const *)bufPriv, (uint8_t const *)bufPub);
+        /* Perform ECDH key agreement using PSA crypto API */
+        psa_status_t status =
+            psa_raw_key_agreement(PSA_ALG_ECDH, psa_pECPKeyPair->OwnKey, bufPub, sizeof(ecdhPublicKey_t) + 1, bufSecret,
+                                  sizeof(ecdhDhKey_t), &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
-        /*big-indian to little-indian*/
+        /* Convert big-endian to little-endian format for output */
         ECP256_PointCopy_and_change_endianness(pOutDhKey->raw, bufSecret);
 
     } while (false);
@@ -676,10 +679,16 @@ secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
  ************************************************************************************/
 secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPrivateKey_t *pOutPrivateKey)
 {
-    secResultType_t ret = gSecSuccess_c;
-    psa_status_t    st  = PSA_SUCCESS;
+    secResultType_t      ret        = gSecSuccess_c;
+    psa_status_t         st         = PSA_SUCCESS;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t         key        = 0U;
+    size_t               output_len = 0U;
+    uint8_t              bufPub[sizeof(ecdhPublicKey_t) + 1]; /* +1 for point format byte*/
+
     do
     {
+        /* Check if there's an existing key pair and destroy it if present */
         if (psa_pECPKeyPair != NULL)
         {
             /* Once the key oject gets destroyed context is not ready anymore */
@@ -691,13 +700,29 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 
         /* psa_g_ECP_KeyPair.keyId = KEY_ID_BLE0; */
 
+        /* Set the global key pair context */
         psa_pECPKeyPair = &psa_g_ECP_KeyPair;
 
-        st = p256_gen_keypair(psa_pECPKeyPair->PrivateKey->raw_8bit, psa_pECPKeyPair->OwnPublicKey->raw_8bit);
-        RAISE_ERROR(st, PSA_SUCCESS)
+        /* Configure key attributes for ECC P-256 key pair generation */
+        psa_set_key_bits(&attributes, 256);
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
+        psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
 
-        /*big-indian to little-indian*/
-        ECP256_PointCopy_and_change_endianness(pOutPublicKey->raw, psa_pECPKeyPair->OwnPublicKey->raw_8bit);
+        /* Generate the ECC P-256 key pair */
+        st = psa_generate_key(&attributes, &key);
+        RAISE_ERROR(st, PSA_SUCCESS);
+
+        /* Export the public key from the generated key pair */
+        st = psa_export_public_key(key, bufPub, sizeof(ecdhPublicKey_t) + 1, &output_len);
+        RAISE_ERROR(st, PSA_SUCCESS);
+
+        /* Store the key ID in the global context */
+        psa_pECPKeyPair->OwnKey = key;
+
+        /* Convert public key from big-endian to little-endian format and store in output */
+        ECP256_PointLoad(pOutPublicKey, bufPub, true);
     } while (false);
     return ret;
 }
