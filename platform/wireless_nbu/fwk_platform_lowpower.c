@@ -50,8 +50,6 @@ extern bool PHY_XCVR_AllowLowPower(void);
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
-static void PLATFORM_HandleLowPowerEntry(void);
-static void PLATFORM_HandleWFI(void);
 static int  PLATFORM_LowPowerModeAllowed(void);
 static bool PLATFORM_IsRemoteAllowingLowPower(void);
 static bool PLATFORM_IsBleAllowingLowPower(uint32_t *outSleepTime);
@@ -60,7 +58,6 @@ static bool PLATFORM_Is_15_4_AllowingLowPower(void);
 #endif
 static void PLATFORM_RemoteLowPowerIndication(bool enter);
 static void PLATFORM_ConfigureRamRetention(void);
-static int  PLATFORM_SwitchSleepClockSource(bool switchTo32k);
 static void PLATFORM_XtalWarningIndicationWorkHandler(fwk_work_t *work);
 
 /* -------------------------------------------------------------------------- */
@@ -177,134 +174,6 @@ void PLATFORM_SetWakeupDelay(uint8_t wakeupDelayReceivedFromHost)
 /* -------------------------------------------------------------------------- */
 
 /*!
- * \brief Starts the low power entry procedure
- *
- */
-
-static void PLATFORM_HandleLowPowerEntry(void)
-{
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-    /* Save FRO192M settings before changing it for lowpower */
-    uint32_t fro192M_clock_ctrl = FRO192M0->FROCCSR;
-    uint32_t fro192M_frodiv     = FRO192M0->FRODIV;
-#endif
-    /* Force sleep clock source to 32k */
-    if (PLATFORM_SwitchSleepClockSource(true) == 0)
-    {
-#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
-        /* Disable SPC high power mode */
-        PLATFORM_EnableSpcHighPowerMode(false);
-#endif
-
-        /* Disable and clear Systicks */
-        SysTick->CTRL = 0U;
-        SysTick->VAL  = SysTick->LOAD;
-
-        /* Clear pending status of the systick interrupt to avoid having an unrequired wakeup if the systick was pending
-         * before disabling it */
-        SCB->ICSR |= SCB_ICSR_PENDSTCLR_Msk;
-
-        SCB->SCR &= ~SCB_SCR_SLEEPONEXIT_Msk;
-        SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-
-        /* update sleep entry timestamp: required to know if native clock is valid after wakeup (HW issue: LL-2953) */
-        LL_API_UpdateLastNativeClkBeforeSleep();
-
-        /* Request low power entry to RFMC */
-        RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_SLEEP_EN_MASK;
-
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-        /* The host allows the NBU to downgrade its frequency to 16MHz
-         * So we can select the 16MHz range and use the highest divider */
-        FRO192M0->FROCCSR = 0U;
-        FRO192M0->FRODIV  = FRO192M_FRODIV_FRODIV_MASK;
-#endif
-        /* WFI will trigger low power entry procedure */
-        __DSB();
-        __WFI();
-        __ISB();
-
-        /* Needs to be cleared first after exiting lowpower (HW issue: MCSE-484) */
-        SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-        __ISB();
-
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-        /* Restore previous CPU frequency */
-        FRO192M0->FROCCSR = fro192M_clock_ctrl;
-        FRO192M0->FRODIV  = fro192M_frodiv;
-#endif
-        /* Unset bit to prevent lowpower now */
-        RF_CMC1->RADIO_LP &= ~RF_CMC1_RADIO_LP_SLEEP_EN_MASK;
-
-        /* Re-enable systicks */
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
-#if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
-        /* Enable SPC high power mode */
-        PLATFORM_EnableSpcHighPowerMode(true);
-#endif
-
-        if ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
-        {
-            /* This is a critical section. avoid calling RPMSG which may call OS APIs in here */
-            /* Postpone the indication and use workqueue to notify the host that the 32MHz crystal is not ready after
-             * the NBU wakeup */
-            if (WORKQ_Submit(&xtal_warning_ind_work) < 0)
-            {
-                assert(0);
-            }
-            /* Wait for the XTAL to be ready before running anything else */
-            while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
-            {
-            }
-        }
-    }
-
-    /* Set sleep clock source to auto */
-    PLATFORM_SwitchSleepClockSource(false);
-}
-
-/*!
- * \brief Handles Entry/Exit WFI to save minimal amount of power for short period of time
- *
- */
-static void PLATFORM_HandleWFI(void)
-{
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-    uint32_t fro192M_clock_ctrl = FRO192M0->FROCCSR;
-    uint32_t fro192M_frodiv     = FRO192M0->FRODIV;
-#endif
-    /* Make sure core Deep Sleep is disabled */
-    SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-
-    if (PLATFORM_GetFrequencyConstraintFromHost() == 0U)
-    {
-        /* The host allows the NBU to downgrade its frequency to 16MHz
-         * So we can select the 16MHz range and use the highest divider */
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-        FRO192M0->FROCCSR = 0U;
-        FRO192M0->FRODIV  = FRO192M_FRODIV_FRODIV_MASK;
-#endif
-        /* Enter simple WFI to save minimal power */
-        __DSB();
-        __WFI();
-        __ISB();
-
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-        /* Restore previous CPU frequency */
-        FRO192M0->FROCCSR = fro192M_clock_ctrl;
-        FRO192M0->FRODIV  = fro192M_frodiv;
-#endif
-    }
-    else
-    {
-        /* Enter simple WFI to save minimal power */
-        __DSB();
-        __WFI();
-        __ISB();
-    }
-}
-
-/*!
  * \brief Checks from various sources if the radio can enter low power
  *
  * \return 0  : lowpower allowed
@@ -372,6 +241,9 @@ static int PLATFORM_LowPowerModeAllowed(void)
             break;
         }
 #if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
+#if (defined FPGA_TARGET && (FPGA_TARGET != 0))
+#error "gUseSfcRf_d  not possible"
+#endif
         /* SFC_Init must have been run to have SFA clock started */
         if (SFC_IsBusy() == true)
         {
@@ -526,7 +398,7 @@ static void PLATFORM_ConfigureRamRetention(void)
     RF_CMC1->RAM_PWR = ram_pwr;
 }
 
-static int PLATFORM_SwitchSleepClockSource(bool switchTo32k)
+int PLATFORM_SwitchSleepClockSource(bool switchTo32k)
 {
     int      ret = 0;
     uint64_t start;
@@ -576,5 +448,23 @@ static void PLATFORM_XtalWarningIndicationWorkHandler(fwk_work_t *work)
     if (PLATFORM_NotifyNbuEvent(&event) < 0)
     {
         assert(0);
+    }
+}
+
+void PLATFORM_WaitForXtalReady(void)
+{
+    if ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
+    {
+        /* This is a critical section. avoid calling RPMSG which may call OS APIs in here */
+        /* Postpone the indication and use workqueue to notify the host that the 32MHz crystal is not ready after
+         * the NBU wakeup */
+        if (WORKQ_Submit(&xtal_warning_ind_work) < 0)
+        {
+            assert(0);
+        }
+        /* Wait for the XTAL to be ready before running anything else */
+        while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)
+        {
+        }
     }
 }
