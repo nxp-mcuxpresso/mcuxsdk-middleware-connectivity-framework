@@ -16,8 +16,4 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70)
         configs
         DEVICE_IDS ${KW43_FAMILY}
     )
-
-    mcux_add_macro(
-        REMOTE_CORE_BOOT_ADDRESS=0x02128000
-    )
 endif()
