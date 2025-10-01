@@ -28,6 +28,16 @@ static blec_result_t PLATFORM_HciRxCallback(blec_hciPacketType_t packetType, voi
 #endif
 
 /* -------------------------------------------------------------------------- */
+/*                               Private macros                               */
+/* -------------------------------------------------------------------------- */
+
+#if gAppMaxTxPowerDbm_c > 6
+/* MCXW23 limits TX power to a maximum of 6 dBm */
+#undef gAppMaxTxPowerDbm_c
+#define gAppMaxTxPowerDbm_c 6
+#endif
+
+/* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
 
