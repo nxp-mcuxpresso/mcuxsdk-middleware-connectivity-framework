@@ -47,60 +47,35 @@ static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
 {
     bool     ret            = true;
     uint32_t remaining_blen = blen;
-    do
+    uint8_t *p_8            = ptr;
+
+    while (remaining_blen > 0u)
     {
-        uint8_t  *p_8             = ptr;
-        uint32_t  unaligned_bytes = (uint32_t)ptr % 4;
-        uint32_t *p_32;
-
-#if (PLATFORM_ACCESS_ALIGNMENT_CONSTRAINT_LOG == 2u)
-        /* need to respect constraint on direct flash access */
-        unaligned_bytes = 4u - unaligned_bytes;
-#endif
-
-        /* Compare byte by byte to 0xff till alignment */
-        for (uint32_t i = 0u; i < unaligned_bytes; i++)
+        if (remaining_blen >= sizeof(uint32_t) && (((uint32_t)p_8 & (sizeof(uint32_t) - 1u)) == 0u))
         {
-            if (*p_8++ != 0xff)
-            {
-                ret = false;
-                break; /* for */
-            }
-            remaining_blen--;
-        }
-        if (!ret)
-        {
-            break; /* do .. while */
-        }
-        /* offset_32b is at the word alignment offset in buffer */
-        p_32 = (uint32_t *)&p_8[0];
-        while (remaining_blen >= sizeof(uint32_t))
-        {
+            /* the pointer is word aligned and there are more than 4 bytes to read  */
             /* read word by word to compare to 0xffffffff */
-            if (*p_32++ != ~0UL)
+            if (*(uint32_t *)p_8 != ~0UL)
             {
-                /* while */
-                ret = false;
+                ret = false; /* Exit inner while loop if 0xffffffff not found */
                 break;
             }
+            p_8 += sizeof(uint32_t);
             remaining_blen -= sizeof(uint32_t);
         }
-        if (!ret)
+        else
         {
-            /* do .. while */
-            break;
-        }
-        p_8 = (uint8_t *)p_32;
-        for (uint32_t i = 0u; i < remaining_blen; i++)
-        {
-            /* Unaligned trailing bytes */
+            /* Compare byte by byte to 0xff till 32 bit alignment met */
+            /* 32 bit aligned */
             if (*p_8 != 0xffu)
             {
                 ret = false;
-                break;
+                break; /* Exit inner while loop if 0xff not found */
             }
+            p_8++;
+            remaining_blen--;
         }
-    } while (false);
+    } /* while loop */
     return ret;
 }
 
