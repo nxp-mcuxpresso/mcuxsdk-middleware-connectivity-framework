@@ -592,7 +592,11 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
 __syscall int k_mutex_init(struct k_mutex *mutex);
 __syscall int k_mutex_destroy(struct k_mutex *mutex);
 
-#ifndef WITH_LOGS
+#if defined WITH_LOGS && (WITH_LOGS > 0)
+#include "fsl_debug_console.h"
+#endif
+
+#if !(defined WITH_LOGS && (WITH_LOGS > 0))
 
 #define LOG_MODULE_REGISTER(x, y)
 #define LOG_MODULE_DECLARE(...)
@@ -616,6 +620,19 @@ __syscall int k_mutex_destroy(struct k_mutex *mutex);
 #define LOG_HEXDUMP_DBG(...) (void)0
 #define LOG_HEXDUMP_INF(...) (void)0
 #else
+#if (WITH_LOGS > 0)
+#define LOG_ERR PRINTF
+#if (WITH_LOGS > 1)
+#define LOG_WRN PRINTF
+#if (WITH_LOGS > 2)
+#define LOG_DBG PRINTF
+#if (WITH_LOGS > 3)
+#define LOG_INF PRINTF
+#endif
+#endif
+#endif
+#endif
+
 /* TO DO */
 #endif
 #ifdef __cplusplus
