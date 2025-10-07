@@ -9,6 +9,8 @@
 
 #include "fsl_device_registers.h"
 
+#define FWK_KW43_MCXW70_FAMILIES 1
+
 #ifndef KB
 #define KB(x) (((uint32_t)x) << 10u)
 #endif
