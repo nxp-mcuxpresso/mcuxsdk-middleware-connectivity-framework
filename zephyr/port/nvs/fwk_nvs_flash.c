@@ -11,7 +11,6 @@
 
 #include "nvs_port.h"
 #include "EmbeddedTypes.h"
-#include "mflash_drv.h"
 #include "fwk_platform_definitions.h"
 #include "FunctionLib.h"
 
