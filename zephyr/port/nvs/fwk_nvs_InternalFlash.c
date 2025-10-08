@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -15,7 +15,7 @@
 #include "fwk_platform_definitions.h"
 
 const struct flash_parameters internal_nv_storage_params = {
-    .write_block_size = 16u,
+    .write_block_size = PLATFORM_INTFLASH_PHRASE_SIZE,
     .erase_value      = 0xffu,
     .sector_size      = PLATFORM_INTFLASH_SECTOR_SIZE,
 };
@@ -94,23 +94,46 @@ static int intflash_blank_check(const struct device *dev, off_t offset, size_t l
     int st = -1;
     NOT_USED(dev);
 
-    do
+    if (((uint32_t)FLASH_DEV_2_NV_OFFSET(offset) + len) <= intflash_area.fa_size)
     {
+        uint32_t               remaining_blen = len;
         union physical_address chk_address;
-
-        if (((uint32_t)FLASH_DEV_2_NV_OFFSET(offset) + len) > intflash_area.fa_size)
-        {
-            break;
-        }
         chk_address.value = FLASH_DEV_OFF_2_PHYS_ADDR(offset);
 
-        if (HAL_FlashVerifyErase(chk_address.value, len, (hal_flash_margin_value_t)0u) != kStatus_HAL_Flash_Success)
+        while (remaining_blen > 0u)
         {
-            st = 1;
-            break;
+            if (remaining_blen >= PLATFORM_INTFLASH_PHRASE_SIZE &&
+                ((chk_address.value & (PLATFORM_INTFLASH_PHRASE_SIZE - 1u)) == 0u))
+            {
+                /* the pointer is phrase aligned and there are more than PLATFORM_INTFLASH_PHRASE_SIZE bytes to read  */
+                uint32_t whole_phrase_sz = remaining_blen & ~(PLATFORM_INTFLASH_PHRASE_SIZE - 1);
+                if (HAL_FlashVerifyErase(chk_address.value, whole_phrase_sz, (hal_flash_margin_value_t)0u) !=
+                    kStatus_HAL_Flash_Success)
+                {
+                    st = 1;
+                    break;
+                }
+                chk_address.value += whole_phrase_sz;
+                remaining_blen -= whole_phrase_sz;
+            }
+            else
+            {
+                /* Compare byte by byte to 0xff till phrase alignment met */
+                if (*chk_address.pointer != 0xffu)
+                {
+                    st = 1;
+                    break; /* Exit inner while loop if 0xff not found */
+                }
+                chk_address.value++;
+                remaining_blen--;
+            }
+        } /* while loop */
+        if (remaining_blen == 0U)
+        {
+            st = 0;
         }
-        st = 0;
-    } while (0 != 0);
+    }
+
     return st;
 }
 
