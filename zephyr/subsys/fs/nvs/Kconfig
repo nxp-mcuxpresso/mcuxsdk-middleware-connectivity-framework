@@ -1,6 +1,6 @@
 # Non-volatile Storage NVS
 
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # Copyright (c) 2018 Laczen
 # SPDX-License-Identifier: Apache-2.0
 
@@ -28,5 +28,10 @@ config NVS_LOOKUP_CACHE_SIZE
 	help
 	  Number of entries in Non-volatile Storage lookup cache.
 	  It is recommended that it be a power of 2.
+config NVS_LOG_LEVEL
+	default 0
+	int "NVS log level"
+	help
+		0 no logs, 1 error, 2 warning, 3 info, 4 debug
 
 endif
