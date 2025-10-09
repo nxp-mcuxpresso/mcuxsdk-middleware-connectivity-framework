@@ -1,4 +1,79 @@
 # SecLib_RNG: Security library and random number generator
+## SecLib Implementation Flavors
+
+### Overview
+The NXP Connectivity Framework provides multiple SecLib implementations (flavors) to support different hardware capabilities, security requirements, and performance needs. Each flavor offers the same high-level cryptographic APIs but with different underlying implementations optimized for specific use cases.
+
+### Available SecLib Flavors
+
+#### 1. Software SecLib (`SecLib.c`)(`RNG.c`)
+**Description**: Pure software implementation providing cryptographic operations if no hardware is available.
+
+**Platforms**: all platforms
+
+**Characteristics**:
+- Platform-independent software implementation
+- No hardware acceleration requirements
+- Consistent behavior across all platforms
+- Higher CPU usage and power consumption
+- Suitable for platforms without crypto hardware
+
+**Files**: [`SecLib.c`](./SecLib.c), [`SecLib_aes_mmo.c`](./SecLib_aes_mmo.c), [`RNG.c`](./RNG.c)
+
+#### 2. EdgeLock SecLib (`SecLib_sss.c`)(`RNG.c`)
+**Description**: Hardware-accelerated implementation using NXP's EdgeLock secure subsystem s200.
+
+**Platforms**: devices with S200: KW45, KW47, MCXW71, MCXW72
+
+**Characteristics**:
+- Hardware-backed security operations
+- Secure key storage in hardware
+- Hardware random number generation
+- Lower CPU usage, better performance
+- Enhanced security through hardware isolation
+- Platform-specific (requires Secure Subsystem API)
+
+**Files**: [`SecLib_sss.c`](./SecLib_sss.c), [`RNG.c`](./RNG.c)
+
+#### 3. PSA Crypto SecLib (`SecLib_psa.c`)(`RNG_psa.c`)
+**Description**: Implementation based on ARM's Platform Security Architecture (PSA) Crypto API standard.
+
+**Platforms**: MCXW23, (MCXW71 and MCXW72 for evaluation)
+
+**Characteristics**:
+- Industry-standard API
+- Hardware acceleration when available
+- Secure key management
+- Future-proof and portable
+- Compliance-ready
+
+**Files**: [`SecLib_psa.c`](./SecLib_psa.c), [`SecLib_psa_config.h`](../../platform/wireless_mcu/configs/SecLib_psa_config.h) [`RNG_psa.c`](./RNG_psa.c)
+
+#### 4. MbedTLS SecLib (`SecLib_mbedtls.c`)(`RNG_mbedTLS.c`)
+**Description**: Implementation using the MbedTLS cryptographic library.
+
+**Platforms**: all platforms, RW61
+
+**Characteristics**:
+- Well-tested and widely adopted
+- Software and hardware acceleration support
+- Extensive algorithm support
+- Good performance optimization
+- Large memory footprint
+
+**Files**: [`SecLib_mbedTLS.c`](./SecLib_mbedTLS.c), [`SecLib_mbedtls_config.h`](../../platform/rw61x/configs/SecLib_mbedtls_config.h), [`RNG_mbedTLS.c`](./RNG_mbedTLS.c)
+
+#### Flavor Selection
+SecLib flavor is described in ['Kconfig'](./Kconfig) and selected inside prj.conf or defconfig. Define one of this line to override the default configuration for your board: 
+```
+CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.sw=y
+CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.secure_subsystem=y
+CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa=y
+CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls=y
+```
+
+The necessary configuration files are automatically added inside of [`CmakeLists.txt`](./CMakeLists.txt)
+
 ## Random number generator
 ### Overview
 The RNG module is part of the framework used for random number generation. It uses hardware RNG peripherals as entropy sources (TRNG, Secure Subsystem, ...) to provide a true random number generator interface.
@@ -13,10 +88,22 @@ On the NBU code side, a request is emitted via RPMSG to the Host to provide a se
 If the core running the RNG service owns the TRNG entropy hardware (if any), it can get the seed directly form this hardware synchronously.
 In the case of an NBU that does not control the devices entropy source, that is owned by the Host, it request a seed from the Host processor via RPMSG exchange.
 On receipt of this request the Host sets a flag notifying of this request from the RPMSG ISR context.
-From the Idle thread, this flag is polled via the RNG_IsReseedNeeded API. If set the seed is regenerated and forwarded to the NBU via RPMSG.
 
 RNG_ReInit API is to be used at wake up time in the context of LowPower.
 RNG_DeInit is used for unit tests and coverage purposes but has no useful role in a real application.
+
+### Asynchronous Seed Handling Enhancement
+The RNG module has been enhanced to use the framework's work queue system instead of polling from the IDLE thread.
+
+#### Key Changes:
+- **Work Queue Integration**: `RNG_NotifyReseedNeeded()` now submits seed operations to the work queue on Host cores
+- **Non-blocking**: Replaces previous IDLE thread polling with asynchronous work queue scheduling
+- **ISR-Safe**: Seed requests from ISR context are safely deferred to work queue execution
+
+#### Benefits:
+- Improved system responsiveness by removing IDLE thread dependency
+- Better resource management through work queue scheduling
+
 
 ### Seed handling
 RNG_SetSeed: 
@@ -28,6 +115,8 @@ RNG_GetTrueRandomNumber is the API used to generate a Random 32 bit number from 
 
 RNG_GetPseudoRandomData is used to generate arrays of random bytes.
 
+RNG_NotifyReseedNeeded Enhanced to use work queue submission on Host cores instead of requiring IDLE thread polling. Sets reseed flag and schedules asynchronous seed generation.
+
 ## Security Library
 
 ### Overview
@@ -36,24 +125,46 @@ The framework provides support for cryptography in the security module. It suppo
 Software implementation is provided in a library format.
 
 ### Support for security algorithms
-|                                                             	| SW Seclib : SecLib.c                         	| EdgeLock SecLib_sss.c           	| Seclib_ecdh.c 	| Mbedtls SecLib_mbedtls.c  	| nccl (part of SecLib.c) 	| Usage example             	|
+|                                                             	| SW Seclib : SecLib.c                         	| EdgeLock SecLib_sss.c           	| Seclib_psa.c     	| Mbedtls SecLib_mbedtls.c  	| nccl (part of SecLib.c) 	| Usage example             	|
 |-------------------------------------------------------------	|----------------------------------------------	|---------------------------------	|---------------	|---------------------------	|-------------------------	|---------------------------	|
-| AES_128                                                     	| SecLib_aes.c                                 	| x                               	|               	| x                         	|                         	|                           	|
-| AES_128_ECB                                                 	|                                              	| x                               	|               	| x                         	|                         	|                           	|
+| AES_128                                                     	| SecLib_aes.c                                 	| x                               	|         x      	| x                         	|                         	|                           	|
+| AES_128_ECB                                                 	|                                              	| x                               	|         x      	| x                         	|                         	|                           	|
 | AES_128_CBC                                                 	| x                                            	| x                               	|               	| x                         	|                         	|                           	|
 | AES_128_CTR encryption                                      	| x                                            	| x                               	|               	|                           	|                         	|                           	|
 | AES_128_OFB Encryption                                      	| x                                            	|                                 	|               	|                           	|                         	|                           	|
-| AES_128_CMAC                                                	| x                                            	| x                               	|               	| x                         	|                         	| BLE connection, ieee 15.4 	|
+| AES_128_CMAC                                                	| x                                            	| x                               	|         x      	| x                         	|                         	| BLE connection, ieee 15.4 	|
 | AES_128_EAX                                                 	| x                                            	|                                 	|               	|                           	|                         	|                           	|
-| AES_128_CCM                                                 	| x                                            	| x                               	|               	| x                         	|                         	| BLE, ieee 15.4            	|
+| AES_128_CCM                                                 	| x                                            	| x                               	|         x      	| x                         	|                         	| BLE, ieee 15.4            	|
 | SHA1                                                        	| SecLib_sha.c                                 	| x                               	|               	| x                         	|                         	|                           	|
-| SHA256                                                      	| x                                            	| x                               	|               	| x                         	|                         	|                           	|
+| SHA256                                                      	| x                                            	| x                               	|         x      	| x                         	|                         	|                           	|
 | HMAC_SHA256                                                 	| x                                            	| x                               	|               	| x                         	|                         	| PRNG, Digest for Matter   	|
 | ECDH_P256 shared  secret generation                         	| x (by 15 incremental steps) -> SecLib_ecdh.c 	| x   with MACRO SecLibECDHUseSSS 	| x             	| x                         	| x                       	| BLE pairing,              	|
 | EC_P256 key pair  generation                                	| x                                            	| x                               	| x             	| x                         	| x                       	|                           	|
-| EC_P256 public key generation from private key              	|                                              	|                                 	| x             	| x                         	| x                       	| Matter (ECDSA)            	|
+| EC_P256 public key generation from private key              	|                                              	|                                 	|               	| x                         	| x                       	| Matter (ECDSA)            	|
 | ECDSA_P256 hash and msg signature  generation / verification 	|                                              	| only if owner of the key pair   	|               	| x                         	| x                       	| Matter                    	|
 | SPAKE2+ P256 arithmetics                                    	|                                              	|                                 	|               	| x                         	| x                       	| Matter                    	|
+
+### SecLib_psa
+The framework provides PSA (Platform Security Architecture) Crypto API support through the `SecLib_psa.c` implementation. This provides a standardized cryptographic interface that can leverage hardware acceleration when available.
+
+### Configuration
+PSA support is configured through the `SecLib_psa_config.h` file, which defines:
+- Hardware acceleration capabilities via `MBEDTLS_PSA_ACCEL_*` macros
+- Memory management integration with the framework's memory manager
+- External RNG integration
+
+### Advantages of PSA Crypto API
+
+#### Standardization and Portability
+- **Vendor Independence**: Applications using PSA APIs can be easily ported between different hardware platforms without changing cryptographic code
+- **Industry Standard**: PSA Crypto API is an ARM-defined industry standard (PSA Certified), ensuring consistent behavior across different platforms and vendors
+- **Future-Proof**: As an evolving standard, PSA provides long-term compatibility and support for emerging cryptographic requirements
+
+#### Security Benefits
+- **Secure Key Management**: PSA provides built-in secure key storage and lifecycle management, reducing the risk of key exposure
+- **Hardware Security Integration**: Seamless integration with hardware security modules (HSMs) and secure elements when available
+- **Isolation**: Keys and cryptographic operations can be isolated from application code, reducing attack surface
+- **Tamper Resistance**: Hardware-backed implementations provide protection against physical attacks
 
 
 ## BLE advanced secure mode
