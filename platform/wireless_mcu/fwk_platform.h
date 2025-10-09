@@ -479,6 +479,15 @@ int PLATFORM_CalibrateXtal32M(int16_t temperature);
  */
 int PLATFORM_GetRadioIdleDuration32K(void);
 
+/*!
+ * \brief Initialize the radio
+ *
+ * \details Enable LDO force on the different LDOs and configure their trim values
+ *
+ * \note API need to be called on KW47/MCXW72 platforms.
+ */
+void PLATFORM_InitRadio(void);
+
 #if defined(__cplusplus)
 }
 #endif /* __cplusplus */

@@ -884,6 +884,9 @@ void PLATFORM_RemoteActiveReq(void)
 
     OSA_InterruptEnable();
 
+    /* Re-initialize radio at the end of PLATFORM_RemoteActiveReq() */
+    PLATFORM_InitRadio();
+
     BOARD_DBGLPIOSET(0, 0);
 }
 
@@ -1108,4 +1111,34 @@ int PLATFORM_CalibrateXtal32M(int16_t temperature)
     } while (false);
 
     return ret;
+}
+
+void PLATFORM_InitRadio(void)
+{
+#if defined(gPlatformEnableLdoForce) && (gPlatformEnableLdoForce > 0)
+    if (((RFMC->VERID & RFMC_VERID_RADIO_ID_MASK) == 0x4700U) || ((RFMC->VERID & RFMC_VERID_RADIO_ID_MASK) == 0x4500U))
+    {
+        uint32_t tmp;
+
+        /* Enable XTAL LDO force and update LDO trim value to 0.885V  */
+        RFMC->XO_TEST |= (RFMC_XO_TEST_LDO_FORCE(1) | RFMC_XO_TEST_LDO_TRIM(1));
+
+        /* Force LDOs */
+        XCVR_ANALOG->LDO_0 |= (XCVR_ANALOG_LDO_0_LDO_PLL_FORCE_MASK | XCVR_ANALOG_LDO_0_LDO_VCO_FORCE_MASK |
+                               XCVR_ANALOG_LDO_0_LDO_RXTXHF_FORCE_MASK | XCVR_ANALOG_LDO_0_LDO_RXTXLF_FORCE_MASK |
+                               XCVR_ANALOG_LDO_0_LDO_CAL_FORCE_MASK);
+
+        tmp = XCVR_MISC->LDO_TRIM_0;
+        tmp &= ~(XCVR_MISC_LDO_TRIM_0_LDO_RXTXHF_TRIM_OFFSET_MASK | XCVR_MISC_LDO_TRIM_0_LDO_RXTXLF_TRIM_OFFSET_MASK |
+                 XCVR_MISC_LDO_TRIM_0_LDO_VCO_TRIM_OFFSET_MASK | XCVR_MISC_LDO_TRIM_0_LDO_PLL_TRIM_OFFSET_MASK);
+
+        /* Update ldo trim offset values */
+        tmp |= (XCVR_MISC_LDO_TRIM_0_LDO_RXTXLF_TRIM_OFFSET(6) | XCVR_MISC_LDO_TRIM_0_LDO_RXTXHF_TRIM_OFFSET(6) |
+                XCVR_MISC_LDO_TRIM_0_LDO_VCO_TRIM_OFFSET(2) | /* resolution is 4 codes ... translates into +8 */
+                XCVR_MISC_LDO_TRIM_0_LDO_PLL_TRIM_OFFSET(6));
+
+        XCVR_MISC->LDO_TRIM_0 = tmp;
+    }
+#endif
+    return;
 }

@@ -226,6 +226,11 @@
 #define PLATFORM_SELECT_RAM_RET_END_IDX   6U
 #endif /* gPlatformShutdownEccRamInLowPower */
 
+/* Disable LDO force mode on the platform */
+#ifndef gPlatformEnableLdoForce
+#define gPlatformEnableLdoForce 0
+#endif
+
 /*********************************************************************
  *        Configuration check
  *********************************************************************/

@@ -236,6 +236,11 @@
 #define gPlatformEnableFro6MCalLowpower_d 1
 #endif
 
+/* Disable LDO force mode on the platform */
+#ifndef gPlatformEnableLdoForce
+#define gPlatformEnableLdoForce 0
+#endif
+
 /*********************************************************************
  *        Configuration check
  *********************************************************************/

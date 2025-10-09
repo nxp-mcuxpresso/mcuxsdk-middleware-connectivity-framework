@@ -10,6 +10,7 @@
 #include "board_platform.h"
 #include "fwk_platform_genfsk.h"
 #include "fwk_platform.h"
+#include "fwk_config.h"
 
 #if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "hdi.h"
@@ -65,6 +66,10 @@ void PLATFORM_InitGenfsk(void)
         status = PLATFORM_SwitchToOsc32k();
         CHECK_AND_RAISE_ERROR(status, -3);
 #endif
+
+        /* Initialize radio */
+        PLATFORM_InitRadio();
+
     } while (false);
 }
 
