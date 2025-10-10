@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -13,6 +13,8 @@
 #ifndef MB
 #define MB(x) (((uint32_t)x) << 20u)
 #endif
+
+#include "mflash_drv.h"
 
 /* SPI NOR Flash is an 8MBytes on RT1060 evk */
 #define FLASH_SIZE MB(8U)

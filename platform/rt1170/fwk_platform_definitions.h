@@ -1,11 +1,13 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FWK_PLAT_DEFS_H_
 #define _FWK_PLAT_DEFS_H_
+
+#include "mflash_drv.h"
 
 #ifndef KB
 #define KB(x) (((uint32_t)x) << 10u)

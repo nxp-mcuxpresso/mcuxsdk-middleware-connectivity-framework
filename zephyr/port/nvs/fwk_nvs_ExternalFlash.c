@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -11,7 +11,6 @@
 
 #include "nvs_port.h"
 #include "EmbeddedTypes.h"
-#include "mflash_drv.h"
 #include "fwk_platform_definitions.h"
 #include "FunctionLib.h"
 #include "fwk_platform_extflash.h"
@@ -157,4 +156,6 @@ static const struct flash_parameters *extflash_get_parameters(const struct devic
     NOT_USED(dev);
     return (const struct flash_parameters *)&external_nv_storage_params;
 }
+#else
+#error "NV_STORAGE_EXTFLASH_START_OFFSET must be defined to use external flash storage"
 #endif
