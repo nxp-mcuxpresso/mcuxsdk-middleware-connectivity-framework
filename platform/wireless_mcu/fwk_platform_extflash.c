@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2022 NXP                          */
+/*                           Copyright 2021-2022,2025 NXP                          */
 /*                            All rights reserved.                            */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
@@ -35,13 +35,32 @@ static nor_handle_t norHandle = {NULL};
 
 static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
 {
-    bool ret = true;
-    for (uint32_t i = 0u; i < blen; i++)
+    bool     ret           = true;
+    uint32_t remaining_len = blen;
+
+    uint32_t *p_32 = (uint32_t *)ptr;
+    while (remaining_len >= sizeof(uint32_t))
     {
-        if (ptr[i] != 0xffu)
+        if (*p_32 != ~0UL)
         {
             ret = false;
             break;
+        }
+        p_32++;
+        remaining_len -= sizeof(uint32_t);
+    }
+    if (ret)
+    {
+        uint8_t *p_8 = (uint8_t *)p_32;
+        while (remaining_len > 0U)
+        {
+            if (*p_8 != 0xFFU)
+            {
+                ret = false;
+                break;
+            }
+            p_8++;
+            remaining_len--;
         }
     }
     return ret;
@@ -187,7 +206,7 @@ bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
         }
         else
         {
-            if (!MemCmpToEraseValue((uint8_t *)address, read_sz))
+            if (!MemCmpToEraseValue((uint8_t *)read_buf, read_sz))
             {
                 ret = false;
                 /* Can stop at once if one byte differ */
