@@ -1,5 +1,5 @@
 /*!
- * Copyright 2021-2024 NXP
+ * Copyright 2021-2025 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * \file fwk_platform_sensors.c
@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "fsl_device_registers.h"
 #include "fwk_platform_sensors.h"
@@ -22,6 +23,8 @@
 /* -------------------------------------------------------------------------- */
 
 volatile bool initialized = false;
+
+static temp_ready_event_callback_t temperature_ready_callback = (temp_ready_event_callback_t)NULL;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -59,7 +62,11 @@ void PLATFORM_GetBatteryLevel(uint8_t *battery_level)
 
 void PLATFORM_StartTemperatureMonitor(void)
 {
-    ;
+    if (temperature_ready_callback != NULL)
+    {
+        /* Temperature always ready to be read using SENSOR_CTRL registers */
+        temperature_ready_callback();
+    }
 }
 
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
@@ -71,4 +78,9 @@ void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
 
     /* (temperature * 0.480561F - 220.7074F) */
     *temperature_value = (int32_t)((temperature * 481U) / 1000U - 221U);
+}
+
+void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
+{
+    temperature_ready_callback = cb;
 }

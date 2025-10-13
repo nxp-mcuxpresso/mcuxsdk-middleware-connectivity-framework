@@ -103,6 +103,14 @@ void Sensors_SetLowpowerCriticalCb(const Sensors_LowpowerCriticalCBs_t *pfCallba
 void SENSORS_TriggerTemperatureMeasurement(void);
 
 /*!
+ * \brief Trig periodic temperature measurement.
+ *
+ * \param[in]  temperature_meas_interval_ms Max measurement interval in ms.
+ *             0U is equivalent to a oneshot measurement (SENSORS_TriggerTemperatureMeasurement)
+ */
+void SENSORS_TriggerPeriodicTemperatureMeasurement(uint32_t temperature_meas_interval_ms);
+
+/*!
  * \brief Trigger the ADC on the temperature. This an unsafe API, and MUST only be called
           when the scheduler is stopped or when interrupts are masked.
  * WARNING: Using this outside atomic sections is undefined behavior.

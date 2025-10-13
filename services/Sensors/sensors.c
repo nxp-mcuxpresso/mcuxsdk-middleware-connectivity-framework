@@ -87,11 +87,14 @@ static sensors_statistics_t sensors_statistics = {.temperatureMeasurementCount =
  */
 static const Sensors_LowpowerCriticalCBs_t *pfSensorsLowpowerCriticalCallbacks = NULL;
 
-static volatile uint32_t CurrentTemperatureMeasIntervalMs = VALUE_NOT_AVAILABLE_32;
+static volatile uint32_t currentTemperatureMeasIntervalMs     = VALUE_NOT_AVAILABLE_32;
+static volatile uint32_t temperatureMeasReqIntervalFromHostMs = VALUE_NOT_AVAILABLE_32;
+static volatile uint32_t temperatureMeasReqIntervalFromNbuMs  = VALUE_NOT_AVAILABLE_32;
 
 static TIMER_MANAGER_HANDLE_DEFINE(mTempSensorTimer);
 
 static void Sensors_PeriodicTempWorkHandler(fwk_work_t *work);
+static void Sensors_StartPeriodicTempMeas(void);
 
 static fwk_work_t periodic_temp_trig_work = {
     .handler = Sensors_PeriodicTempWorkHandler,
@@ -129,15 +132,26 @@ static int32_t Sensors_ReleaseLpConstraint(int32_t power_mode)
 
 STATIC void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
 {
-    if (temperature_meas_interval_ms == 0U)
+    /* Request form NBU */
+    temperatureMeasReqIntervalFromNbuMs = temperature_meas_interval_ms;
+    if (temperatureMeasReqIntervalFromNbuMs == 0U)
     {
-        /* 0U means that the NBU requests a non periodic oneshot measurement */
-        CurrentTemperatureMeasIntervalMs = VALUE_NOT_AVAILABLE_32;
+        /* 0U means that the NBU requests a non periodic oneshot measurement
+         * 0U can be used also to stop the periodic measurement if it was already on.
+         */
+        temperatureMeasReqIntervalFromNbuMs = VALUE_NOT_AVAILABLE_32;
     }
-    else
-    {
-        CurrentTemperatureMeasIntervalMs = temperature_meas_interval_ms;
-    }
+
+    Sensors_StartPeriodicTempMeas();
+}
+
+static void Sensors_StartPeriodicTempMeas(void)
+{
+    uint32_t nbu_interval  = temperatureMeasReqIntervalFromNbuMs;
+    uint32_t host_interval = temperatureMeasReqIntervalFromHostMs;
+
+    currentTemperatureMeasIntervalMs = MIN(nbu_interval, host_interval);
+
     /* trigger one shot measurement
      * SENSORS_RefreshTemperatureValue function will be called once the measurement is ready
      * and will schedule the next measurement to be done after interval time
@@ -146,6 +160,9 @@ STATIC void Sensors_TemperatureReqCb(uint32_t temperature_meas_interval_ms)
     {
         assert(0);
     }
+    /* At this level, if currentTemperatureMeasIntervalMs value is VALUE_NOT_AVAILABLE_32, a one shot
+     * measurement will be done and periodicity shall stop
+     */
 }
 
 static void Sensors_TempMeasTimerCallback(void *pParam)
@@ -158,7 +175,7 @@ static void Sensors_TempMeasTimerCallback(void *pParam)
     }
 }
 
-static void Sensors_TemperatureReadyCb(int32_t temperature_value)
+static void Sensors_TemperatureReadyCb(void)
 {
     (void)SENSORS_RefreshTemperatureValue();
 }
@@ -295,6 +312,25 @@ void SENSORS_TriggerTemperatureMeasurement(void)
 }
 
 /*!
+ * @brief Trig periodic temperature measurement.
+ *
+ */
+void SENSORS_TriggerPeriodicTemperatureMeasurement(uint32_t temperature_meas_interval_ms)
+{
+    /* Request from Host */
+    temperatureMeasReqIntervalFromHostMs = temperature_meas_interval_ms;
+    if (temperatureMeasReqIntervalFromHostMs == 0U)
+    {
+        /* 0U means that the Host requests a non periodic oneshot measurement
+         * 0U can be used also to stop the periodic measurement if it was already on.
+         */
+        temperatureMeasReqIntervalFromHostMs = VALUE_NOT_AVAILABLE_32;
+    }
+
+    Sensors_StartPeriodicTempMeas();
+}
+
+/*!
  * @brief Trig the ADC on the temperature.
  *
  *
@@ -334,13 +370,13 @@ int32_t SENSORS_RefreshTemperatureValue(void)
         LastTemperature = temperature;
 
         /* Temperature is ready, Stop timer and restart it if a periodic interval is requested */
-        if (CurrentTemperatureMeasIntervalMs != VALUE_NOT_AVAILABLE_32)
+        if (currentTemperatureMeasIntervalMs != VALUE_NOT_AVAILABLE_32)
         {
             /* Restart a oneshot timer with the requested interval.
              * Timer's timeout callback will trigger the measurement.
              * Timer is restarted each time the temperature is ready to make the measurement periodic.
              */
-            (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, CurrentTemperatureMeasIntervalMs);
+            (void)TM_Start((timer_handle_t)mTempSensorTimer, kTimerModeSingleShot, currentTemperatureMeasIntervalMs);
         }
         else
         {

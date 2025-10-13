@@ -233,7 +233,8 @@ static void PLATFORM_TemperatureReadyWorkHandler(fwk_work_t *work)
 
     if (temperature_ready_callback != NULL)
     {
-        temperature_ready_callback(new_temperature_value);
+        /* Inform Sensors module that the temperature is ready */
+        temperature_ready_callback();
     }
 
     /* No need to send the temperature to the NBU if the core is not started */

@@ -17,6 +17,51 @@ Calling "SENSORS_GetTemperature()" or "SENSORS_GetBatteryLevel()" function will 
 
 > **Important**: When a measurement is ongoing, new measurement requests will be **dropped**. Measurement triggers are only accepted when the measurement state is **IDLE**. This applies to both temperature and battery measurements to prevent ADC resource conflicts.
 
+### Periodic Temperature Measurement
+
+The Sensors module supports automatic periodic temperature measurements that can be requested from two sources:
+
+#### 1. HOST Requests
+Applications can request periodic temperature measurements using:
+```c
+SENSORS_TriggerPeriodicTemperatureMeasurement(uint32_t temperature_meas_interval_ms);
+```
+
+#### 2. NBU Requests (wireless_mcu platforms only)
+The NBU (Narrow Band Unit) can request periodic temperature measurements.
+For more details about NBU temperature requests check `NBU Integration Features` section bellow.
+
+#### Periodic Measurement Behavior
+
+**Immediate Trigger**: Every periodic request (HOST or NBU) triggers an **immediate measurement** before starting the interval timer.
+
+**Interval Management**: 
+- **Minimum Interval Selection**: When both HOST and NBU request periodic measurements, the system uses the **shorter interval**
+- **Dynamic Updates**: Changing the interval from either source immediately triggers a new measurement and restarts the timer with the new effective interval
+- **Independent Control**: HOST and NBU can independently start/stop their periodic requests
+
+**One-shot Mode**: Setting interval to `0` triggers a single measurement and stops periodic operation for that source.
+
+#### Usage Examples
+
+```c
+// HOST requests periodic measurement every 100ms
+SENSORS_TriggerPeriodicTemperatureMeasurement(100);
+
+// HOST requests one-shot measurement and stops periodic operation
+SENSORS_TriggerPeriodicTemperatureMeasurement(0);
+```
+
+#### Concurrent Requests Behavior
+
+| HOST Interval | NBU Interval | Effective Interval| Notes                    |
+|---------------|--------------|-------------------|--------------------------|
+| 200ms         | 100ms        | 100ms             | NBU interval is shorter  |
+| 100ms         | 300ms        | 100ms             | HOST interval is shorter |
+| 0 (stopped)   | 150ms        | 150ms             | Only NBU active          |
+| 200ms         | 0 (stopped)  | 200ms             | Only HOST active         |
+| 0 (stopped)   | 0 (stopped)  | No periodic       | Both stopped             |
+
 ### Measurement State Management
 
 The Sensors module uses a state machine to manage ADC resource access:

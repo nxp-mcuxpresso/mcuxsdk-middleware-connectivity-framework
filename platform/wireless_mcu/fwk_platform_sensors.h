@@ -36,7 +36,7 @@
 /*                           Public type definitions                          */
 /* -------------------------------------------------------------------------- */
 
-typedef void (*temp_ready_event_callback_t)(int32_t temperature_value);
+typedef void (*temp_ready_event_callback_t)(void);
 
 /* -------------------------------------------------------------------------- */
 /*                        Public functions declaration                        */
