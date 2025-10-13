@@ -92,6 +92,11 @@
 #endif /* FWK_PLATFORM_XTAL32K_STARTUP_TIMEOUT */
 
 /*! @brief Remote active request timeout */
+#ifndef FWK_PLATFORM_INIT_NBU_TIMEOUT_US
+#define FWK_PLATFORM_INIT_NBU_TIMEOUT_US 1000U
+#endif /* FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US */
+
+/*! @brief Remote active request timeout */
 #ifndef FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US
 #define FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US 10000U
 #endif /* FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US */
@@ -267,7 +272,8 @@ int PLATFORM_InitNbu(void)
 
     if (nbu_init == 0)
     {
-        uint32_t rfmc_ctrl;
+        uint32_t rfmc_ctrl, regPrimask;
+        uint64_t timestamp;
         int      cnt = 0;
 
 #if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
@@ -301,32 +307,49 @@ int PLATFORM_InitNbu(void)
         RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
         CMC0->DBGCTL &= ~CMC_DBGCTL_SOD_MASK;
 #endif
-
-        /* Enabling BLE Power Controller (BLE_LP_EN) will automatically start the XTAL
-         * According to RM, we need to wait for the XTAL to be ready before accessing
-         * Radio domain ressources.
-         * Here, we make sure the XTAL is ready before releasing the CM3 from reset
-         * it will prevent any access issue when the CM3 is starting up.
-         * CM3 is released in HAL_RpmsgMcmgrInit */
-        BOARD_DBGLPIOSET(2, 1);
-        while ((cnt++ < FWK_PLATFORM_XTAL32M_STARTUP_TIMEOUT) && ((RFMC->XO_STAT & RFMC_XO_STAT_XTAL_RDY_MASK) == 0U))
+        regPrimask = DisableGlobalIRQ();
+        timestamp  = PLATFORM_GetTimeStamp();
+        /* Wait for the NBU to become active as BLE_LP_EN has been asserted */
+        while ((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_BLE_STATE_MASK) != RFMC_RF2P4GHZ_STAT_BLE_STATE(0x1U))
         {
-            BOARD_DBGLPIOSET(2, 0);
-            __ASM("NOP");
+            /* Trigger a timeout error if the register update takes too long */
+            if (PLATFORM_IsTimeoutExpired(timestamp, FWK_PLATFORM_INIT_NBU_TIMEOUT_US))
+            {
+                status = RAISE_ERROR(0, 2);
+                break;
+            }
+        }
+        EnableGlobalIRQ(regPrimask);
+
+        if (status == 0)
+        {
+            /* Enabling BLE Power Controller (BLE_LP_EN) will automatically start the XTAL
+             * According to RM, we need to wait for the XTAL to be ready before accessing
+             * Radio domain ressources.
+             * Here, we make sure the XTAL is ready before releasing the NBU from reset
+             * it will prevent any access issue when the NBU is starting up.
+             * NBU is released in HAL_RpmsgMcmgrInit */
             BOARD_DBGLPIOSET(2, 1);
-        }
-        BOARD_DBGLPIOSET(2, 0);
+            while ((cnt++ < FWK_PLATFORM_XTAL32M_STARTUP_TIMEOUT) &&
+                   ((RFMC->XO_STAT & RFMC_XO_STAT_XTAL_RDY_MASK) == 0U))
+            {
+                BOARD_DBGLPIOSET(2, 0);
+                __ASM("NOP");
+                BOARD_DBGLPIOSET(2, 1);
+            }
+            BOARD_DBGLPIOSET(2, 0);
 
-        if (cnt > FWK_PLATFORM_XTAL32M_STARTUP_TIMEOUT)
-        {
-            status = RAISE_ERROR(0, 1);
-        }
-        else
-        {
-            DBG_NBU_GPIOD_ACCESS();
+            if (cnt > FWK_PLATFORM_XTAL32M_STARTUP_TIMEOUT)
+            {
+                status = RAISE_ERROR(0, 1);
+            }
+            else
+            {
+                DBG_NBU_GPIOD_ACCESS();
 
-            /* nbu initialization completed */
-            nbu_init = 1;
+                /* nbu initialization completed */
+                nbu_init = 1;
+            }
         }
     }
     else
