@@ -52,7 +52,8 @@ void PLATFORM_StartTemperatureMonitor(void)
 
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
 {
-    *temperature_value = (int32_t)PLATFORM_SENSOR_UNKNOWN_TEMPERATURE;
+    /* Dummy Value (25°C)- Real measurement not implemented yet */
+    *temperature_value = 250; /* value in tenths of degree */
 }
 
 void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
