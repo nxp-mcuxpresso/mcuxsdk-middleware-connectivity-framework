@@ -35,33 +35,40 @@ static nor_handle_t norHandle = {NULL};
 
 static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
 {
-    bool     ret           = true;
-    uint32_t remaining_len = blen;
+    bool ret = true;
 
-    uint32_t *p_32 = (uint32_t *)ptr;
-    while (remaining_len >= sizeof(uint32_t))
+    if (blen > 0U)
     {
-        if (*p_32 != ~0UL)
+        uint32_t  remaining_len = blen;
+        uint32_t *p_32          = (uint32_t *)ptr;
+        while (remaining_len >= sizeof(uint32_t))
         {
-            ret = false;
-            break;
-        }
-        p_32++;
-        remaining_len -= sizeof(uint32_t);
-    }
-    if (ret)
-    {
-        uint8_t *p_8 = (uint8_t *)p_32;
-        while (remaining_len > 0U)
-        {
-            if (*p_8 != 0xFFU)
+            if (*p_32 != ~0UL)
             {
                 ret = false;
                 break;
             }
-            p_8++;
-            remaining_len--;
+            p_32++;
+            remaining_len -= sizeof(uint32_t);
         }
+        if (ret)
+        {
+            uint8_t *p_8 = (uint8_t *)p_32;
+            while (remaining_len > 0U)
+            {
+                if (*p_8 != 0xFFU)
+                {
+                    ret = false;
+                    break;
+                }
+                p_8++;
+                remaining_len--;
+            }
+        }
+    }
+    else
+    {
+        ret = false;
     }
     return ret;
 }
@@ -192,33 +199,36 @@ int PLATFORM_IsExternalFlashBusy(bool *isBusy)
 
 bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
 {
-    uint8_t  read_buf[PLATFORM_EXTFLASH_PAGE_SIZE] = {0U};
-    uint32_t remaining_sz                          = len;
-    bool     ret                                   = false;
+    uint8_t read_buf[PLATFORM_EXTFLASH_PAGE_SIZE] = {0U};
+    bool    ret                                   = false;
 
-    while (remaining_sz > 0u)
+    if (len > 0U)
     {
-        uint32_t read_sz;
-        read_sz = MIN(remaining_sz, PLATFORM_EXTFLASH_PAGE_SIZE);
-        if (kStatus_Success != Nor_Flash_Read(&norHandle, address, (uint8_t *)read_buf, read_sz))
+        uint32_t remaining_sz = len;
+
+        while (remaining_sz > 0u)
         {
-            ret = false;
-        }
-        else
-        {
+            uint32_t read_sz;
+            read_sz = MIN(remaining_sz, PLATFORM_EXTFLASH_PAGE_SIZE);
+            if (kStatus_Success != Nor_Flash_Read(&norHandle, address, (uint8_t *)read_buf, read_sz))
+            {
+                /* If no data could be read, exit loop now, read_buf cannot have been updated anyway */
+                break;
+            }
             if (!MemCmpToEraseValue((uint8_t *)read_buf, read_sz))
             {
-                ret = false;
                 /* Can stop at once if one byte differ */
                 break;
             }
+            remaining_sz -= read_sz;
         }
-        remaining_sz -= read_sz;
+        /* If the while loop completes without breaking, it means all read chunks were blank */
+        if (remaining_sz == 0U)
+        {
+            ret = true;
+        }
     }
-    if (remaining_sz == 0u)
-    {
-        ret = true;
-    }
+
     return ret;
 }
 

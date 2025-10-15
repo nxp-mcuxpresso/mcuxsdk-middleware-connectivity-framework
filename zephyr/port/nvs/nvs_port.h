@@ -21,6 +21,11 @@
 #include "fwk_hal_macros.h"
 #include "fsl_os_abstraction.h"
 
+#if (defined CONFIG_NVS_LOG_LEVEL && (CONFIG_NVS_LOG_LEVEL > 0))
+#include <stdio.h>
+#include "fsl_debug_console.h"
+#endif
+
 /**
  * @brief FLASH internal Interface
  * @defgroup flash_internal_interface FLASH internal Interface
@@ -592,11 +597,6 @@ __syscall int k_mutex_unlock(struct k_mutex *mutex);
 __syscall int k_mutex_init(struct k_mutex *mutex);
 __syscall int k_mutex_destroy(struct k_mutex *mutex);
 
-#if (CONFIG_NVS_LOG_LEVEL > 0)
-#include <stdio.h>
-#include "fsl_debug_console.h"
-#endif
-
 #if !(defined CONFIG_NVS_LOG_LEVEL && (CONFIG_NVS_LOG_LEVEL > 0))
 
 #define LOG_MODULE_REGISTER(x, y)
@@ -612,12 +612,22 @@ __syscall int k_mutex_destroy(struct k_mutex *mutex);
 #define LOG_INF(...) (void)0
 #define LOG_DBG(...) (void)0
 
-#else
-#define LOG_MODULE_REGISTER(x, y)
+#else /* CONFIG_NVS_LOG_LEVEL */
+
+#define NVS_LOG_LEVEL_NONE 0
+#define NVS_LOG_LEVEL_ERR  1
+#define NVS_LOG_LEVEL_WRN  2
+#define NVS_LOG_LEVEL_INF  3
+#define NVS_LOG_LEVEL_DBG  4
+
+#define LOG_MODULE_REGISTER(x, y) uint8_t nvs_debug_level = (y);
 #define LOG_MODULE_DECLARE(...)
 
-#if (CONFIG_NVS_LOG_LEVEL > 0)
+extern volatile uint8_t nvs_debug_level;
+
+#if (CONFIG_NVS_LOG_LEVEL >= NVS_LOG_LEVEL_ERR)
 #define LOG_ERR(fmt, ...)                      \
+    if (nvs_debug_level >= NVS_LOG_LEVEL_ERR)  \
     {                                          \
         char str[128];                         \
         sprintf(str, fmt "\n", ##__VA_ARGS__); \
@@ -627,8 +637,9 @@ __syscall int k_mutex_destroy(struct k_mutex *mutex);
 #define LOG_ERR(...) (void)0
 #endif
 
-#if (CONFIG_NVS_LOG_LEVEL > 1)
+#if (CONFIG_NVS_LOG_LEVEL >= NVS_LOG_LEVEL_WRN)
 #define LOG_WRN(fmt, ...)                      \
+    if (nvs_debug_level >= NVS_LOG_LEVEL_WRN)  \
     {                                          \
         char str[128];                         \
         sprintf(str, fmt "\n", ##__VA_ARGS__); \
@@ -638,8 +649,9 @@ __syscall int k_mutex_destroy(struct k_mutex *mutex);
 #define LOG_WRN(...) (void)0
 #endif
 
-#if (CONFIG_NVS_LOG_LEVEL > 2)
+#if (CONFIG_NVS_LOG_LEVEL >= NVS_LOG_LEVEL_INF)
 #define LOG_INF(fmt, ...)                      \
+    if (nvs_debug_level >= NVS_LOG_LEVEL_INF)  \
     {                                          \
         char str[128];                         \
         sprintf(str, fmt "\n", ##__VA_ARGS__); \
@@ -648,8 +660,9 @@ __syscall int k_mutex_destroy(struct k_mutex *mutex);
 #else
 #define LOG_INF(...) (void)0
 #endif
-#if (CONFIG_NVS_LOG_LEVEL > 3)
+#if (CONFIG_NVS_LOG_LEVEL >= NVS_LOG_LEVEL_DBG)
 #define LOG_DBG(fmt, ...)                      \
+    if (nvs_debug_level >= NVS_LOG_LEVEL_DBG)  \
     {                                          \
         char str[128];                         \
         sprintf(str, fmt "\n", ##__VA_ARGS__); \
@@ -659,7 +672,7 @@ __syscall int k_mutex_destroy(struct k_mutex *mutex);
 #define LOG_DBG(...) (void)0
 #endif
 
-#endif
+#endif /* CONFIG_NVS_LOG_LEVEL */
 
 #ifdef __cplusplus
 }

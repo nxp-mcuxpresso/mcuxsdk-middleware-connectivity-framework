@@ -45,7 +45,7 @@
 
 static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
 {
-    bool     ret            = true;
+    bool     ret            = (blen > 0U);
     uint32_t remaining_blen = blen;
     uint8_t *p_8            = ptr;
 

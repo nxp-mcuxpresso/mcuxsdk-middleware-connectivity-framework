@@ -36,7 +36,7 @@ static nor_handle_t norHandle = {NULL};
 
 static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
 {
-    bool ret = true;
+    bool ret = (blen > 0U);
     for (uint32_t i = 0u; i < blen; i++)
     {
         if (ptr[i] != 0xffu)
