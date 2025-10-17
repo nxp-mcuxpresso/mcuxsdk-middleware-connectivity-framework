@@ -106,6 +106,11 @@
 #define FWK_PLATFORM_FRO32K_SWITCH_TIMEOUT_US 10000U
 #endif /* FWK_PLATFORM_FRO32K_SWITCH_TIMEOUT_US */
 
+/*! @brief Remote active release timeout */
+#ifndef FWK_PLATFORM_ACTIVE_REL_TIMEOUT_US
+#define FWK_PLATFORM_ACTIVE_REL_TIMEOUT_US 5000ULL
+#endif /* FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US */
+
 #define FWK_PLATFORM_NBU_WAKE_UP_INTERRUPT_MASK 0x8UL
 
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
@@ -951,6 +956,20 @@ void PLATFORM_RemoteActiveRel(void)
         if (active_request_nb == 0)
         {
             uint32_t rfmc_ctrl;
+            uint64_t timestamp = PLATFORM_GetTimeStamp();
+
+            /* NBU clears WKUP_TIME register to notify application core it's waking up from low power, this is a
+             * software protocol to sync both cores */
+            while ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) != 0U)
+            {
+                /* Trigger an error if the NBU does not clear WKUP_TIME when the timeout expires. */
+                if (PLATFORM_IsTimeoutExpired(timestamp, FWK_PLATFORM_ACTIVE_REL_TIMEOUT_US) &&
+                    (pfPlatformErrorCallback != NULL))
+                {
+                    pfPlatformErrorCallback(PLATFORM_REMOTE_ACTIVE_REL_ID, -1);
+                    break;
+                }
+            }
             rfmc_ctrl = RFMC->RF2P4GHZ_CTRL;
             rfmc_ctrl &= ~RFMC_RF2P4GHZ_CTRL_BLE_WKUP_MASK;
             RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
