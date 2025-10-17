@@ -321,6 +321,8 @@ static int32_t PLATFORM_ComputeMMAOnTemperature(int32_t temperature)
 
 #else
 
+static temp_ready_event_callback_t temperature_ready_callback = (temp_ready_event_callback_t)NULL;
+
 bool PLATFORM_IsAdcInitialized(void)
 {
     return true;
@@ -349,6 +351,10 @@ void PLATFORM_GetBatteryLevel(uint8_t *battery_level)
 
 void PLATFORM_StartTemperatureMonitor(void)
 {
+    if (temperature_ready_callback != NULL)
+    {
+        temperature_ready_callback();
+    }
 }
 
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
@@ -358,7 +364,7 @@ void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
 
 void PLATFORM_RegisterTemperatureReadyEventCb(temp_ready_event_callback_t cb)
 {
-    (void)cb;
+    temperature_ready_callback = cb;
 }
 
 #endif
