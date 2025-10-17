@@ -101,6 +101,11 @@
 #define FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US 10000U
 #endif /* FWK_PLATFORM_ACTIVE_REQ_TIMEOUT_US */
 
+/*! @brief Timeout duration in microseconds for switching the 32kHz clock source to FRO32K */
+#ifndef FWK_PLATFORM_FRO32K_SWITCH_TIMEOUT_US
+#define FWK_PLATFORM_FRO32K_SWITCH_TIMEOUT_US 10000U
+#endif /* FWK_PLATFORM_FRO32K_SWITCH_TIMEOUT_US */
+
 #define FWK_PLATFORM_NBU_WAKE_UP_INTERRUPT_MASK 0x8UL
 
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
@@ -448,6 +453,23 @@ int PLATFORM_InitOsc32K(void)
     int      status;
     uint32_t osc32k_ctrl;
     uint8_t  xtalCap32K = BOARD_32KHZ_XTAL_CLOAD_DEFAULT;
+    uint64_t timestamp  = PLATFORM_GetTimeStamp();
+
+    /* Enable the fro32k and select it as 32k clock source, the switch to the OSC32K will be handle later on */
+    CCM32K_Enable32kFro(CCM32K, true);
+    CCM32K_SelectClockSource(CCM32K, kCCM32K_ClockSourceSelectFro32k);
+
+    /* Wait for the switch to fro32k to be effective */
+    while ((CCM32K_GetStatusFlag(CCM32K) & (uint32_t)kCCM32K_32kFroActiveStatusFlag) == 0U)
+    {
+        /* Exit the loop and trigger error callback if the FRO32K activation exceeds the timeout period. */
+        if (PLATFORM_IsTimeoutExpired(timestamp, FWK_PLATFORM_FRO32K_SWITCH_TIMEOUT_US) &&
+            (pfPlatformErrorCallback != NULL))
+        {
+            pfPlatformErrorCallback(PLATFORM_INIT_OSC_32K_ID, -1);
+            break;
+        }
+    }
 
     status = PLATFORM_GetOscCap32KValue(&xtalCap32K);
 
