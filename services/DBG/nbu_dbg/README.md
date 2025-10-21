@@ -2,7 +2,7 @@ NBU Debug Module
 
 ## Overview
 
-The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) fault detection and analysis. It allows the host to monitor NBU status, detect faults/fatal assert, and extract debug information when crashes occur.
+The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) fault detection and analysis. It allows the host to monitor NBU status, detect faults/fatal assert, and extract debug information when crashes occur, and handle warning notifications.
 
 ## Platform Support
 
@@ -31,6 +31,7 @@ The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) 
   - NBU fault detection
   - Debug structure extraction
   - System error callback management
+  - NBU warning detection and notification
 
 ### NBU Interface
 
@@ -55,11 +56,16 @@ The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) 
 - **Description**: Platform-specific debug functionality
 - **Features**:
   - NBU fault status detection
+  - NBU warning status detection
 
 ## Key Features
 
 ### Fault Detection
 - Single call to check NBU status
+
+### Warning Detection
+- NBU warning status monitoring
+- Warning count reporting
 
 ### Debug Information Extraction
 - Complete register state capture
@@ -90,11 +96,11 @@ Unlike the crash context which is captured at fault time, BLE debug data behaves
 ### Main Functions
 
 ```c
-// Check if NBU fault has occurred
+// Check if NBU fault or warning has occurred
 void NBUDBG_StateCheck(void);
 
-// Register system error callback - Cb will be called upon NBUDBG_StateCheck usage if the fault is detected
-void NBUDBG_RegisterSystemErrorCb(nbu_dbg_system_err_cb_t cb);
+// Register NBU system debug callback - Cb will be called upon NBUDBG_StateCheck usage if fault/new warning is detected
+void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb);
 
 // Extract debug information from NBU
 int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
@@ -107,26 +113,50 @@ int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
 ```c
 #include "fwk_nbu_dbg.h"
 
-// NBU fault analysis callback
-static void BOARD_NbuSystemNotifyCb(nbu_dbg_event_id_t event_id)
+// NBU debug notification callback
+static void BOARD_NbuDebugNotifyCb(const nbu_dbg_context_t *nbu_event)
 {
     nbu_debug_struct_t debug_info;
+    regs_status_t *regs;
     int status;
 
-    // Extract debug information from NBU
     status = NBUDBG_StructDump(&debug_info);
     if (status != 0)
     {
         PRINTF("ERROR: Failed to retrieve NBU debug information\n");
         return;
     }
-   /*** Detailed debug information logging ***/
+
+    if (nbu_event->nbu_warning_count > 0U)
+    {
+        PRINTF("New NBU Warnings detected: %u warnings\n", nbu_event->nbu_warning_count);
+    }
+
+    if (nbu_event->nbu_error_count > 0U)
+    {
+        /* Fault/ Fatal assert on NBU side */
+        regs = &debug_info.reg_dump;
+
+        PRINTF("\n=== NBU Fault Analysis ===\n");
+        PRINTF("Exception Information:\n");
+        PRINTF("  Exception ID: 0x%08X\n", regs->exception_id);
+        PRINTF("  NBU SHA1    : 0x%08X\n", regs->nbu_sha1);
+
+        PRINTF("\nProcessor State:\n");
+        PRINTF("  PC  (Program Counter): 0x%08X\n", regs->pc);
+        PRINTF("  LR  (Link Register)  : 0x%08X\n", regs->lr);
+        PRINTF("  SP  (Stack Pointer)  : 0x%08X\n", regs->sp);
+        PRINTF("  PSR (Program Status) : 0x%08X\n", regs->psr);
+        /*** Additional debug analysis can be performed here ***/
+        /*** System recovery actions ***/
+        /*** Consider NBU reset, system restart, or safe mode entry ***/
+    }
 }
 
 // Initialize NBU debug monitoring
 int BOARD_DbgNbuInit(void)
 {
-    NBUDBG_RegisterSystemErrorCb(BOARD_NbuSystemNotifyCb);
+    NBUDBG_RegisterNbuDebugNotificationCb(BOARD_NbuDebugNotifyCb);
     return 0;
 }
 
@@ -140,4 +170,4 @@ void BOARD_DbgNbuProcess(void)
 ## Limitations
 
 - Currently only supported on KW47-MCXW72 platform
-- Requires NBU fault handlers to be enabled
+- Requires NBU fault handlers to be enabled for fault detection

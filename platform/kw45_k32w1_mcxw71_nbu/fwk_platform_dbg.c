@@ -33,3 +33,14 @@ int PLATFORM_Nbu2HostFaultIndication(void)
     /* Not implemented */
     return 0;
 }
+
+int PLATFORM_Nbu2HostWarningIndication(void)
+{
+    /* Not implemented */
+    return 0;
+}
+
+void PLATFORM_NbuRaiseFault(void)
+{
+    /* Not implemented */
+}

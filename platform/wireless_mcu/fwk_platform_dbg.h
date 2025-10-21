@@ -27,6 +27,14 @@ extern "C" {
  */
 bool PLATFORM_IsNbuFaultSet(void);
 
+/**
+ * \brief Check if NBU warning is set and get the warning count
+ * \param pCount Pointer to store the warning count (can be NULL if count not needed)
+ *
+ * \return true if warning is set (count > 0), false otherwise
+ */
+bool PLATFORM_IsNbuWarningSet(uint8_t *pCount);
+
 #ifdef __cplusplus
 }
 #endif

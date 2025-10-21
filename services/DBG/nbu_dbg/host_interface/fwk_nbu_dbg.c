@@ -26,7 +26,7 @@ nbu_debug_struct_t *debug_struct = (nbu_debug_struct_t *)(m_sqram_debug_start);
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
-static nbu_dbg_system_err_cb_t nbu_dbg_system_err_cb = (nbu_dbg_system_err_cb_t)NULL;
+static nbu_dbg_system_cb_t nbu_dbg_system_cb = (nbu_dbg_system_cb_t)NULL;
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -38,18 +38,20 @@ static nbu_dbg_system_err_cb_t nbu_dbg_system_err_cb = (nbu_dbg_system_err_cb_t)
 
 void NBUDBG_StateCheck(void)
 {
-    if (PLATFORM_IsNbuFaultSet())
+    nbu_dbg_context_t nbu_event = {0U};
+
+    (void)PLATFORM_IsNbuWarningSet(&nbu_event.nbu_warning_count);
+    nbu_event.nbu_error_count = (uint8_t)PLATFORM_IsNbuFaultSet();
+
+    if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U))
     {
-        if (nbu_dbg_system_err_cb != NULL)
-        {
-            nbu_dbg_system_err_cb(fatal_error);
-        }
+        nbu_dbg_system_cb(&nbu_event);
     }
 }
 
-void NBUDBG_RegisterSystemErrorCb(nbu_dbg_system_err_cb_t cb)
+void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb)
 {
-    nbu_dbg_system_err_cb = cb;
+    nbu_dbg_system_cb = cb;
 }
 
 int NBUDBG_StructDump(nbu_debug_struct_t *debug_info)

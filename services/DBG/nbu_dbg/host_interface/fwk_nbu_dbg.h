@@ -20,13 +20,13 @@
  * \brief NBU debug event id
  *
  */
-typedef enum
+typedef struct nbu_dbg_context
 {
-    fatal_error,
-    reserved
-} nbu_dbg_event_id_t;
+    uint8_t nbu_error_count;
+    uint8_t nbu_warning_count;
+} nbu_dbg_context_t;
 
-typedef void (*nbu_dbg_system_err_cb_t)(nbu_dbg_event_id_t event_id);
+typedef void (*nbu_dbg_system_cb_t)(const nbu_dbg_context_t *nbu_event);
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -40,11 +40,11 @@ typedef void (*nbu_dbg_system_err_cb_t)(nbu_dbg_event_id_t event_id);
 void NBUDBG_StateCheck(void);
 
 /*!
- * \brief Register a system error callback. Will be called when NBU crashes.
+ * \brief Register a NBU debug notification callback. Will be called upon NBU fault/warning detection.
  *
  * \param[in] cb callback to be registered
  */
-void NBUDBG_RegisterSystemErrorCb(nbu_dbg_system_err_cb_t cb);
+void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb);
 
 /*!
  * \brief Extract NBU debug information.
