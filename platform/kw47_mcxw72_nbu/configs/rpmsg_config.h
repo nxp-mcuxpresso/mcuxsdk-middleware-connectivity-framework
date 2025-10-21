@@ -38,7 +38,7 @@
 /* START { */
 #define RL_MS_PER_INTERVAL (1)
 
-#define RL_BUFFER_PAYLOAD_SIZE (496)
+#define RL_BUFFER_PAYLOAD_SIZE (270)
 
 #define RL_BUFFER_COUNT (4U)
 
