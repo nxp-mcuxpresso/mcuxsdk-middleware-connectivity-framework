@@ -56,7 +56,7 @@
                 ;        \
     } while (false);
 
-/* Use a custom shared memory setting to set the same setting that application at the initialization */
+/* Share the shared memory configuration with NBU to ensure both the application and NBU use the same settings */
 #define RL_ALLOW_CUSTOM_SHMEM_CONFIG (1)
 
 /* } END */

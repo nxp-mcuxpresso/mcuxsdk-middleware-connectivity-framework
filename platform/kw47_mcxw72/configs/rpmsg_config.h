@@ -63,6 +63,10 @@
             while (true) \
                 ;        \
     } while (false);
+
+/* Share the shared memory configuration with NBU to ensure both the application and NBU use the same settings */
+#define RL_ALLOW_CUSTOM_SHMEM_CONFIG (1)
+
 /* } END */
 
 #endif /* _RPMSG_CONFIG_H */
