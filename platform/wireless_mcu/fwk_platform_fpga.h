@@ -36,7 +36,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-void PLATFORM_InitRadio(void);
+void PLATFORM_InitRadioFpga(void);
 
 #if defined(__cplusplus)
 }

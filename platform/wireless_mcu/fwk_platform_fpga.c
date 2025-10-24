@@ -116,7 +116,7 @@ static void BOARD_InitPinsRF(void)
 }
 #endif
 
-void PLATFORM_InitRadio(void)
+void PLATFORM_InitRadioFpga(void)
 {
 #if defined(HDI_MODE) && (HDI_MODE == 1)
     /* Init SPI pins and interface to be used for channel switch */
