@@ -170,7 +170,7 @@ extern volatile uint32_t gMWS_CoexRfDenyActiveState_d;
 
 #if defined(gWCI2_UseCoexistence_d) && (gWCI2_UseCoexistence_d == 1)
 #ifndef gWCI2_CoexGrantPinSampleDelay
-#define gWCI2_CoexGrantPinSampleDelay   50  /* usec */
+#define gWCI2_CoexGrantPinSampleDelay   100  /* usec */
 #endif
 #endif
 
@@ -235,7 +235,8 @@ typedef enum
 
 typedef uint32_t ( *pfMwsCallback ) ( mwsEvents_t event );
 
-#if gMWS_EnableCoexistenceStats_d && (gMWS_EnableCoexistenceStats_d == 1)
+#if defined (gMWS_EnableCoexistenceStats_d) && (gMWS_EnableCoexistenceStats_d) || \
+    defined(gWCI2_EnableCoexistenceStats_d) && (gWCI2_EnableCoexistenceStats_d)
 typedef struct
 {
     uint32_t numTxRequests;
@@ -532,6 +533,12 @@ void WCI2_CoexistenceSetPriority(mwsRfSeqPriority_t rxPrio, mwsRfSeqPriority_t t
 void WCI2_CoexistenceEnable(void);
 
 /*! *********************************************************************************
+* \brief  Disable Coexistence signals.
+*
+********************************************************************************** */
+void WCI2_CoexistenceDisable (void);
+
+/*! *********************************************************************************
 * \brief  Signal externally that the Radio is not using the medium anymore.
 *
 ********************************************************************************** */
@@ -547,5 +554,33 @@ void WCI2_CoexistenceReleaseAccess(void);
 *
 ********************************************************************************** */
 mwsStatus_t WCI2_SignalIdle(mwsProtocols_t protocol);
+
+/*! *********************************************************************************
+* \brief  MWS state query helper
+*
+* \return  0 if coexistence is enabled, != 0 otherwise
+*
+********************************************************************************** */
+uint8_t WCI2_CoexistenceIsEnabled(void);
+
+/* Define CoexistenceIsEnabled function to have unified call */
+#if gWCI2_UseCoexistence_d
+#undef MWS_CoexistenceIsEnabled
+#define MWS_CoexistenceIsEnabled WCI2_CoexistenceIsEnabled
+#endif
+
+#if gWCI2_UseCoexistence_d
+#if defined(gWCI2_EnableCoexistenceStats_d) && (gWCI2_EnableCoexistenceStats_d)
+/*! *********************************************************************************
+* \brief  Coex stats query helper
+*
+* * \param[in/out]  stats - pointer where the acquired statistics will be written
+*
+* \return  0 if stats were succesfully retrieved, != 0 otherwise
+*
+********************************************************************************** */
+uint8_t WCI2_GetCoexStats(mwsCoexStats_t *stats);
+#endif /* defined(gWCI2_EnableCoexistenceStats_d) && (gWCI2_EnableCoexistenceStats_d) */
+#endif /* gWCI2_UseCoexistence_d */
 
 #endif /* _MWS_H_ */
