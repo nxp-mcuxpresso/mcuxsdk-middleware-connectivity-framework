@@ -4,6 +4,9 @@
 
 if MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu
 
+config MCUX_COMPONENT_middleware.wireless.framework.platform.dbg
+        select MCUX_COMPONENT_utility.assert
+
 config MCUX_COMPONENT_middleware.wireless.framework.platform.dcdc
 
 endif

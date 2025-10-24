@@ -26,6 +26,9 @@
 #define NBUDBG_SET_HANDLER_MODE_IRQ(irq_nbr)
 #define NBUDBG_SetThreadContext(a, b)
 
+/* Check whether NBU asserted or not - Not supported on legacy */
+#define NBUDBG_IS_NBU_ASSERT() 0U
+
 /* -------------------------------------------------------------------------- */
 /*                            Public type definitions                         */
 /* -------------------------------------------------------------------------- */

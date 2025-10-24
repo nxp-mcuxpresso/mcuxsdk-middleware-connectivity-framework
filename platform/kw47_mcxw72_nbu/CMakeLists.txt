@@ -48,6 +48,8 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu)
             CORE_IDS "cm33_core1"
         )
         mcux_add_macro(USE_FWK_DBG_STRUCT=1)
+
+        # fsl_assert has debug console dependency, map it to DEBUGCONSOLE_DISABLE (2U)
+        mcux_add_macro(SDK_DEBUGCONSOLE=2U)
     endif()
 endif()
-

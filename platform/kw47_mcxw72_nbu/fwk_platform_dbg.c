@@ -8,6 +8,8 @@
 /* -------------------------------------------------------------------------- */
 #include "fsl_device_registers.h"
 #include "fwk_platform_dbg.h"
+#include "fwk_debug_struct.h"
+#include "fsl_assert.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -70,4 +72,11 @@ void PLATFORM_NbuRaiseFault(void)
      * and inform the host using the fault handler.
      */
     *((volatile uint32_t *)0xFFA55E27) = 0xFFA55E27; // Invalid memory access
+}
+
+int fsl_assert_hook(const char *failedExpr, const char *file, int line)
+{
+    NBUDBG_SetAssertContext(failedExpr, file, line);
+    PLATFORM_NbuRaiseFault();
+    return 0;
 }
