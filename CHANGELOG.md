@@ -1,6 +1,33 @@
 ## Connectivity framework CHANGELOG
 
-### 7.0.4 revA mcux SDK 25.12.00
+### 7.1.2 mcux SDK 25.12.00 pvw2
+
+#### Major Changes
+
+- [wireless_mcu] Reduced RPMSG buffer payload size from 496 to 270 bytes on KW43/KW47 platforms, saving 226 bytes per buffer (1808 bytes total with 4 buffers on each core). This optimization is possible as rpmsg-lite no longer requires buffer sizes to be powers of two.
+- [configs] Introduced `RL_ALLOW_CUSTOM_SHMEM_CONFIG` flag in rpmsg_config.h to enable connectivity applications to use `platform_set_static_shmem_config()` and `platform_get_custom_shmem_config()`.
+
+#### Minor Changes
+
+- [wireless_mcu] Added `PLATFORM_InitRadio()` API to configure forced enablement of various LDOs (XTAL, PLL, VCO, RXTXHF, RXTXLF, CAL) and update LDO trim values for kw47/mcxw72 platforms.
+- [DBG] Added NBU assert indication support to host with line/file info using debug structure.
+- [DBG] Enhanced NBU debug framework with warning detection and notification capabilities. Extended `NBUDBG_StateCheck()` to monitor NBU warnings via `PLATFORM_IsNbuWarningSet()` with callback support for proactive warning monitoring.
+- [Sensors] Added periodic temperature measurement support allowing app/host to request periodic temperature measurement.
+- [Sensors] Added markdown documentation explaining periodic measurement functionality upon NBU requests.
+- [SecLib_RNG] Added documentation for asynchronous seed handling using `RNG_NotifyReseedNeeded()` and SecLib implementation flavors (Software, EdgeLock, PSA Crypto, MbedTLS).
+- [PSA] Simplified PSA configuration files and reduced imports/definitions for wireless MCU platforms.
+- [mcxw23] Changed temperature dummy value for sensors to progress on application enablement.
+- [NVS] Enhanced debug capabilities by adding `CONFIG_NVS_LOG_LEVEL` and improved LOG macros to adapt to PRINTF limitations.
+
+#### Bug fixes
+
+- [wireless_mcu] Fixed FRO32K as 32 kHz clock source with deferred OSC32K switching to improve initialization performance after warm reset.
+- [wireless_mcu] Added wait loop for NBU power domain readiness in `PLATFORM_InitNbu()` to prevent race conditions when accessing NBU power domain in applications without NBU images.
+- [wireless_mcu] Fixed external flash blank check procedure for LSPI external NOR Flash by correcting `PLATFORM_ExternalFlashAreaIsBlank()` to read from RAM buffer and perform erase pattern comparison in RAM with optimized 4-byte step loops.
+- [NVS] Removed mflash dependency from NVS external flash port and fixed internal flash blank check of unaligned flash data.
+- [mcxw23] Ensured TX power does not exceed 6dBm maximum limit.
+
+### 7.1.1 mcux SDK 25.12.00 pvw1
 
 #### Minor Changes
 
