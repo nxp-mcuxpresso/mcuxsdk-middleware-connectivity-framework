@@ -83,7 +83,7 @@
     }
 #endif
 
-#if gRngHasSecLibDependency_d
+#if gRngUseSecLib_d
 /* Share mutex with SecLib if RNG involves crypto, or Secure subsystem */
 extern osa_status_t SecLibMutexCreate(void);
 extern osa_status_t SecLibMutexLock(void);
@@ -93,13 +93,13 @@ extern osa_status_t SecLibMutexUnlock(void);
 #define RNG_MUTEX_LOCK()   (void)SecLibMutexLock()
 #define RNG_MUTEX_UNLOCK() (void)SecLibMutexUnlock()
 
-#else /* gRngHasSecLibDependency_d */
+#else /* gRngUseSecLib_d */
 
 #define RNG_MUTEX_CREATE() KOSA_StatusSuccess
 #define RNG_MUTEX_LOCK()
 #define RNG_MUTEX_UNLOCK()
 
-#endif
+#endif /* gRngUseSecLib_d */
 
 #if ((defined(FSL_FEATURE_SOC_TRNG_COUNT)) && (FSL_FEATURE_SOC_TRNG_COUNT > 0U))
 #if (defined(RW610_SERIES) || defined(RW612_SERIES))
@@ -206,6 +206,7 @@ int RNG_Init(void)
             break;
         }
 #endif
+#if gRngUseSecLib_d
         /* Create mutex here in case it was not done already.
          * Does nothing without error otherwise.
          */
@@ -213,6 +214,7 @@ int RNG_Init(void)
         {
             break;
         }
+#endif
 #if defined(gPlatformHasNbu_d)
         PLATFORM_RegisterReceivedSeedRequest(&RNG_NotifyReseedNeeded);
 #endif
