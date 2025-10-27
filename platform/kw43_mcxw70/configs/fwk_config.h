@@ -85,10 +85,10 @@
 #define USER_DATA_SECTOR     PROD_DATA_FLASH_ADDR
 #else
 /*
- * IFR_RSVD_SZ may be undefined or set to 0 if no reserved space is required.
- * However keep it as 0x600 during the internal development phase.
+ * IFR_RSVD_SZ may be undefined or set to 0U if no reserved space is required.
+ * However keep it as 0x600U during the internal development phase.
  */
-#define IFR_RSVD_SZ 0x600
+#define IFR_RSVD_SZ 0x600U
 
 #if (defined IFR_RSVD_SZ) && (IFR_RSVD_SZ > 0)
 #define PROD_DATA_FLASH_ADDR (IFR_USER_ADDR + IFR_RSVD_SZ + PROD_DATA_OFFSET)

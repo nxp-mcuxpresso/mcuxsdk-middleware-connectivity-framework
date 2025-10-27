@@ -89,10 +89,10 @@
 #define USER_DATA_SECTOR     PROD_DATA_FLASH_ADDR
 #else
 /*
- * IFR_RSVD_SZ may be undefined or set to 0 if no reserved space is required.
- * However keep it as 0x600 during the internal development phase.
+ * IFR_RSVD_SZ may be undefined or set to 0U if no reserved space is required.
+ * However keep it as 0x600U during the internal development phase.
  */
-#define IFR_RSVD_SZ 0x600
+#define IFR_RSVD_SZ 0x600U
 
 #if (defined IFR_RSVD_SZ) && (IFR_RSVD_SZ > 0)
 #define PROD_DATA_FLASH_ADDR (IFR_USER_ADDR + IFR_RSVD_SZ + PROD_DATA_OFFSET)
@@ -147,7 +147,7 @@
  *        RNG source of entropy
  *********************************************************************/
 
-/* On wireless_mcu platform the only source of entropy disponible is the S200 */
+/* On KW47 wireless_mcu platform the only available source of entropy is the S200 */
 #ifndef gRngUseSecureSubSystem_d
 #define gRngUseSecureSubSystem_d 1
 #endif
