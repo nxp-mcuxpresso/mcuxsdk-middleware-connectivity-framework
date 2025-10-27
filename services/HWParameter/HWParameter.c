@@ -352,17 +352,28 @@ static uint8_t NvWriteProdData(void *src_data, uint32_t size)
 #endif
     return st;
 }
+
+/*! *********************************************************************************
+ * \brief  Scan through hardware parameter production data stored in flash memory,
+ *         identifying any ECC-related faults.
+ *
+ * \param[in] hw_param_sz  size of area to scan in bytes.
+ *
+ * \return gHWParameterError_c is ECC error is detected, gHWParameterSuccess_c otherwise.
+ *
+ ********************************************************************************** */
 static uint32_t SearchEccFaultsInHWParam(uint32_t hw_param_sz)
 {
     uint32_t status = gHWParameterSuccess_c;
-
-    for (uint32_t i = 0U; i < hw_param_sz;)
+    uint32_t i      = 0UL;
+    while (i < hw_param_sz)
     {
-        uint8_t  read_buf[32];
-        uint16_t sz = (hw_param_sz - i);
-        if (sz > 32)
+        /* Tread by 32-byte steps */
+        uint8_t  read_buf[32U];
+        uint32_t sz = (hw_param_sz - i);
+        if (sz > sizeof(read_buf))
         {
-            sz = 32;
+            sz = sizeof(read_buf);
         }
         /* Dummy read so as to detect potential ECC errors */
         if (HAL_FlashReadCheckEccFaults(PROD_DATA_FLASH_ADDR + i, sz, read_buf) == kStatus_HAL_Flash_EccError)
@@ -383,42 +394,53 @@ static uint32_t SearchEccFaultsInHWParam(uint32_t hw_param_sz)
 /*! *********************************************************************************
  * \brief  Set a pointer to point on start of HW parameters structure.
  *         Let it NULL if structure not correct
+ * \note performs an ECC check over the HW Parameter area, which may involve erasing
+ * the sector.
  *
  * \param[in] pHwParams  pointer of pointer to a structure where HW parameters will
  * be stored
  *
- * \return error code
- *
+ * \return error code:
+ *  - gHWParameterSuccess_c if already initialized or successful read,
+ *  - gHWParameterError_c if production data structure is invalid or unrecoverable ECC error detected,
+ *  - gHWParameterBlank_c if area is blank
+ * *
  ********************************************************************************** */
 uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
 {
     uint32_t status = gHWParameterSuccess_c;
     assert(*pHwParams == NULL);
-    uint32_t hw_param_sz;
-#if ((gHwParamsProdDataPlacement_c == gHwParamsProdDataIfrMode_c) || \
-     (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c))
-    hw_param_sz = PROD_DATA_LEN;
-#else
-    hw_param_sz = LEGACY_PROD_DATA_LEN;
-#endif
     do
     {
         hal_flash_status_t st;
+        uint32_t           hw_param_sz;
+#if ((gHwParamsProdDataPlacement_c == gHwParamsProdDataIfrMode_c) || \
+     (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c))
+        hw_param_sz = PROD_DATA_LEN;
+#else
+        hw_param_sz = LEGACY_PROD_DATA_LEN;
+#endif
 
         if (gHardwareParameters_p != NULL)
         {
-            status = gHWParameterSuccess_c;
+            /* Already initialized :  return gHWParameterSuccess_c */
             break;
         }
 
         st = HAL_FlashInit();
         if (kStatus_HAL_Flash_Success != st)
         {
+            /* Flash initialization failed, set error status*/
+            status = gHWParameterError_c;
             break;
         }
         st = HAL_FlashVerifyErase(PROD_DATA_FLASH_ADDR, hw_param_sz, kHAL_Flash_MarginValueNormal);
         if (kStatus_HAL_Flash_Success == st)
         {
+            /* Flash sector is erased , which means no valid HW parameters exist */
+            /* If gHwParamsProdDataPlacement_c is gHwParamsProdDataMainFlash2IfrMode_c,
+             *  Copy from legacy position if valid.
+             */
 #if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlash2IfrMode_c)
             /* Check if there are prod data at legacy position. The IFR sector was not programmed
              * with HWParams yet. Attempt read from legacy position and transfer to IFR.
@@ -455,12 +477,13 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
                     break;
                 }
                 gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
-                status                = gHWParameterSuccess_c;
                 break;
             }
             else
 #endif
             {
+                /* Otherwise, if gHwParamsProdDataPlacement_c is not gHwParamsProdDataMainFlash2IfrMode_c, or
+                 * no valid legacy data found : preset gHardwareParameters RAM instance with 0xff */
                 status = gHWParameterBlank_c;
                 FLib_MemSet(&gHardwareParameters[0], 0xffu, hw_param_sz);
             }
@@ -468,6 +491,7 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
         }
         else
         {
+            /* The HW Parameter section is not blank : verify whether it contains any ECC errors*/
             /* First do an ECC error check over the HWParam location */
             status = SearchEccFaultsInHWParam(hw_param_sz);
 
@@ -477,17 +501,26 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
                 if (HAL_FlashEraseSector(PROD_DATA_FLASH_ADDR, PLATFORM_INTFLASH_SECTOR_SIZE) !=
                     kStatus_HAL_Flash_Success)
                 {
-                    status = gHWParameterError_c;
+                    /* Error handling for flash sector erase failure : will be difficult to recover */
+                    status                = gHWParameterError_c;
+                    gHardwareParameters_p = NULL;
                 }
                 else
                 {
-                    status = gHWParameterBlank_c;
+                    /* There was an error that got cleared by the erase operation,
+                     * the HW Parameter area is now blank.
+                     */
+                    status                = gHWParameterBlank_c;
+                    gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
+                    FLib_MemSet(&gHardwareParameters[0], 0xffu, hw_param_sz);
                 }
-                gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
-                FLib_MemSet(&gHardwareParameters[0], 0xffu, hw_param_sz);
+                /* Whether the ECC fault was repaired by the erase or not, we can break here.
+                 * Either the area is now blank and reset to 0xFF, or the ECC error could not be cleared.
+                 */
+                break;
             }
 
-            /* if we reach this point the HwPAram area is exempt of ECC errors */
+            /* if we reach this point the HwParam area is exempt of ECC errors */
             /*Load the hardware parameters in Flash to RAM */
             hardwareParameters_t *pLocalParams = (hardwareParameters_t *)PROD_DATA_FLASH_ADDR;
             if (FLib_MemCmp(pLocalParams->identificationWord, (const void *)mProdDataIdentifier,
@@ -496,15 +529,15 @@ uint32_t NV_ReadHWParameters(hardwareParameters_t **pHwParams)
             {
                 /*Copy the local value in our static structure*/
                 FLib_MemCpy(&gHardwareParameters[0], (void *)pLocalParams, hw_param_sz);
-                gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
-                status                = gHWParameterSuccess_c;
+                status = gHWParameterSuccess_c;
             }
             else
             {
-                gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
-                status                = gHWParameterError_c;
-                break;
+                /* Contents of local parameters do not match identifier or CRC verification failed */
+                status = gHWParameterError_c;
             }
+            gHardwareParameters_p = (hardwareParameters_t *)(void *)&gHardwareParameters[0];
+            break;
         }
     } while (false);
 
