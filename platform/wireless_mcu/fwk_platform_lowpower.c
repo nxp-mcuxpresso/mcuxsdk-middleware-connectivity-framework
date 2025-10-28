@@ -250,11 +250,11 @@ PLATFORM_status_t PLATFORM_GetLowpowerMode(PLATFORM_PowerDomain_t power_domain, 
     return status;
 }
 
-int PLATFORM_GetDefaultRamBanksRetained(void)
+uint32_t PLATFORM_GetDefaultRamBanksRetained(void)
 {
     uint32_t          ram_upper_limit;
     uint32_t          ram_lower_limit;
-    int               bank_mask = ~0; // Retain everything by default
+    uint32_t          bank_mask = ~0UL; /* Retain everything by default */
     volatile uint32_t heap_end;
 
     /* Those symbols should be exported by the Linker Script */
@@ -297,7 +297,7 @@ int PLATFORM_GetDefaultRamBanksRetained(void)
         {
             /* This RAM bank is outside current used RAM range, so we can
              * shut it down during low power */
-            bank_mask &= ~(1 << i);
+            bank_mask &= ~(1uL << i);
         }
     }
 
@@ -306,7 +306,7 @@ int PLATFORM_GetDefaultRamBanksRetained(void)
 
 void PLATFORM_SetRamBanksRetained(uint32_t bank_mask)
 {
-    bool vbat_ldo_ram_required = ((bank_mask & ((uint32_t)1U << PLATFORM_VBAT_LDORAM_IDX)) != 0u);
+    bool vbat_ldo_ram_required = ((bank_mask & (1uL << PLATFORM_VBAT_LDORAM_IDX)) != 0u);
 
     /* Set SRAM retention config handled by the CMC module */
     CMC_PowerOffSRAMLowPowerOnly(CMC0, ~bank_mask);
@@ -498,7 +498,7 @@ static void PLATFORM_ShutdownRadio(void)
     RFMC->CTRL |= RFMC_CTRL_RFMC_RST(0x1U);
     /* Wait for a few microseconds before releasing the NBU reset,
      * without this the system may hang in the loop waiting for FRO clock valid */
-    PLATFORM_Delay(31u);
+    PLATFORM_Delay(31uLL);
     /* Release NBU reset */
     RFMC->CTRL &= ~RFMC_CTRL_RFMC_RST_MASK;
 
@@ -557,22 +557,22 @@ void MEM_ReinitRamBank(uint32_t startAddress, uint32_t endAddress)
         {
             if (TCM_IS_ECC[i] == true)
             {
-                if ((last_bank_mask & ((uint32_t)1U << i)) == 0U)
+                if ((last_bank_mask & (1uL << i)) == 0U)
                 {
                     uint32_t size, bankAdressToReinit;
 
-                    size = TCM_END_ADDR_tab[i] - TCM_START_ADDR_tab[i] + 1U;
+                    size = TCM_END_ADDR_tab[i] - TCM_START_ADDR_tab[i] + 1UL;
 
                     bankAdressToReinit = TCM_START_ADDR_tab[i];
 
                     /* Write to ECC RAM bank to force ECC calculation
                         Warning : This is mandatory to write word per word (not by byte per byte),  so use a proprietary
                         FuncLib API to make sure the memory set is done by word */
-                    FLib_MemSet32Aligned((uint32_t *)bankAdressToReinit, 0U, (size / 4U));
+                    FLib_MemSet32Aligned((uint32_t *)bankAdressToReinit, 0uL, (size / 4U));
 
                     /* Remove this bank from the last shutdown during low power as
                      * it has been reinitialized */
-                    last_bank_mask |= ((uint32_t)1U << i);
+                    last_bank_mask |= (1uL << i);
                 }
             }
         }

@@ -142,20 +142,20 @@ PLATFORM_status_t PLATFORM_GetLowpowerMode(PLATFORM_PowerDomain_t power_domain, 
 
 /*!
  * \brief Check which banks need to be retained
- * \note This function is linker script specific.\n
- *       Amelioration handle by this function :\n
- *       - There is a free block at the end of the heap, so if the heap is on
- *       the top of the RAM. No need to retain all banks upper that the last one
- *       used by the heap.
+ * \note This function is specific to the linker script.
+ *       Enhancement provided by this function:
+ *       - When the heap is placed at the top of RAM, a free block may exist at its end.
+ *         In such cases, memory banks with start addresses higher than the last address
+ *         used by the heap do not need to be retained.
  *
- * \return uint8_t mask of which bank needs to be retained
+ * \return  uint32_t bitmask indicating which memory banks must be retained.
  */
-int PLATFORM_GetDefaultRamBanksRetained(void);
+uint32_t PLATFORM_GetDefaultRamBanksRetained(void);
 
 /*!
  * \brief Set the banks that need to be retained in lowpower
  *
- * \param[in] bank_mask mask of which bank needs to be retained
+ * \param[in] bank_mask bitmask indicating which memory banks must be retained.
  */
 void PLATFORM_SetRamBanksRetained(uint32_t bank_mask);
 
