@@ -16,6 +16,9 @@
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
+#ifndef IS_NBU_STUCK_MAX_TIMER_US
+#define IS_NBU_STUCK_MAX_TIMER_US 10000000U /* 10s */
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
@@ -43,7 +46,13 @@ void NBUDBG_StateCheck(void)
     (void)PLATFORM_IsNbuWarningSet(&nbu_event.nbu_warning_count);
     nbu_event.nbu_error_count = (uint8_t)PLATFORM_IsNbuFaultSet();
 
-    if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U))
+    extern bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs);
+    if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US))
+    {
+        nbu_event.nbu_is_halted = 1U;
+    }
+
+    if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U) || (nbu_event.nbu_is_halted > 0U))
     {
         nbu_dbg_system_cb(&nbu_event);
     }

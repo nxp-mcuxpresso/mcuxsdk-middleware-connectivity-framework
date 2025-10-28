@@ -24,6 +24,7 @@ typedef struct nbu_dbg_context
 {
     uint8_t nbu_error_count;
     uint8_t nbu_warning_count;
+    uint8_t nbu_is_halted; /* 1 -> halted*/
 } nbu_dbg_context_t;
 
 typedef void (*nbu_dbg_system_cb_t)(const nbu_dbg_context_t *nbu_event);
