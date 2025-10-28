@@ -95,17 +95,6 @@ int flash_area_get_sectors(int fa_id, uint32_t *count, struct flash_sector *sect
     return rc;
 }
 
-int flash_get_page_info_by_offs(const struct device *dev, off_t offset, struct flash_pages_info *info)
-{
-    NOT_USED(dev);
-    NOT_USED(offset);
-
-    info->index        = 0;
-    info->size         = (uint32_t)NV_STORAGE_SECTOR_SIZE;
-    info->start_offset = (uint32_t)NV_STORAGE_START_ADDRESS;
-    return 0;
-}
-
 const struct device *flash_area_get_device(const struct flash_area *fa)
 {
     return fa->fa_dev;

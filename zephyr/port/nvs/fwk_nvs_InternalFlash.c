@@ -190,3 +190,14 @@ static const struct flash_parameters *intflash_get_parameters(const struct devic
     NOT_USED(dev);
     return (const struct flash_parameters *)&internal_nv_storage_params;
 }
+
+int flash_get_page_info_by_offs(const struct device *dev, off_t offset, struct flash_pages_info *info)
+{
+    NOT_USED(dev);
+    NOT_USED(offset);
+
+    info->index = 0U;
+    info->size  = (uint32_t)NV_STORAGE_SECTOR_SIZE; /* Actual internal flash sector size given by linker script */
+    info->start_offset = (uint32_t)NV_STORAGE_START_ADDRESS;
+    return 0;
+}

@@ -156,6 +156,18 @@ static const struct flash_parameters *extflash_get_parameters(const struct devic
     NOT_USED(dev);
     return (const struct flash_parameters *)&external_nv_storage_params;
 }
+
+int flash_get_page_info_by_offs(const struct device *dev, off_t offset, struct flash_pages_info *info)
+{
+    NOT_USED(dev);
+    NOT_USED(offset);
+
+    info->index        = 0U;
+    info->size         = PLATFORM_EXTFLASH_SECTOR_SIZE;
+    info->start_offset = NV_STORAGE_EXTFLASH_START_OFFSET;
+    return 0;
+}
+
 #else
 #error "NV_STORAGE_EXTFLASH_START_OFFSET must be defined to use external flash storage"
 #endif
