@@ -2170,6 +2170,11 @@ NVM_STATIC int __NvIdle(void)
                 }
                 NvRemovePendingSaveHead();
                 nb_operation++;
+                if (nb_operation > (int)gNvPendingSavesQueueSize_c)
+                {
+                    assert(0);
+                    break;
+                }
             }
         }
     }
