@@ -111,6 +111,14 @@
 #define gUseResetByLvdForce_c      2
 #define gUseResetByDeepPowerDown_c 3
 
+/* Select correct reset method based on application configuration */
+#if (defined(gAppForceLvdResetOnResetPinDet_d) && (gAppForceLvdResetOnResetPinDet_d != 0))
+#define gPlatResetMethod_c gUseResetByLvdForce_c
+#endif
+#if (defined(gAppForceDeepPowerDownResetOnResetPinDet_d) && (gAppForceDeepPowerDownResetOnResetPinDet_d != 0))
+#define gPlatResetMethod_c gUseResetByDeepPowerDown_c
+#endif
+
 #if !defined(gPlatResetMethod_c)
 #if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #define gPlatResetMethod_c gUseResetByNvicReset_c

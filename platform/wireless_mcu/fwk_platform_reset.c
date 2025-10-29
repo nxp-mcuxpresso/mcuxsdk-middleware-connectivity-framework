@@ -11,11 +11,15 @@
 
 #include "fwk_platform_reset.h"
 
-#if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
+#if defined(gPlatResetMethod_c)
 /* SDK drivers */
+#if (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)
 #include "fsl_wuu.h"
 #include "fsl_lptmr.h"
 #include "fsl_cmc.h"
+#elif (gPlatResetMethod_c == gUseResetByLvdForce_c)
+#include "fsl_cmc.h"
+#endif
 #endif
 
 /* -------------------------------------------------------------------------- */
