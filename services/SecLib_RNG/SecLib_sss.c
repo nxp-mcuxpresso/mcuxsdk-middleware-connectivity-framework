@@ -811,6 +811,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
                 currentCmacInputBlkLen = AES_128_BLOCK_SIZE;
             }
             pInput -= currentCmacInputBlkLen;
+            /* Coverity [overflow_const:FALSE] : it is safe, currentCmacInputBlkLen is always <= cnt */
             cnt -= currentCmacInputBlkLen;
             /* Copy the input block to the reversed CMAC input buffer */
             FLib_MemCpyReverseOrder(p, pInput, currentCmacInputBlkLen);
