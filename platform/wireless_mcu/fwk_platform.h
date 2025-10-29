@@ -206,16 +206,18 @@ void PLATFORM_UninitOsc32K(void);
 
 /*!
  * \brief Get the oscillator capacitance value set in the HWparameters.
- *        If no value is set it will return value by default.
+ *       If no value is set, or gPlatformUseHwParameter_d is not enabled, it will
+ *       return a per board default value.
  *
- * \param[out] pointer to the capacitance value
+ * \param[out] pointer to the capacitance value to be returned.
  *
  * \return int 0 if success, other if error.
  */
 int PLATFORM_GetOscCap32KValue(uint8_t *xtalCap32K);
 
 /*!
- * \brief Set in HWparameters and in CCM32K register capacitance value that we want to set.
+ * \brief Apply required Xtal Capacitance value to CCM32K register.
+ *        Optionally save the value to HW parameters if gPlatformUseHwParameter_d is enabled.
  *
  * \param[in] capacitance value
  *
@@ -226,15 +228,16 @@ int PLATFORM_SetOscCap32KValue(uint8_t xtalCap32K);
 /*!
  * \brief get the XTAL trim value
  *
- * \param[in] regRead boolean to read value from Radio register or from HW parameters
+ * \param[in] regRead legacy boolean : not used.
  *
  * \return XTAL trim value
  */
 uint8_t PLATFORM_GetXtal32MhzTrim(bool_t regRead);
 
 /*!
- * \brief Set the XTAL trim value
- *        Calling this function assumes HWParameters in flash have been read
+ * \brief Apply the required XTAL trim value to RFMC XO register.
+ *        Optionally save trimming value to HWParameters depending on input flag
+ *        and gPlatformUseHwParameter_d configuration.
  *
  * \param[in] trimValue Trim value to be set
  * \param[in] saveToHwParams boolean to update value in HW parameters
@@ -243,6 +246,8 @@ void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams);
 
 /*!
  * \brief Update 32MHz trim value with the one stored in HW parameters.
+ *
+ * \ note Does nothing if gPlatformUseHwParameter_d is not enabled.
  *
  */
 void PLATFORM_LoadHwParams(void);

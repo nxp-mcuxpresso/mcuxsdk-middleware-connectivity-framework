@@ -401,7 +401,8 @@ void PLATFORM_LoadHwParams(void)
 
     /* Load the HW parameters from Flash to RAM */
     status = NV_ReadHWParameters(&pHWParams);
-    if ((status == 0U) && (pHWParams->xtalTrim != 0xFFU))
+
+    if ((status == gHWParameterSuccess_c) && (pHWParams->xtalTrim != 0xFFU))
     {
         /* There is an existing trim value */
         xtal_32m_trim = pHWParams->xtalTrim;
@@ -502,62 +503,98 @@ int PLATFORM_InitOsc32K(void)
 
 int PLATFORM_GetOscCap32KValue(uint8_t *xtalCap32K)
 {
-    hardwareParameters_t *pHWParams = NULL;
-    int                   status;
-
-    status = (int)NV_ReadHWParameters(&pHWParams);
-
-    if ((status == 0) && (pHWParams->xtalCap32K != 0xFFU))
+    int status = 0;
+    if (xtalCap32K == NULL)
     {
-        uint32_t regPrimask;
-        regPrimask  = DisableGlobalIRQ();
-        *xtalCap32K = pHWParams->xtalCap32K;
-        EnableGlobalIRQ(regPrimask);
+        /* Null pointer : bad argument */
+        status = -1;
     }
     else
     {
+        /* If no HWParameter or the production data unset it will keep the default value. */
         *xtalCap32K = BOARD_32KHZ_XTAL_CLOAD_DEFAULT;
+#if defined gPlatformUseHwParameter_d && (gPlatformUseHwParameter_d > 0)
+        do
+        {
+            hardwareParameters_t *pHWParams = NULL;
+            uint32_t              st;
+            st = NV_ReadHWParameters(&pHWParams);
+            if ((st != gHWParameterSuccess_c) && (st != gHWParameterBlank_c))
+            {
+                status = (int)st;
+                break;
+            }
+            status = 0;
+            if (st == gHWParameterSuccess_c)
+            {
+                if (pHWParams->xtalCap32K != 0xFFU)
+                {
+                    uint32_t regPrimask;
+                    regPrimask  = DisableGlobalIRQ();
+                    *xtalCap32K = pHWParams->xtalCap32K;
+                    EnableGlobalIRQ(regPrimask);
+                }
+                else
+                {
+                    /* Production Data not blank but no valid xtalCap32K, keep xtalCap32K default value and return no
+                     * error */
+                }
+            }
+            else
+            {
+                /* Production Data blank, keep xtalCap32K default value and return no error */
+            }
+        } while (false);
+#endif
     }
-    /* If the HWParameter are not set it will keep the value chosen by default so do nothing here */
     return status;
 }
 
 int PLATFORM_SetOscCap32KValue(uint8_t xtalCap32K)
 {
-    hardwareParameters_t *pHWParams = NULL;
-    int                   status;
-    ccm32k_osc_config_t   osc32k_config;
-
-    do
+    int status = -1;
+    if (xtalCap32K <= BOARD_32KHZ_XTAL_CAPACITANCE_MAX_VALUE)
     {
-        uint32_t regPrimask;
-        if (xtalCap32K > BOARD_32KHZ_XTAL_CAPACITANCE_MAX_VALUE)
+        /* From now on xtalCap32K is sanitized */
+        status = 0;
+#if defined gPlatformUseHwParameter_d && (gPlatformUseHwParameter_d > 0)
+        do
         {
-            status = -1;
-            break;
-        }
+            hardwareParameters_t *pHWParams = NULL;
+            uint32_t              regPrimask;
+            uint32_t              st;
+            st = NV_ReadHWParameters(&pHWParams);
+            if ((st != gHWParameterSuccess_c) && (st != gHWParameterBlank_c))
+            {
+                status = (int)st;
+                break;
+            }
+            /* We have read the production data area, replace the previous xtalCap32K value by the new one */
+            regPrimask = DisableGlobalIRQ();
+            if (pHWParams->xtalCap32K != xtalCap32K)
+            {
+                /* update value only if it changed */
+                pHWParams->xtalCap32K = xtalCap32K;
+                (void)NV_WriteHWParameters();
+            }
+            EnableGlobalIRQ(regPrimask);
+        } while (false);
 
-        status = (int)NV_ReadHWParameters(&pHWParams);
-        if (status != 0)
+        if (status == 0)
+#endif
+
         {
-            break;
+            ccm32k_osc_config_t osc32k_config;
+
+            osc32k_config.enableInternalCapBank = true;
+            osc32k_config.coarseAdjustment = (ccm32k_osc_coarse_adjustment_value_t)BOARD_32KHZ_XTAL_COARSE_ADJ_DEFAULT;
+
+            osc32k_config.extalCap = (ccm32k_osc_extal_cap_t)xtalCap32K;
+            osc32k_config.xtalCap  = (ccm32k_osc_xtal_cap_t)xtalCap32K;
+
+            CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &osc32k_config);
         }
-
-        regPrimask            = DisableGlobalIRQ();
-        pHWParams->xtalCap32K = xtalCap32K;
-        (void)NV_WriteHWParameters();
-        EnableGlobalIRQ(regPrimask);
-
-        osc32k_config.enableInternalCapBank = true;
-        osc32k_config.coarseAdjustment      = (ccm32k_osc_coarse_adjustment_value_t)BOARD_32KHZ_XTAL_COARSE_ADJ_DEFAULT;
-
-        osc32k_config.extalCap = (ccm32k_osc_extal_cap_t)xtalCap32K;
-        osc32k_config.xtalCap  = (ccm32k_osc_xtal_cap_t)xtalCap32K;
-
-        CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &osc32k_config);
-
-    } while (false);
-
+    }
     return status;
 }
 
@@ -611,6 +648,7 @@ void PLATFORM_UninitOsc32K(void)
 
 uint8_t PLATFORM_GetXtal32MhzTrim(bool_t regRead)
 {
+    NOT_USED(regRead);
     uint8_t xtal32MhzTrim;
     xtal32MhzTrim = (uint8_t)((RFMC->XO_TEST & RFMC_XO_TEST_CDAC_MASK) >> RFMC_XO_TEST_CDAC_SHIFT);
     return xtal32MhzTrim;
@@ -619,17 +657,27 @@ uint8_t PLATFORM_GetXtal32MhzTrim(bool_t regRead)
 /* Calling this function assumes HWParameters in flash have been read */
 void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams)
 {
-    uint32_t              status;
-    uint32_t              rfmc_xo;
-    hardwareParameters_t *pHWParams = NULL;
-    status                          = NV_ReadHWParameters(&pHWParams);
-    if ((TRUE == saveToHwParams) && (status == 0U))
-    {
-        /* update value only if it changed */
-        pHWParams->xtalTrim = trimValue;
-        (void)NV_WriteHWParameters();
-    }
+    uint32_t rfmc_xo;
 
+#if defined gPlatformUseHwParameter_d && (gPlatformUseHwParameter_d > 0)
+    if (TRUE == saveToHwParams)
+    {
+        uint32_t              status;
+        hardwareParameters_t *pHWParams = NULL;
+        status                          = NV_ReadHWParameters(&pHWParams);
+        if ((status == gHWParameterSuccess_c) || (status == gHWParameterBlank_c))
+        {
+            /* update value only if it changed */
+            if (trimValue != pHWParams->xtalTrim)
+            {
+                pHWParams->xtalTrim = trimValue;
+                (void)NV_WriteHWParameters();
+            }
+        }
+    }
+#else
+    NOT_USED(saveToHwParams);
+#endif
     /* Apply a trim value to the crystal oscillator */
     rfmc_xo = RFMC->XO_TEST;
 
