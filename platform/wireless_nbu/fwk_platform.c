@@ -58,8 +58,9 @@ typedef struct smu_dmem_config
 #define PLATFORM_HOST_USE_POWER_DOWN (0xA5A5A5A5U)
 
 #if (defined(gPlatformUseLptmr_d)) && (gPlatformUseLptmr_d == 1U)
-#if !(defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
-#error "LPTMR2 only exists on KW47 / MCXW72"
+#if !(defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1) && \
+    !(defined(FWK_KW43_MCXW70_NBU_FAMILIES)) && (FWK_KW43_MCXW70_NBU_FAMILIES == 1)
+#error "LPTMR2 only exists on KW47/MCXW72 or KW43/MCXW70"
 #endif
 /*! @brief The configuration of timer. */
 #define PLATFORM_TM_INSTANCE 2U

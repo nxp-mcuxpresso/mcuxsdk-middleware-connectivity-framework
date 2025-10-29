@@ -17,8 +17,6 @@
 #include "fwk_platform_fpga.h"
 #endif
 
-#include "fsl_tstmr.h"
-
 #if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
@@ -42,6 +40,7 @@
 
 #include "fwk_debug.h"
 #include "mcmgr_imu_internal.h"
+#include "fwk_platform_mcu_nbu_common.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -122,9 +121,6 @@
 #define MRCC_TSTMR_CLK_EN_LP_STALL_IDLE      0x02u
 #define MRCC_TSTMR_CLK_EN_LP_STALL_DEEPSLEEP 0x03u
 
-/* Maximum value of 56 bit counter */
-#define PLATFORM_TSTMR_MAX_VAL ((uint64_t)0x00FFFFFFFFFFFFFFULL)
-
 /* Basepri masking to allow high priority IRQs to execute */
 #define PLATFORM_MAX_INTERRUPT_PRIORITY         4U
 #define PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI (PLATFORM_MAX_INTERRUPT_PRIORITY << (8 - __NVIC_PRIO_BITS))
@@ -184,34 +180,6 @@ static Platform_Fro6MCalCtx_t fro6M_calibration_ctx = {
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
 /* -------------------------------------------------------------------------- */
-
-/*!
- * \brief Compute number of ticks between 2 timestamps expressed in number of TSTMR ticks
- *
- * \param [in] timestamp0 start timestamp.
- * \param [in] timestamp1 end timestamp.
- *
- * \return uint64_t number of TSTMR ticks
- *
- */
-static uint64_t GetTstmrDeltaTicks(uint64_t timestamp0, uint64_t timestamp1)
-{
-    uint64_t delta_ticks;
-
-    timestamp0 &= PLATFORM_TSTMR_MAX_VAL; /* sanitize arguments */
-    timestamp1 &= PLATFORM_TSTMR_MAX_VAL;
-
-    if (timestamp1 >= timestamp0)
-    {
-        delta_ticks = timestamp1 - timestamp0;
-    }
-    else
-    {
-        /* In case the 56-bit counter has wrapped */
-        delta_ticks = PLATFORM_TSTMR_MAX_VAL - timestamp0 + timestamp1 + 1ULL;
-    }
-    return delta_ticks;
-}
 
 static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
 {
@@ -806,7 +774,7 @@ void PLATFORM_DeinitTimerManager(void)
 uint64_t PLATFORM_GetTimeStamp(void)
 {
     /* TSTMR0 counts 1MHz ticks */
-    return TSTMR_ReadTimeStamp(TSTMR0);
+    return PLATFORM_TSTMR_ReadTimeStamp(TSTMR0);
 }
 
 uint64_t PLATFORM_GetMaxTimeStamp(void)
@@ -828,7 +796,7 @@ uint64_t PLATFORM_GetTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
 {
     uint64_t duration_us;
 
-    duration_us = GetTstmrDeltaTicks(timestamp0, timestamp1);
+    duration_us = PLATFORM_GetTstmrDeltaTicks(timestamp0, timestamp1);
 
     if (fwk_platform_FRO6MHz_ratio > 1U)
     {
@@ -1208,7 +1176,7 @@ int PLATFORM_EndFro6MCalibration(void)
         now = PLATFORM_GetTimeStamp();
 
         /* tstmr_tick_diff should be a number of microseconds if FRO6M has correctly locked */
-        tstmr_ticks_delta = GetTstmrDeltaTicks(ctx->initial_ts, now);
+        tstmr_ticks_delta = PLATFORM_GetTstmrDeltaTicks(ctx->initial_ts, now);
 
         if (tstmr_ticks_delta < (uint64_t)UINT32_MAX)
         {
