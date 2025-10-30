@@ -158,6 +158,10 @@ void PLATFORM_LowPowerInit(void)
     /* Set number of SPC timer clock cycles to wait on exit from lowpower mode */
     SPC_SetLowPowerWakeUpDelay(SPC0, PLATFORM_LPWKUP_DELAY_10MHz);
 
+    /* Clear IO isolation set by previous apps to ensure proper behavior.
+     * In connectivity apps, IO isolation is managed at board level.*/
+    SPC_SetExternalVoltageDomainsConfig(SPC0, 0, 0);
+
     /* When low power is enabled on the host core, the radio core may need to set/release low power constraints
      * as some resources needed by it are in the host power domain
      * This needs to be done before starting the radio core to avoid any race condition */
