@@ -14,6 +14,19 @@
 #include "fwk_debug_struct.h"
 
 /* -------------------------------------------------------------------------- */
+/*                               Public macros                                */
+/* -------------------------------------------------------------------------- */
+/* Debug buffer identifiers */
+#define NBUDBG_BUFFER_ID_DEBUG_STRUCT (0x00U)
+#define NBUDBG_BUFFER_ID_RAM_LOG      (0x01U) /* Not supported yet */
+
+/* HCI vendor event configuration bitmask */
+#define NBUDBG_HCI_EVENT_NONE         (0U)
+#define NBUDBG_HCI_EVENT_DEBUG_STRUCT (1U << 0U)
+#define NBUDBG_HCI_EVENT_RAM_LOG      (1U << 1U)
+#define NBUDBG_HCI_EVENT_ALL          (NBUDBG_HCI_EVENT_DEBUG_STRUCT | NBUDBG_HCI_EVENT_RAM_LOG)
+
+/* -------------------------------------------------------------------------- */
 /*                           Public type definitions                          */
 /* -------------------------------------------------------------------------- */
 /*!
@@ -50,10 +63,33 @@ void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb);
 /*!
  * \brief Extract NBU debug information.
  *
- * \param[out] debug_struct structure to be filled with the extracted debug information from NBU.
+ * This function can dump NBU debug information through HCI vendor events based on
+ * the configuration set via NBUDBG_ConfigureHciVendorEvent(). If a non-NULL pointer is provided,
+ * the debug structure will also be copied to the output parameter.
+ *
+ * \param[out] debug_struct pointer to structure to be filled with the extracted
+ *                          debug structure from NBU. Can be NULL if only HCI
+ *                          event transmission is needed.
  *
  * \return int 0 if success, negative value if error
  */
 int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
+
+/*!
+ * \brief Configure HCI vendor event transmission for debug information
+ *
+ * \details This function configures which debug information should be transmitted
+ *          as HCI vendor events when NBUDBG_StructDump() is called. Users can
+ *          selectively enable debug structure, RAM log, or both using bitmask flags.
+ *          The feature is disabled by default to avoid unwanted HCI traffic.
+ *
+ * \param[in] config_mask Bitmask to configure HCI vendor event transmission:
+ *                        - NBUDBG_HCI_EVENT_NONE: Disable all HCI vendor events
+ *                        - NBUDBG_HCI_EVENT_DEBUG_STRUCT: Enable debug structure transmission
+ *                        - NBUDBG_HCI_EVENT_RAM_LOG: Enable RAM log transmission
+ *                        - NBUDBG_HCI_EVENT_ALL: Enable both debug structure and RAM log
+ *                        Multiple flags can be OR'ed together.
+ */
+void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask);
 
 #endif /*  __FWK_DEBUG_NBU_H__ */
