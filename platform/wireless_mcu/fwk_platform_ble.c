@@ -62,6 +62,9 @@
 #define HciCommand(opCodeGroup, opCodeCommand) \
     (((uint16_t)(opCodeGroup) & (uint16_t)0x3FU) << (uint16_t)SHIFT10) | (uint16_t)((opCodeCommand)&0x3FFU)
 
+#define HCI_EVENT_PACKET_TYPE (0x04U)
+#define HCI_VENDOR_EVENT_CODE (0xFFU)
+
 #define BT_USER_BD 254
 
 /* Check if __st is negative,  if true, apply 4 bits shift and add new __error_code,
@@ -835,4 +838,33 @@ STATIC uint32_t PLATFORM_ComputeTimeDiffFromBleSlotAndSlotOffset(uint32_t ll_ts,
     }
     /* coverity[return_overflow:FALSE] */
     return time_diff;
+}
+
+int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len)
+{
+    int ret = 0;
+
+    /* len shall be strictly positive as message shall not be empty */
+    assert((data != NULL) && (len > 0U) && (len <= (uint16_t)UINT16_MAX));
+    do
+    {
+        if ((data == NULL) || (len == 0U) || (len > (uint16_t)UINT16_MAX))
+        {
+            ret = -1;
+            break;
+        }
+
+        if ((data[0] != HCI_VENDOR_EVENT_CODE) || (hci_rx_callback == NULL))
+        {
+            ret = -2;
+            break;
+        }
+
+        hci_rx_callback(HCI_EVENT_PACKET_TYPE, &data[0], (uint16_t)len);
+#ifdef SERIAL_BTSNOOP
+        sbtsnoop_write_hci_pkt(HCI_EVENT_PACKET_TYPE, 1U, &data[0], (uint16_t)len);
+#endif
+    } while (false);
+
+    return ret;
 }

@@ -138,6 +138,23 @@ bool PLATFORM_CheckNextBleConnectivityActivity(void);
  */
 uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
 
+/*!
+ * \brief Process HCI vendor event reception
+ *
+ * \details This function sends system-generated HCI vendor events into the HCI
+ *          reception path, allowing them to be processed by the host stack as if
+ *          they were received from the controller. This enables the system to
+ *          generate synthetic HCI events for debug or diagnostic purposes.
+ *
+ * \param[in] data Pointer to HCI event data starting from the event code (0xFF for
+ *                 vendor events), NOT including the HCI packet type indicator (0x04).
+ *                 Format: [Event Code][Parameter Length][Parameters...]
+ * \param[in] len  Total length of the HCI event data (excluding packet type)
+ *
+ * \return int 0 if success, negative value if error
+ */
+int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len);
+
 #ifdef __cplusplus
 }
 #endif
