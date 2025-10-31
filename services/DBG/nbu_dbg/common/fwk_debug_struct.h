@@ -29,7 +29,7 @@
 /* Magic pattern to identify handler mode faults */
 #define NBUDBG_EXCEPTION_ID_FOR_ASSERT_MAGIC 0x00A55E27U
 /* Size of the assert file name container */
-#define NBUDBG_ASSERT_FILE_NAME_SIZE 76U
+#define NBUDBG_ASSERT_FILE_NAME_SIZE 74U
 /* Check whether NBU asserted or not */
 #define NBUDBG_IS_NBU_ASSERT() ((debug_struct)->nbu_dbg_info.exception_id == NBUDBG_EXCEPTION_ID_FOR_ASSERT_MAGIC)
 /* Magic pattern to identify handler mode faults */

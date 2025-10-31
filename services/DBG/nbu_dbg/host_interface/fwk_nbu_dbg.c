@@ -54,7 +54,10 @@ void NBUDBG_StateCheck(void)
 
     if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U) || (nbu_event.nbu_is_halted > 0U))
     {
-        nbu_dbg_system_cb(&nbu_event);
+        if (nbu_dbg_system_cb != NULL)
+        {
+            nbu_dbg_system_cb(&nbu_event);
+        }
     }
 }
 
