@@ -125,6 +125,16 @@
 /* Maximum value of 56 bit counter */
 #define PLATFORM_TSTMR_MAX_VAL ((uint64_t)0x00FFFFFFFFFFFFFFULL)
 
+/* Basepri masking to allow high priority IRQs to execute */
+#define PLATFORM_MAX_INTERRUPT_PRIORITY         4U
+#define PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI (PLATFORM_MAX_INTERRUPT_PRIORITY << (8 - __NVIC_PRIO_BITS))
+
+#if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+#define PLATFORM_MU_IRQn MU0_IRQn
+#else
+#define PLATFORM_MU_IRQn RF_IMU0_IRQn
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
 /* -------------------------------------------------------------------------- */
@@ -254,6 +264,58 @@ static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t tem
     return ret;
 }
 
+/*!
+ * \brief Set interrupt mask to block interrupts below a certain priority level.
+ *
+ * This function sets the BASEPRI register to mask (disable) all interrupts
+ * with priority values numerically equal to or greater than
+ * PLATFORM_MAX_INTERRUPT_PRIORITY. It saves and returns the current BASEPRI
+ * value before modification, allowing it to be restored later.
+ *
+ * The function includes memory barriers (DSB and ISB) to ensure the interrupt
+ * masking takes effect immediately.
+ *
+ * \return uint32_t The previous BASEPRI register value. This value should be
+ *                  saved and passed to PLATFORM_ClearInterruptMask() to restore
+ *                  the original interrupt state.
+ *
+ * \note This function is typically used to enter a critical section where
+ *       interrupts below PLATFORM_MAX_INTERRUPT_PRIORITY must be disabled.
+ * \note The returned value must be used with PLATFORM_ClearInterruptMask()
+ *       to properly restore the interrupt state.
+ */
+static uint32_t PLATFORM_SetInterruptMask(void)
+{
+    uint32_t basepri = __get_BASEPRI();
+    __set_BASEPRI(PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI);
+    __DSB();
+    __ISB();
+    return basepri;
+}
+
+/*!
+ * \brief Clear interrupt mask and restore previous interrupt priority level.
+ *
+ * This function restores the BASEPRI register to a previously saved value,
+ * effectively re-enabling interrupts that were masked by PLATFORM_SetInterruptMask().
+ * It includes memory barriers (DSB and ISB) to ensure the change takes effect
+ * immediately.
+ *
+ * \param[in] int_mask The previous BASEPRI value to restore. This should be
+ *                     the value returned by a prior call to PLATFORM_SetInterruptMask().
+ *
+ *
+ * \note This function is typically used to exit a critical section and restore
+ *       the interrupt state that existed before calling PLATFORM_SetInterruptMask().
+ * \note Always pair this function with PLATFORM_SetInterruptMask() to ensure
+ *       proper interrupt state management.
+ */
+static void PLATFORM_ClearInterruptMask(uint32_t int_mask)
+{
+    __set_BASEPRI(int_mask);
+    __DSB();
+    __ISB();
+}
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -947,7 +1009,32 @@ void PLATFORM_RemoteActiveRel(void)
 {
     BOARD_DBGLPIOSET(0, 1);
 
-    OSA_InterruptDisable();
+    /* Determine the context we are being called */
+    uint32_t isrNumber = __get_IPSR();
+
+    /* Security check: This function can only be safely called from:
+     * 1. Normal thread context (isrNumber == 0)
+     * 2. MU interrupt handler (for inter-core communication callbacks)
+     *
+     * Blocking calls from other ISRs prevents:
+     * - Race conditions on the reference counter
+     * - Unpredictable timing in the NBU handshake protocol */
+    if ((isrNumber != 0U) && (isrNumber != ((uint32_t)PLATFORM_MU_IRQn + (uint32_t)NVIC_USER_IRQ_OFFSET)))
+    {
+        /* Invalid calling context detected.
+         * This could corrupt the power management state machine */
+        if (pfPlatformErrorCallback != NULL)
+        {
+            pfPlatformErrorCallback(PLATFORM_REMOTE_ACTIVE_REL_ID, -2);
+        }
+        assert(0);
+    }
+
+    /* Use BASEPRI masking instead of PRIMASK to create a priority ceiling.
+     * This blocks lower priority interrupts (including MU) to protect our critical section,
+     * while still allowing high-priority system interrupts (priority < 4) to execute.
+     * This maintains system responsiveness during the handshake protocol */
+    uint32_t intMask = PLATFORM_SetInterruptMask();
 
     if (active_request_nb > 0)
     {
@@ -958,18 +1045,38 @@ void PLATFORM_RemoteActiveRel(void)
             uint32_t rfmc_ctrl;
             uint64_t timestamp = PLATFORM_GetTimeStamp();
 
-            /* NBU clears WKUP_TIME register to notify application core it's waking up from low power, this is a
-             * software protocol to sync both cores */
-            while ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) != 0U)
+            do
             {
-                /* Trigger an error if the NBU does not clear WKUP_TIME when the timeout expires. */
+                /* Brief PRIMASK critical section to atomically check the handshake register.
+                 * We need to ensure the register read and timeout check are atomic to prevent
+                 * the NBU from changing state between our read and timeout evaluation */
+                uint32_t regPrimask = DisableGlobalIRQ();
+
+                /* Check NBU readiness: The NBU firmware clears WKUP_TIME register as an
+                 * acknowledgment that it is now fully wakeup and can be put into low power state */
+                if ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) == 0U)
+                {
+                    EnableGlobalIRQ(regPrimask);
+                    break;
+                }
+
+                /* Timeout protection: NBU must acknowledge within FWK_PLATFORM_ACTIVE_REL_TIMEOUT_US */
                 if (PLATFORM_IsTimeoutExpired(timestamp, FWK_PLATFORM_ACTIVE_REL_TIMEOUT_US) &&
                     (pfPlatformErrorCallback != NULL))
                 {
+                    EnableGlobalIRQ(regPrimask);
                     pfPlatformErrorCallback(PLATFORM_REMOTE_ACTIVE_REL_ID, -1);
                     break;
                 }
-            }
+                /* Re-enable interrupts (except those masked by BASEPRI) to allow
+                 * peripheral ISRs to execute while we wait for NBU acknowledgment.
+                 * MU interrupts remain blocked to prevent re-entrance */
+                EnableGlobalIRQ(regPrimask);
+            } while (true);
+
+            /* Clear the hardware wakeup request bit. This signals to the NBU hardware that it's now permitted to enter
+             * low power mode when its firmware determines it's appropriate.
+             * The NBU will honor this based on its internal activity schedule */
             rfmc_ctrl = RFMC->RF2P4GHZ_CTRL;
             rfmc_ctrl &= ~RFMC_RF2P4GHZ_CTRL_BLE_WKUP_MASK;
             RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
@@ -981,11 +1088,11 @@ void PLATFORM_RemoteActiveRel(void)
         assert(0);
     }
 
-    OSA_InterruptEnable();
+    /* Restore original interrupt masking state */
+    PLATFORM_ClearInterruptMask(intMask);
 
     BOARD_DBGLPIOSET(0, 0);
 }
-
 void PLATFORM_GetResetCause(PLATFORM_ResetStatus_t *reset_status)
 {
     uint32_t SSRS_value;
