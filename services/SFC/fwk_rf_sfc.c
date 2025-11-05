@@ -557,9 +557,9 @@ static void SFC_StartCalibration(void)
 
         /* Call SFA_MeasureNonBlocking() under critical section to avoid the completion of a measure during the setup of
          * a new measurement */
-        intMask = PLATFORM_SET_INTERRUPT_MASK();
+        intMask = PLATFORM_SetInterruptMask();
         SFA_MeasureNonBlocking(RF_SFA);
-        PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+        PLATFORM_ClearInterruptMask(intMask);
     }
 }
 

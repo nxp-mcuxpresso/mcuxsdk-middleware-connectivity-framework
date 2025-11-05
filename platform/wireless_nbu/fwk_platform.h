@@ -12,6 +12,7 @@
 /* -------------------------------------------------------------------------- */
 
 #include "EmbeddedTypes.h"
+#include "fsl_device_registers.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -23,20 +24,61 @@ extern "C" {
 
 #define PLATFORM_MAX_INTERRUPT_PRIORITY         3U
 #define PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI (PLATFORM_MAX_INTERRUPT_PRIORITY << (8 - __NVIC_PRIO_BITS))
-#define PLATFORM_SET_INTERRUPT_MASK()                       \
-    __get_BASEPRI();                                        \
-    __set_BASEPRI(PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI); \
-    __DSB();                                                \
-    __ISB()
-#define PLATFORM_CLEAR_INTERRUPT_MASK(x) \
-    __set_BASEPRI(x);                    \
-    __DSB();                             \
-    __ISB()
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+/*!
+ * \brief Set interrupt mask to block interrupts below a certain priority level.
+ *
+ * This function sets the BASEPRI register to mask (disable) all interrupts
+ * with priority values numerically equal to or greater than
+ * PLATFORM_MAX_INTERRUPT_PRIORITY. It saves and returns the current BASEPRI
+ * value before modification, allowing it to be restored later.
+ *
+ * The function includes memory barriers (DSB and ISB) to ensure the interrupt
+ * masking takes effect immediately.
+ *
+ * \return uint32_t The previous BASEPRI register value. This value should be
+ *                  saved and passed to PLATFORM_ClearInterruptMask() to restore
+ *                  the original interrupt state.
+ *
+ * \note This function is typically used to enter a critical section where
+ *       interrupts below PLATFORM_MAX_INTERRUPT_PRIORITY must be disabled.
+ * \note The returned value must be used with PLATFORM_ClearInterruptMask()
+ *       to properly restore the interrupt state.
+ */
+static inline uint32_t PLATFORM_SetInterruptMask(void)
+{
+    uint32_t basepri = __get_BASEPRI();
+    __set_BASEPRI(PLATFORM_MAX_INTERRUPT_PRIORITY_BASEPRI);
+    __DSB();
+    __ISB();
+    return basepri;
+}
 
+/*!
+ * \brief Clear interrupt mask and restore previous interrupt priority level.
+ *
+ * This function restores the BASEPRI register to a previously saved value,
+ * effectively re-enabling interrupts that were masked by PLATFORM_SetInterruptMask().
+ * It includes memory barriers (DSB and ISB) to ensure the change takes effect
+ * immediately.
+ *
+ * \param[in] int_mask The previous BASEPRI value to restore. This should be
+ *                     the value returned by a prior call to PLATFORM_SetInterruptMask().
+ *
+ * \note This function is typically used to exit a critical section and restore
+ *       the interrupt state that existed before calling PLATFORM_SetInterruptMask().
+ * \note Always pair this function with PLATFORM_SetInterruptMask() to ensure
+ *       proper interrupt state management.
+ */
+static inline void PLATFORM_ClearInterruptMask(uint32_t int_mask)
+{
+    __set_BASEPRI(int_mask);
+    __DSB();
+    __ISB();
+}
 /*!
  * \brief Reset all platform variables to their initial state.
  * This function only resets the software state, no hardware reset is performed.

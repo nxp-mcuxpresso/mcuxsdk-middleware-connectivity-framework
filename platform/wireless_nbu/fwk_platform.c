@@ -145,12 +145,12 @@ static const smu_dmem_config_t smu_dmem_lookup_table[] = {
 
 void PLATFORM_ResetContext(void)
 {
-    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+    uint32_t intMask = PLATFORM_SetInterruptMask();
 
     /* Reset XTAL32M trim related variables */
     xtal32MTrimLock = 0;
 
-    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+    PLATFORM_ClearInterruptMask(intMask);
 }
 
 void PLATFORM_RemoteActiveReq(void)
@@ -170,7 +170,7 @@ void PLATFORM_RemoteActiveReqWithoutDelay(void)
 void PLATFORM_RemoteActiveRel(void)
 {
 #if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+    uint32_t intMask = PLATFORM_SetInterruptMask();
 
     // PWR_DBG_LOG("<--active_request_nb RELEASE=%d", active_request_nb);
 
@@ -185,7 +185,7 @@ void PLATFORM_RemoteActiveRel(void)
     {
     }
 
-    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+    PLATFORM_ClearInterruptMask(intMask);
 #endif
 }
 
@@ -227,21 +227,21 @@ void PLATFORM_UpdateXtal32MTrim(void)
 
 void PLATFORM_LockXtal32MTrim(void)
 {
-    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+    uint32_t intMask = PLATFORM_SetInterruptMask();
 
     xtal32MTrimLock++;
 
-    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+    PLATFORM_ClearInterruptMask(intMask);
 }
 
 void PLATFORM_UnlockXtal32MTrim(void)
 {
-    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+    uint32_t intMask = PLATFORM_SetInterruptMask();
 
     xtal32MTrimLock--;
     assert(xtal32MTrimLock >= 0);
 
-    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+    PLATFORM_ClearInterruptMask(intMask);
 }
 
 void PLATFORM_SetChipRevision(uint8_t chip_rev_l)
@@ -563,7 +563,7 @@ static uint32_t PLATFORM_GetLowPowerFlag(void)
 
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay)
 {
-    uint32_t intMask = PLATFORM_SET_INTERRUPT_MASK();
+    uint32_t intMask = PLATFORM_SetInterruptMask();
 
     if (active_request_nb == 0)
     {
@@ -583,7 +583,7 @@ static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay)
 
     active_request_nb++;
 
-    PLATFORM_CLEAR_INTERRUPT_MASK(intMask);
+    PLATFORM_ClearInterruptMask(intMask);
 
     // PWR_DBG_LOG("-->active_request_nb REQUEST=%d", active_request_nb);
 }
