@@ -9,7 +9,7 @@
 
 #### Minor Changes
 
-- [wireless_mcu] Added `PLATFORM_InitRadio()` API to configure forced enablement of various LDOs (XTAL, PLL, VCO, RXTXHF, RXTXLF, CAL) and update LDO trim values for kw47/mcxw72 platforms.
+- [wireless_mcu] Updated radio power management configuration with PLATFORM_InitRadio() API on kw47/mcxw72 platforms
 - [DBG] Added NBU assert indication support to host with line/file info using debug structure.
 - [DBG] Enhanced NBU debug framework with warning detection and notification capabilities. Extended `NBUDBG_StateCheck()` to monitor NBU warnings via `PLATFORM_IsNbuWarningSet()` with callback support for proactive warning monitoring.
 - [Sensors] Added periodic temperature measurement support allowing app/host to request periodic temperature measurement.
