@@ -22,12 +22,6 @@
 #define IEEE802_15_4_ADDR_OUI 0x37U, 0x60U, 0x00U
 #endif
 
-#ifndef gPlatformUseOuiFromIfr
-/* Define to 1 to use OUI in IFR for the extented MAC adress. It will fallback to the static OUI if the IFR one is not
- * available. This feature is experimental as it has not been validated on programmed samples. */
-#define gPlatformUseOuiFromIfr 0
-#endif
-
 static const uint8_t gIeee802_15_4_ADDR_OUI_c[MAC_ADDR_OUI_PART_SIZE] = {IEEE802_15_4_ADDR_OUI};
 
 /* Check if __st is negative,  if true, apply 4 bits shit and add new __error_code,
@@ -128,7 +122,7 @@ static void PLATFORM_GenerateNewEui64Addr(uint8_t *eui64_address)
     FLib_MemCpy((void *)eui64_address, (const void *)macAddr, EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE);
 
     /* Set 3 MSB from OUI */
-#if defined(gPlatformUseOuiFromIfr) && (gPlatformUseOuiFromIfr == 1)
+#if (defined(FWK_KW47_MCXW72_FAMILIES) && (FWK_KW47_MCXW72_FAMILIES == 1))
     /* If the IFR is not blank, copy its first three bytes to the OUI field of the extended address.
        Otherwise, use the static OUI as a fallback. */
     if (FLib_MemCmpToVal((const void *)IFR_BLE_BD_ADDR, 0xFFU, MAC_ADDR_OUI_PART_SIZE) == FALSE)
