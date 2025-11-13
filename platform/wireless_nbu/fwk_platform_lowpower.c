@@ -218,7 +218,7 @@ static int PLATFORM_LowPowerModeAllowed(void)
             }
             break;
         }
-        if (bleSleepTime < OVF_HALF_SLOTS_2_32KTICKS) /* */
+        if (bleSleepTime < OVF_HALF_SLOTS_2_32KTICKS)
         {
             slp_nb_32k_ticks = CONVERT_HALF_SLOTS_2_32KTICKS(bleSleepTime);
         }
@@ -257,6 +257,13 @@ static int PLATFORM_LowPowerModeAllowed(void)
         }
 #endif
     } while (false);
+#if defined gNbuDisableLowpower_d && (gNbuDisableLowpower_d == 1)
+    if (ret == 0)
+    {
+        ret = 1;
+    }
+#endif
+
     /* Has no effect on KW45 or KW47 : tell main core how much time there is to insert activities that would stall NBU
      */
     PLATFORM_SetNextNbuActivityDeadline(slp_nb_32k_ticks);
