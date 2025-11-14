@@ -1799,7 +1799,7 @@ NVM_STATIC NVM_Status_t __NvAtomicSave(void)
                 tableEntryIdx = NvGetTableEntryIndexFromId(mNvPendingSavesQueue.QData[loopCnt].entryId);
                 if (gNvInvalidTableEntryIndex_c != tableEntryIdx)
                 {
-                    if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+                    if (pNVM_DataTable[tableEntryIdx].DataEntryType != (uint16_t)gNVM_MirroredInRam_c)
                     {
                         if (NULL == ((void **)pNVM_DataTable[tableEntryIdx]
                                          .pData)[mNvPendingSavesQueue.QData[loopCnt].elementIndex])
@@ -1840,7 +1840,7 @@ NVM_STATIC NVM_Status_t __NvAtomicSave(void)
             while (loopCnt < mNVM_DataTableNbEntries)
             {
 #if gUnmirroredFeatureSet_d
-                if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[loopCnt].DataEntryType)
+                if (pNVM_DataTable[loopCnt].DataEntryType != (uint16_t)gNVM_MirroredInRam_c)
                 {
                     for (loopCnt2 = 0U; loopCnt2 < pNVM_DataTable[loopCnt].ElementsCount; loopCnt2++)
                     {
@@ -2018,7 +2018,7 @@ NVM_STATIC NVM_Status_t __NvFormat(void)
         {
             maDatasetInfo[loopCnt].countsToNextSave = mNvCountsBetweenSaves;
             maDatasetInfo[loopCnt].saveNextInterval = FALSE;
-            if ((NVM_DataEntryType_t)pNVM_DataTable[loopCnt].DataEntryType != gNVM_MirroredInRam_c)
+            if (pNVM_DataTable[loopCnt].DataEntryType != (uint16_t)gNVM_MirroredInRam_c)
             {
                 for (uint16_t loopCnt2 = 0U; loopCnt2 < pNVM_DataTable[loopCnt].ElementsCount; loopCnt2++)
                 {
@@ -2272,7 +2272,7 @@ NVM_STATIC NVM_Status_t __NvRestoreDataSet(void *ptrData, bool_t restoreAll)
 
         assert(gNvInvalidTableEntryIndex_c != tableEntryIdx);
 
-        if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+        if (pNVM_DataTable[tableEntryIdx].DataEntryType != (uint16_t)gNVM_MirroredInRam_c)
         {
             tblIdx.op_type = OP_SAVE_SINGLE;
         }
@@ -2322,7 +2322,7 @@ NVM_STATIC bool_t __NvTimerTick(bool_t countTick)
             {
                 tblIdx.entryId = pNVM_DataTable[idx].DataEntryID;
 #if gUnmirroredFeatureSet_d
-                if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[idx].DataEntryType)
+                if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[idx].DataEntryType)
                 {
                     tblIdx.elementIndex = maDatasetInfo[idx].elementIndex;
                     tblIdx.op_type      = OP_SAVE_SINGLE;
@@ -2448,7 +2448,7 @@ NVM_STATIC NVM_Status_t __NvSaveOnInterval(void *ptrData)
             maDatasetInfo[tableEntryIdx].ticksToNextSave  = mNvMinimumTicksBetweenSaves;
             maDatasetInfo[tableEntryIdx].saveNextInterval = TRUE;
 #if gUnmirroredFeatureSet_d
-            if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
             {
                 maDatasetInfo[tableEntryIdx].elementIndex = tblIdx.elementIndex;
             }
@@ -2813,8 +2813,7 @@ NVM_STATIC void __NvmRestoreUnmirrored(void)
             /* get table entry information */
             tableEntryIdx = NvGetTableEntryIndexFromId(metaInfo.fields.NvmDataEntryID);
             if ((gNvInvalidTableEntryIndex_c == tableEntryIdx) ||
-                (gNVM_NotMirroredInRamAutoRestore_c !=
-                 (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType))
+                ((uint16_t)gNVM_NotMirroredInRamAutoRestore_c != pNVM_DataTable[tableEntryIdx].DataEntryType))
             {
                 metaInfoAddress -= sizeof(NVM_RecordMetaInfo_t);
                 continue;
@@ -2848,7 +2847,7 @@ NVM_STATIC void __NvmRestoreUnmirrored(void)
 
         while (loopCnt < mNVM_DataTableNbEntries)
         {
-            if (gNVM_NotMirroredInRamAutoRestore_c == (NVM_DataEntryType_t)pNVM_DataTable[loopCnt].DataEntryType)
+            if ((uint16_t)gNVM_NotMirroredInRamAutoRestore_c == pNVM_DataTable[loopCnt].DataEntryType)
             {
                 for (loopCnt2 = 0U; loopCnt2 < pNVM_DataTable[loopCnt].ElementsCount; loopCnt2++)
                 {
@@ -2882,7 +2881,7 @@ NVM_STATIC NVM_Status_t __NvmMoveToRam(void **ppData)
     status = NvGetTableEntryIndexFromDataPtr(ppData, &tblIdx, &tableEntryIndex);
     if (gNVM_OK_c == status)
     {
-        if (gNVM_MirroredInRam_c == (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIndex].DataEntryType)
+        if ((uint16_t)gNVM_MirroredInRam_c == pNVM_DataTable[tableEntryIndex].DataEntryType)
         {
             status = gNVM_IsMirroredDataSet_c;
         }
@@ -2963,7 +2962,7 @@ NVM_STATIC NVM_Status_t __NvmErase(void **ppData)
     status = NvGetTableEntryIndexFromDataPtr(ppData, &tblIdx, &tableEntryIndex);
     if (gNVM_OK_c == status)
     {
-        if (gNVM_MirroredInRam_c == (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIndex].DataEntryType)
+        if ((uint16_t)gNVM_MirroredInRam_c == pNVM_DataTable[tableEntryIndex].DataEntryType)
         {
             status = gNVM_IsMirroredDataSet_c;
         }
@@ -4735,7 +4734,7 @@ NVM_STATIC bool_t NvIsMetaInfoValid(uint32_t              srcMetaAddress,
         if (*srcTableEntryIdx != gNvInvalidTableEntryIndex_c)
         {
 #endif /* gNvDualImageSupport_d */
-            if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[*srcTableEntryIdx].DataEntryType)
+            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[*srcTableEntryIdx].DataEntryType)
             {
                 /*check if the data was erased using NvErase or is just uninitialised*/
                 if (NULL == ((void **)pNVM_DataTable[*srcTableEntryIdx].pData)[srcMetaInfo->fields.NvmElementIndex] &&
@@ -4783,8 +4782,8 @@ NVM_STATIC bool_t NvIsNvTableChanged(NVM_RecordMetaInfo_t *srcMetaInfo,
             if (NvGetTableEntry(pNVM_DataTable[*srcTableEntryIdx].DataEntryID, &flashDataEntry))
             {
                 /* entries changed from mirrored/unmirrored and with different entry size cannot be recovered */
-                if ((((gNVM_MirroredInRam_c == (NVM_DataEntryType_t)flashDataEntry.DataEntryType) ||
-                      (gNVM_MirroredInRam_c == (NVM_DataEntryType_t)pNVM_DataTable[*srcTableEntryIdx].DataEntryType)) &&
+                if (((((uint16_t)gNVM_MirroredInRam_c == flashDataEntry.DataEntryType) ||
+                      ((uint16_t)gNVM_MirroredInRam_c == pNVM_DataTable[*srcTableEntryIdx].DataEntryType)) &&
                      (flashDataEntry.DataEntryType != pNVM_DataTable[*srcTableEntryIdx].DataEntryType)) ||
                     (flashDataEntry.ElementSize != pNVM_DataTable[*srcTableEntryIdx].ElementSize))
                 {
@@ -5061,7 +5060,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
                        then it not need to check if NvTable is changed from RAM  */
                     if (srcTableEntryIdx == gNvInvalidTableEntryIndex_c)
                     {
-                        if (gNVM_MirroredInRam_c != flashDataEntry.DataEntryType)
+                        if ((uint16_t)gNVM_MirroredInRam_c != flashDataEntry.DataEntryType)
                         {
                             tblEntryMetaAddress = 0U;
                         }
@@ -5073,7 +5072,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
                     }
                     else
 #endif /* gNvDualImageSupport_d */
-                        if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[srcTableEntryIdx].DataEntryType)
+                        if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[srcTableEntryIdx].DataEntryType)
                         {
                             tblEntryMetaAddress = 0U;
                         }
@@ -5152,8 +5151,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
                         else
                         {
 #endif /* gNvDualImageSupport_d */
-                            if (gNVM_MirroredInRam_c !=
-                                (NVM_DataEntryType_t)pNVM_DataTable[srcTableEntryIdx].DataEntryType)
+                            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[srcTableEntryIdx].DataEntryType)
                             {
                                 OSA_InterruptDisable();
                                 /* set the pointer to the flash data */
@@ -5781,7 +5779,7 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
                     break;
                 }
 #if gUnmirroredFeatureSet_d
-                if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[idx].DataEntryType)
+                if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[idx].DataEntryType)
                 {
                     elt_sz = sizeof(void *);
                 }
@@ -5958,7 +5956,7 @@ NVM_STATIC NVM_Status_t NvWriteRecordToFlash(NVM_TableEntryInfo_t *tblIndexes,
     uint32_t     srcAddress;
 
 #if gUnmirroredFeatureSet_d
-    if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+    if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
     {
         srcAddress = (uint32_t)(uint8_t *)((uint8_t **)pNVM_DataTable[tableEntryIdx].pData)[tblIndexes->elementIndex];
     }
@@ -6000,7 +5998,7 @@ NVM_STATIC NVM_Status_t NvWriteRecordToFlash(NVM_TableEntryInfo_t *tblIndexes,
             FSCI_NV_WRITE_MONITOR(p_metaInfo->fields.NvmDataEntryID, tblIndexes->elementIndex,
                                   (tblIndexes->op_type == OP_SAVE_ALL) ? TRUE : FALSE);
 #if gUnmirroredFeatureSet_d
-            if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
             {
                 if (0U != p_metaInfo->fields.NvmRecordOffset)
                 {
@@ -6088,7 +6086,7 @@ NVM_STATIC NVM_Status_t NvWriteRecord(NVM_TableEntryInfo_t *tblIndexes)
         {
 #if gUnmirroredFeatureSet_d
             /* For data sets not mirrored in ram a table entry is saved separate */
-            if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
             {
                 tblIndexes->op_type = OP_SAVE_SINGLE;
             }
@@ -6114,7 +6112,7 @@ NVM_STATIC NVM_Status_t NvWriteRecord(NVM_TableEntryInfo_t *tblIndexes)
 
 #if gUnmirroredFeatureSet_d
             /* Check if is an erase for unmirrored dataset*/
-            if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
             {
                 if (NULL == ((void **)pNVM_DataTable[tableEntryIdx].pData)[tblIndexes->elementIndex])
                 {
@@ -6346,8 +6344,7 @@ NVM_STATIC NVM_Status_t NvRestoreData(NVM_TableEntryInfo_t *tblIdx)
                                 metaInfo.fields.NvmElementIndex == tblIdx->elementIndex)
                             {
 #if gUnmirroredFeatureSet_d
-                                if (gNVM_MirroredInRam_c !=
-                                    (NVM_DataEntryType_t)pNVM_DataTable[tableEntryIdx].DataEntryType)
+                                if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
                                 {
                                     if (0U == metaInfo.fields.NvmRecordOffset)
                                     {
@@ -8124,10 +8121,10 @@ void NV_ShowRamTable(uint16_t end_id)
         sprintf(message, "pData = 0x%08lx, EntriesCount = %04x, EntrySize = %04x, Id = %04x, Data type = %s\r\n",
                 (uint32_t)pDataEntry->pData, pDataEntry->ElementsCount, pDataEntry->ElementSize,
                 pDataEntry->DataEntryID,
-                (pDataEntry->DataEntryType == gNVM_MirroredInRam_c ? "mirrored" : "unmirrored"));
+                (pDataEntry->DataEntryType == (uint16_t)gNVM_MirroredInRam_c ? "mirrored" : "unmirrored"));
         PRINTF(message);
 
-        if (pDataEntry->DataEntryType == gNVM_MirroredInRam_c)
+        if (pDataEntry->DataEntryType == (uint16_t)gNVM_MirroredInRam_c)
         {
             if (pDataEntry->pData)
             {
