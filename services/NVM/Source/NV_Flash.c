@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2019-2024 NXP
+ * Copyright 2016-2017, 2019-2025 NXP
  * All rights reserved.
  *
  * \file
@@ -5734,53 +5734,76 @@ NVM_STATIC NVM_Status_t UpgradeLegacyTable(void)
  *               [OUT] pIndex - a pointer to a memory location where the
  *                              requested indexed will be stored
  * Return: gNVM_NullPointer_c - if the provided pointer is NULL
- *         gNVM_PointerOutOfRange_c - if the provided pointer cannot be founded
+ *         gNVM_PointerOutOfRange_c - if the provided pointer cannot be found
  *                                    within the RAM table
  *         gNVM_OK_c - if the operation completed successfully
  *****************************************************************************/
 NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t *pIndex)
 {
-    uint16_t     idx    = 0U;
-    NVM_Status_t status = gNVM_PointerOutOfRange_c;
-
-    while (idx < mNVM_DataTableNbEntries)
+    NVM_Status_t status;
+    if ((NULL == pData) || (NULL == pIndex))
     {
-        if (((uint8_t *)pData >= (uint8_t *)pNVM_DataTable[idx].pData))
+        /* A NULL pData or pIndex pointer are bad arguments so return error */
+        status = gNVM_NullPointer_c;
+    }
+    else
+    {
+        status = gNVM_PointerOutOfRange_c;
+        /* Convert pointer to integer for comparison - MISRA compliant approach */
+        uintptr_t dataAddr = (uintptr_t)(uint8_t *)pData;
+
+        for (uint16_t idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
         {
-#if gUnmirroredFeatureSet_d
-            if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[idx].DataEntryType)
+            /* parse NVM Table of data entries */
+            if ((pNVM_DataTable[idx].pData == NULL) || (pNVM_DataTable[idx].ElementSize == 0U) ||
+                (pNVM_DataTable[idx].ElementsCount == 0U))
             {
-                if ((uint8_t *)pData <
-                    ((uint8_t *)pNVM_DataTable[idx].pData + (sizeof(void *) * pNVM_DataTable[idx].ElementsCount)))
+                continue; /* Skip invalid table entries */
+            }
+            uintptr_t tableEntryAddr = (uintptr_t)(uint8_t *)pNVM_DataTable[idx].pData;
+
+            /* Use integer comparison instead of pointer comparison */
+            if (dataAddr >= tableEntryAddr)
+            {
+                uint32_t  elt_sz;
+                uint32_t  tb_sz;
+                uintptr_t endAddr;
+                uint32_t  offset;
+                /* Check that pData is within the table entry's address range, so greater than or equal to
+                 * tableEntryAddr */
+                /* Determining the end address of the table entry varies based on data entry type, whether mirrored in
+                 * RAM or not */
+                /* offset guaranteed to be positive due to previous comparison */
+                offset = (uint32_t)dataAddr - (uint32_t)tableEntryAddr;
+                if (offset > (uint32_t)UINT16_MAX)
                 {
-                    int32_t offset       = (uint8_t *)pData - (uint8_t *)pNVM_DataTable[idx].pData;
-                    int32_t index        = offset / ((int32_t)sizeof(void *));
+                    status = gNVM_PointerOutOfRange_c;
+                    break;
+                }
+#if gUnmirroredFeatureSet_d
+                if (gNVM_MirroredInRam_c != (NVM_DataEntryType_t)pNVM_DataTable[idx].DataEntryType)
+                {
+                    elt_sz = sizeof(void *);
+                }
+                else
+#endif
+                {
+                    elt_sz = (uint32_t)pNVM_DataTable[idx].ElementSize;
+                }
+                tb_sz   = elt_sz * pNVM_DataTable[idx].ElementsCount;
+                endAddr = tableEntryAddr + (uintptr_t)tb_sz;
+                if (dataAddr < endAddr)
+                {
+                    /* Use integer arithmetic instead of pointer subtraction */
+                    uint32_t index       = offset / elt_sz;
                     pIndex->elementIndex = (uint16_t)index;
                     pIndex->entryId      = pNVM_DataTable[idx].DataEntryID;
                     status               = gNVM_OK_c;
-                    break;
+                    break; /* Exit loop after finding matching entry */
                 }
-                idx++;
-                continue;
+                /* Continue loop if not found */
             }
-            else
-#endif
-                if ((uint8_t *)pData < ((uint8_t *)pNVM_DataTable[idx].pData +
-                                        (pNVM_DataTable[idx].ElementSize * pNVM_DataTable[idx].ElementsCount)))
-            {
-                int32_t offset       = (uint8_t *)pData - (uint8_t *)pNVM_DataTable[idx].pData;
-                pIndex->elementIndex = (uint16_t)offset / pNVM_DataTable[idx].ElementSize;
-                pIndex->entryId      = pNVM_DataTable[idx].DataEntryID;
-                status               = gNVM_OK_c;
-                break;
-            }
-            else
-            {
-                /*MISRA rule 15.7*/
-            }
-        }
-        /* increment the loop counter */
-        idx++;
+        } /* End of for loop idx incremented */
     }
     return status;
 }
