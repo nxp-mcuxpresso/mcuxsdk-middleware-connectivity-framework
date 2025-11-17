@@ -22,6 +22,17 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72)
         CORE_IDS "cm33_core0" "cm33"
     )
 
+    # workaround to be able to use preprocessed linker scripts on packages
+    # could be moved to project segment once package generation is fully deprecated
+    mcux_add_source(
+        TOOLCHAINS armgcc iar
+        BASE_PATH ${SdkRootDirPath}
+        SOURCES
+            examples/_common/project_segments/wireless/${conn_device}/conn_device_memory.h
+        DEVICE_IDS ${KW47_FAMILY}
+        CORE_IDS "cm33_core0"
+    )
+
     mcux_add_include(INCLUDES
         .
         configs
