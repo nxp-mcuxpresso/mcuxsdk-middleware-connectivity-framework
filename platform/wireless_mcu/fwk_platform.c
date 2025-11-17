@@ -1072,6 +1072,9 @@ void PLATFORM_RemoteActiveRel(void)
                  * peripheral ISRs to execute while we wait for NBU acknowledgment.
                  * MU interrupts remain blocked to prevent re-entrance */
                 EnableGlobalIRQ(regPrimask);
+
+                /* Flush pipeline to allow any pending interrupts to execute before interrupts are masked again */
+                __ISB();
             } while (true);
 
             /* Clear the hardware wakeup request bit. This signals to the NBU hardware that it's now permitted to enter
