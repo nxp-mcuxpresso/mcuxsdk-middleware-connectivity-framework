@@ -1104,6 +1104,7 @@ bool_t NvIsPendingOperation(void);
  ********************************************************************************* */
 void NvSetNvmDataTable(NVM_DataEntry_t *tb_array, uint16_t nb_entries);
 
+#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
 /*
  * Functions below are required in some NVM tests scenarii for setup or debug reasons.
  * They should not be considered as public APIs to be used outside this context.
@@ -1132,6 +1133,8 @@ void NV_ShowMetas(void);
 void NV_ShowRamTable(uint16_t end_id);
 
 void NV_ShowDataEntry(uint8_t *ptr, uint16_t data_size);
+
+#endif /* gNvDebugEnabled_d */
 
 /*! *********************************************************************************
  *  \brief Getter to retrieve first meta offset. Used in tests or debug only.

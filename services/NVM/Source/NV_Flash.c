@@ -7010,7 +7010,7 @@ void NvModuleDeInit(void)
 #if gNvFragmentation_Enabled_d
     FLib_MemSet((void *)&maNvRecordsCpyOffsets[0], 0U, sizeof(maNvRecordsCpyOffsets));
 #endif
-
+    mNvIdleTaskId = NULL;
 #if gNvUseExtendedFeatureSet_d
     mNvTableSizeInFlash  = 0U;
     mNvTableMarker       = 0U;
@@ -7825,6 +7825,10 @@ void NvSetFlashTableVersion(uint16_t version)
 #endif
 }
 
+#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
+/*
+ * Internal static debug functions accessing static data of NVM module.
+ */
 /*! *********************************************************************************
  *  \brief NvFlashDump
  * Used only for debug purposes
@@ -7835,7 +7839,6 @@ void NvSetFlashTableVersion(uint16_t version)
  *
  * \return none
  ********************************************************************************* */
-#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
 NVM_STATIC void NvFlashDump(uint8_t *ptr, uint16_t data_size)
 {
     char message[128];
@@ -7877,27 +7880,6 @@ NVM_STATIC void NvFlashDump(uint8_t *ptr, uint16_t data_size)
     }
     PRINTF("\r\n");
 }
-#endif
-
-/*! *********************************************************************************
- *  \brief NV_ShowDataEntry
- * Used only for debug purposes. Does nothing if not built with gNvDebugEnabled_d.
- *
- * Parameter(s):
- *  [IN] ptr address from which to dum
- *  [IN] data_size number of bytes to dump.
- *
- * \return none
- ********************************************************************************* */
-void NV_ShowDataEntry(uint8_t *ptr, uint16_t data_size)
-{
-#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
-    NvFlashDump(ptr, data_size);
-#else
-    NOT_USED(ptr);
-    NOT_USED(data_size);
-#endif
-}
 
 /*! *********************************************************************************
  *  \brief NV_ShowPageMetas
@@ -7909,8 +7891,6 @@ void NV_ShowDataEntry(uint8_t *ptr, uint16_t data_size)
  *
  * \return none
  ********************************************************************************* */
-#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
-
 NVM_STATIC void NV_ShowPageMetas(NVM_VirtualPageID_t page_id, bool_t ecc_checks)
 {
     char                 message[150];
@@ -8029,13 +8009,24 @@ NVM_STATIC void NV_ShowPageTableInfo(NVM_VirtualPageID_t page_id, bool_t ecc_che
     }
 }
 
-#endif
+/*! *********************************************************************************
+ *  \brief NV_ShowDataEntry
+ * Used only for debug purposes. Does nothing if not built with gNvDebugEnabled_d.
+ *
+ * Parameter(s):
+ *  [IN] ptr address from which to dum
+ *  [IN] data_size number of bytes to dump.
+ *
+ * \return none
+ ********************************************************************************* */
+void NV_ShowDataEntry(uint8_t *ptr, uint16_t data_size)
+{
+    NvFlashDump(ptr, data_size);
+}
 
 void NV_ShowMetas(void)
 {
-#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
     NV_ShowPageMetas(mNvActivePageId, TRUE);
-#endif
 }
 
 /*! *********************************************************************************
@@ -8048,7 +8039,6 @@ void NV_ShowMetas(void)
  ********************************************************************************* */
 void NV_ShowFlashTable(bool_t active_only)
 {
-#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
     char                         message[128];
     NVM_VirtualPageID_t          page_id;
     NVM_VirtualPageProperties_t *vpage_prop;
@@ -8090,9 +8080,6 @@ void NV_ShowFlashTable(bool_t active_only)
         }
         PRINTF("\r\n\r\n");
     }
-#else
-    NOT_USED(active_only);
-#endif
 }
 
 /*! *********************************************************************************
@@ -8105,7 +8092,6 @@ void NV_ShowFlashTable(bool_t active_only)
  ********************************************************************************* */
 void NV_ShowRamTable(uint16_t end_id)
 {
-#if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
     uint8_t cnt;
     char    message[150];
 
@@ -8145,11 +8131,8 @@ void NV_ShowRamTable(uint16_t end_id)
         }
         PRINTF("\r\n");
     }
-#else
-    NOT_USED(end_id);
-#endif
 }
-
+#endif
 /*! *********************************************************************************
  *  \brief Nv_GetLastMetaAddress returns address of the latest meta data.
  * Used for debug purposes only.
