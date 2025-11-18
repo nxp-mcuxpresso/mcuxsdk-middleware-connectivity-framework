@@ -17,8 +17,11 @@
 /*! *********************************************************************************
  *   RNG Module Configuration
  ********************************************************************************** */
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! Set priority of TRNG interrupt (must be lower than link layer interrupts).
- *   See system_MCXW23*.* files for more details on the system requirements regarding interrupt priorities. */
+ *  See system_MCXW23*.* files for more details on the system requirements regarding interrupt priorities.
+ *  Note: When PSA is used, it uses polling to access TRNG, so gRngIsrPrio_c is not needed. */
 #define gRngIsrPrio_c ((NVIC_DEFAULT_PRIORITY) << (8U - (uint8_t)__NVIC_PRIO_BITS))
+#endif
 
 #endif /* _FWK_CONFIG_H_ */
