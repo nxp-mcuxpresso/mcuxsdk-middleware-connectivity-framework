@@ -1,5 +1,37 @@
 ## Connectivity framework CHANGELOG
 
+### 7.1.3 mcux SDK 25.12.00 RFP
+
+#### Major Changes
+
+- [wireless_mcu][wireless_nbu] Replaced interrupt masking macros with static inline functions `PLATFORM_SetInterruptMask()` and `PLATFORM_ClearInterruptMask()` to ensure consistent BASEPRI value handling across all compilers. This addresses compiler-dependent behavior issues with the previous macro implementation.
+- [wireless_mcu] Added BASEPRI-based interrupt masking in `PLATFORM_RemoteActiveRel()` to allow high-priority IRQs while ensuring only IMU0 or thread context can call this function.
+- [wireless_mcu] Introduced `gPlatformUseHwParameter_d` compile flag to allow builds without HWParameter section. When undefined or set to 0, crystal trimming functions conditionally access HWParameters only when required.
+
+#### Minor Changes
+
+- [kw47_mcxw72] Introduced platform-specific library for KW47/MCXW72 platforms.
+- [kw47_mcxw72] Support for additional KW47 phantoms including ZB2/ZB3/ZB6/ZB7 and Z83/Z96/Z97.
+- [kw47_mcxw72] Removed SH_MEM_TOTAL_SIZE override as it is now automatically calculated to match rpmsg-lite configuration.
+- [wireless_mcu] Set RL_BUFFER_PAYLOAD_SIZE to word-aligned value as expected by rpmsg-lite.
+- [wireless_mcu] Added system-generated HCI vendor events capability for debug and diagnostic purposes.
+- [DBG] Added debug structure transmission over HCI vendor events with configuration API to enable/disable the feature.
+- [Platform] Simplified enablement of reset features via pin detection 
+    - Automatically selects `gUseResetByLvdForce_c` when `gAppForceLvdResetOnResetPinDet_d` is enabled.
+    - Automatically select `gUseResetByDeepPowerDown_c` when `gAppForceDeepPowerDownResetOnResetPinDet_d` is enabled.
+- [RNG] Replaced `gRngHasSecLibDependency_d` compilation switch with `gRngUseSecLib_d`.
+
+#### Bug fixes
+
+- [wireless_mcu] Fixed race condition in `PLATFORM_RemoteActiveRel()` by adding verification loop to confirm NBU core execution before releasing power domain.
+- [wireless_mcu] Added instruction synchronization barrier (__ISB()) after interrupt re-enable in `PLATFORM_RemoteActiveRel()` to ensure pending interrupts execute between critical sections.
+- [wireless_mcu] Fixed external IO voltage isolation issue during low-power initialization - isolation is now cleared at init to ensure proper behavior.
+- [NVM] Fixed `NvIdle()` to prevent looping for more operations than the queue size.
+- [NVS] Fixed blank check procedure to return false (non-blank) when checking a 0 length area.
+- [NVS] Made external and internal flash ports consistent.
+- [DBG] Fixed debug structure size and callback access issues - corrected memory placement overlap between reg_info and assert_info.
+- [MISRA] Various MISRA compliance fixes in NVM, HWParameter, LowPower, SecLib modules and IFR offset definitions.
+
 ### 7.1.2 mcux SDK 25.12.00 pvw2
 
 #### Major Changes
