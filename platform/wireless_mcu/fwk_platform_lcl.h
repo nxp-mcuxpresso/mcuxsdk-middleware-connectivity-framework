@@ -18,7 +18,7 @@
 #define LCL_RFGPO_3_0  1U /* use RF_GPO[3:0] */
 #define LCL_RFGPO_7_4  2U /* use RF_GPO[7:4] */
 
-#if !defined(NDEBUG) || (defined(gValidationBuildOptions) && (gValidationBuildOptions == 1))
+#if !defined(NDEBUG) || defined(VALIDATIONBUILDOPTIONS)
 #define ENABLE_DTEST
 #endif
 /*******************************************************************************
