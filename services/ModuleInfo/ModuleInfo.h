@@ -137,13 +137,13 @@ moduleInfo_t;
                            buildNo)                                                                                \
     extern const moduleInfo_t                                       SET_MODULE_NAME(moduleName);                   \
     _Pragma("location=\".VERSION_TAGS\"") __root const moduleInfo_t SET_MODULE_NAME(moduleName) = {                \
-        &moduleNameString, moduleId, {versionNoMajor, versionNoMinor, versionNoPatch}, buildNo}
+        (const char **)&moduleNameString, moduleId, {versionNoMajor, versionNoMinor, versionNoPatch}, buildNo}
 #elif defined(__CC_ARM)
 #define RegisterModuleInfo(moduleName, moduleNameString, moduleId, versionNoMajor, versionNoMinor, versionNoPatch, \
                            buildNo)                                                                                \
     extern const moduleInfo_t SET_MODULE_NAME(moduleName);                                                         \
     const moduleInfo_t        SET_MODULE_NAME(moduleName) = {                                                      \
-        &moduleNameString, moduleId, {versionNoMajor, versionNoMinor, versionNoPatch}, buildNo}
+        (const char **)&moduleNameString, moduleId, {versionNoMajor, versionNoMinor, versionNoPatch}, buildNo}
 #elif defined(__GNUC__)
 #define RegisterModuleInfo(moduleName, moduleNameString, moduleId, versionNoMajor, versionNoMinor, versionNoPatch, \
                            buildNo)                                                                                \
