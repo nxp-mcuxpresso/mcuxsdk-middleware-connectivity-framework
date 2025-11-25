@@ -10,6 +10,8 @@
 #include "fwk_platform_intflash.h"
 #include "fsl_adapter_flash.h"
 
+#include <setjmp.h>
+
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
@@ -101,28 +103,25 @@ void FaultRecovery(void)
     /* Detect whether Bus Fault is caused by ECC fault */
     if (HAL_FlashEccStatusRaised())
     {
-        uint32_t ecc_fault_addr;
         uint32_t bfar             = SCB->BFAR;
         uint32_t nv_storage_start = (uint32_t)NV_STORAGE_START_ADDRESS;
+        /* Check is the Bus Fault Address is within NV storage range */
         if ((bfar >= nv_storage_start) && (bfar < (nv_storage_start + NVM_LENGTH)))
-        {
-            ecc_fault_addr = bfar;
-        }
-        else
-        {
-            ecc_fault_addr = PLATFORM_SeekForEccFaultsInRange((uint32_t)NV_STORAGE_START_ADDRESS, NVM_LENGTH);
-        }
-        if (ecc_fault_addr != 0UL)
         {
             /* We have now ascertained that the ECC fault raised within the NV storage area.
              * The brutal solution, relies on the fact that when mounting the partition, NVS, or LittleFs
              * will detect the missing sector and reformat if required */
-            PLATFORM_TreatEccFault(ecc_fault_addr);
+            PLATFORM_TreatEccFault(bfar);
         }
     }
+#ifdef UNITY_DUMP_RESULT
+    extern jmp_buf g_test_ctx;
+    longjmp(g_test_ctx, 1); /* Jump back to the setjmp point */
+#else
     /* Potentially add other handlers for other BusFault causes */
     /* Only a suggestion to reset. Alternate possibilities exist, such as log some information to notify
      * application of the loss  */
     NVIC_SystemReset();
+#endif
 }
 #endif

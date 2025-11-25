@@ -270,10 +270,12 @@ void MemManage_Handler(void)
     __asm volatile("  b HardFault_Handler \n");
 }
 
+#if !(defined(gInterceptEccBusFaults_d) && (gInterceptEccBusFaults_d > 0))
 void BusFault_Handler(void)
 {
     __asm volatile(" b HardFault_Handler \n");
 }
+#endif
 
 void UsageFault_Handler(void)
 {
