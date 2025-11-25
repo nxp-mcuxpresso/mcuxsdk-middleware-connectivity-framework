@@ -76,12 +76,6 @@ typedef struct psa_ecp256_context_t
 static psa_ecp256_context_t  psa_g_ECP_KeyPair;
 static psa_ecp256_context_t *psa_pECPKeyPair = ((void *)0);
 
-/*! Callback used to offload Security steps onto application message queue. When it is not set the
- * multiplication is done using SecLib means */
-extern secLibCallback_t pfSecLibMultCallback;
-
-secLibCallback_t pfSecLibMultCallback = NULL;
-
 /*! *********************************************************************************
 *************************************************************************************
 * Private functions
@@ -125,6 +119,7 @@ void SecLib_Init(void)
 void SecLib_ReInit(void)
 {
     /* Initialize cryptographic hardware.*/
+    mbedtls_psa_crypto_free();
     (void)PLATFORM_ResetCrypto();
 }
 
@@ -136,13 +131,8 @@ void SecLib_ReInit(void)
 void SecLib_DeInit(void)
 {
     /* Deinitialize cryptographic hardware.*/
+    mbedtls_psa_crypto_free();
     (void)PLATFORM_TerminateCrypto();
-}
-
-/* to see if implementation needed */
-void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback)
-{
-    return;
 }
 
 /*! *********************************************************************************
@@ -155,18 +145,26 @@ void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback)
  * \param [in,out]   pOutput     Pointer to the output location
  *
  ********************************************************************************** */
-void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
+secResultType_t SecLib_SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
 {
+    secResultType_t       res        = gSecError_c;
     const psa_algorithm_t alg        = PSA_ALG_SHA_256;
     size_t                hashLength = 0U; /* Initialize hash length to 0 */
     psa_status_t          status;
 
     do
     {
+        if ((pOutput == NULL) || (pData == NULL))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
         /* SHA 256 computation */
         status = psa_hash_compute(alg, pData, numBytes, pOutput, SHA256_HASH_SIZE, &hashLength);
         RAISE_ERROR(status, PSA_SUCCESS);
+        res = gSecSuccess_c;
     } while (false);
+    return res;
 }
 
 /*! *********************************************************************************
@@ -203,8 +201,9 @@ void SecLib_XorN(uint8_t *pDst, const uint8_t *pSrc, uint8_t n)
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
 {
+    secResultType_t       res      = gSecError_c;
     size_t                key_bits = AES_128_KEY_BYTE_LEN;
     const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
     psa_status_t          status;
@@ -219,6 +218,11 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
 
     do
     {
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
         status = psa_import_key(&attributes, pKey, key_bits, &key); /* import the key in psa and get its id */
         RAISE_ERROR(status, PSA_SUCCESS);
 
@@ -228,7 +232,9 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
 
         status = psa_destroy_key(key);
         RAISE_ERROR(status, PSA_SUCCESS);
+        res = gSecSuccess_c;
     } while (false);
+    return res;
 }
 
 /*! *********************************************************************************
@@ -247,8 +253,12 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_ECB_Encrypt(const uint8_t *pInput,
+                                           uint32_t       inputLen,
+                                           const uint8_t *pKey,
+                                           uint8_t       *pOutput)
 {
+    secResultType_t       res      = gSecError_c;
     size_t                key_bits = AES_128_KEY_BYTE_LEN;
     const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
     psa_status_t          status;
@@ -256,13 +266,19 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
     psa_key_id_t          key        = 0U;
     size_t                output_len = 0U;
 
-    /* key initialisation before import */
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
-
     do
     {
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL) || (inputLen == 0) ||
+            ((inputLen % AES_BLOCK_SIZE) != 0U))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
+        /* key initialisation before import */
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+
         /* import pKey and get the address of the imported key */
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
@@ -273,7 +289,9 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
 
         status = psa_destroy_key(key); /* destroy key after use */
         RAISE_ERROR(status, PSA_SUCCESS);
+        res = gSecSuccess_c;
     } while (false);
+    return res;
 }
 
 /*! *********************************************************************************
@@ -288,8 +306,9 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
 {
+    secResultType_t       res      = gSecError_c;
     size_t                key_bits = AES_128_KEY_BYTE_LEN;
     const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
     psa_status_t          status;
@@ -304,6 +323,11 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
 
     do
     {
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
@@ -314,7 +338,9 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
         /* destroy key after use */
         status = psa_destroy_key(key);
         RAISE_ERROR(status, PSA_SUCCESS);
+        res = gSecSuccess_c;
     } while (false);
+    return res;
 }
 
 /*! *********************************************************************************
@@ -331,9 +357,13 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-#ifdef FSL_FEATURE_SOC_AES_HW
-void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_ECB_Decrypt(const uint8_t *pInput,
+                                           uint32_t       inputLen,
+                                           const uint8_t *pKey,
+                                           uint8_t       *pOutput)
 {
+    secResultType_t res = gSecError_c;
+
     size_t                key_bits = AES_128_KEY_BYTE_LEN;
     const psa_algorithm_t alg      = PSA_ALG_ECB_NO_PADDING;
     psa_status_t          status;
@@ -341,12 +371,18 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
     psa_key_id_t          key        = 0U;
     size_t                output_len = 0U;
 
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
-
     do
     {
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL) || (inputLen == 0) ||
+            ((inputLen % AES_BLOCK_SIZE) != 0U))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
+
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
@@ -355,9 +391,11 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
 
         status = psa_destroy_key(key);
         RAISE_ERROR(status, PSA_SUCCESS);
+        res = gSecSuccess_c;
     } while (false);
+
+    return res;
 }
-#endif
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CMAC on a message block accepting input data
@@ -376,8 +414,12 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
  *              The code will be generated MSB first.
  *
  ********************************************************************************** */
-void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
+                                                  uint32_t       inputLen,
+                                                  const uint8_t *pKey,
+                                                  uint8_t       *pOutput)
 {
+    secResultType_t       res      = gSecError_c;
     size_t                key_bits = AES_128_KEY_BYTE_LEN;
     const psa_algorithm_t alg      = PSA_ALG_CMAC; /* Set algorithm to cmac */
     psa_status_t          status;
@@ -385,13 +427,19 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     psa_key_id_t          key        = 0U;
     size_t                output_len = 0U;
 
-    /* key initialisation before import */
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-
     do
     {
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
+
+        /* key initialisation before import */
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
 
@@ -435,7 +483,9 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
 
         status = psa_destroy_key(key); /* destroy key after use */
         RAISE_ERROR(status, PSA_SUCCESS);
+        res = gSecSuccess_c;
     } while (false);
+    return res;
 }
 
 /*! *********************************************************************************
@@ -453,23 +503,35 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
  * \remarks This is public open source code! Terms of use must be checked before use!
  *
  ********************************************************************************** */
-void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_CMAC(const uint8_t *pInput,
+                                    const uint32_t inputLen,
+                                    const uint8_t *pKey,
+                                    uint8_t       *pOutput)
 {
-    size_t                key_bits = AES_128_KEY_BYTE_LEN;
-    const psa_algorithm_t alg      = PSA_ALG_CMAC; /* set algorithm to cmac */
-    psa_status_t          status;
+    secResultType_t res = gSecError_c;
+    ;
+    size_t                key_bits   = AES_128_KEY_BYTE_LEN;
+    const psa_algorithm_t alg        = PSA_ALG_CMAC; /* set algorithm to cmac */
     psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t          key        = 0U;
     size_t                output_len = 0U;
 
-    /* key initialisation before import */
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
-    psa_set_key_algorithm(&attributes, alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
-
     do
     {
+        psa_status_t status;
+
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
+        /* key initialisation before import */
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+
         status = psa_import_key(&attributes, pKey, key_bits, &key);
+
         RAISE_ERROR(status, PSA_SUCCESS);
 
         /* compute mac operation on pInput */
@@ -478,7 +540,11 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
 
         status = psa_destroy_key(key); /* destroy key after use */
         RAISE_ERROR(status, PSA_SUCCESS);
+
+        res = gSecSuccess_c;
+
     } while (false);
+    return res;
 }
 
 /*! *********************************************************************************
@@ -514,28 +580,43 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
  * \remarks At decryption, MIC fail is also signalled by returning a non-zero value.
  *
  ********************************************************************************** */
-uint8_t AES_128_CCM(const uint8_t *pInput,
-                    uint16_t       inputLen,
-                    const uint8_t *pAuthData,
-                    uint16_t       authDataLen,
-                    const uint8_t *pNonce,
-                    uint8_t        nonceSize,
-                    const uint8_t *pKey,
-                    uint8_t       *pOutput,
-                    uint8_t       *pCbcMac,
-                    uint8_t        macSize,
-                    uint32_t       flags)
+secResultType_t SecLib_AES_128_CCM(const uint8_t *pInput,
+                                   uint16_t       inputLen,
+                                   const uint8_t *pAuthData,
+                                   uint16_t       authDataLen,
+                                   const uint8_t *pNonce,
+                                   uint8_t        nonceSize,
+                                   const uint8_t *pKey,
+                                   uint8_t       *pOutput,
+                                   uint8_t       *pCbcMac,
+                                   uint8_t        macSize,
+                                   uint32_t       flags)
 {
+    secResultType_t ret = gSecError_c;
+
     size_t               key_bits   = AES_128_KEY_BYTE_LEN;
     psa_algorithm_t      alg        = PSA_ALG_CCM;
-    uint8_t             *buff       = MEM_BufferAlloc((uint32_t)(inputLen + (uint32_t)macSize));
     psa_status_t         status     = PSA_ERROR_GENERIC_ERROR;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t         key        = 0U;
     size_t               output_len = 0U;
 
-    if (buff != NULL && pInput != NULL && pAuthData != NULL && pNonce != NULL && pOutput != NULL && pCbcMac != NULL)
+    do
     {
+        uint8_t *buff;
+        if ((pInput == NULL) || (pAuthData == NULL) || (pNonce == NULL) || (pOutput == NULL) || (pKey == NULL) ||
+            (pCbcMac == NULL))
+        {
+            ret = gSecBadArgument_c;
+            break;
+        }
+        buff = MEM_BufferAlloc((uint32_t)(inputLen + (uint32_t)macSize));
+        if (buff == NULL)
+        {
+            ret = gSecAllocError_c;
+            break;
+        }
+
         /* set key usage depending on flags */
         if ((flags & gSecLib_CCM_Decrypt_c) != 0U)
         {
@@ -552,37 +633,35 @@ uint8_t AES_128_CCM(const uint8_t *pInput,
         psa_set_key_algorithm(&attributes, alg);
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
 
-        do
+        status = psa_import_key(&attributes, pKey, key_bits, &key);
+        RAISE_ERROR(status, PSA_SUCCESS);
+
+        if ((flags & gSecLib_CCM_Decrypt_c) != 0U)
         {
-            status = psa_import_key(&attributes, pKey, key_bits, &key);
-            RAISE_ERROR(status, PSA_SUCCESS);
+            /* combine pInput and pCbcMac in a buffer to comply with PSA prototype psa_aead_decrypt */
+            FLib_MemCpy(buff, pInput, inputLen);
+            FLib_MemCpy(buff + inputLen, pCbcMac, macSize);
+            status = psa_aead_decrypt(key, alg, pNonce, nonceSize, pAuthData, authDataLen, buff,
+                                      (uint32_t)(inputLen + (uint32_t)macSize), pOutput,
+                                      PSA_AEAD_DECRYPT_OUTPUT_MAX_SIZE(inputLen), &output_len);
+        }
+        else
+        {
+            status = psa_aead_encrypt(key, alg, pNonce, nonceSize, pAuthData, authDataLen, pInput, inputLen, buff,
+                                      (uint32_t)(inputLen + (uint32_t)macSize), &output_len);
+            /* split output buffer in pOutput and pCbcMac */
+            FLib_MemCpy(pOutput, buff, inputLen);
+            FLib_MemCpy(pCbcMac, buff + inputLen, macSize);
+        }
+        RAISE_ERROR(status, PSA_SUCCESS);
 
-            if ((flags & gSecLib_CCM_Decrypt_c) != 0U)
-            {
-                /* combine pInput and pCbcMac in a buffer to comply with PSA prototype psa_aead_decrypt */
-                FLib_MemCpy(buff, pInput, inputLen);
-                FLib_MemCpy(buff + inputLen, pCbcMac, macSize);
-                status = psa_aead_decrypt(key, alg, pNonce, nonceSize, pAuthData, authDataLen, buff,
-                                          (uint32_t)(inputLen + (uint32_t)macSize), pOutput,
-                                          PSA_AEAD_DECRYPT_OUTPUT_MAX_SIZE(inputLen), &output_len);
-            }
-            else
-            {
-                status = psa_aead_encrypt(key, alg, pNonce, nonceSize, pAuthData, authDataLen, pInput, inputLen, buff,
-                                          (uint32_t)(inputLen + (uint32_t)macSize), &output_len);
-                /* split output buffer in pOutput and pCbcMac */
-                FLib_MemCpy(pOutput, buff, inputLen);
-                FLib_MemCpy(pCbcMac, buff + inputLen, macSize);
-            }
-            RAISE_ERROR(status, PSA_SUCCESS);
+        status = psa_destroy_key(key); /* destroy key after use */
+        RAISE_ERROR(status, PSA_SUCCESS);
 
-            status = psa_destroy_key(key); /* destroy key after use */
-            RAISE_ERROR(status, PSA_SUCCESS);
-
-            (void)MEM_BufferFree(buff);
-        } while (false);
-    }
-    return (status == PSA_SUCCESS) ? (uint8_t)gSecSuccess_c : (uint8_t)gSecError_c;
+        (void)MEM_BufferFree(buff);
+        ret = gSecSuccess_c;
+    } while (false);
+    return ret;
 }
 
 /************************************************************************************
@@ -633,12 +712,16 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
     do
     {
         /* Check if output DH key pointer is valid */
-        if (pOutDhKey == NULL)
+        if ((pOutDhKey == NULL) || (pInPeerPublicKey == NULL))
+        {
+            ret = gSecBadArgument_c;
+            break;
+        }
+        if (psa_pECPKeyPair == NULL)
         {
             ret = gSecError_c;
             break;
         }
-
         /* Validate that the peer public key is a valid point on the curve */
         if (!ECP256_LePointValid(pInPeerPublicKey))
         {
@@ -690,6 +773,11 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 
     do
     {
+        if ((pOutPublicKey == NULL) || (pOutPrivateKey == NULL))
+        {
+            ret = gSecBadArgument_c;
+            break;
+        }
         /* Check if there's an existing key pair and destroy it if present */
         if (psa_pECPKeyPair != NULL)
         {
@@ -812,11 +900,16 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
         /*! Check for NULL output pointers and return with proper status if this is the case. */
         if ((NULL == pMacKey) || (NULL == pLtk) || (NULL == pN1) || (NULL == pN2) || (NULL == pA1) || (NULL == pA2))
         {
+            result = gSecBadArgument_c;
             break;
         }
 
         /*! Compute the f5 function key T using the predefined salt as key for AES-128-CAMC */
-        AES_128_CMAC_LsbFirstInput((const uint8_t *)pW, 32, (const uint8_t *)f5Salt, f5T);
+        result = SecLib_AES_128_CMAC_LsbFirstInput((const uint8_t *)pW, 32, (const uint8_t *)f5Salt, f5T);
+        if (result != gSecSuccess_c)
+        {
+            break;
+        }
 
         /*! Build the most significant part of the f5 input data to compute the MacKey */
         f5CmacBuffer[0] = 0; /* Counter = 0 */
@@ -831,8 +924,11 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
         f5CmacBuffer[52] = 0x00; /* Length lsB big endian = 0x00, Length = 256 */
 
         /*! Compute the MacKey into the temporary buffer. */
-        AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
-
+        result = SecLib_AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
+        if (result != gSecSuccess_c)
+        {
+            break;
+        }
         /*! Copy the MacKey to the output location
          *  in reverse order. The CMAC result is generated MSB first. */
         FLib_MemCpyReverseOrder(pMacKey, (const uint8_t *)tempOut, 16);
@@ -842,8 +938,11 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
         f5CmacBuffer[0] = 1; /* Counter = 1 */
 
         /*! Compute the LTK into the temporary buffer. */
-        AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
-
+        result = SecLib_AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
+        if (result != gSecSuccess_c)
+        {
+            break;
+        }
         /*! Copy the LTK to the output location
          *  in reverse order. The CMAC result is generated MSB first. */
         FLib_MemCpyReverseOrder(pLtk, (const uint8_t *)tempOut, 16);
@@ -884,6 +983,7 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
         /*! Check for NULL output pointers and return with proper status if this is the case. */
         if ((NULL == pHash) || (NULL == pKey) || (NULL == pR))
         {
+            result = gSecBadArgument_c;
             break;
         }
         /* Initialize the r' value in the temporary location. 3 bytes of ramdom value.
@@ -1012,5 +1112,13 @@ secResultType_t SecLib_GenerateBluetoothEIRKBlobSecure(const void  *pIRK,
     NOT_USED(blobInput);
     NOT_USED(generateDKeyIRK);
     NOT_USED(pOutEIRKblob);
+    return gSecError_c;
+}
+
+secResultType_t SecLib_GenerateSymmetricKey(const uint32_t keySize, const bool_t blobOutput, void *pOut)
+{
+    NOT_USED(keySize);
+    NOT_USED(blobOutput);
+    NOT_USED(pOut);
     return gSecError_c;
 }

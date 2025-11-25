@@ -1,6 +1,6 @@
-/*
- * Copyright 2015 Freescale
- * Copyright 2016-2018, 2020-2026 NXP
+/*! *********************************************************************************
+ * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright 2016-2018,2020-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -52,6 +52,12 @@
 
 #define AES256        256U
 #define AES256_ROUNDS 14U
+
+/* Limit the size of the hashed stream so that the number of bits does not exceed 32 bit in size.
+ * This limitation is arbitrary
+ */
+#define MAX_SHA256_TOTAL_BYTES (UINT32_MAX / 8uL)
+#define MAX_SHA1_TOTAL_BYTES   (UINT32_MAX / 8uL)
 
 #if ((defined(USE_RTOS) && (USE_RTOS > 0)) &&                                       \
      ((defined FSL_FEATURE_SOC_LTC_COUNT && (FSL_FEATURE_SOC_LTC_COUNT > 0)) ||     \
@@ -168,8 +174,6 @@ typedef struct HMAC_SHA256_context_tag
 /*! Callback used to offload Security steps onto application message queue. When it is not set the
  * multiplication is done using SecLib means */
 extern secLibCallback_t pfSecLibMultCallback;
-
-secLibCallback_t pfSecLibMultCallback = NULL;
 
 #if (gSecLibUseBleDebugKeys_d == 1)
 /*! Bluetooth LE debug keys as specified in section 2.3.5.6.1 vol. 3, part H of the Bluetooth Core specification version 5.4 */
@@ -332,6 +336,11 @@ void SecLib_DeInit(void)
     /* Nothing to do for Software implementation */
 }
 
+#if !(defined(gSecLibUseDspExtension_d) && (gSecLibUseDspExtension_d > 0))
+/* In case the SecLib is using dsp extension the API from the Ultrafast library will be used,
+ * no need to offload elliptic curve multiplication.
+ * Otherwise the operation takes too long and multiplication must be segmented in multiple steps.
+ */
 /*! *********************************************************************************
  * \brief  This function performs initialization of the callback used to offload
  * elliptic curve multiplication.
@@ -341,13 +350,7 @@ void SecLib_DeInit(void)
  ********************************************************************************** */
 void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback)
 {
-#if (defined(gSecLibUseDspExtension_d) && (gSecLibUseDspExtension_d > 0))
-    /* In case the SecLib is using dsp extension the API from the Ultrafast library will be used, no need to offload
-     * elliptic curve multiplication */
-    return;
-#else
     pfSecLibMultCallback = pfCallback;
-#endif
 }
 
 /*! *********************************************************************************
@@ -356,14 +359,19 @@ void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback)
  * \param[in]  pMsg Pointer to the data used in multiplication.
  *
  ********************************************************************************** */
-void SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg)
+bool_t SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg)
 {
+    bool_t result = FALSE;
+
     if (pfSecLibMultCallback != NULL)
     {
         pfSecLibMultCallback(pMsg);
+        result = TRUE;
     }
-}
 
+    return result;
+}
+#endif
 /*! *********************************************************************************
  * \brief  This function performs AES-128 encryption on a 16-byte block.
  *
@@ -376,82 +384,92 @@ void SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg)
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
 {
-#if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
-    mmcauAesContext_t *pCtx = &mmcauAesCtx;
-    uint8_t           *pIn;
-    uint8_t           *pOut;
-#endif
-
-    SECLIB_MUTEX_LOCK();
-
-#if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
-    /* Check if pKey is 4 bytes aligned */
-    if ((uint32_t)pKey & 0x00000003u)
-    {
-        FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pKey, AES_BLOCK_SIZE);
-        pIn = pCtx->alignedIn;
-    }
-    else
-    {
-        pIn = (uint8_t *)pKey;
-    }
-
-    /* Expand Key */
-    mmcau_aes_set_key(pIn, AES128, pCtx->keyExpansion);
-
-    /* Check if pData is 4 bytes aligned */
-    if ((uint32_t)pInput & 0x00000003u)
-    {
-        FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pInput, AES_BLOCK_SIZE);
-        pIn = pCtx->alignedIn;
-    }
-    else
-    {
-        pIn = (uint8_t *)pInput;
-    }
-
-    /* Check if pReturnData is 4 bytes aligned */
-    if ((uint32_t)pOutput & 0x00000003u)
-    {
-        pOut = pCtx->alignedOut;
-    }
-    else
-    {
-        pOut = pOutput;
-    }
-
-    /* Encrypt data */
-    mmcau_aes_encrypt(pIn, pCtx->keyExpansion, AES128_ROUNDS, pOut);
-
-    if (pOut == pCtx->alignedOut)
-    {
-        FLib_MemCpy(pOutput, pCtx->alignedOut, AES_BLOCK_SIZE);
-    }
-
-#elif (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
-    (void)LTC_AES_EncryptEcb(LTC0, pInput, pOutput, AES_BLOCK_SIZE, pKey, AES_BLOCK_SIZE);
-
-#elif (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
-    aes_enc_status_t hw_ase_status_flag;
-
+    secResultType_t result = gSecSuccess_c;
     do
     {
-        while (*(uint8_t *)(0x04000168u + 76u) == true)
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
         {
-            OSA_TaskYield();
+            result = gSecBadArgument_c;
+            break;
         }
-        __disable_irq();
-        hw_ase_status_flag = AES_128_Encrypt_HW(pInput, pKey, pOutput);
-        __enable_irq();
-    } while (hw_ase_status_flag == HW_AES_Previous_Enc_on_going);
 
-#else
-    sw_Aes128(pInput, pKey, 1, pOutput);
+#if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
+
+        mmcauAesContext_t *pCtx = &mmcauAesCtx;
+        uint8_t           *pIn;
+        uint8_t           *pOut;
+        SECLIB_MUTEX_LOCK();
+
+        /* Check if pKey is 4 bytes aligned */
+        if ((uint32_t)pKey & 0x00000003u)
+        {
+            FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pKey, AES_BLOCK_SIZE);
+            pIn = pCtx->alignedIn;
+        }
+        else
+        {
+            pIn = (uint8_t *)pKey;
+        }
+
+        /* Expand Key */
+        mmcau_aes_set_key(pIn, AES128, pCtx->keyExpansion);
+
+        /* Check if pData is 4 bytes aligned */
+        if ((uint32_t)pInput & 0x00000003u)
+        {
+            FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pInput, AES_BLOCK_SIZE);
+            pIn = pCtx->alignedIn;
+        }
+        else
+        {
+            pIn = (uint8_t *)pInput;
+        }
+        /* Check if pReturnData is 4 bytes aligned */
+        if ((uint32_t)pOutput & 0x00000003u)
+        {
+            pOut = pCtx->alignedOut;
+        }
+        else
+        {
+            pOut = pOutput;
+        }
+
+        /* Encrypt data */
+        mmcau_aes_encrypt(pIn, pCtx->keyExpansion, AES128_ROUNDS, pOut);
+
+        if (pOut == pCtx->alignedOut)
+        {
+            FLib_MemCpy(pOutput, pCtx->alignedOut, AES_BLOCK_SIZE);
+        }
+        SECLIB_MUTEX_UNLOCK();
+#endif /* MMCAU */
+#if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
+        SECLIB_MUTEX_LOCK();
+        (void)LTC_AES_EncryptEcb(LTC0, pInput, pOutput, AES_BLOCK_SIZE, pKey, AES_BLOCK_SIZE);
+        SECLIB_MUTEX_UNLOCK();
 #endif
+#if (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
+        SECLIB_MUTEX_LOCK();
+        aes_enc_status_t hw_ase_status_flag;
 
-    SECLIB_MUTEX_UNLOCK();
+        do
+        {
+            while (*(uint8_t *)(0x04000168u + 76u) == true)
+            {
+                OSA_TaskYield();
+            }
+            __disable_irq();
+            hw_ase_status_flag = AES_128_Encrypt_HW(pInput, pKey, pOutput);
+            __enable_irq();
+        } while (hw_ase_status_flag == HW_AES_Previous_Enc_on_going);
+        SECLIB_MUTEX_UNLOCK();
+#else
+        sw_Aes128(pInput, pKey, 1, pOutput);
+#endif
+    } while (false);
+    return result;
 }
 
 /*! *********************************************************************************
@@ -466,82 +484,92 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
 {
+    secResultType_t result = gSecSuccess_c;
+    do
+    {
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
+        {
+            result = gSecBadArgument_c;
+            break;
+        }
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
-    mmcauAesContext_t *pCtx = &mmcauAesCtx;
-    uint8_t           *pIn;
-    uint8_t           *pOut;
+        mmcauAesContext_t *pCtx = &mmcauAesCtx;
+        uint8_t           *pIn;
+        uint8_t           *pOut;
 
-    SECLIB_MUTEX_LOCK();
-    /* Check if pKey is 4 bytes aligned */
-    if ((uint32_t)pKey & 0x00000003u)
-    {
-        FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pKey, AES_BLOCK_SIZE);
-        pIn = pCtx->alignedIn;
-    }
-    else
-    {
-        pIn = (uint8_t *)pKey;
-    }
+        SECLIB_MUTEX_LOCK();
+        /* Check if pKey is 4 bytes aligned */
+        if ((uint32_t)pKey & 0x00000003u)
+        {
+            FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pKey, AES_BLOCK_SIZE);
+            pIn = pCtx->alignedIn;
+        }
+        else
+        {
+            pIn = (uint8_t *)pKey;
+        }
 
-    /* Expand Key */
-    mmcau_aes_set_key(pIn, AES128, pCtx->keyExpansion);
+        /* Expand Key */
+        mmcau_aes_set_key(pIn, AES128, pCtx->keyExpansion);
 
-    /* Check if pData is 4 bytes aligned */
-    if ((uint32_t)pInput & 0x00000003u)
-    {
-        FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pInput, AES_BLOCK_SIZE);
-        pIn = pCtx->alignedIn;
-    }
-    else
-    {
-        pIn = (uint8_t *)pInput;
-    }
+        /* Check if pData is 4 bytes aligned */
+        if ((uint32_t)pInput & 0x00000003u)
+        {
+            FLib_MemCpy(pCtx->alignedIn, (uint8_t *)pInput, AES_BLOCK_SIZE);
+            pIn = pCtx->alignedIn;
+        }
+        else
+        {
+            pIn = (uint8_t *)pInput;
+        }
 
-    /* Check if pReturnData is 4 bytes aligned */
-    if ((uint32_t)pOutput & 0x00000003u)
-    {
-        pOut = pCtx->alignedOut;
-    }
-    else
-    {
-        pOut = pOutput;
-    }
+        /* Check if pReturnData is 4 bytes aligned */
+        if ((uint32_t)pOutput & 0x00000003u)
+        {
+            pOut = pCtx->alignedOut;
+        }
+        else
+        {
+            pOut = pOutput;
+        }
 
-    /* Decrypt data */
-    mmcau_aes_decrypt(pIn, pCtx->keyExpansion, AES128_ROUNDS, pOut);
+        /* Decrypt data */
+        mmcau_aes_decrypt(pIn, pCtx->keyExpansion, AES128_ROUNDS, pOut);
 
-    if (pOut == pCtx->alignedOut)
-    {
-        FLib_MemCpy(pOutput, pCtx->alignedOut, AES_BLOCK_SIZE);
-    }
-    SECLIB_MUTEX_UNLOCK();
+        if (pOut == pCtx->alignedOut)
+        {
+            FLib_MemCpy(pOutput, pCtx->alignedOut, AES_BLOCK_SIZE);
+        }
+        SECLIB_MUTEX_UNLOCK();
 #elif (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
-    SECLIB_MUTEX_LOCK();
-    (void)LTC_AES_DecryptEcb(LTC0, pInput, pOutput, AES_BLOCK_SIZE, pKey, AES_BLOCK_SIZE, kLTC_EncryptKey);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        (void)LTC_AES_DecryptEcb(LTC0, pInput, pOutput, AES_BLOCK_SIZE, pKey, AES_BLOCK_SIZE, kLTC_EncryptKey);
+        SECLIB_MUTEX_UNLOCK();
 
 #elif (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
 
-    aes_enc_status_t hw_ase_status_flag;
-    SECLIB_MUTEX_LOCK();
-    do
-    {
-        while (*(uint8_t *)(0x04000168u + 76u) == true)
+        aes_enc_status_t hw_ase_status_flag;
+        SECLIB_MUTEX_LOCK();
+        do
         {
-            OSA_TaskYield();
-        }
-        __disable_irq();
-        hw_ase_status_flag = AES_128_Decrypt_HW(pInput, pKey, pOutput);
-        __enable_irq();
+            while (*(uint8_t *)(0x04000168u + 76u) == true)
+            {
+                OSA_TaskYield();
+            }
+            __disable_irq();
+            hw_ase_status_flag = AES_128_Decrypt_HW(pInput, pKey, pOutput);
+            __enable_irq();
 
-    } while (hw_ase_status_flag == HW_AES_Previous_Enc_on_going);
+        } while (hw_ase_status_flag == HW_AES_Previous_Enc_on_going);
 
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_UNLOCK();
 #else
-    sw_Aes128(pInput, pKey, 0, pOutput);
+        sw_Aes128(pInput, pKey, 0, pOutput);
 #endif
+    } while (false);
+    return result;
 }
 
 /*! *********************************************************************************
@@ -558,45 +586,67 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_ECB_Encrypt(const uint8_t *pInput,
+                                           uint32_t       inputLen,
+                                           const uint8_t *pKey,
+                                           uint8_t       *pOutput)
 {
-#ifdef FSL_FEATURE_SOC_AES_HW /* HW AES */
-    AES_param_t pAES;
-
-    pAES.CTR_counter = NULL;
-    pAES.Key         = pKey;
-    pAES.Len         = inputLen;
-    pAES.pCipher     = pOutput;
-    pAES.pInitVector = NULL;
-    pAES.pPlain      = pInput;
-    pAES.Blocks      = 0;
-#if (defined(USE_TASK_FOR_HW_AES) && (USE_TASK_FOR_HW_AES > 0))
-    AESM_InitType(&AES128ECB_Enc_Id, gAESMGR_ECB_Enc_c);
-    AESM_SetParam(AES128ECB_Enc_Id, pAES, AES_128_ECB_Enc_HW);
-    AESM_Start(AES128ECB_Enc_Id);
-#else
-    SECLIB_MUTEX_LOCK();
-    AES_128_ECB_Enc_HW(&pAES);
-    SECLIB_MUTEX_UNLOCK();
-#endif /* USE_TASK_FOR_HW_AES */
-#else  /* SW AES */
-    uint8_t tempBuffIn[AES_BLOCK_SIZE]  = {0};
-    uint8_t tempBuffOut[AES_BLOCK_SIZE] = {0};
-
-    /* If remaining data bigger than one AES block size */
-    while (inputLen > AES_BLOCK_SIZE)
+    secResultType_t status;
+    do
     {
-        AES_128_Encrypt(pInput, pKey, pOutput);
-        pInput += AES_BLOCK_SIZE;
-        pOutput += AES_BLOCK_SIZE;
-        inputLen -= AES_BLOCK_SIZE;
-    }
+        if (pInput == NULL || pKey == NULL || pOutput == NULL || inputLen == 0)
+        {
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
+        if ((inputLen % AES_128_BLOCK_SIZE) != 0U)
+        {
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
 
-    /* If remaining data is smaller then one AES block size */
-    FLib_MemCpy(tempBuffIn, pInput, inputLen);
-    AES_128_Encrypt(tempBuffIn, pKey, tempBuffOut);
-    FLib_MemCpy(pOutput, tempBuffOut, inputLen);
+#ifdef FSL_FEATURE_SOC_AES_HW /* HW AES */
+        AES_param_t pAES;
+
+        pAES.CTR_counter = NULL;
+        pAES.Key         = pKey;
+        pAES.Len         = inputLen;
+        pAES.pCipher     = pOutput;
+        pAES.pInitVector = NULL;
+        pAES.pPlain      = pInput;
+        pAES.Blocks      = 0;
+#if (defined(USE_TASK_FOR_HW_AES) && (USE_TASK_FOR_HW_AES > 0))
+        AESM_InitType(&AES128ECB_Enc_Id, gAESMGR_ECB_Enc_c);
+        AESM_SetParam(AES128ECB_Enc_Id, pAES, AES_128_ECB_Enc_HW);
+        AESM_Start(AES128ECB_Enc_Id);
+#else
+        SECLIB_MUTEX_LOCK();
+        AES_128_ECB_Enc_HW(&pAES);
+        SECLIB_MUTEX_UNLOCK();
+#endif /* USE_TASK_FOR_HW_AES */
+        status = gSecSuccess_c;
+
+#else /* SW AES */
+        uint8_t tempBuffIn[AES_BLOCK_SIZE]  = {0};
+        uint8_t tempBuffOut[AES_BLOCK_SIZE] = {0};
+
+        /* If remaining data bigger than one AES block size */
+        while (inputLen > AES_BLOCK_SIZE)
+        {
+            AES_128_Encrypt(pInput, pKey, pOutput);
+
+            pInput += AES_BLOCK_SIZE;
+            pOutput += AES_BLOCK_SIZE;
+            inputLen -= AES_BLOCK_SIZE;
+        }
+        /* If remaining data is smaller then one AES block size */
+        FLib_MemCpy(tempBuffIn, pInput, inputLen);
+        AES_128_Encrypt(tempBuffIn, pKey, tempBuffOut);
+        FLib_MemCpy(pOutput, tempBuffOut, inputLen);
 #endif
+        status = gSecSuccess_c;
+
+    } while (false);
+
+    return status;
 }
 
 /*! *********************************************************************************
@@ -613,29 +663,68 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
  * \pre All Input/Output pointers must refer to a memory address aligned to 4 bytes!
  *
  ********************************************************************************** */
-#ifdef FSL_FEATURE_SOC_AES_HW
-void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_ECB_Decrypt(const uint8_t *pInput,
+                                           uint32_t       inputLen,
+                                           const uint8_t *pKey,
+                                           uint8_t       *pOutput)
 {
-    AES_param_t pAES;
+    secResultType_t status;
+    do
+    {
+        if (pInput == NULL || pKey == NULL || pOutput == NULL || inputLen == 0)
+        {
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
+        if ((inputLen % AES_128_BLOCK_SIZE) != 0U)
+        {
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
+#ifdef FSL_FEATURE_SOC_AES_HW
 
-    pAES.CTR_counter = NULL;
-    pAES.Key         = pKey;
-    pAES.Len         = inputLen;
-    pAES.pCipher     = pInput;
-    pAES.pInitVector = NULL;
-    pAES.pPlain      = pOutput;
-    pAES.Blocks      = 0;
+        AES_param_t pAES;
+
+        pAES.CTR_counter = NULL;
+        pAES.Key         = pKey;
+        pAES.Len         = inputLen;
+        pAES.pCipher     = pInput;
+        pAES.pInitVector = NULL;
+        pAES.pPlain      = pOutput;
+        pAES.Blocks      = 0;
 #if (defined(USE_TASK_FOR_HW_AES) && (USE_TASK_FOR_HW_AES > 0))
-    AESM_InitType(&AES128ECB_Dec_Id, gAESMGR_ECB_Dec_c);
-    AESM_SetParam(AES128ECB_Dec_Id, pAES, AES_128_ECB_Dec_HW);
-    AESM_Start(AES128ECB_Dec_Id);
+        AESM_InitType(&AES128ECB_Dec_Id, gAESMGR_ECB_Dec_c);
+        AESM_SetParam(AES128ECB_Dec_Id, pAES, AES_128_ECB_Dec_HW);
+        AESM_Start(AES128ECB_Dec_Id);
 #else
-    SECLIB_MUTEX_LOCK();
-    AES_128_ECB_Dec_HW(&pAES);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        AES_128_ECB_Dec_HW(&pAES);
+        SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
-}
+        status = gSecSuccess_c;
+
+#else  /* SW AES */
+        uint8_t tempBuffIn[AES_BLOCK_SIZE]  = {0};
+        uint8_t tempBuffOut[AES_BLOCK_SIZE] = {0};
+
+        /* If remaining data bigger than one AES block size */
+        while (inputLen > AES_BLOCK_SIZE)
+        {
+            AES_128_Decrypt(pInput, pKey, pOutput);
+
+            pInput += AES_BLOCK_SIZE;
+            pOutput += AES_BLOCK_SIZE;
+            inputLen -= AES_BLOCK_SIZE;
+        }
+        /* If remaining data is smaller then one AES block size */
+        FLib_MemCpy(tempBuffIn, pInput, inputLen);
+        AES_128_Decrypt(tempBuffIn, pKey, tempBuffOut);
+        FLib_MemCpy(pOutput, tempBuffOut, inputLen);
 #endif /* FSL_FEATURE_SOC_AES_HW */
+
+        status = gSecSuccess_c;
+
+    } while (false);
+    return status;
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block.
@@ -658,7 +747,7 @@ void AES_128_ECB_Decrypt(const uint8_t *pInput, uint32_t inputLen, uint8_t *pKey
  *           gSecError_c in case of internal error.
  *
  ********************************************************************************** */
-secResultType_t AES_128_CBC_Encrypt(
+secResultType_t SecLib_AES_128_CBC_Encrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
     secResultType_t ret;
@@ -669,8 +758,7 @@ secResultType_t AES_128_CBC_Encrypt(
             /* If the input length is not a non zero multiple of AES 128 block size,  return */
             (inputLen < AES_BLOCK_SIZE) || (AES_PARTIAL_BLOCK_BYTES(inputLen) != 0U))
         {
-            ret = gSecBadArgument_c;
-            break;
+            RAISE_ERROR(ret, gSecBadArgument_c);
         }
 
         /* LTC is capable of performing CBC operation natively */
@@ -681,8 +769,7 @@ secResultType_t AES_128_CBC_Encrypt(
         SECLIB_MUTEX_UNLOCK();
         if (st != kStatus_Success)
         {
-            ret = gSecError_c;
-            break;
+            RAISE_ERROR(ret, gSecError_c);
         }
         /* Update IV with last ciphered block to be injected at next call */
         /* Note that inputLen is greater than or equal to AES_BLOCK_SIZE, otherwise would have exited
@@ -730,7 +817,7 @@ secResultType_t AES_128_CBC_Encrypt(
  *           gSecError_c in case of internal error.
  *
  ********************************************************************************** */
-secResultType_t AES_128_CBC_Decrypt(
+secResultType_t SecLib_AES_128_CBC_Decrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
 {
     secResultType_t ret;
@@ -741,8 +828,7 @@ secResultType_t AES_128_CBC_Decrypt(
             /* If the input length is not a non zero multiple of AES 128 block size,  return */
             (inputLen < AES_BLOCK_SIZE) || (AES_PARTIAL_BLOCK_BYTES(inputLen) != 0U))
         {
-            ret = gSecBadArgument_c;
-            break;
+            RAISE_ERROR(ret, gSecBadArgument_c);
         }
 
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0)) && \
@@ -754,8 +840,7 @@ secResultType_t AES_128_CBC_Decrypt(
         SECLIB_MUTEX_UNLOCK();
         if (st != kStatus_Success)
         {
-            ret = gSecError_c;
-            break;
+            RAISE_ERROR(ret, gSecError_c);
         }
         /* Update IV with last ciphered block to be injected at next call */
         /* Note that inputLen is greater than or equal to AES_BLOCK_SIZE, otherwise would have exited
@@ -823,21 +908,19 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
         roundedLen      = AES_WHOLE_BLOCK_BYTES(inputLen);
         last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
         /* Perform AES-CBC operation on whole AES blocks */
-        if (AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
+        if (SecLib_AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
         {
             roundedLen = 0u;
             break;
         }
         pInput += roundedLen;
         pOutput += roundedLen;
-        /* There may be a remainder modulus 16 : copy it to last_block on stack */
-        /* then add padding so as to fill the last_block array */
-        if (SecLib_Padding(pInput, last_block, last_blk_msg_sz) == 0u)
-        {
-            roundedLen = 0u;
-            break;
-        }
-        if (AES_128_CBC_Encrypt(last_block, AES_BLOCK_SIZE, pInitVector, pKey, pOutput) != gSecSuccess_c)
+        /* There may be a remainder modulus 16 : copy it to last_block byte array (on stack).
+         * then add padding so as to fill the last_block array. The amount of padding is 16 bytes if already
+         * AES block aligned, or any size [0..15] to pad till AES block is full.
+         */
+        (void)SecLib_Padding(pInput, last_block, last_blk_msg_sz);
+        if (SecLib_AES_128_CBC_Encrypt(last_block, AES_BLOCK_SIZE, pInitVector, pKey, pOutput) != gSecSuccess_c)
         {
             roundedLen = 0u;
             break;
@@ -871,7 +954,7 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
 
     if (inputLen > 0u)
     {
-        if (AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput) == gSecSuccess_c)
+        if (SecLib_AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput) == gSecSuccess_c)
         {
             uint8_t padding_len;
             /* If we are here inputLen is a non 0 multiple of AES_BLOCK_SIZE, otherwise AES_128_CBC_Decrypt would have
@@ -909,61 +992,76 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
  * \param[out]  pOutput Pointer to the location to store the ciphered output.
  *
  ********************************************************************************** */
-void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_CTR(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput)
 {
+    secResultType_t status = gSecError_c;
+    do
+    {
+        if ((pInput == NULL) || (pOutput == NULL) || (pKey == NULL) || (pCounter == NULL) || (inputLen == 0UL))
+        {
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
 #ifdef FSL_FEATURE_SOC_AES_HW /* HW AES */
-    AES_param_t pAES;
+        AES_param_t pAES;
 
-    pAES.CTR_counter = pCounter;
-    pAES.Key         = pKey;
-    pAES.Len         = inputLen;
-    pAES.pCipher     = pOutput;
-    pAES.pInitVector = NULL;
-    pAES.pPlain      = pInput;
-    pAES.Blocks      = 0;
+        pAES.CTR_counter = pCounter;
+        pAES.Key         = pKey;
+        pAES.Len         = inputLen;
+        pAES.pCipher     = pOutput;
+        pAES.pInitVector = NULL;
+        pAES.pPlain      = pInput;
+        pAES.Blocks      = 0;
 #if (defined(USE_TASK_FOR_HW_AES) && (USE_TASK_FOR_HW_AES > 0))
-    AESM_InitType(&AES128CTR_Enc_Id, gAESMGR_CTR_Enc_c);
-    AESM_SetParam(AES128CTR_Enc_Id, pAES, AES_128_CTR_Enc_HW);
-    AESM_Start(AES128CTR_Enc_Id);
+        AESM_InitType(&AES128CTR_Enc_Id, gAESMGR_CTR_Enc_c);
+        AESM_SetParam(AES128CTR_Enc_Id, pAES, AES_128_CTR_Enc_HW);
+        AESM_Start(AES128CTR_Enc_Id);
 #else
-    SECLIB_MUTEX_LOCK();
-    AES_128_CTR_Enc_HW(&pAES);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        AES_128_CTR_Enc_HW(&pAES);
+        SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
-
-#else  /* SW AES */
+        status = gSecSuccess_c;
+#else  /*FSL_FEATURE_SOC_AES_HW */
 
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
-    SECLIB_MUTEX_LOCK();
-    (void)LTC_AES_EncryptCtr(LTC0, pInput, pOutput, inputLen, pCounter, pKey, AES_BLOCK_SIZE, (void *)NULL,
-                             (void *)NULL);
-    SECLIB_MUTEX_UNLOCK();
-
+        status_t st;
+        SECLIB_MUTEX_LOCK();
+        st = LTC_AES_EncryptCtr(LTC0, pInput, pOutput, inputLen, pCounter, pKey, AES_BLOCK_SIZE, (void *)NULL,
+                                (void *)NULL);
+        SECLIB_MUTEX_UNLOCK();
+        if (st != kStatus_Success)
+        {
+            RAISE_ERROR(ret, gSecError_c);
+        }
 #else
-    uint8_t tempBuffIn[AES_BLOCK_SIZE] = {0};
-    uint8_t encrCtr[AES_BLOCK_SIZE]    = {0};
+        uint8_t tempBuffIn[AES_BLOCK_SIZE] = {0};
+        uint8_t encrCtr[AES_BLOCK_SIZE]    = {0};
 
-    /* If remaining data bigger than one AES block size */
-    while (inputLen > AES_BLOCK_SIZE)
-    {
-        FLib_MemCpy(tempBuffIn, pInput, AES_BLOCK_SIZE);
+        /* If remaining data bigger than one AES block size */
+        while (inputLen > AES_BLOCK_SIZE)
+        {
+            FLib_MemCpy(tempBuffIn, pInput, AES_BLOCK_SIZE);
+            AES_128_Encrypt(pCounter, pKey, encrCtr);
+            SecLib_XorN(tempBuffIn, encrCtr, AES_BLOCK_SIZE);
+            FLib_MemCpy(pOutput, tempBuffIn, AES_BLOCK_SIZE);
+            pInput += AES_BLOCK_SIZE;
+            pOutput += AES_BLOCK_SIZE;
+            inputLen -= AES_BLOCK_SIZE;
+            AES_128_IncrementCounter(pCounter);
+        }
+        /* If remaining data is smaller then one AES block size  */
+        FLib_MemCpy(tempBuffIn, pInput, inputLen);
         AES_128_Encrypt(pCounter, pKey, encrCtr);
         SecLib_XorN(tempBuffIn, encrCtr, AES_BLOCK_SIZE);
-        FLib_MemCpy(pOutput, tempBuffIn, AES_BLOCK_SIZE);
-        pInput += AES_BLOCK_SIZE;
-        pOutput += AES_BLOCK_SIZE;
-        inputLen -= AES_BLOCK_SIZE;
+        FLib_MemCpy(pOutput, tempBuffIn, inputLen);
         AES_128_IncrementCounter(pCounter);
-    }
-
-    /* If remaining data is smaller then one AES block size  */
-    FLib_MemCpy(tempBuffIn, pInput, inputLen);
-    AES_128_Encrypt(pCounter, pKey, encrCtr);
-    SecLib_XorN(tempBuffIn, encrCtr, AES_BLOCK_SIZE);
-    FLib_MemCpy(pOutput, tempBuffIn, inputLen);
-    AES_128_IncrementCounter(pCounter);
 #endif /* FSL_FEATURE_SOC_LTC_COUNT */
 #endif /* FSL_FEATURE_SOC_AES_HW */
+        status = gSecSuccess_c;
+    } while (false);
+
+    return status;
 }
 
 /*! *********************************************************************************
@@ -1014,101 +1112,116 @@ void AES_128_CTR_Decrypt(
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key. The key must be provided MSB first.
  *
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code. The code will be generated MSB
+ * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code. The code will be generated
+ *MSB
  *first.
  *
  * \remarks This is public open source code! Terms of use must be checked before use!
  *
  ********************************************************************************** */
-void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_CMAC(const uint8_t *pInput,
+                                    const uint32_t inputLen,
+                                    const uint8_t *pKey,
+                                    uint8_t       *pOutput)
 {
+    secResultType_t status;
+    do
+    {
+        if ((pInput == 0) || (pKey == NULL) || (pOutput == NULL))
+        {
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
 #ifdef FSL_FEATURE_SOC_AES_HW /* HW AES */
-    AES_param_t pAES;
+        AES_param_t pAES;
 
-    pAES.CTR_counter = NULL;
-    pAES.Key         = pKey;
-    pAES.Len         = inputLen;
-    pAES.pCipher     = pOutput;
-    pAES.pInitVector = NULL;
-    pAES.pPlain      = pInput;
-    pAES.Blocks      = 0;
+        pAES.CTR_counter = NULL;
+        pAES.Key         = pKey;
+        pAES.Len         = inputLen;
+        pAES.pCipher     = pOutput;
+        pAES.pInitVector = NULL;
+        pAES.pPlain      = pInput;
+        pAES.Blocks      = 0;
 #if (defined(USE_TASK_FOR_HW_AES) && (USE_TASK_FOR_HW_AES > 0))
-    AESM_InitType(&AES128CMAC_Id, gAESMGR_CMAC_Enc_c);
-    AESM_SetParam(AES128CMAC_Id, pAES, AES_128_CMAC_HW);
-    AESM_Start(AES128CMAC_Id);
+        AESM_InitType(&AES128CMAC_Id, gAESMGR_CMAC_Enc_c);
+        AESM_SetParam(AES128CMAC_Id, pAES, AES_128_CMAC_HW);
+        AESM_Start(AES128CMAC_Id);
 #else
-    SECLIB_MUTEX_LOCK();
-    AES_128_CMAC_HW(&pAES);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        AES_128_CMAC_HW(&pAES);
+        SECLIB_MUTEX_UNLOCK();
 #endif /* USE_TASK_FOR_HW_AES */
 
 #else  /* SW AES */
 
-    uint8_t X[16];
-    uint8_t Y[16];
-    uint8_t M_last[16] = {0};
-    uint8_t padded[16] = {0};
+        uint8_t X[16];
+        uint8_t Y[16];
+        uint8_t M_last[16] = {0};
+        uint8_t padded[16] = {0};
 
-    uint8_t K1[16] = {0};
-    uint8_t K2[16] = {0};
+        uint8_t K1[16] = {0};
+        uint8_t K2[16] = {0};
 
-    uint16_t n;
-    uint32_t i;
-    uint8_t  flag;
-    uint8_t  residual_len;
+        uint16_t n;
+        uint32_t i;
+        uint8_t  flag;
+        uint8_t  residual_len;
 
-    AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
+        AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-    n            = (uint16_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
-    residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
+        n            = (uint16_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
+        residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
 
-    if (n == 0u)
-    {
-        n    = 1u;
-        flag = 0u;
-    }
-    else
-    {
-        if (residual_len == 0u)
-        { /* last block is a complete block */
-            flag = 1u;
-        }
-        else
-        { /* last block is not complete block */
+        if (n == 0u)
+        {
+            n    = 1u;
             flag = 0u;
         }
-    }
+        else
+        {
+            if (residual_len == 0u)
+            { /* last block is a complete block */
+                flag = 1u;
+            }
+            else
+            { /* last block is not complete block */
+                flag = 0u;
+            }
+        }
 
-    /* Process the last block  - the last part the MSB first input data */
-    if (flag > 0u)
-    { /* last block is complete block */
-        SecLib_Xor128(&pInput[AES_BLOCK_SIZE * (n - 1u)], K1, M_last);
-    }
-    else
-    {
-        (void)SecLib_Padding(&pInput[AES_BLOCK_SIZE * (n - 1u)], padded, residual_len);
-        SecLib_Xor128(padded, K2, M_last);
-    }
+        /* Process the last block  - the last part the MSB first input data */
+        if (flag > 0u)
+        { /* last block is complete block */
+            SecLib_Xor128(&pInput[AES_BLOCK_SIZE * (n - 1u)], K1, M_last);
+        }
+        else
+        {
+            (void)SecLib_Padding(&pInput[AES_BLOCK_SIZE * (n - 1u)], padded, residual_len);
+            SecLib_Xor128(padded, K2, M_last);
+        }
 
-    for (i = 0u; i < 16u; i++)
-    {
-        X[i] = 0u;
-    }
+        for (i = 0u; i < 16u; i++)
+        {
+            X[i] = 0u;
+        }
 
-    for (i = 0u; i < (uint32_t)n - 1u; i++)
-    {
-        SecLib_Xor128(X, &pInput[AES_BLOCK_SIZE * i], Y); /* Y := Mi (+) X  */
-        AES_128_Encrypt(Y, pKey, X);                      /* X := AES-128(KEY, Y) */
-    }
+        for (i = 0u; i < (uint32_t)n - 1u; i++)
+        {
+            SecLib_Xor128(X, &pInput[AES_BLOCK_SIZE * i], Y); /* Y := Mi (+) X  */
+            AES_128_Encrypt(Y, pKey, X);                      /* X := AES-128(KEY, Y) */
+        }
 
-    SecLib_Xor128(X, M_last, Y);
-    AES_128_Encrypt(Y, pKey, X);
+        SecLib_Xor128(X, M_last, Y);
+        AES_128_Encrypt(Y, pKey, X);
 
-    for (i = 0u; i < 16u; i++)
-    {
-        pOutput[i] = X[i];
-    }
+        for (i = 0u; i < 16u; i++)
+        {
+            pOutput[i] = X[i];
+        }
 #endif /* FSL_FEATURE_SOC_AES_HW */
+        status = gSecSuccess_c;
+    } while (false);
+
+    return status;
 }
 
 /*! *********************************************************************************
@@ -1121,80 +1234,95 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
  *
  * \param[in]  pKey Pointer to the location of the 128-bit key. The key must be provided MSB first.
  *
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code. The code will be generated MSB
+ * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code. The code will be generated
+ *MSB
  *first.
  *
  ********************************************************************************** */
-void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+secResultType_t SecLib_AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
+                                                  uint32_t       inputLen,
+                                                  const uint8_t *pKey,
+                                                  uint8_t       *pOutput)
 {
-    uint8_t X[16];
-    uint8_t Y[16];
-    uint8_t M_last[16]        = {0};
-    uint8_t padded[16]        = {0};
-    uint8_t reversedBlock[16] = {0};
+    secResultType_t status;
 
-    uint8_t K1[16] = {0};
-    uint8_t K2[16] = {0};
-
-    uint16_t n;
-    uint32_t i;
-    uint8_t  flag;
-    uint8_t  residual_len;
-
-    AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
-
-    n            = (uint16_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
-    residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
-
-    if (n == 0u)
+    do
     {
-        n    = 1u;
-        flag = 0u;
-    }
-    else
-    {
-        if (residual_len == 0u) /* last block is a complete block */
+        if ((pInput == NULL) || (pKey == NULL) || (pOutput == NULL))
         {
-            flag = 1u;
+            RAISE_ERROR(status, gSecBadArgument_c);
         }
-        else /* last block is not complete block */
+        uint8_t X[16];
+        uint8_t Y[16];
+        uint8_t M_last[16]        = {0};
+        uint8_t padded[16]        = {0};
+        uint8_t reversedBlock[16] = {0};
+
+        uint8_t K1[16] = {0};
+        uint8_t K2[16] = {0};
+
+        uint16_t n;
+        uint32_t i;
+        uint8_t  flag;
+        uint8_t  residual_len;
+
+        AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
+
+        n            = (uint16_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
+        residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
+
+        if (n == 0u)
         {
+            n    = 1u;
             flag = 0u;
         }
-    }
+        else
+        {
+            if (residual_len == 0u) /* last block is a complete block */
+            {
+                flag = 1u;
+            }
+            else /* last block is not complete block */
+            {
+                flag = 0u;
+            }
+        }
 
-    /* Process the last block  - the first part the LSB first input data */
-    if (flag > 0u) /* last block is complete block */
-    {
-        FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], AES_BLOCK_SIZE);
-        SecLib_Xor128(reversedBlock, K1, M_last);
-    }
-    else
-    {
-        FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], residual_len);
-        (void)SecLib_Padding(reversedBlock, padded, residual_len);
-        SecLib_Xor128(padded, K2, M_last);
-    }
+        /* Process the last block  - the first part the LSB first input data */
+        if (flag > 0u) /* last block is complete block */
+        {
+            FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], AES_BLOCK_SIZE);
+            SecLib_Xor128(reversedBlock, K1, M_last);
+        }
+        else
+        {
+            FLib_MemCpyReverseOrder(reversedBlock, &pInput[0], residual_len);
+            (void)SecLib_Padding(reversedBlock, padded, residual_len);
+            SecLib_Xor128(padded, K2, M_last);
+        }
 
-    for (i = 0u; i < 16u; i++)
-    {
-        X[i] = 0u;
-    }
+        for (i = 0u; i < 16u; i++)
+        {
+            X[i] = 0u;
+        }
 
-    for (i = 0u; i < (uint32_t)n - 1u; i++)
-    {
-        FLib_MemCpyReverseOrder(reversedBlock, &pInput[inputLen - AES_BLOCK_SIZE * (i + 1u)], AES_BLOCK_SIZE);
-        SecLib_Xor128(X, reversedBlock, Y); /* Y := Mi (+) X  */
-        AES_128_Encrypt(Y, pKey, X);        /* X := AES-128(KEY, Y) */
-    }
+        for (i = 0u; i < (uint32_t)n - 1u; i++)
+        {
+            FLib_MemCpyReverseOrder(reversedBlock, &pInput[inputLen - AES_BLOCK_SIZE * (i + 1u)], AES_BLOCK_SIZE);
+            SecLib_Xor128(X, reversedBlock, Y); /* Y := Mi (+) X  */
+            AES_128_Encrypt(Y, pKey, X);        /* X := AES-128(KEY, Y) */
+        }
 
-    SecLib_Xor128(X, M_last, Y);
-    AES_128_Encrypt(Y, pKey, X);
+        SecLib_Xor128(X, M_last, Y);
+        AES_128_Encrypt(Y, pKey, X);
 
-    for (i = 0u; i < 16u; i++)
-    {
-        pOutput[i] = X[i];
-    }
+        for (i = 0u; i < 16u; i++)
+        {
+            pOutput[i] = X[i];
+        }
+        status = gSecSuccess_c;
+    } while (false);
+    return status;
 }
 
 /*! *********************************************************************************
@@ -1215,29 +1343,49 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
  * \param[out]  pOutput Pointer to the location to store the 16-byte pseudo random variable.
  *
  ********************************************************************************** */
-void AES_CMAC_PRF_128(
+secResultType_t SecLib_AES_CMAC_PRF_128(
     const uint8_t *pInput, uint32_t inputLen, const uint8_t *pVarKey, uint32_t varKeyLen, uint8_t *pOutput)
 {
-    uint8_t        K[16];              /*!< Temporary key location to be used if the key length is not 16 bytes. */
-    const uint8_t *pCmacKey = pVarKey; /*!<  Pointer to the key used by the CMAC operation which generates the
-                                        *    output. */
-    if (varKeyLen > 0u)
+    secResultType_t status;
+    do
     {
-        if (varKeyLen != 16u)
+        uint8_t        K[16];              /*!< Temporary key location to be used if the key length is not 16 bytes. */
+        const uint8_t *pCmacKey = pVarKey; /*!<  Pointer to the key used by the CMAC operation which generates the
+                                            *    output. */
+        if ((pInput == NULL) || (pVarKey == NULL) || (pOutput == NULL))
         {
-            uint8_t K0[16] = {0x00u, 0x00,  0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
-                              0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u};
-            /*! Perform AES 128 CMAC on the variable key if it has a length which
-             *  is different from 16 bytes using a 128 bit key with all zeroes and
-             *  set the CMAC key to point to the result. */
-            AES_128_CMAC(pVarKey, varKeyLen, K0, K);
-            pCmacKey = K;
+            status = gSecBadArgument_c;
+            break;
         }
 
-        /*! Perform the CMAC operation which generates the output using the local
-         *  key pointer whcih will be set to the initial key or the generated one. */
-        AES_128_CMAC(pInput, inputLen, pCmacKey, pOutput);
-    }
+        if (varKeyLen > 0u)
+        {
+            if (varKeyLen != 16u)
+            {
+                uint8_t K0[16] = {0x00u, 0x00,  0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
+                                  0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u};
+                /*! Perform AES 128 CMAC on the variable key if it has a length which
+                 *  is different from 16 bytes using a 128 bit key with all zeroes and
+                 *  set the CMAC key to point to the result. */
+
+                status = SecLib_AES_128_CMAC(pVarKey, varKeyLen, K0, K);
+                if (status != gSecSuccess_c)
+                {
+                    break;
+                }
+                pCmacKey = K;
+            }
+
+            /*! Perform the CMAC operation which generates the output using the local
+             *  key pointer whcih will be set to the initial key or the generated one. */
+            status = SecLib_AES_128_CMAC(pInput, inputLen, pCmacKey, pOutput);
+        }
+        else
+        {
+            status = gSecError_c;
+        }
+    } while (false);
+    return status;
 }
 
 /*! *********************************************************************************
@@ -1273,23 +1421,29 @@ void AES_CMAC_PRF_128(
  * \remarks At decryption, MIC fail is also signaled by returning a non-zero value.
  *
  ********************************************************************************** */
-uint8_t AES_128_CCM(const uint8_t *pInput,
-                    uint16_t       inputLen,
-                    const uint8_t *pAuthData,
-                    uint16_t       authDataLen,
-                    const uint8_t *pNonce,
-                    uint8_t        nonceSize,
-                    const uint8_t *pKey,
-                    uint8_t       *pOutput,
-                    uint8_t       *pCbcMac,
-                    uint8_t        macSize,
-                    uint32_t       flags)
+secResultType_t SecLib_AES_128_CCM(const uint8_t *pInput,
+                                   uint16_t       inputLen,
+                                   const uint8_t *pAuthData,
+                                   uint16_t       authDataLen,
+                                   const uint8_t *pNonce,
+                                   uint8_t        nonceSize,
+                                   const uint8_t *pKey,
+                                   uint8_t       *pOutput,
+                                   uint8_t       *pCbcMac,
+                                   uint8_t        macSize,
+                                   uint32_t       flags)
 {
-    uint8_t status;
+    secResultType_t st = gSecError_c;
+    uint8_t         status;
 
-    SECLIB_MUTEX_LOCK();
+    if ((pInput == NULL) || (pAuthData == NULL) || (pNonce == NULL) || (pOutput == NULL) || (pKey == NULL) ||
+        (pCbcMac == NULL))
+    {
+        return gSecBadArgument_c;
+    }
 
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT == 1))
+    SECLIB_MUTEX_LOCK();
     if ((flags & gSecLib_CCM_Decrypt_c) == gSecLib_CCM_Decrypt_c)
     {
         status = (uint8_t)(LTC_AES_DecryptTagCcm(LTC0, pInput, pOutput, (uint32_t)inputLen, pNonce, (uint32_t)nonceSize,
@@ -1302,15 +1456,18 @@ uint8_t AES_128_CCM(const uint8_t *pInput,
                                                  pAuthData, (uint32_t)authDataLen, pKey, AES_BLOCK_SIZE, pCbcMac,
                                                  (uint32_t)macSize));
     }
+    SECLIB_MUTEX_UNLOCK();
 
 #else
     status = sw_AES128_CCM(pInput, inputLen, pAuthData, authDataLen, pNonce, nonceSize, pKey, pOutput, pCbcMac, macSize,
                            flags);
 #endif
+    if (status == 0u)
+    {
+        st = gSecSuccess_c;
+    }
 
-    SECLIB_MUTEX_UNLOCK();
-
-    return status;
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1342,7 +1499,7 @@ void SecLib_XorN(uint8_t *pDst, const uint8_t *pSrc, uint8_t n)
  *            Deallocate using SHA256_FreeCtx()
  *
  ********************************************************************************** */
-void *SHA256_AllocCtx(void)
+void *SecLib_SHA256_AllocCtx(void)
 {
     void *sha256Ctx = MEM_BufferAlloc(sizeof(sha256Context_t));
 
@@ -1356,7 +1513,7 @@ void *SHA256_AllocCtx(void)
 * \param [in]    pContext    Address of the SHA256 context buffer
 *
 ********************************************************************************** */
-void SHA256_FreeCtx(void *pContext)
+void SecLib_SHA256_FreeCtx(void *pContext)
 {
     (void)MEM_BufferFree(pContext);
 }
@@ -1369,7 +1526,7 @@ void SHA256_FreeCtx(void *pContext)
  * \param [in]    pSourceCtx  Address of the source SHA256 context
  *
  ********************************************************************************** */
-void SHA256_CloneCtx(void *pDestCtx, void *pSourceCtx)
+void SecLib_SHA256_CloneCtx(void *pDestCtx, void *pSourceCtx)
 {
     FLib_MemCpy(pDestCtx, pSourceCtx, sizeof(sha256Context_t));
 }
@@ -1381,20 +1538,26 @@ void SHA256_CloneCtx(void *pDestCtx, void *pSourceCtx)
  *                            Allocated using SHA256_AllocCtx()
  *
  ********************************************************************************** */
-void SHA256_Init(void *pContext)
+secResultType_t SecLib_SHA256_Init(void *pContext)
 {
+    secResultType_t  st      = gSecBadArgument_c;
     sha256Context_t *context = (sha256Context_t *)pContext;
 
-    context->bytes      = 0u;
-    context->totalBytes = 0u;
+    if (context != NULL)
+    {
+        context->bytes      = 0u;
+        context->totalBytes = 0u;
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
-    SECLIB_MUTEX_LOCK();
-    (void)mmcau_sha256_initialize_output((const unsigned int *)context->hash);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        (void)mmcau_sha256_initialize_output((const unsigned int *)context->hash);
+        SECLIB_MUTEX_UNLOCK();
 
 #else
-    sw_sha256_initialize_output(context->hash);
+        sw_sha256_initialize_output(context->hash);
 #endif
+        st = gSecSuccess_c;
+    }
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1404,47 +1567,71 @@ void SHA256_Init(void *pContext)
  *                            Allocated using SHA256_AllocCtx()
  * \param [in]    pData       Pointer to the input data
  * \param [in]    numBytes    Number of bytes to hash
+ * \return        0  if operation successful
+ *                -1 if context is NULL
+ *                -2 if bytes in context greater than 64
+ *                -3 if numBytes is about to let number of accumulated bytes of context exceeds 2^29.
  *
  ********************************************************************************** */
-void SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
+secResultType_t SecLib_SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
 {
-    uint16_t         blocks;
+    uint32_t         blocks;
     sha256Context_t *context = (sha256Context_t *)pContext;
-
-    /* update total byte count */
-    context->totalBytes += numBytes;
-    /* Check if we have at least 1 SHA256 block */
-    if (context->bytes + numBytes < SHA256_BLOCK_SIZE)
+    secResultType_t  st;
+    /* The Hash Finish operation needs space to convert in number of bits so must
+     * be smaller than 2^29 */
+    do
     {
-        /* store bytes for later processing */
-        FLib_MemCpy(&context->buffer[context->bytes], pData, numBytes);
-        context->bytes += (uint8_t)(numBytes & 0xffu);
-    }
-    else
-    {
-        /* Check for bytes leftover from previous update */
-        if (context->bytes > 0u)
-        {
-            uint8_t copyBytes = SHA256_BLOCK_SIZE - context->bytes;
+        uint8_t copyBytes;
 
-            FLib_MemCpy(&context->buffer[context->bytes], pData, copyBytes);
-            SHA256_hash_n(context->buffer, 1u, context->hash);
-            pData += copyBytes;
-            numBytes -= copyBytes;
-            context->bytes = 0u;
-        }
-        /* Hash 64 bytes blocks */
-        blocks = (uint16_t)(numBytes / SHA256_BLOCK_SIZE & 0xffffu);
-        SHA256_hash_n(pData, blocks, context->hash);
-        numBytes -= (uint32_t)blocks * SHA256_BLOCK_SIZE;
-        pData += blocks * SHA256_BLOCK_SIZE;
-        /* Check for remaining bytes */
-        if (numBytes > 0u)
+        if ((context == NULL) || (pData == NULL))
         {
-            context->bytes = (uint8_t)(numBytes & 0xffu);
-            FLib_MemCpy(context->buffer, pData, numBytes);
+            RAISE_ERROR(st, gSecBadArgument_c);
         }
-    }
+        assert(context->bytes < SHA256_BLOCK_SIZE);
+        if (MAX_SHA256_TOTAL_BYTES - context->totalBytes < numBytes)
+        {
+            RAISE_ERROR(st, gSecError_c);
+        }
+        /* update total byte count */
+        context->totalBytes += numBytes;
+
+        copyBytes = SHA256_BLOCK_SIZE - context->bytes;
+
+        if (numBytes < (uint32_t)copyBytes)
+        {
+            /* store bytes for later processing, a full block will not be accumulated yet */
+            FLib_MemCpy(&context->buffer[context->bytes], pData, numBytes);
+            context->bytes += (uint8_t)(numBytes & 0xffu);
+        }
+        else
+        {
+            /* Check for bytes leftover from previous update */
+            if (context->bytes > 0u)
+            {
+                FLib_MemCpy(&context->buffer[context->bytes], pData, copyBytes);
+                SHA256_hash_n(context->buffer, 1u, context->hash);
+                pData += copyBytes;
+                /* numBytes necessarily greater or equal to copyBytes in this branch */
+                numBytes -= (uint32_t)copyBytes;
+                context->bytes = 0u;
+            }
+            /* Hash 64 bytes blocks */
+            blocks = (numBytes / SHA256_BLOCK_SIZE);
+            SHA256_hash_n(pData, blocks, context->hash);
+            numBytes -= blocks * SHA256_BLOCK_SIZE;
+            pData += blocks * SHA256_BLOCK_SIZE; /* Check if we have at least 1 SHA256 block */
+                                                 /* Check for remaining bytes */
+            if (numBytes > 0u)
+            {
+                context->bytes = (uint8_t)(numBytes & (uint32_t)(SHA256_BLOCK_SIZE - 1));
+                FLib_MemCpy(context->buffer, pData, numBytes);
+            }
+        }
+        st = gSecSuccess_c;
+    } while (0);
+
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1456,40 +1643,57 @@ void SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
  * \param [out]      pOutput     Pointer to the output location
  *
  ********************************************************************************** */
-void SHA256_HashFinish(void *pContext, uint8_t *pOutput)
+secResultType_t SecLib_SHA256_HashFinish(void *pContext, uint8_t *pOutput)
 {
-    uint32_t         i;
-    uint32_t         temp;
+    secResultType_t st;
+
     sha256Context_t *context = (sha256Context_t *)pContext;
-    uint32_t         numBytes;
-
-    /* update remaining bytes */
-    numBytes = context->bytes;
-    /* Add 1 bit (a 0x80 byte) after the message to begin padding */
-    context->buffer[numBytes++] = 0x80u;
-    /* Check for space to fit an 8 byte length field plus the 0x80 */
-    if (context->bytes >= 56u)
+    /* The Hash Finish operation needs space to convert in number of bits so must
+     * be smaller than 2^29 */
+    do
     {
+        uint32_t numBytes = context->bytes;
+
+        if ((context == NULL) || (pOutput == NULL))
+        {
+            RAISE_ERROR(st, gSecBadArgument_c);
+        }
+        assert(numBytes < SHA256_BLOCK_SIZE);
+        assert(MAX_SHA256_TOTAL_BYTES - context->totalBytes >= numBytes);
+
+        /* Add 1 bit (a 0x80 byte) after the message to begin padding */
+        context->buffer[numBytes++] = 0x80u;
+        /* Check for space to fit an 8 byte length field plus the 0x80 */
+        if (context->bytes >= (SHA256_BLOCK_SIZE - 8u))
+        {
+            /* Fill the rest of the chunk with zeros */
+            FLib_MemSet(&context->buffer[numBytes], 0u, SHA256_BLOCK_SIZE - numBytes);
+            SHA256_hash_n(context->buffer, 1u, context->hash);
+            numBytes = 0u;
+        }
         /* Fill the rest of the chunk with zeros */
-        FLib_MemSet(&context->buffer[numBytes], 0u, SHA256_BLOCK_SIZE - numBytes);
+        FLib_MemSet(&context->buffer[numBytes], 0, SHA256_BLOCK_SIZE - numBytes);
+        /* Append the total length of the message(Big Endian), in bits (bytes << 3) */
+        /* Conversion can be done safely on a 32 bit variable because we have ascertained that totalBytes remain
+         * smaller than 2^29 */
+        context->totalBytes <<= 3u;
+        FLib_MemCpyReverseOrder(&context->buffer[SHA256_BLOCK_SIZE - (uint8_t)sizeof(uint32_t)], &context->totalBytes,
+                                sizeof(uint32_t));
         SHA256_hash_n(context->buffer, 1u, context->hash);
-        numBytes = 0u;
-    }
-    /* Fill the rest of the chunk with zeros */
-    FLib_MemSet(&context->buffer[numBytes], 0, SHA256_BLOCK_SIZE - numBytes);
-    /* Append the total length of the message(Big Endian), in bits (bytes << 3) */
-    context->totalBytes <<= 3u;
-    FLib_MemCpyReverseOrder(&context->buffer[60], &context->totalBytes, sizeof(uint32_t));
-    SHA256_hash_n(context->buffer, 1u, context->hash);
-    /* Convert to Big Endian */
-    for (i = 0u; i < SHA256_HASH_SIZE / sizeof(uint32_t); i++)
-    {
-        temp = context->hash[i];
-        FLib_MemCpyReverseOrder(&context->hash[i], &temp, sizeof(uint32_t));
-    }
+        /* Convert to Big Endian */
+        for (uint32_t i = 0u; i < SHA256_HASH_SIZE / sizeof(uint32_t); i++)
+        {
+            uint32_t temp;
+            temp = context->hash[i];
+            FLib_MemCpyReverseOrder(&context->hash[i], &temp, sizeof(uint32_t));
+        }
 
-    /* Copy the generated hash to the indicated output location */
-    FLib_MemCpy(pOutput, (uint8_t *)(context->hash), SHA256_HASH_SIZE);
+        /* Copy the generated hash to the indicated output location */
+        FLib_MemCpy(pOutput, (uint8_t *)(context->hash), SHA256_HASH_SIZE);
+        st = gSecSuccess_c;
+    } while (false);
+
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1502,13 +1706,25 @@ void SHA256_HashFinish(void *pContext, uint8_t *pOutput)
  * \param [out]      pOutput     Pointer to the output location
  *
  ********************************************************************************** */
-void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
+secResultType_t SecLib_SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
 {
+    secResultType_t st;
     sha256Context_t context;
-
-    SHA256_Init(&context);
-    SHA256_HashUpdate(&context, pData, numBytes);
-    SHA256_HashFinish(&context, pOutput);
+    do
+    {
+        (void)SecLib_SHA256_Init(&context);
+        st = SecLib_SHA256_HashUpdate(&context, pData, numBytes);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        st = SecLib_SHA256_HashFinish(&context, pOutput);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+    } while (false);
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1518,7 +1734,7 @@ void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
  *            Deallocate using HMAC_SHA256_FreeCtx()
  *
  ********************************************************************************** */
-void *HMAC_SHA256_AllocCtx(void)
+void *SecLib_HMAC_SHA256_AllocCtx(void)
 {
     void *hmacSha256Ctx = MEM_BufferAlloc(sizeof(HMAC_SHA256_context_t));
 
@@ -1531,7 +1747,7 @@ void *HMAC_SHA256_AllocCtx(void)
  * \param [in]    pContext    Address of the HMAC SHA256 context buffer
  *
  ********************************************************************************** */
-void HMAC_SHA256_FreeCtx(void *pContext)
+void SecLib_HMAC_SHA256_FreeCtx(void *pContext)
 {
     (void)MEM_BufferFree(pContext);
 }
@@ -1545,45 +1761,63 @@ void HMAC_SHA256_FreeCtx(void *pContext)
  * \param [in]    keyLen      Length of the HMAC key in bytes
  *
  ********************************************************************************** */
-void HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
+secResultType_t SecLib_HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
 {
-    uint8_t                i;
-    HMAC_SHA256_context_t *context                               = (HMAC_SHA256_context_t *)pContext;
-    uint8_t                sha256HashKeyBuffer[SHA256_HASH_SIZE] = {0};
-    const uint8_t         *pKeyToUse;
-    uint32_t               keyLenToUse;
+    secResultType_t st;
 
-    if (keyLen > SHA256_BLOCK_SIZE)
+    do
     {
-        SHA256_Hash(pKey, keyLen, sha256HashKeyBuffer);
-        pKeyToUse   = sha256HashKeyBuffer;
-        keyLenToUse = SHA256_HASH_SIZE;
-    }
-    else
-    {
-        pKeyToUse   = pKey;
-        keyLenToUse = keyLen;
-    }
+        uint8_t                i;
+        HMAC_SHA256_context_t *context = (HMAC_SHA256_context_t *)pContext;
+        sha256Context_t       *hash_ctx;
+        uint8_t                sha256HashKeyBuffer[SHA256_HASH_SIZE] = {0};
 
-    /* Create i_pad */
-    for (i = 0u; i < keyLenToUse; i++)
-    {
-        context->pad[i] = pKeyToUse[i] ^ gHmacIpad_c;
-    }
+        if ((context == NULL) || (pKey == NULL))
+        {
+            RAISE_ERROR(st, gSecBadArgument_c);
+        }
+        hash_ctx = &context->shaCtx;
 
-    for (i = (uint8_t)(keyLenToUse & 0xffu); i < SHA256_BLOCK_SIZE; i++)
-    {
-        context->pad[i] = gHmacIpad_c;
-    }
-    /* start hashing of the i_key_pad */
-    SHA256_Init(&context->shaCtx);
-    SHA256_HashUpdate(&context->shaCtx, context->pad, SHA256_BLOCK_SIZE);
+        if (keyLen > SHA256_BLOCK_SIZE)
+        {
+            st = SecLib_SHA256_Hash(pKey, keyLen, sha256HashKeyBuffer);
+            if (st != gSecSuccess_c)
+            {
+                break;
+            }
+            pKey   = sha256HashKeyBuffer;
+            keyLen = SHA256_HASH_SIZE;
+        }
+        /* Create i_pad */
+        for (i = 0u; i < keyLen; i++)
+        {
+            context->pad[i] = pKey[i] ^ gHmacIpad_c;
+        }
 
-    /* create o_pad by xor-ing pad[i] with 0x36 ^ 0x5C: */
-    for (i = 0u; i < SHA256_BLOCK_SIZE; i++)
-    {
-        context->pad[i] ^= (gHmacIpad_c ^ gHmacOpad_c);
-    }
+        for (i = (uint8_t)(keyLen & 0xffu); i < SHA256_BLOCK_SIZE; i++)
+        {
+            context->pad[i] = gHmacIpad_c;
+        }
+
+        /* start hashing of the i_key_pad */
+        st = SecLib_SHA256_Init(hash_ctx);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+
+        st = SecLib_SHA256_HashUpdate(hash_ctx, context->pad, SHA256_BLOCK_SIZE);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        /* create o_pad by xor-ing pad[i] with 0x36 ^ 0x5C: */
+        for (i = 0u; i < SHA256_BLOCK_SIZE; i++)
+        {
+            context->pad[i] ^= (gHmacIpad_c ^ gHmacOpad_c);
+        }
+    } while (false);
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1595,11 +1829,11 @@ void HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
  * \param [in]    numBytes    Number of bytes to hash
  *
  ********************************************************************************** */
-void HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
+secResultType_t SecLib_HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
 {
     HMAC_SHA256_context_t *context = (HMAC_SHA256_context_t *)pContext;
-
-    SHA256_HashUpdate(&context->shaCtx, pData, numBytes);
+    sha256Context_t       *sha_ctx = (context == NULL) ? NULL : &context->shaCtx;
+    return SecLib_SHA256_HashUpdate(sha_ctx, pData, numBytes);
 }
 
 /*! *********************************************************************************
@@ -1611,18 +1845,46 @@ void HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
  * \param [in,out]   pOutput     Pointer to the output location
  *
  ********************************************************************************** */
-void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
+secResultType_t SecLib_HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
 {
-    uint8_t                hash1[SHA256_HASH_SIZE];
-    HMAC_SHA256_context_t *context = (HMAC_SHA256_context_t *)pContext;
+    secResultType_t st;
+    do
+    {
+        HMAC_SHA256_context_t *context = (HMAC_SHA256_context_t *)pContext;
+        sha256Context_t       *sha_ctx = (context == NULL) ? NULL : &context->shaCtx;
+        uint8_t                hash1[SHA256_HASH_SIZE];
 
-    /* finalize the hash of the i_key_pad and message */
-    SHA256_HashFinish(&context->shaCtx, hash1);
-    /* perform hash of the o_key_pad and hash1 */
-    SHA256_Init(&context->shaCtx);
-    SHA256_HashUpdate(&context->shaCtx, context->pad, SHA256_BLOCK_SIZE);
-    SHA256_HashUpdate(&context->shaCtx, hash1, SHA256_HASH_SIZE);
-    SHA256_HashFinish(&context->shaCtx, pOutput);
+        /* finalize the hash of the i_key_pad and message */
+        st = SecLib_SHA256_HashFinish(sha_ctx, hash1);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        /* perform hash of the o_key_pad and hash1 */
+        st = SecLib_SHA256_Init(sha_ctx);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        st = SecLib_SHA256_HashUpdate(sha_ctx, context->pad, SHA256_BLOCK_SIZE);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        st = SecLib_SHA256_HashUpdate(sha_ctx, hash1, SHA256_HASH_SIZE);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+
+        st = SecLib_SHA256_HashFinish(sha_ctx, pOutput);
+
+    } while (false);
+    return st;
 }
 
 /*! *********************************************************************************
@@ -1637,13 +1899,31 @@ void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
  * \param [in,out]   pOutput     Pointer to the output location
  *
  ********************************************************************************** */
-void HMAC_SHA256(const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
+secResultType_t SecLib_HMAC_SHA256(
+    const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
 {
-    HMAC_SHA256_context_t context;
+    secResultType_t st;
+    do
+    {
+        HMAC_SHA256_context_t context;
 
-    HMAC_SHA256_Init(&context, pKey, keyLen);
-    HMAC_SHA256_Update(&context, pData, numBytes);
-    HMAC_SHA256_Finish(&context, pOutput);
+        st = SecLib_HMAC_SHA256_Init(&context, pKey, keyLen);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        st = SecLib_HMAC_SHA256_Update(&context, pData, numBytes);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+        st = SecLib_HMAC_SHA256_Finish(&context, pOutput);
+        if (st != gSecSuccess_c)
+        {
+            break;
+        }
+    } while (false);
+    return st;
 }
 
 #if (defined(mDbgRevertKeys_d) && (mDbgRevertKeys_d > 0))
@@ -1701,16 +1981,22 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 {
     secResultType_t result;
 
-#if (gSecLibUseBleDebugKeys_d == 0)
-#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
-    void *pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
-    if (NULL == pMultiplicationBuffer)
+    do
     {
-        result = gSecAllocError_c;
-    }
-    else
+        if ((pOutPublicKey == NULL) || (pOutPrivateKey == NULL))
+        {
+            result = gSecBadArgument_c;
+            break;
+        }
 
-    {
+#if !(defined(gSecLibUseBleDebugKeys_d) && (gSecLibUseBleDebugKeys_d > 0))
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
+        void *pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
+        if (NULL == pMultiplicationBuffer)
+        {
+            result = gSecAllocError_c;
+            break;
+        }
 #if (defined(mDbgRevertKeys_d) && (mDbgRevertKeys_d > 0))
         if (gSecEcp256Success_c !=
             ECP256_GenerateKeyPair(&mReversedPublicKey, &mReversedPrivateKey, pMultiplicationBuffer))
@@ -1719,6 +2005,7 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 #endif /* mDbgRevertKeys_d */
         {
             result = gSecError_c;
+            break;
         }
         else
         {
@@ -1728,32 +2015,31 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
             FLib_MemCpyReverseOrder(pOutPublicKey->components_8bit.y, mReversedPublicKey.components_8bit.y, 32);
             FLib_MemCpyReverseOrder(pOutPrivateKey->raw_8bit, mReversedPrivateKey.raw_8bit, 32);
 #endif /* mDbgRevertKeys_d */
+            result = gSecSuccess_c;
+
+            (void)MEM_BufferFree(pMultiplicationBuffer);
+        }
+#else
+        ecp256KeyPair_t KeyPair;
+        if (gSecEcp256Success_c != ECP256_GenerateKeyPairUltraFast(&KeyPair.public_key, &KeyPair.private_key))
+        {
+            result = gSecError_c;
+            break;
         }
 
-        (void)MEM_BufferFree(pMultiplicationBuffer);
-    }
-#else
-    ecp256KeyPair_t KeyPair;
-    if (gSecEcp256Success_c != ECP256_GenerateKeyPairUltraFast(&KeyPair.public_key, &KeyPair.private_key))
-    {
-        result = gSecError_c;
-    }
-    else
-    {
         result = gSecSuccess_c;
         /* The NCCL output is BE and BLE expected LE */
         ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, (const uint8_t *)&KeyPair.public_key);
         ECP256_coordinate_copy_and_change_endianness((uint8_t *)pOutPrivateKey, (const uint8_t *)&KeyPair.private_key);
-    }
 #endif
 #else  /* gSecLibUseBleDebugKeys_d */
-    /* The NCCL output is BE and BLE expected LE */
-    ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, (const uint8_t *)&mBleDebugKeyPair.public_key);
-    ECP256_coordinate_copy_and_change_endianness((uint8_t *)pOutPrivateKey,
-                                                 (const uint8_t *)&mBleDebugKeyPair.private_key);
-    result = gSecSuccess_c;
+        /* The NCCL output is BE and BLE expected LE */
+        ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, (const uint8_t *)&mBleDebugKeyPair.public_key);
+        ECP256_coordinate_copy_and_change_endianness((uint8_t *)pOutPrivateKey,
+                                                     (const uint8_t *)&mBleDebugKeyPair.private_key);
+        result = gSecSuccess_c;
 #endif /* gSecLibUseBleDebugKeys_d */
-
+    } while (false);
     return result;
 }
 
@@ -1775,32 +2061,38 @@ secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
 {
     secResultType_t result;
 
-    /* The callback is NULL when there is no async ECDH */
-    if (pfSecLibMultCallback == NULL)
+    do
     {
-        result = ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
-    }
-    else
-    {
-        void *pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
-
-        if (NULL == pMultiplicationBuffer)
+        if (pDhKeyData == NULL)
         {
-            result = gSecAllocError_c;
+            RAISE_ERROR(result, gSecBadArgument_c);
+        }
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
+        /* The callback is NULL when there is no async ECDH */
+        if (pfSecLibMultCallback == NULL)
+        {
+            result = ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
         }
         else
         {
+            void *pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
+
+            if (NULL == pMultiplicationBuffer)
+            {
+                RAISE_ERROR(result, gSecAllocError_c);
+            }
+
             pDhKeyData->pWorkBuffer = pMultiplicationBuffer;
             if (gSecEcdhSuccess_c != Ecdh_GenerateNewKeysSeg(pDhKeyData))
             {
-                result = gSecError_c;
+                RAISE_ERROR(result, gSecError_c);
             }
-            else
-            {
-                result = gSecResultPending_c;
-            }
+            result = gSecResultPending_c;
         }
-    }
+#else
+        result = ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
+#endif
+    } while (false);
     return result;
 }
 
@@ -1843,12 +2135,13 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
         uint8_t tempOut[16];
 
         /*! Check for NULL output pointers and return with proper status if this is the case. */
-        if ((NULL == pMacKey) || (NULL == pLtk) || (NULL == pN1) || (NULL == pN2) || (NULL == pA1) || (NULL == pA2))
+        if ((NULL == pMacKey) || (NULL == pLtk) || (NULL == pW) || (NULL == pN1) || (NULL == pN2) || (NULL == pA1) ||
+            (NULL == pA2))
         {
 #if defined(gSmDebugEnabled_d) && (gSmDebugEnabled_d == 1U)
             SmDebug_Log(gSmDebugFileSmCrypto_c, __LINE__, smDebugLogTypeError_c, 0);
 #endif /* gSmDebugEnabled_d */
-            RAISE_ERROR(result, gSecError_c);
+            RAISE_ERROR(result, gSecBadArgument_c);
         }
 
         /*! Compute the f5 function key T using the predefined salt as key for AES-128-CAMC */
@@ -1867,8 +2160,11 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
         f5CmacBuffer[52] = 0x00; /* Length lsB big endian = 0x00, Length = 256 */
 
         /*! Compute the MacKey into the temporary buffer. */
-        AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
-
+        result = SecLib_AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
+        if (result != gSecSuccess_c)
+        {
+            break;
+        }
         /*! Copy the MacKey to the output location
          *  in reverse order. The CMAC result is generated MSB first. */
         FLib_MemCpyReverseOrder(pMacKey, (const uint8_t *)tempOut, 16);
@@ -1878,7 +2174,11 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
         f5CmacBuffer[0] = 1; /* Counter = 1 */
 
         /*! Compute the LTK into the temporary buffer. */
-        AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
+        result = SecLib_AES_128_CMAC(f5CmacBuffer, sizeof(f5CmacBuffer), f5T, tempOut);
+        if (result != gSecSuccess_c)
+        {
+            break;
+        }
 
         /*! Copy the LTK to the output location
          *  in reverse order. The CMAC result is generated MSB first. */
@@ -1904,18 +2204,20 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
     secEcdhStatus_t ecdhStatus;
     do
     {
+        if ((pInPrivateKey == NULL) || (pInPeerPublicKey == NULL) || (pOutDhKey == NULL))
+        {
+            RAISE_ERROR(result, gSecBadArgument_c);
+        }
         if (!ECP256_LePointValid(pInPeerPublicKey))
         {
-            result = gSecInvalidPublicKey_c;
-            break;
+            RAISE_ERROR(result, gSecInvalidPublicKey_c);
         }
 #if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
 
         void *pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
         if (NULL == pMultiplicationBuffer)
         {
-            result = gSecAllocError_c;
-            break;
+            RAISE_ERROR(result, gSecAllocError_c);
         }
 
 #if (defined(mDbgRevertKeys_d) && (mDbgRevertKeys_d > 0))
@@ -1932,13 +2234,11 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
 #endif /* mDbgRevertKeys_d */
         if (gSecEcdhInvalidPublicKey_c == ecdhStatus)
         {
-            result = gSecInvalidPublicKey_c;
-            break;
+            RAISE_ERROR(result, gSecInvalidPublicKey_c);
         }
         else if (gSecEcdhSuccess_c != ecdhStatus)
         {
-            result = gSecError_c;
-            break;
+            RAISE_ERROR(result, gSecError_c);
         }
         else
         {
@@ -1963,25 +2263,11 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
         }
         else
         {
-            result = gSecError_c;
+            RAISE_ERROR(result, gSecError_c);
         }
 #endif
     } while (false);
     return result;
-}
-
-/************************************************************************************
- * \brief Free any data allocated in the input structure.
- *
- * \param[in]  pDhKeyData Pointer to the structure holding information about the
- *                        multiplication
- *
- * \return gSecSuccess_c or error
- *
- ************************************************************************************/
-void ECDH_P256_FreeDhKeyData(computeDhKeyParam_t *pDhKeyData)
-{
-    NOT_USED(pDhKeyData);
 }
 
 /************************************************************************************
@@ -2030,7 +2316,7 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
         /*! Check for NULL output pointers and return with proper status if this is the case. */
         if ((NULL == pHash) || (NULL == pKey) || (NULL == pR))
         {
-            break;
+            RAISE_ERROR(result, gSecBadArgument_c);
         }
         /* Initialize the r' value in the temporary location. 3 bytes of ramdom value.
          *  Initialize it reversed for AES.
@@ -2075,6 +2361,7 @@ secResultType_t SecLib_VerifyBluetoothAh(uint8_t *pHash, const uint8_t *pKey, co
 secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
 {
     secResultType_t result;
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
 
     if (pfSecLibMultCallback == NULL)
     {
@@ -2108,9 +2395,13 @@ secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
             }
         }
     }
+#else
+    result = ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint, FALSE);
+#endif
     return result;
 }
 
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
 /************************************************************************************
  * \brief Handle one step of ECDH multiplication depending on the number of steps at
  *        a time according to gSecLibEcStepsAtATime. After the last step is completed
@@ -2158,6 +2449,7 @@ bool_t SecLib_HandleMultiplyStep(computeDhKeyParam_t *pData)
     }
     return result;
 }
+#endif
 
 secResultType_t SecLib_GenerateBluetoothF5KeysSecure(uint8_t       *pMacKey,
                                                      uint8_t       *pLtk,
@@ -2320,13 +2612,20 @@ secResultType_t SecLib_VerifyBluetoothAhSecure(uint8_t *pHash, const uint8_t *pK
  ********************************************************************************** */
 static void SHA256_hash_n(const uint8_t *pData, uint32_t nBlk, uint32_t *pHash)
 {
+    if (nBlk < (UINT32_MAX / SHA256_BLOCK_SIZE))
+    {
 #if (defined(FSL_FEATURE_SOC_MMCAU_COUNT) && (FSL_FEATURE_SOC_MMCAU_COUNT > 0))
-    SECLIB_MUTEX_LOCK();
-    mmcau_sha256_hash_n(pData, nBlk, (unsigned int *)pHash);
-    SECLIB_MUTEX_UNLOCK();
+        SECLIB_MUTEX_LOCK();
+        mmcau_sha256_hash_n(pData, nBlk, (unsigned int *)pHash);
+        SECLIB_MUTEX_UNLOCK();
 #else
-    sw_sha256_hash_n(pData, (int32_t)nBlk, pHash);
+        sw_sha256_hash_n(pData, nBlk, pHash);
 #endif
+    }
+    else
+    {
+        assert(0);
+    }
 }
 
 #if (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
@@ -2454,7 +2753,7 @@ static void AES_128_CTR_Enc_HW(AES_param_t *CTR_p)
 
     /* If remaining data is smaller then one AES block size  */
     FLib_MemCpy(tempBuffIn, CTR_p->pPlain, CTR_p->Len);
-    AES_128_Encrypt(CTR_p->CTR_counter, CTR_p->Key, encrCtr);
+    SecLib_AES_128_Encrypt(CTR_p->CTR_counter, CTR_p->Key, encrCtr);
     SecLib_XorN(tempBuffIn, encrCtr, AES_BLOCK_SIZE);
     FLib_MemCpy(CTR_p->pCipher, tempBuffIn, CTR_p->Len);
     AES_128_IncrementCounter(CTR_p->CTR_counter);
@@ -2489,7 +2788,7 @@ static void AES_128_CTR_Dec_HW(AES_param_t *CTR_p)
 
     /* If remaining data is smaller then one AES block size  */
     FLib_MemCpy(tempBuffIn, CTR_p->pCipher, CTR_p->Len);
-    AES_128_Encrypt(CTR_p->CTR_counter, CTR_p->Key, encrCtr);
+    SecLib_AES_128_Encrypt(CTR_p->CTR_counter, CTR_p->Key, encrCtr);
     SecLib_XorN(tempBuffIn, encrCtr, AES_BLOCK_SIZE);
     FLib_MemCpy(CTR_p->pPlain, tempBuffIn, CTR_p->Len);
     AES_128_IncrementCounter(CTR_p->CTR_counter);

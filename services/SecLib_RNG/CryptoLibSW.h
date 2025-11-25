@@ -1,5 +1,5 @@
-/*
- * Copyright 2019, 2022-2024, 2026 NXP
+/*! *********************************************************************************
+ * Copyright 2019, 2022, 2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -33,12 +33,12 @@ extern "C" {
 /* SHA1 SW implemetation */
 
 void sw_sha1_initialize_output(uint32_t *sha1_state);
-void sw_sha1_hash_n(uint8_t *msg_data, int32_t num_blks, uint32_t *sha1_state);
+void sw_sha1_hash_n(uint8_t *msg_data, uint32_t num_blks, uint32_t *sha1_state);
 
 /* SHA256 SW implementation */
 
 void sw_sha256_initialize_output(uint32_t *sha256_state);
-void sw_sha256_hash_n(const uint8_t *msg_data, int32_t num_blks, uint32_t *sha256_state);
+void sw_sha256_hash_n(const uint8_t *msg_data, uint32_t num_blks, uint32_t *sha256_state);
 
 /* AES128 */
 void    CCM_CreateA0(uint8_t *pData, const uint8_t *nonce, uint8_t size);

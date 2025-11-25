@@ -61,6 +61,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.sw)
     )
 
     mcux_add_macro(gRngUseSecureSubSystem_d=0)
+    mcux_add_macro(gSecLibUseSw_d=1)
     mcux_add_source(
         SOURCES RNG.c
     )

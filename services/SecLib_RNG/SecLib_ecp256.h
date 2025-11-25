@@ -155,7 +155,7 @@ typedef struct computeDhKeyParams_tag
     uint32_t aUserData[1];     /*!< Hold upper layer private data */
 } computeDhKeyParam_t;
 
-typedef void (*secLibCallback_t)(computeDhKeyParam_t *pData);
+typedef bool_t (*secLibCallback_t)(computeDhKeyParam_t *pData);
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,9 +166,8 @@ extern "C" {
 * Public functions
 *************************************************************************************
 ************************************************************************************/
-
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
-
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
+#if defined(gSecLibUseSw_d) && (gSecLibUseSw_d == 1)
 /*! *********************************************************************************
  * \brief  This function performs initialization of the callback used to offload
  * elliptic curve multiplication.
@@ -184,9 +183,9 @@ void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback);
  * \param[in]  pMsg Pointer to the data used in multiplication.
  *
  ********************************************************************************** */
-void SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg);
+bool_t SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg);
 #endif
-
+#endif
 /************************************************************************************
  * \brief Generates a new ECDH P256 Private/Public key pair
  *

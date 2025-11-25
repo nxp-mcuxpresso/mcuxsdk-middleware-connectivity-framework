@@ -18,7 +18,7 @@
 #define gSensorsAdcCalibrationDurationInMs_c 4U
 
 /*
- * KW45/K32W148 CM33 core has the DSP extension (__DSP_PRESENT), which allows the use of the NXP UltraFast EC P256
+ * KW43/MCXW70 CM33 core has the DSP extension (__DSP_PRESENT), which allows the use of the NXP UltraFast EC P256
  * library. The flags may be set to 0 if this library is not required. It mainly makes sense for Matter SPAKE2P
  * procedures and for BLE point validation.
  */
