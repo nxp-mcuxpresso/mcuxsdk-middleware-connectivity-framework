@@ -307,9 +307,8 @@ void PLATFORM_DeinitTimerManager(void);
  * \param[out] aOutUid16B pointer to UID bytes
  * \param[out] pOutLen pointer to UID length
  *
- * \return int 0 if success, negative value if error.
  */
-int PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
+void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
 
 /*!
  * \brief Configures the SMU DMEM mapping.
