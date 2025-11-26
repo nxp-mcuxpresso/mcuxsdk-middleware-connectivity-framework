@@ -33,6 +33,10 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23)
         CC "--diag_suppress=Pa084,Pe188"
     )
 
+    mcux_add_macro(
+        "-DgRngIsrPrio_c=\"((NVIC_DEFAULT_PRIORITY)<<(8U-(uint8_t)__NVIC_PRIO_BITS))\""
+    )
+
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ble)
         mcux_add_source(
             SOURCES
