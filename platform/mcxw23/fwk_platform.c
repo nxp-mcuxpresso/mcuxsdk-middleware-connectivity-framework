@@ -52,6 +52,12 @@ int PLATFORM_InitTimerManager(void)
         timerConfig.srcClock_Hz           = CLOCK_GetCTimerClkFreq(SOC_CTIMER_INSTANCE);
         timerConfig.clockSrcSelect        = 0;
         timerConfig.hardwareTimerAlwaysOn = true;
+#if (defined(TM_ENABLE_TIME_STAMP) && (TM_ENABLE_TIME_STAMP > 0U))
+        /* Use the OSTIMER for timestamp functionality */
+        timerConfig.timeStampInstance       = 0U;
+        timerConfig.timeStampSrcClock_Hz    = CLOCK_GetOSTimerClkFreq();
+        timerConfig.timeStampClockSrcSelect = 0;
+#endif
 
         status = TM_Init(&timerConfig);
         assert_equal(kStatus_TimerSuccess, status);
