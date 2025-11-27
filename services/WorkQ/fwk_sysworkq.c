@@ -18,12 +18,9 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
-#ifndef CONFIG_FWK_SYSWORKQ_STACK_SIZE
-#define CONFIG_FWK_SYSWORKQ_STACK_SIZE 608U
-#endif
-
-#ifndef CONFIG_FWK_SYSWORKQ_PRIO
-#define CONFIG_FWK_SYSWORKQ_PRIO 4U
+#if CONFIG_FWK_SYSWORKQ_PRIO >= OSA_TASK_PRIORITY_MIN
+#error CONFIG_FWK_SYSWORKQ_PRIO must be numerically less than OSA_TASK_PRIORITY_MIN. \
+       Lower numeric values indicate higher priority, and OSA_TASK_PRIORITY_MIN represents the IDLE task priority.
 #endif
 
 /* -------------------------------------------------------------------------- */

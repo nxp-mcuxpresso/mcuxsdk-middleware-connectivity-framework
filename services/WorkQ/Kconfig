@@ -23,8 +23,12 @@ if MCUX_COMPONENT_middleware.wireless.framework.workq
               Macro to set work queue task stack size.
       config FWK_SYSWORKQ_PRIO
           int "WorkQueue task priority"
-          default 4
+          default 14 if MCUX_COMPONENT_component.osa_bm
+          default 1
           help
-              Macro to set work queue task priority.
+              Macro to set the system work queue task priority, usually set to a lower priority than other tasks.
+              The priority value and logic depends on the OS: on BM (bare metal), higher numeric values mean lower priority.
+              On FreeRTOS and ThreadX, lower numeric values mean lower priority.
+
   endmenu
 endif

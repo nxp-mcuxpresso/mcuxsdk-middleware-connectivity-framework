@@ -28,13 +28,21 @@
  * OSA API forces the user to define a thread handler, here we define a dummy
  * thread handler which will be replaced by the internal thread handler from
  * the workqueue service.
+ *
+ * \param[in] name The name of the thread
+ * \param[in] prio The priority of the thread. The logic follows the RTOS priority logic.
+ *                 As an example, for FreeRTOS and ThreadX, higher values mean higher priorities.
+ *                 On bare-metal, it's the contrary.
+ *                 We use PRIORITY_RTOS_TO_OSA to always follow the logic from the RTOS as input and
+ *                 convert to OSA priority logic.
+ * \param[in] stackSize The stack size of the thread in bytes.
  */
 #define FWK_WORKQ_THREAD_DEFINE(name, prio, stackSize) \
     static void name(void *workq)                      \
     {                                                  \
         (void)workq;                                   \
     }                                                  \
-    static OSA_TASK_DEFINE(name, prio, 1, stackSize, false)
+    static OSA_TASK_DEFINE(name, PRIORITY_RTOS_TO_OSA(prio), 1, stackSize, false)
 
 /*!
  * \brief Access a workqueue thread definition
