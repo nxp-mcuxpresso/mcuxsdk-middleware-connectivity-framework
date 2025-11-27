@@ -185,6 +185,16 @@ int PLATFORM_TerminateCrypto(void)
 
 int PLATFORM_ResetCrypto(void)
 {
-    /* Not implemented */
-    return 0;
+    trng_config_t config;
+    TRNG_Type    *trngArr[] = TRNG_BASE_PTRS;
+    int           ret       = 0;
+
+    (void)TRNG_GetDefaultConfig(&config);
+    /* Init TRNG */
+    if (TRNG_Init(trngArr[0], (void *)&config) != kStatus_Success)
+    {
+        ret = -1;
+    }
+
+    return ret;
 }
