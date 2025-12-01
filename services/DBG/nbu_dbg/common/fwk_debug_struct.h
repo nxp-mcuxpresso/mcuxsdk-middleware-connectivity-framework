@@ -17,8 +17,8 @@
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
 #define NBUDBG_COMMON_STRUCT_SIZE    sizeof(nbu_dbg_info_t)
-#define NBUDBG_BLE_STRUCT_SIZE       0x100
-#define NBUDBG_15_4_STRUCT_SIZE      0x40
+#define NBUDBG_BLE_STRUCT_SIZE       0x100U
+#define NBUDBG_15_4_STRUCT_SIZE      0x0U
 #define NBUDBG_SET_REG(reg, val)     ((debug_struct)->nbu_dbg_info.reg_info.reg = (val))
 #define NBUDBG_SET_EXCEPTION_ID(val) ((debug_struct)->nbu_dbg_info.exception_id = (val))
 #define NBUDBG_SET_XFAR(reg, val)    ((debug_struct)->nbu_dbg_info.reg_info.xfar.reg = (val))
@@ -120,7 +120,10 @@ typedef struct
 {
     nbu_dbg_info_t nbu_dbg_info;
     uint8_t        dbg_ble[NBUDBG_BLE_STRUCT_SIZE];
+#if 0
+    /* 15.4 nbu debug not supported yet */
     uint8_t        dbg_15_4[NBUDBG_15_4_STRUCT_SIZE];
+#endif
 } nbu_debug_struct_t;
 
 extern nbu_debug_struct_t *debug_struct;
