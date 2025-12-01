@@ -16,6 +16,11 @@
 /* -------------------------------------------------------------------------- */
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
+#define NBUDBG_VERSION 1U
+/* Logging not yet supported. Setting the size to 0 */
+#define NBUDBG_LOGGING_SIZE   0U
+#define NBUDBG_LOGGING_OFFSET 0xFFFFFFFFU
+
 #define NBUDBG_COMMON_STRUCT_SIZE    sizeof(nbu_dbg_info_t)
 #define NBUDBG_BLE_STRUCT_SIZE       0x100U
 #define NBUDBG_15_4_STRUCT_SIZE      0x0U
@@ -96,8 +101,8 @@ typedef struct
         /* Fault from thread mode */
         struct
         {
-            uint32_t thread_addr;    /* Thread address */
-            char     thread_name[8]; /* Thread name (null-terminated) */
+            uint32_t thread_addr;     /* Thread address */
+            char     thread_name[8U]; /* Thread name (null-terminated) */
         } thread_info;
     };
 } execution_context_t;
@@ -118,6 +123,9 @@ typedef struct
 
 typedef struct
 {
+    uint16_t       version;
+    uint16_t       logging_buf_size;
+    uint32_t       logging_buf_offset; /* Offset of the shared RAM */
     nbu_dbg_info_t nbu_dbg_info;
     uint8_t        dbg_ble[NBUDBG_BLE_STRUCT_SIZE];
 #if 0

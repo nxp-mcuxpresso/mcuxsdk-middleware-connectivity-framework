@@ -15,6 +15,7 @@
 /* -------------------------------------------------------------------------- */
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
+#define NBUDBG_VERSION               0U
 #define NBUDBG_USE_LEGACY_STRUCT     1
 #define NBUDBG_BLE_STRUCT_SIZE       sizeof(nbu_debug_struct_t)
 #define NBUDBG_SET_REG(reg, val)     ((debug_struct)->dbg_info.exception_data.dbg_exception.reg = (val))

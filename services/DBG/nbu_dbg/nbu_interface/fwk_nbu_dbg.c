@@ -16,7 +16,14 @@
 /*                         Public memory declarations                         */
 /* -------------------------------------------------------------------------- */
 
-__attribute__((section(".debugbuf"))) nbu_debug_struct_t debug_buff;
+__attribute__((section(".debugbuf"))) nbu_debug_struct_t debug_buff = {
+#if defined(NBUDBG_VERSION) && (NBUDBG_VERSION > 0U)
+    .version = NBUDBG_VERSION,
+    /* TODO: Set logging fields for NBU; in future, these may be configured by the host */
+    .logging_buf_size   = NBUDBG_LOGGING_SIZE,
+    .logging_buf_offset = NBUDBG_LOGGING_OFFSET,
+#endif
+};
 
 nbu_debug_struct_t *debug_struct = &debug_buff;
 
