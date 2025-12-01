@@ -176,12 +176,18 @@ void HardFaultHandler(unsigned long *hardfault_args)
         }
         if ((SCB->CFSR & SCB_CFSR_DIVBYZERO_Msk) != 0U)
         {
-            PRINTF("Division by zero\r\n");
+            PRINTF("!! Division by zero !!\r\n");
         }
         if ((SCB->CFSR & SCB_CFSR_UNALIGNED_Msk) != 0U)
         {
-            PRINTF("Unaligned access\r\n");
+            PRINTF("!! Unaligned access !!\r\n");
         }
+#if defined(__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1)
+        if ((SCB->CFSR & SCB_CFSR_STKOF_Msk) != 0U)
+        {
+            PRINTF("!! Stack overflow !!\r\n");
+        }
+#endif
 
         PRINTF("Exception_id = 0x%08x \r\n", __get_IPSR());
 #endif
@@ -251,10 +257,13 @@ void HardFault_Handler(void)
         "bx r1\t\n");
 }
 
+/* NMI handler is reimplemented by gcov port layer in the SDK */
+#if !defined(GCOV_DO_COVERAGE)
 void NMI_Handler(void)
 {
     __asm volatile("  b HardFault_Handler \n");
 }
+#endif
 
 void MemManage_Handler(void)
 {
