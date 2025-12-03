@@ -14,11 +14,11 @@
 #include "fwk_platform.h"
 #include "FunctionLib.h"
 #include "fsl_adapter_rpmsg.h"
+#include "fsl_os_abstraction.h"
 #include "fwk_debug.h"
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 #include "fwk_workq.h"
-#include "fsl_os_abstraction.h"
 #endif
 
 #if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
@@ -155,6 +155,7 @@ int PLATFORM_FwkSrvInit(void)
 
     static bool_t      mFwkSrvInit  = FALSE;
     hal_rpmsg_config_t rpmsg_config = fwkRpmsgConfig;
+    osa_status_t       osa_status;
 
     uint32_t irqMask = DisableGlobalIRQ();
 
@@ -176,7 +177,7 @@ int PLATFORM_FwkSrvInit(void)
         /* We are using the OS message queue since it allows to allocate the memory safely (statically or during init)
          * and then copy ics_rx_data content in ISR context without allocating memory dynamically
          * This works with the workqueue only if we don't block when calling OSA_MsgQGet() */
-        osa_status_t osa_status = OSA_MsgQCreate(icsMsgQueue, PLATFORM_ICS_RX_QUEUE_SIZE, sizeof(ics_rx_data_t));
+        osa_status = OSA_MsgQCreate(icsMsgQueue, PLATFORM_ICS_RX_QUEUE_SIZE, sizeof(ics_rx_data_t));
         if (osa_status != KOSA_StatusSuccess)
         {
             assert(0);

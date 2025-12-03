@@ -957,6 +957,28 @@ void PLATFORM_RemoteActiveReq(void)
          * dummy interrupt is used */
         *(uint32_t *)gPlatformNbuWakeUpInterruptAddr |= FWK_PLATFORM_NBU_WAKE_UP_INTERRUPT_MASK;
 #endif
+
+        /* Prevent NBU from entering deep sleep mode (only WFI allowed).
+         *
+         * Purpose: Setting the BLE_WKUP bit in RADIO_LP register prevents a race condition where:
+         * 1. Host wakes up NBU via PLATFORM_RemoteActiveReq()
+         * 2. NBU wakes up fully and becomes active
+         * 3. If PLATFORM_RemoteActiveRel() is not called quickly enough, the NBU may become idle
+         *    and start preparing for deep sleep while still between Request and Release calls
+         * 4. PLATFORM_RemoteActiveRel() requires the NBU to be fully awake to properly manage
+         *    the transition back to deep sleep, but finds it in an invalid transitional state
+         *
+         * Solution: By setting RADIO_LP.BLE_WKUP, we instruct the NBU firmware to use only WFI
+         * (Wait For Interrupt) instead of preparing for deep sleep. From the host perspective,
+         * WFI is considered as fully awake, allowing PLATFORM_RemoteActiveRel() to safely
+         * manage the NBU's return to deep sleep.
+         *
+         * Register access: RF_CMC1 is in the NBU power domain. The NBU can access it without
+         * requesting the host domain, and the host can access it when the NBU domain is awake
+         * (which is guaranteed at this stage).
+         *
+         * Note: This bit is cleared in PLATFORM_RemoteActiveRel() to allow deep sleep again. */
+        RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_BLE_WKUP_MASK;
     }
     else
     {
@@ -1024,6 +1046,19 @@ void PLATFORM_RemoteActiveRel(void)
                  * acknowledgment that it is now fully wakeup and can be put into low power state */
                 if ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) == 0U)
                 {
+                    /* Allow the NBU to go to deep sleep again */
+                    RF_CMC1->RADIO_LP &= ~RF_CMC1_RADIO_LP_BLE_WKUP_MASK;
+#if defined(gPlatformNbuWakeUpInterruptAddr)
+                    /* Trigger an interrupt on the NBU to ensure it exits WFI and prepares for deep sleep asap.
+                     *
+                     * Rationale: After clearing BLE_WKUP bit above, the NBU is now allowed to prepare for
+                     * deep sleep instead of only WFI. However, if the NBU is currently in WFI, it won't
+                     * check the updated RADIO_LP register until it naturally wakes up from an interrupt.
+                     * By triggering a dummy interrupt here, we ensure the NBU exits WFI immediately,
+                     * detects the cleared BLE_WKUP bit, and can start its deep sleep preparation as soon
+                     * as possible, minimizing power consumption. */
+                    *(uint32_t *)gPlatformNbuWakeUpInterruptAddr |= FWK_PLATFORM_NBU_WAKE_UP_INTERRUPT_MASK;
+#endif
                     EnableGlobalIRQ(regPrimask);
                     break;
                 }
