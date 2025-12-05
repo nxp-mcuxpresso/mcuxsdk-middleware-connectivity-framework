@@ -15,22 +15,32 @@
 - [kw47_mcxw72] Removed SH_MEM_TOTAL_SIZE override as it is now automatically calculated to match rpmsg-lite configuration.
 - [wireless_mcu] Set RL_BUFFER_PAYLOAD_SIZE to word-aligned value as expected by rpmsg-lite.
 - [wireless_mcu] Added system-generated HCI vendor events capability for debug and diagnostic purposes.
-- [DBG] Added debug structure transmission over HCI vendor events with configuration API to enable/disable the feature.
+- [DBG] Added debug structure transmission over HCI vendor events with `NBUDBG_ConfigureHciVendorEvent()` API to enable/disable the feature.
+- [DBG] Added debug structure versioning and logging buffer address/size information to debug structure.
+- [DBG] Removed 15.4 region from debug structure as not supported on KW47.
+- [DBG] Added stack overflow detection for armv8_m_mainline architecture.
 - [Platform] Simplified enablement of reset features via pin detection 
     - Automatically selects `gUseResetByLvdForce_c` when `gAppForceLvdResetOnResetPinDet_d` is enabled.
     - Automatically select `gUseResetByDeepPowerDown_c` when `gAppForceDeepPowerDownResetOnResetPinDet_d` is enabled.
 - [RNG] Replaced `gRngHasSecLibDependency_d` compilation switch with `gRngUseSecLib_d`.
+- [mcxw23] Defined `gRngIsrPrio_c` on the preprocessor to make it global and avoid redefinition warnings.
+- [mcxw23] Implemented `PLATFORM_ResetCrypto()` API called by RNG_reinit/SecLib_reinit.
+- [mcxw23] Added support of Timer Manager timestamp with OSTIMER.
+- [WorkQ] Adjusted WorkQueue priority to 1 (lower than application tasks) on FreeRTOS/ThreadX and to 14 on bare-metal.
 
 #### Bug fixes
 
+- [wireless_mcu] Fixed race condition in `PLATFORM_RemoteActiveRel()` where NBU could enter deep sleep preparation between RemoteActiveReq() and RemoteActiveRel() calls. Solution sets BLE_WKUP bit to constrain NBU to WFI mode during this period, then clears it and triggers a dummy interrupt to allow deep sleep preparation.
 - [wireless_mcu] Fixed race condition in `PLATFORM_RemoteActiveRel()` by adding verification loop to confirm NBU core execution before releasing power domain.
 - [wireless_mcu] Added instruction synchronization barrier (__ISB()) after interrupt re-enable in `PLATFORM_RemoteActiveRel()` to ensure pending interrupts execute between critical sections.
 - [wireless_mcu] Fixed external IO voltage isolation issue during low-power initialization - isolation is now cleared at init to ensure proper behavior.
+- [wireless_mcu] Replaced spin-wait loops with event-based synchronization in NBU communication APIs. Added mutex protection to `PLATFORM_NbuApiReq()` and `PLATFORM_GetNbuInfo()` to prevent race conditions and deadlocks when multiple tasks call these APIs concurrently.
+- [wireless_mcu] Fixed OSA bare metal event race condition in ICS where auto-clear event feature could cause tasks to become permanently stuck. Disabled auto-clear feature in bare metal builds and manually clear event flags after `OSA_EventWait()` returns successfully.
 - [NVM] Fixed `NvIdle()` to prevent looping for more operations than the queue size.
 - [NVS] Fixed blank check procedure to return false (non-blank) when checking a 0 length area.
 - [NVS] Made external and internal flash ports consistent.
 - [DBG] Fixed debug structure size and callback access issues - corrected memory placement overlap between reg_info and assert_info.
-- [MISRA] Various MISRA compliance fixes in NVM, HWParameter, LowPower, SecLib modules and IFR offset definitions.
+- [MISRA] Various MISRA compliance fixes in NVM, HWParameter, LowPower, SecLib, Platform modules and IFR offset definitions.
 
 ### 7.1.2 mcux SDK 25.12.00 pvw2
 
