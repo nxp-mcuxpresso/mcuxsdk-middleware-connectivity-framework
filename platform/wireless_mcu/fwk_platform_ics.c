@@ -29,6 +29,14 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
+#if defined(USE_RTOS) && (USE_RTOS > 0)
+#define ICS_EVT_AUTO_CLEAR 1U
+#else
+/* In bare-metal, we manually clear event flags to avoid altering the "haveToRun" property of the waiting task
+ * this is specific to OSA BM implementation */
+#define ICS_EVT_AUTO_CLEAR 0U
+#endif
+
 /* Event flags */
 #define ICS_EVT_NBU_API_IND (1U << 0U)
 #define ICS_EVT_NBU_INF_IND (1U << 1U)
@@ -186,7 +194,7 @@ int PLATFORM_FwkSrvInit(void)
         }
 #endif
 
-        osa_status = OSA_EventCreate(icsEvent, 1U);
+        osa_status = OSA_EventCreate(icsEvent, ICS_EVT_AUTO_CLEAR);
         if (osa_status != KOSA_StatusSuccess)
         {
             assert(0);
@@ -564,8 +572,8 @@ int PLATFORM_SendNBUXtal32MTrim(uint8_t trim)
 
 static int PLATFORM_WaitForIcsEvent(uint32_t event_mask, uint32_t timeout_ms)
 {
-    int           ret   = 0;
-    event_flags_t flags = 0U;
+    int               ret   = 0;
+    osa_event_flags_t flags = 0U;
 
 #if defined(USE_RTOS) && (USE_RTOS > 0)
     (void)OSA_EventWait(icsEvent, event_mask, 1U, timeout_ms, &flags);
@@ -589,6 +597,13 @@ static int PLATFORM_WaitForIcsEvent(uint32_t event_mask, uint32_t timeout_ms)
     {
         ret = -1;
     }
+#if !defined(USE_RTOS) || (USE_RTOS == 0)
+    else
+    {
+        /* In bare-metal, we manually manage flag clearing */
+        (void)OSA_EventClear(icsEvent, flags);
+    }
+#endif
 
     return ret;
 }
