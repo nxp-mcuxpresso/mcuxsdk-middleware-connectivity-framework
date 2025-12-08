@@ -26,7 +26,6 @@
 - [mcxw23] Defined `gRngIsrPrio_c` on the preprocessor to make it global and avoid redefinition warnings.
 - [mcxw23] Implemented `PLATFORM_ResetCrypto()` API called by RNG_reinit/SecLib_reinit.
 - [mcxw23] Added support of Timer Manager timestamp with OSTIMER.
-- [WorkQ] Adjusted WorkQueue priority to 1 (lower than application tasks) on FreeRTOS/ThreadX and to 14 on bare-metal.
 
 #### Bug fixes
 

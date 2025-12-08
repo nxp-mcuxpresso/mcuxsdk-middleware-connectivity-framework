@@ -42,7 +42,7 @@
     {                                                  \
         (void)workq;                                   \
     }                                                  \
-    static OSA_TASK_DEFINE(name, PRIORITY_RTOS_TO_OSA(prio), 1, stackSize, false)
+    static OSA_TASK_DEFINE(name, prio, 1, stackSize, false)
 
 /*!
  * \brief Access a workqueue thread definition

@@ -24,7 +24,7 @@ if MCUX_COMPONENT_middleware.wireless.framework.workq
       config FWK_SYSWORKQ_PRIO
           int "WorkQueue task priority"
           default 14 if MCUX_COMPONENT_component.osa_bm
-          default 1
+          default 4
           help
               Macro to set the system work queue task priority, usually set to a lower priority than other tasks.
               The priority value and logic depends on the OS: on BM (bare metal), higher numeric values mean lower priority.
