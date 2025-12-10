@@ -52,6 +52,20 @@
 #endif
 
 /* -------------------------------------------------------------------------- */
+/*                           Public type definitions                          */
+/* -------------------------------------------------------------------------- */
+
+/*!
+ * \brief HCI packet logging callback type
+ *
+ * \param[in] packet_type HCI packet type (0x01=CMD, 0x02=ACL, 0x04=EVENT, etc.)
+ * \param[in] data pointer to HCI packet payload (without packet type byte)
+ * \param[in] len length of payload
+ * \param[in] is_rx true for RX (controller->host), false for TX (host->controller)
+ */
+typedef void (*platform_hci_log_cb_t)(uint8_t packet_type, const uint8_t *data, uint16_t len, bool is_rx);
+
+/* -------------------------------------------------------------------------- */
 /*                              Public prototypes                             */
 /* -------------------------------------------------------------------------- */
 
@@ -154,6 +168,16 @@ uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
  * \return int 0 if success, negative value if error
  */
 int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len);
+
+/*!
+ * \brief Register HCI packet logging callback
+ *
+ * \details This callback will be invoked for every HCI packet (TX and RX).
+ *          Can be used by upper layers (DBG module, application) to log HCI traffic.
+ *
+ * \param[in] cb callback to be registered, NULL to unregister
+ */
+void PLATFORM_RegisterHciLogCallback(platform_hci_log_cb_t cb);
 
 #ifdef __cplusplus
 }

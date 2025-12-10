@@ -119,6 +119,12 @@ typedef struct
 #endif
 
 /* -------------------------------------------------------------------------- */
+/*                               Private Memory                               */
+/* -------------------------------------------------------------------------- */
+/* HCI logging callback - registered by upper layers (DBG module or application) */
+static platform_hci_log_cb_t platform_hci_log_cb = NULL;
+
+/* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
 
@@ -365,7 +371,11 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
             sbtsnoop_write_hci_pkt(msg[0U], 0U, &msg[1], lg);
         }
 #endif
-
+        /* Log HCI TX packet if callback registered */
+        if ((platform_hci_log_cb != NULL) && (len > 1U))
+        {
+            platform_hci_log_cb(msg[0], &msg[1], (uint16_t)(len - 1U), false);
+        }
     } while (false);
 
     /* Release wake up request */
@@ -604,7 +614,11 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
 #ifdef SERIAL_BTSNOOP
         sbtsnoop_write_hci_pkt(data[0U], 1U, &data[1], (uint16_t)(len - 1U));
 #endif
-
+        /* Log HCI RX packet if callback registered */
+        if (platform_hci_log_cb != NULL)
+        {
+            platform_hci_log_cb(data[0], &data[1], (uint16_t)(len - 1U), true);
+        }
         PLATFORM_RemoteActiveRel();
 #endif
     }
@@ -635,7 +649,11 @@ static void PLATFORM_HciRxWorkHandler(fwk_work_t *work)
 #ifdef SERIAL_BTSNOOP
             sbtsnoop_write_hci_pkt(hci_rx_data.data[0U], 1U, &hci_rx_data.data[1], (uint16_t)(hci_rx_data.len - 1U));
 #endif
-
+            /* Log HCI RX packet if callback registered */
+            if (platform_hci_log_cb != NULL)
+            {
+                platform_hci_log_cb(hci_rx_data.data[0], &hci_rx_data.data[1], (uint16_t)(hci_rx_data.len - 1U), true);
+            }
             /* Release the buffer from shared memory */
             (void)HAL_RpmsgFreeRxBuffer(hciRpmsgHandle, hci_rx_data.data);
         }
@@ -864,7 +882,17 @@ int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len)
 #ifdef SERIAL_BTSNOOP
         sbtsnoop_write_hci_pkt(HCI_EVENT_PACKET_TYPE, 1U, &data[0], (uint16_t)len);
 #endif
+        /* Log HCI vendor event if callback registered */
+        if (platform_hci_log_cb != NULL)
+        {
+            platform_hci_log_cb(HCI_EVENT_PACKET_TYPE, data, (uint16_t)len, true);
+        }
     } while (false);
 
     return ret;
+}
+
+void PLATFORM_RegisterHciLogCallback(platform_hci_log_cb_t cb)
+{
+    platform_hci_log_cb = cb;
 }
