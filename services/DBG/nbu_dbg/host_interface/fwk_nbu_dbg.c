@@ -197,3 +197,8 @@ void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask)
 {
     nbu_dbg_hci_vendor_event_config = config_mask;
 }
+
+void NBUDBG_RegisterHciLogCallback(platform_hci_log_cb_t cb)
+{
+    PLATFORM_RegisterHciLogCallback(cb);
+}

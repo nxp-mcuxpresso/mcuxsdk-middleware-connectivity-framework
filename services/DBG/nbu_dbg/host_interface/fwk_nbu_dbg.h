@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "fwk_debug_struct.h"
+#include "fwk_platform_ble.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Public macros                                */
@@ -91,5 +92,15 @@ int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
  *                        Multiple flags can be OR'ed together.
  */
 void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask);
+
+/*!
+ * \brief Register HCI logging callback
+ *
+ * \details This function registers the HCI logging callback with the platform.
+ *          The callback will be invoked for all HCI packets (TX and RX).
+ *
+ * \param[in] cb callback to be registered, NULL to unregister
+ */
+void NBUDBG_RegisterHciLogCallback(platform_hci_log_cb_t cb);
 
 #endif /*  __FWK_DEBUG_NBU_H__ */
