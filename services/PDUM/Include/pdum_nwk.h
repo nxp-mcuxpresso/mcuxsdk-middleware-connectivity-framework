@@ -39,18 +39,18 @@ extern "C" {
 #define PDUM_ALWAYS_INLINE ALWAYS_INLINE
 #endif
 
-#if JENNIC_CHIP_FAMILY == JN514x
+#if defined JENNIC_CHIP_FAMILY && (JENNIC_CHIP_FAMILY == JN514x)
 // Keep PDUM size for Z01 to avoid patching
-#define PDUM_NPDU_SIZE (127)
+#define PDUM_NPDU_SIZE (127U)
 #else
 //  RAM saving lpsw2999: NPDU size can be shrunk
-#define PDUM_NPDU_SIZE (127 - 9)
+#define PDUM_NPDU_SIZE (127U - 9U)
 #endif
 #define PDUM_NPDU_DESCENDING(npdu) (((pdum_tsNPdu *)(npdu))->u8Footer < ((pdum_tsNPdu *)(npdu))->u8Header)
 #define PDUM_NPDU_ASCENDING(npdu)  (((pdum_tsNPdu *)(npdu))->u8Footer >= ((pdum_tsNPdu *)(npdu))->u8Header)
 
 #define TRACE_NPDU_MAX    TRUE
-#define PDUM_NPDU_FREETAG (0xFF)
+#define PDUM_NPDU_FREETAG (0xFFU)
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
