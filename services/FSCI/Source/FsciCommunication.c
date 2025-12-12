@@ -55,11 +55,11 @@
 #endif
 
 #ifndef mFsciTxRetryCnt_c
-#define mFsciTxRetryCnt_c 4
+#define mFsciTxRetryCnt_c 4U
 #endif
 
 #ifndef mFsciRxRestartTimeoutMs_c
-#define mFsciRxRestartTimeoutMs_c 50u /* milliseconds */
+#define mFsciRxRestartTimeoutMs_c 50U /* milliseconds */
 #endif
 
 /************************************************************************************
@@ -211,7 +211,7 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
     osa_status_t status;
     do
     {
-        assert(pSerCfg);
+        assert(pSerCfg != NULL);
         FLib_MemSet(mFsciCommData, 0x00, sizeof(mFsciCommData));
 
 #if defined gFsciHostSupport_c && (gFsciHostSupport_c != 0)
@@ -226,7 +226,7 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
 #endif /* gFsciHostSyncUseEvent_c */
 #endif /* gFsciHostSupport_c */
 
-        for (i = 0; i < gFsciMaxInterfaces_c; i++)
+        for (i = 0U; i < gFsciMaxInterfaces_c; i++)
         {
             serial_handle_t ser_h;
             ser_h = gFsciSerialInterfaces[i] = (serial_handle_t)pSerCfg[i];
@@ -312,7 +312,7 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
 
 void FSCI_commInit(serial_handle_t *pSerCfg)
 {
-    assert(pSerCfg);
+    assert(pSerCfg != NULL);
     FLib_MemSet(mFsciCommData, 0x00, sizeof(mFsciCommData));
     for (uint32_t i = 0; i < gFsciMaxInterfaces_c; i++)
     {
@@ -421,7 +421,7 @@ void FSCI_receivePacket(void *param)
         SerialManager_TryRead((serial_read_handle_t)gFsciSerialReadHandle[(uint32_t)(uint32_t *)param], &c, 1,
                               &readBytes))
     {
-        while (readBytes != 0u)
+        while (readBytes != 0U)
         {
 #if defined gFsciRxTimeout_c && (gFsciRxTimeout_c != 0)
             timerRestartEn = TRUE;
@@ -694,18 +694,18 @@ void FSCI_transmitFormatedPacket(clientPacket_t *pPkt, uint32_t fsciInterface)
     uint8_t  checksum;
 
     pPkt->structured.header.startMarker = gFSCI_StartMarker_c;
-    size = (uint32_t)sizeof(clientPacketHdr_t) + pPkt->structured.header.len + 1u /* CRC */;
+    size = (uint32_t)sizeof(clientPacketHdr_t) + pPkt->structured.header.len + 1U /* CRC */;
 
     /* Compute Checksum */
-    checksum = FSCI_computeChecksum(pPkt->raw + 1, (uint16_t)(size - 2u));
+    checksum = FSCI_computeChecksum(pPkt->raw + 1, (uint16_t)(size - 2U));
 
     pPkt->structured.payload[pPkt->structured.header.len] = checksum;
 
-    if (virtInterface != 0u)
+    if (virtInterface != 0U)
     {
 #if (gFsciMaxVirtualInterfaces_c > 0)
         pPkt->structured.payload[pPkt->structured.header.len] += virtInterface;
-        pPkt->structured.payload[pPkt->structured.header.len + 1u] = checksum ^ (checksum + virtInterface);
+        pPkt->structured.payload[pPkt->structured.header.len + 1U] = checksum ^ (checksum + virtInterface);
         size += sizeof(checksum);
 #else
         (void)virtInterface;
@@ -744,7 +744,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
         buffer_size = sizeof(clientPacketHdr_t) + msgLen + gFsci_TailBytes_c;
 
 #if gFsciUseEscapeSeq_c
-        buffer_size = buffer_size * 2u;
+        buffer_size = buffer_size * 2U;
 #endif
 
         /* Allocate buffer */
@@ -758,10 +758,10 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
             header.len         = msgLen;
 
             /* Compute CRC for TX packet, on opcode group, opcode, payload length, and payload fields */
-            checksum = FSCI_computeChecksum((uint8_t *)&header + 1, sizeof(header) - 1u);
+            checksum = FSCI_computeChecksum((uint8_t *)&header + 1, sizeof(header) - 1U);
             checksum ^= FSCI_computeChecksum(pMsg, msgLen);
 #if (gFsciMaxVirtualInterfaces_c > 0)
-            if (virtInterface != 0u)
+            if (virtInterface != 0U)
             {
                 checksum2 = checksum ^ (checksum + virtInterface);
                 checksum += virtInterface;
@@ -775,7 +775,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
             /* Store the Checksum*/
             index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&checksum, sizeof(checksum), &buffer_ptr[index]);
 #if (gFsciMaxVirtualInterfaces_c > 0)
-            if (virtInterface != 0u)
+            if (virtInterface != 0U)
             {
                 index +=
                     (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&checksum2, sizeof(checksum2), &buffer_ptr[index]);
@@ -823,12 +823,12 @@ uint8_t *FSCI_GetFormattedPacket(uint8_t OG, uint8_t OC, void *pMsg, uint16_t ms
 {
     uint8_t          *pBuff = NULL;
     clientPacketHdr_t header;
-    uint16_t          index    = 0;
-    uint8_t           checksum = 0;
+    uint16_t          index    = 0U;
+    uint8_t           checksum = 0U;
 
-    assert(pMsg);
+    assert(pMsg != NULL);
     assert(msgLen <= gFsciMaxPayloadLen_c);
-    assert(pOutLen);
+    assert(pOutLen != NULL);
 
     pBuff = MEM_BufferAlloc(sizeof(header) + msgLen + sizeof(checksum));
     if (pBuff != NULL)
@@ -845,7 +845,7 @@ uint8_t *FSCI_GetFormattedPacket(uint8_t OG, uint8_t OC, void *pMsg, uint16_t ms
         /* Copy message payload */
         FLib_MemCpy(pBuff + index, pMsg, msgLen);
         index += msgLen;
-        checksum       = FSCI_computeChecksum(pBuff + 1, sizeof(header) - 1u + msgLen);
+        checksum       = FSCI_computeChecksum(pBuff + 1, sizeof(header) - 1U + msgLen);
         pBuff[index++] = checksum;
 
         *pOutLen = index;
@@ -889,11 +889,11 @@ uint8_t FSCI_GetVirtualInterface(uint32_t fsciInterface)
  ********************************************************************************** */
 fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint8_t *pVIntf)
 {
-    uint8_t             checksum = 0;
+    uint8_t             checksum = 0U;
     uint16_t            len;
     fsci_packetStatus_t status = FRAMING_ERROR;
 
-    assert(pData);
+    assert(pData != NULL);
     if (bytes < MIN_VALID_PACKET_LEN)
     {
         status = PACKET_IS_TO_SHORT; /* Too short to be valid. */
@@ -923,12 +923,12 @@ fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint
             }
             else /* If the length looks right, make sure that the checksum is correct. */
             {
-                checksum = FSCI_computeChecksum(pData->raw + 1, (uint16_t)(len + sizeof(clientPacketHdr_t) - 1u));
+                checksum = FSCI_computeChecksum(pData->raw + 1U, (uint16_t)(len + sizeof(clientPacketHdr_t) - 1U));
                 *pVIntf  = pData->structured.payload[len] - checksum;
 
                 if (bytes == (uint16_t)(len + sizeof(clientPacketHdr_t) + (uint16_t)sizeof(checksum)))
                 {
-                    if (0u == *pVIntf)
+                    if (0U == *pVIntf)
                     {
                         status = PACKET_IS_VALID;
                     }
@@ -947,10 +947,10 @@ fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint
                 if (FRAMING_ERROR == status)
                 {
                     /* Check virtual interface */
-                    if (bytes == len + sizeof(clientPacketHdr_t) + 2u * sizeof(checksum))
+                    if (bytes == len + sizeof(clientPacketHdr_t) + 2U * sizeof(checksum))
                     {
                         checksum ^= checksum + *pVIntf;
-                        if (pData->structured.payload[len + 1u] == checksum)
+                        if (pData->structured.payload[len + 1U] == checksum)
                         {
                             status = PACKET_IS_VALID;
                         }
@@ -975,10 +975,10 @@ fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint
 uint8_t FSCI_computeChecksum(const void *pBuffer, uint16_t size)
 {
     uint16_t index;
-    uint8_t  checksum = 0u;
+    uint8_t  checksum = 0U;
 
     /* Compute the CRC from Opcode byte */
-    for (index = 0u; index < size; index++)
+    for (index = 0U; index < size; index++)
     {
         checksum ^= ((const uint8_t *)pBuffer)[index];
     }
@@ -999,11 +999,11 @@ uint8_t FSCI_computeChecksum(const void *pBuffer, uint16_t size)
 #if gFsciUseEscapeSeq_c
 uint32_t FSCI_encodeEscapeSeq(const uint8_t *pDataIn, uint32_t len, uint8_t *pDataOut)
 {
-    uint32_t index, new_index = 0;
+    uint32_t index, new_index = 0UL;
 
     if (NULL != pDataOut)
     {
-        for (index = 0; index < len; index++)
+        for (index = 0UL; index < len; index++)
         {
             if ((pDataIn[index] == gFSCI_StartMarker_c) || (pDataIn[index] == gFSCI_EndMarker_c) ||
                 (pDataIn[index] == gFSCI_EscapeChar_c))
@@ -1036,7 +1036,7 @@ void FSCI_decodeEscapeSeq(uint8_t *pData, uint32_t len)
     uint32_t index, new_index;
 
     /* Find the first gFSCI_EscapeChar_c */
-    for (index = 0; index < len; index++)
+    for (index = 0UL; index < len; index++)
     {
         if (pData[index] == gFSCI_EscapeChar_c)
         {
@@ -1143,7 +1143,7 @@ static void FSCI_CheckRxTimeoutPolling(void *param)
         currentTs = TM_GetTimestamp();
 
         /* Check for timeout */
-        if (((currentTs - pCommData->lastRxByteTs) / 1000u) > mFsciRxRestartTimeoutMs_c)
+        if (((currentTs - pCommData->lastRxByteTs) / 1000U) > mFsciRxRestartTimeoutMs_c)
         {
             /* call the RX timeout callback to do the cleanup */
             FSCI_RxRxTimeoutCb(param);
@@ -1190,7 +1190,7 @@ static void FSCI_SendPacketToSerialManager(uint32_t fsciInterface, uint8_t *pPac
     pCommData->ackReceived = FALSE;
     pCommData->txRetryCnt  = mFsciTxRetryCnt_c;
 
-    while (pCommData->txRetryCnt != 0u)
+    while (pCommData->txRetryCnt != 0U)
     {
         (void)SerialManager_WriteBlocking((serial_write_handle_t)gFsciSerialWriteHandle[fsciInterface], pPacket,
                                           packetLen);
@@ -1228,10 +1228,10 @@ static void FSCI_SendPacketToSerialManager(uint32_t fsciInterface, uint8_t *pPac
         {
             FSCI_receivePacket((uint32_t *)fsciInterface);
             currentTs = TM_GetTimestamp();
-            if (((currentTs - ackWaitStartTs) / 1000u) > mFsciRxAckTimeoutMs_c)
+            if (((currentTs - ackWaitStartTs) / 1000U) > mFsciRxAckTimeoutMs_c)
             {
                 pCommData->ackWaitOngoing = FALSE;
-                if (pCommData->txRetryCnt != 0u)
+                if (pCommData->txRetryCnt != 0U)
                 {
                     pCommData->txRetryCnt--;
                 }

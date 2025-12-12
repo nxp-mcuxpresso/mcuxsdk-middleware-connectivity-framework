@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2017, 2025 NXP
  * All rights reserved.
  *
  * \file
@@ -40,8 +40,8 @@
 *************************************************************************************
 ************************************************************************************/
 
-#define gFsciTextLogSize_c (gFsciMaxPayloadLen_c - sizeof(clientPacketHdr_t) - gFsciTimestampSize_c - 1)
-#define gFsciFileLogSize_c 220
+#define gFsciTextLogSize_c (gFsciMaxPayloadLen_c - (uint32_t)sizeof(clientPacketHdr_t) - gFsciTimestampSize_c - 1U)
+#define gFsciFileLogSize_c 220U
 
 /************************************************************************************
 *************************************************************************************
@@ -92,12 +92,12 @@ void FSCI_Print(uint8_t readyToSend, void *pSrc, fsciLen_t len)
                 // Fill the Header
                 pData->structured.header.opGroup = gFSCI_CnfOpcodeGroup_c;
                 pData->structured.header.opCode  = mFsciMsgDebugPrint_c;
-                pData->structured.header.len     = 0;
+                pData->structured.header.len     = 0U;
             }
         }
 
         /* Check for overflow */
-        if ((pData != NULL) && (pData->structured.header.len + len < gFsciMaxPayloadLen_c))
+        if ((pData != NULL) && ((pData->structured.header.len + len) < gFsciMaxPayloadLen_c))
         {
             FLib_MemCpy(&pData->structured.payload[pData->structured.header.len], pSrc, len);
             pData->structured.header.len += len;
@@ -142,7 +142,7 @@ void FSCI_LogFormatedText(const char *fmt, ...)
 
     /* Fill the message Header */
     pFsciData->structured.header.opGroup = gFSCI_LoggingOpcodeGroup_c;
-    pFsciData->structured.header.opCode  = 0x01;
+    pFsciData->structured.header.opCode  = 0x01U;
 
 #if gFsciTimestampSize_c
     *((uint64_t *)pFsciData->structured.payload) = TimerGetAbsoluteTime();
@@ -162,7 +162,7 @@ void FSCI_LogFormatedText(const char *fmt, ...)
         pFsciData->structured.payload[gFsciTextLogSize_c - 3] = '\n';
         pFsciData->structured.payload[gFsciTextLogSize_c - 2] = '\r';
         pFsciData->structured.payload[gFsciTextLogSize_c - 1] = '\0';
-        length                                                = gFsciTextLogSize_c - 1;
+        length                                                = gFsciTextLogSize_c - 1U;
     }
 
     /* Compute total payload len */
@@ -215,7 +215,7 @@ void FSCI_LogToFile(char *fileName, uint8_t *pData, uint16_t dataSize, uint8_t m
     pFsciData->structured.payload[idx++] = fileNameSize;
 
     // Compute checksum
-    checksum = FSCI_computeChecksum(&pFsciData->raw[1], sizeof(clientPacketHdr_t) + idx - 1u);
+    checksum = FSCI_computeChecksum(&pFsciData->raw[1], sizeof(clientPacketHdr_t) + idx - 1U);
     checksum ^= FSCI_computeChecksum(fileName, fileNameSize);
     checksum ^= FSCI_computeChecksum(pData, dataSize);
 
@@ -230,8 +230,8 @@ void FSCI_LogToFile(char *fileName, uint8_t *pData, uint16_t dataSize, uint8_t m
     size = (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)fileName, fileNameSize, buffer);
     (void)Serial_SyncWrite(gFsciSerialInterfaces[gFsciLoggingInterface_c], buffer, size);
 
-    idx = sizeof(clientPacketStructured_t) / 2u;
-    while (dataSize != 0u)
+    idx = sizeof(clientPacketStructured_t) / 2U;
+    while (dataSize != 0U)
     {
         if (dataSize > idx)
         {
@@ -242,7 +242,7 @@ void FSCI_LogToFile(char *fileName, uint8_t *pData, uint16_t dataSize, uint8_t m
         else
         {
             size     = (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)pData, dataSize, buffer);
-            dataSize = 0;
+            dataSize = 0U;
         }
 
         (void)Serial_SyncWrite(gFsciSerialInterfaces[gFsciLoggingInterface_c], buffer, size);

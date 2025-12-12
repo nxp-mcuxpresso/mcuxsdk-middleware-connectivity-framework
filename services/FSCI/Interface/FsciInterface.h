@@ -72,7 +72,7 @@
 #if defined(gFsciUseDedicatedTask_c) && (gFsciUseDedicatedTask_c == 1)
 /* Fsci Task specification */
 #ifndef gFsciTaskStackSize_c
-#define gFsciTaskStackSize_c (1024) /* bytes */
+#define gFsciTaskStackSize_c (1024U) /* bytes */
 #endif
 #ifndef gFsciTaskPriority_c
 #define gFsciTaskPriority_c (3)
@@ -81,7 +81,7 @@
 #endif /* gFsciUseDedicatedTask_c */
 
 #ifndef gFsciMaxOpGroups_c
-#define gFsciMaxOpGroups_c 9
+#define gFsciMaxOpGroups_c 9U
 #endif
 
 #ifndef gFsciMaxInterfaces_c
@@ -93,7 +93,7 @@
 #endif
 
 #ifndef gFsciMaxPayloadLen_c
-#define gFsciMaxPayloadLen_c 245 /* bytes */
+#define gFsciMaxPayloadLen_c 245U /* bytes */
 #endif
 
 #ifndef gFsciLenHas2Bytes_c
@@ -150,7 +150,7 @@
 #define gFsciOverRpmsg_c 0 /* boolean */
 #endif
 
-#define mFsciInvalidInterface_c (0xFF)
+#define mFsciInvalidInterface_c (0xFFU)
 
 /* Used for maintaining backward compatibility */
 #define gFSCI_McpsSapId_c  1
@@ -167,10 +167,10 @@
  * The Test Tool uses an Opcode Group to specify which SAP Handler a packet
  * in intended for or received from.
  */
-#define gFSCI_LoggingOpcodeGroup_c 0xB0  /* FSCI data logging utility    */
-#define gFSCI_ReqOpcodeGroup_c     0xA3  /* FSCI utility Requests         */
+#define gFSCI_LoggingOpcodeGroup_c 0xB0U /* FSCI data logging utility    */
+#define gFSCI_ReqOpcodeGroup_c     0xA3U /* FSCI utility Requests         */
 #define gFSCI_CnfOpcodeGroup_c     0xA4U /* FSCI utility Confirmations/Indications    */
-#define gFSCI_ReservedOpGroup_c    0x52
+#define gFSCI_ReservedOpGroup_c    0x52U
 
 /* Additional bytes added by FSCI to a packet */
 #if (gFsciMaxVirtualInterfaces_c > 0)
