@@ -402,8 +402,14 @@ static void PLATFORM_ConfigureRamRetention(void)
 {
     /* Keep all ram banks in retention,  Set SD_EN (Shutdown enable) bits to zero and DS_EN (Deep Sleep enable) bits to
      * one */
-    uint32_t ram_pwr = RF_CMC1_RAM_PWR_DS_EN_MASK;
+    uint32_t ram_pwr = 0U;
+#if defined(PLATFORM_RAM_LP_OPTIMIZED_MASK)
+    ram_pwr = RF_CMC1_RAM_PWR_DS_EN_MASK & ~((PLATFORM_RAM_LP_OPTIMIZED_MASK) << RF_CMC1_RAM_PWR_DS_EN_SHIFT);
+    ram_pwr |= PLATFORM_RAM_LP_OPTIMIZED_MASK;
+#else
+    ram_pwr = RF_CMC1_RAM_PWR_DS_EN_MASK;
     ram_pwr &= ~RF_CMC1_RAM_PWR_SD_EN_MASK;
+#endif
     RF_CMC1->RAM_PWR = ram_pwr;
 }
 

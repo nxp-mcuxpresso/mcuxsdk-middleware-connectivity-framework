@@ -57,4 +57,10 @@
  * needs to access to NBU power domain */
 #define gPlatformLowpowerEnableWakeUpInterrupt_d 1
 
+#if defined(gNbuLowpowerRetentionRamOptimized) && (gNbuLowpowerRetentionRamOptimized == 1)
+/* RAM retention mask optimized for low-power mode when NBU operates with a limited feature set (e.g., Matter use cases)
+ */
+#define PLATFORM_RAM_LP_OPTIMIZED_MASK (BIT12 | BIT11 | BIT2 | BIT7)
+#endif
+
 #endif /* _FWK_CONFIG_H_ */
