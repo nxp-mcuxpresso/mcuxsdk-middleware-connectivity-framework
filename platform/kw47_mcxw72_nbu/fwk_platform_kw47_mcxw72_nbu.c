@@ -19,6 +19,9 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
+/* Using all 0xFF as invalid since the register mask is 0x3F, no risk of collision */
+#define FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID (0xFFFFFFFFU)
+
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
 /* -------------------------------------------------------------------------- */
@@ -31,6 +34,8 @@ typedef struct
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
 const Fro192Cfg_t slowest_fro_cfg = {.clock_ctrl = 0U, .div = FRO192M_FRODIV_FRODIV_MASK};
+
+static uint32_t lpo_wakeup_delay_saved = FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID;
 
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
@@ -67,6 +72,15 @@ static void PLATFORM_PreDeepSleepSaveCfg(void)
     /* Disable SPC high power mode */
     PLATFORM_EnableSpcHighPowerMode(false);
 #endif
+
+    /* If LPO wakeup delay was previously saved, restore it
+     * Initial value is FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID, and it will be set to a valid value
+     * at first low power exit, so we need to handle this case for the first entry. */
+    if (lpo_wakeup_delay_saved != FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID)
+    {
+        BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES =
+            BLE2_REG_BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES_WAKEUP_DELAY_LPO_CYCLES(lpo_wakeup_delay_saved);
+    }
 }
 
 /*!
@@ -80,6 +94,12 @@ static void PLATFORM_PostWakeupRestoreCfg(void)
     /* Enable SPC high power mode */
     PLATFORM_EnableSpcHighPowerMode(true);
 #endif
+
+    /* Force LPO cycle to 0 to ensure proper LL timing calculation
+     * The value is restored before going into low power in PLATFORM_PreDeepSleepSaveCfg */
+    lpo_wakeup_delay_saved = BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES;
+    BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES =
+        BLE2_REG_BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES_WAKEUP_DELAY_LPO_CYCLES(0U);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -168,6 +188,7 @@ void PLATFORM_HandleLowPowerEntry(void)
     if (PLATFORM_SwitchSleepClockSource(true) == 0)
     {
         Fro192Cfg_t nbuclk_cfg;
+
         PLATFORM_PreDeepSleepSaveCfg();
 
         /* Disable and clear Systicks */
@@ -206,6 +227,7 @@ void PLATFORM_HandleLowPowerEntry(void)
 
         /* Re-enable systicks */
         SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+
         PLATFORM_PostWakeupRestoreCfg();
 
         PLATFORM_WaitForXtalReady();
