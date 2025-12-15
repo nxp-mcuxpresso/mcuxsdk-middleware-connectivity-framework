@@ -311,7 +311,7 @@ static int PLATFORM_SendZbMessage(hal_imumc_handle_t imumcHandle, uint8_t *msg, 
         {
             /* An error here means the IMU link is not ready yet, we can assert here as it shouldn't happen
              * because we wait for the IMU link to be ready in PLATFORM_InitZbImumc() */
-            assert(0);
+            assert(false);
             ret = -2;
             break;
         }

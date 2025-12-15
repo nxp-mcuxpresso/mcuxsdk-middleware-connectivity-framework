@@ -187,7 +187,7 @@ int PLATFORM_OtaNotifyNewImageReady(const OtaLoaderInfo_t *ota_loader_info)
     }
     else
     {
-        assert(0);
+        assert(false);
     }
 
     return 0;

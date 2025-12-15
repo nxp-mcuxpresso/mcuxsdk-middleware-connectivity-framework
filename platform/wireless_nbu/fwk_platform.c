@@ -367,7 +367,7 @@ int PLATFORM_InitTimerManager(void)
         if (tm_st != kStatus_TimerSuccess)
         {
             status = RAISE_ERROR(tm_st, 1);
-            assert(0);
+            assert(false);
         }
         else
         {
@@ -437,7 +437,7 @@ void PLATFORM_ConfigureSmuDmemMapping(void)
     /* Ensure the start symbols are correct */
     if (((uint32_t)&m_dmem_start != 0x140000U) || ((uint32_t)&m_shared_ram_start != 0xB0000000U))
     {
-        assert(0);
+        assert(false);
     }
 
     m_dmem_size       = (uint32_t)&m_dmem_end - (uint32_t)&m_dmem_start + 1U;
@@ -462,7 +462,7 @@ void PLATFORM_ConfigureSmuDmemMapping(void)
     /* Assert if no valid configuration found */
     if (!config_found)
     {
-        assert(0);
+        assert(false);
     }
 
     ram_mux_ctrl = RF_CMC1->RAM_MUX_CTRL;

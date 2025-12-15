@@ -61,7 +61,7 @@ int PLATFORM_InitExternalFlash(void)
     st = Nor_Flash_Init(BOARD_GetExtFlashConfig(), &norHandle);
     if (st != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     return (int)st;
 }
@@ -158,7 +158,7 @@ int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address
     st = Nor_Flash_Program(&norHandle, address + FSL_FEATURE_SPIFI_START_ADDR, data, length);
     if (st != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     return (int)st;
 }

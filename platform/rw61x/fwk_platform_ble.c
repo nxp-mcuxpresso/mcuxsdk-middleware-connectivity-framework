@@ -659,7 +659,7 @@ int PLATFORM_RequestBleWakeUp(void)
     if (OSA_MutexLock((osa_mutex_handle_t)bleMutexHandle, osaWaitForever_c) != KOSA_StatusSuccess)
     {
         /* shouldn't happen */
-        assert(0);
+        assert(false);
     }
 
     if (PLATFORM_IsBleAwake() == false)

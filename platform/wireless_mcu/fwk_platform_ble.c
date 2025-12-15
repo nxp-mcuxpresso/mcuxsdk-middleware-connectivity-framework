@@ -74,7 +74,7 @@
     {                                                                                              \
         if ((__st) < 0)                                                                            \
         {                                                                                          \
-            assert(0);                                                                             \
+            assert(false);                                                                         \
             (__st) = -(int)((uint32_t)(((uint32_t)(-(__st)) << 4) | (uint32_t)(-(__error_code)))); \
             break;                                                                                 \
         }                                                                                          \
@@ -393,7 +393,7 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
 int PLATFORM_SendHciMessageAlt(uint8_t packetType, uint8_t *msg, uint32_t len)
 {
     /* not implemented */
-    assert(0);
+    assert(false);
     return -1;
 }
 
@@ -542,7 +542,7 @@ static int PLATFORM_InitHciLink(void)
         status = WORKQ_InitSysWorkQ();
         if (status < 0)
         {
-            assert(0);
+            assert(false);
             break;
         }
 
@@ -552,7 +552,7 @@ static int PLATFORM_InitHciLink(void)
         osa_status = OSA_MsgQCreate(hciMsgQueue, PLATFORM_HCI_RX_QUEUE_SIZE, sizeof(hci_rx_data_t));
         if (osa_status != KOSA_StatusSuccess)
         {
-            assert(0);
+            assert(false);
             status = RAISE_ERROR(osa_status, 3);
             break;
         }
@@ -561,7 +561,7 @@ static int PLATFORM_InitHciLink(void)
         hci_rpmsg_status = HAL_RpmsgInit((hal_rpmsg_handle_t)hciRpmsgHandle, &hci_rpmsg_config);
         if (hci_rpmsg_status != kStatus_HAL_RpmsgSuccess)
         {
-            assert(0);
+            assert(false);
             status = RAISE_ERROR(hci_rpmsg_status, 1);
             break;
         }
@@ -591,7 +591,7 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
          * to do before pushing to the message queue. */
         if (WORKQ_Submit(&hci_work) < 0)
         {
-            assert(0);
+            assert(false);
         }
         else
         {
@@ -603,7 +603,7 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
             }
             else
             {
-                assert(0);
+                assert(false);
             }
         }
 #else

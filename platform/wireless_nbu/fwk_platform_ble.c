@@ -92,7 +92,7 @@ static void PLATFORM_InitHciLink(void)
     if (kStatus_HAL_RpmsgSuccess !=
         HAL_RpmsgInit((hal_rpmsg_handle_t)hciRpmsgHandle, (hal_rpmsg_config_t *)&hciRpmsgConfig))
     {
-        assert(0);
+        assert(false);
         return;
     }
 
@@ -100,7 +100,7 @@ static void PLATFORM_InitHciLink(void)
     if (HAL_RpmsgInstallRxCallback((hal_rpmsg_handle_t)hciRpmsgHandle, PLATFORM_HciRpmsgRxCallback, NULL) !=
         kStatus_HAL_RpmsgSuccess)
     {
-        assert(0);
+        assert(false);
     }
 }
 

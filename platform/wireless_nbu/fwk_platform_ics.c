@@ -57,7 +57,7 @@ typedef struct
 
 /* declared here to avoid including ble_controller header file */
 extern uint32_t Controller_HandleNbuApiReq(uint8_t *api_return, uint8_t *data, uint32_t data_len);
-extern bool     Controller_EnableSecurityFeature();
+extern bool     Controller_EnableSecurityFeature(void);
 
 #if defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0)
 extern void PLATFORM_RxNbuSharedCtxAddress(uint8_t *data, uint32_t len);
@@ -94,13 +94,17 @@ static void PLATFORM_RxWorkHandler(fwk_work_t *work);
 /* -------------------------------------------------------------------------- */
 
 static RPMSG_HANDLE_DEFINE(fwkRpmsgHandle);
-const static hal_rpmsg_config_t fwkRpmsgConfig = {
+
+static const hal_rpmsg_config_t fwkRpmsgConfig = {
     .local_addr  = 100,
     .remote_addr = 110,
+    .callback    = PLATFORM_FwkSrv_RxCallBack,
+    .param       = NULL,
+
 };
 
-static void (*PLATFORM_RxCallbackService[gFwkSrvHost2NbuLast_c - gFwkSrvHost2NbuFirst_c - 1U])(uint8_t *data,
-                                                                                               uint32_t len) = {
+static void (*PLATFORM_RxCallbackService[(uint8_t)gFwkSrvHost2NbuLast_c - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U])(
+    uint8_t *data, uint32_t len) = {
     PLATFORM_RxNbuVersionRequest,
     PLATFORM_RxXtal32MTrimIndication,
     PLATFORM_RxNbuApiRequest,
@@ -135,7 +139,8 @@ int PLATFORM_FwkSrvInit(void)
 {
     int result = 0;
 
-    static bool_t mFwkSrvInit = FALSE;
+    static bool_t      mFwkSrvInit  = FALSE;
+    hal_rpmsg_config_t rpmsg_config = fwkRpmsgConfig;
 
     do
     {
@@ -150,8 +155,7 @@ int PLATFORM_FwkSrvInit(void)
         (void)WORKQ_InitSysWorkQ();
 #endif
 
-        if (kStatus_HAL_RpmsgSuccess !=
-            HAL_RpmsgInit((hal_rpmsg_handle_t)fwkRpmsgHandle, (hal_rpmsg_config_t *)&fwkRpmsgConfig))
+        if (kStatus_HAL_RpmsgSuccess != HAL_RpmsgInit((hal_rpmsg_handle_t)fwkRpmsgHandle, &rpmsg_config))
         {
             result = -1;
             break;
@@ -173,36 +177,39 @@ int PLATFORM_FwkSrvInit(void)
 
 int PLATFORM_SendNbuVersionIndication(void)
 {
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuVersionIndication_c, (void *)&nbu_version, sizeof(NbuInfo_t));
+    const NbuInfo_t *nbu_version_ptr = &nbu_version;
+    /* MISRA deviation: casting const to non-const for send function that does not modify data */
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuVersionIndication_c, (void *)(uintptr_t)nbu_version_ptr,
+                                     (uint16_t)sizeof(NbuInfo_t));
 }
 
 int PLATFORM_NotifyNbuInitDone(void)
 {
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuInitDone_c, (void *)NULL, 0);
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuInitDone_c, (void *)NULL, 0U);
 }
 
 int PLATFORM_NotifyNbuMemFull(unsigned short poolId, uint16_t bufferSize)
 {
     NbuDbgMemInfo_t memInfo = {0}; /* useless but rids of Coverity UNINIT - reserved field remained uninitialized */
-    memInfo.poolId          = poolId;
+    memInfo.poolId          = (uint8_t)poolId;
     memInfo.bufferSize      = bufferSize;
 
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuMemFullIndication_c, (void *)&memInfo, sizeof(memInfo));
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuMemFullIndication_c, (void *)&memInfo, (uint16_t)sizeof(memInfo));
 }
 
 int PLATFORM_FwkSrvSetLowPowerConstraint(uint8_t mode)
 {
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvHostSetLowPowerConstraint_c, (void *)&mode, sizeof(mode));
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvHostSetLowPowerConstraint_c, (void *)&mode, (uint16_t)sizeof(mode));
 }
 
 int PLATFORM_FwkSrvReleaseLowPowerConstraint(uint8_t mode)
 {
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvHostReleaseLowPowerConstraint_c, (void *)&mode, sizeof(mode));
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvHostReleaseLowPowerConstraint_c, (void *)&mode, (uint16_t)sizeof(mode));
 }
 
 int PLATFORM_NotifyNbuIssue(void)
 {
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuIssueIndication_c, (void *)NULL, 0);
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuIssueIndication_c, (void *)NULL, 0U);
 }
 
 int PLATFORM_NotifyNbuEvent(NbuEvent_t *event)
@@ -227,37 +234,34 @@ int PLATFORM_NotifyNbuEvent(NbuEvent_t *event)
 int PLATFORM_NotifySecurityEvents(uint32_t securityEventBitmask)
 {
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuSecurityEventIndication_c, (void *)&securityEventBitmask,
-                                     sizeof(uint32_t));
+                                     (uint16_t)sizeof(uint32_t));
 }
 
 void PLATFORM_FwkSrvFreeRxPacket(void *pPacket)
 {
-    HAL_RpmsgFreeRxBuffer(fwkRpmsgHandle, (uint8_t *)pPacket - 4U);
+    (void)HAL_RpmsgFreeRxBuffer(fwkRpmsgHandle, (uint8_t *)pPacket - 4U);
 }
 
 int PLATFORM_FwkSrvFroInfo(uint16_t freq, int16_t ppm_mean, int16_t ppm, uint16_t fro_trim)
 {
-    uint8_t tab[8];
-    tab[0] = (uint8_t)freq;
-    tab[1] = (uint8_t)(freq >> 8U);
-    tab[2] = (uint8_t)ppm_mean;
-    tab[3] = (uint8_t)(ppm_mean >> 8U);
-    tab[4] = (uint8_t)ppm;
-    tab[5] = (uint8_t)(ppm >> 8U);
-    tab[6] = (uint8_t)fro_trim;
-    tab[7] = (uint8_t)(fro_trim >> 8U);
-    return (PLATFORM_FwkSrvSendPacket(gFwkSrvFroNotification_c, tab, (uint16_t)sizeof(tab)));
+    FroInfo_t fro_inf;
+    fro_inf.freq     = freq;
+    fro_inf.ppm_mean = ppm_mean;
+    fro_inf.ppm      = ppm;
+    fro_inf.fro_trim = fro_trim;
+
+    return (PLATFORM_FwkSrvSendPacket(gFwkSrvFroNotification_c, &fro_inf, (uint16_t)sizeof(FroInfo_t)));
 }
 
 int PLATFORM_RequestRngSeedToHost(void)
 {
-    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuRequestRngSeed_c, (void *)NULL, 0);
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuRequestRngSeed_c, (void *)NULL, 0U);
 }
 
 int PLATFORM_FwkSrvRequestNewTemperature(uint32_t periodic_interval_ms)
 {
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuRequestNewTemperature_c, (void *)&periodic_interval_ms,
-                                     sizeof(uint32_t));
+                                     (uint16_t)sizeof(uint32_t));
 }
 
 void PLATFORM_RegisterSetNewSeed(seed_ready_event_callback_t cb)
@@ -280,7 +284,8 @@ static void PLATFORM_RxWorkHandler(fwk_work_t *work)
     while (node != NULL)
     {
         rx_data = CONTAINER_OF(node, rx_data_t, node);
-        PLATFORM_RxCallbackService[rx_data->data[0] - gFwkSrvHost2NbuFirst_c - 1U](rx_data->data, rx_data->len);
+        PLATFORM_RxCallbackService[rx_data->data[0] - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U](rx_data->data,
+                                                                                            rx_data->len);
         (void)MEM_BufferFree(rx_data);
         node = LIST_RemoveHead(&rx_work.pending);
     }
@@ -291,7 +296,7 @@ static int PLATFORM_FwkSrvSendPacket(eFwkSrvMsgType msg_type, void *msg, uint16_
 {
     uint8_t *buf    = NULL;
     int      result = 0;
-    uint32_t sz     = ((uint32_t)msg_lg + 1);
+    uint32_t sz     = ((uint32_t)msg_lg + 1UL);
 
     PWR_DBG_LOG("fwk Send Pkt %x type=%d sz=%d", msg, msg_type, msg_lg);
 
@@ -307,7 +312,7 @@ static int PLATFORM_FwkSrvSendPacket(eFwkSrvMsgType msg_type, void *msg, uint16_
             break;
         }
         buf[0] = (uint8_t)msg_type;
-        if (msg != NULL && msg_lg != 0)
+        if (msg != NULL && msg_lg != 0UL)
         {
             FLib_MemCpy(&buf[1], (uint8_t *)msg, msg_lg);
         }
@@ -364,7 +369,7 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
         if (process_now == true)
 #endif
         {
-            PLATFORM_RxCallbackService[msg_type - gFwkSrvHost2NbuFirst_c - 1U](data, len);
+            PLATFORM_RxCallbackService[msg_type - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U](data, len);
         }
     }
     return res;
@@ -372,7 +377,7 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
 
 static bool FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type)
 {
-    return (msg_type > gFwkSrvHost2NbuFirst_c && msg_type < gFwkSrvHost2NbuLast_c);
+    return (msg_type > (uint8_t)gFwkSrvHost2NbuFirst_c && msg_type < (uint8_t)gFwkSrvHost2NbuLast_c);
 }
 
 static void PLATFORM_RxNbuVersionRequest(uint8_t *data, uint32_t len)
@@ -390,33 +395,45 @@ static void PLATFORM_RxXtal32MTrimIndication(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuApiRequest(uint8_t *data, uint32_t len)
 {
-    uint32_t nb_returns;
+    uint16_t ind_len = 1U;
     uint8_t  ind[1U + NBU_API_MAX_RETURN_PARAM_LENGTH]; /* rpmsg status + API status + API outputs */
-    uint16_t ind_len;
 
-    /* execute the API */
-    nb_returns = Controller_HandleNbuApiReq(&ind[1], data + 1U, len - 1U);
-    assert((nb_returns > 0U) && (nb_returns <= NBU_API_MAX_RETURN_PARAM_LENGTH));
+    ind[0U] = 0U; /* pre-load with error code (rpmsg failure: API does not exist etc.) */
+    do
+    {
+        uint32_t nb_returns = 0UL;
 
-    /* indication message: 1 byte rpmsg status followed by 4 bytes api status */
-    if (nb_returns != 0)
-    {
-        ind[0U] = 1U; // rpmsg success, API could still fail
-        ind_len = 1U + nb_returns;
-    }
-    else
-    {
-        ind[0U] = 0U; // rpmsg failure: API does not exist etc.
-        ind_len = 1U;
-    }
+        if (len <= 1U)
+        {
+            break;
+        }
+        /* execute the API */
+        nb_returns = Controller_HandleNbuApiReq(&ind[1], &data[1], len - 1U);
+        if ((nb_returns == 0UL) || (nb_returns > (uint32_t)NBU_API_MAX_RETURN_PARAM_LENGTH))
+        {
+            break;
+        }
+
+        uint16_t val = (uint16_t)nb_returns;
+        /* indication message: 1 byte rpmsg status followed by 4 bytes api status */
+        if (val != 0U)
+        {
+            ind[0U] = 1U; // rpmsg success, API could still fail
+            ind_len = 1U + val;
+        }
+
+    } while (false);
     (void)PLATFORM_FwkSrvSendPacket(gFwkSrvNbuApiIndication_c, (void *)&ind[0U], ind_len);
+    assert(ind_len != 0U);
 }
 
 static void PLATFORM_RxTemperatureIndication(uint8_t *data, uint32_t len)
 {
+    int32_t temperature;
     /* data[0] is the API id */
     /* data[1-4] is the temperature as signed 32 bits - little endian */
-    int32_t temperature = *((int32_t *)&data[1]);
+    assert(len == 5U);
+    (void)memcpy(&temperature, &data[1], sizeof(int32_t));
     PLATFORM_SaveTemperatureValue(temperature);
 }
 
@@ -455,11 +472,12 @@ static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
 {
 #if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
     sfc_config_t sfc_config;
-    uint32_t     data_len     = len - 1U;
-    uint32_t     size_to_copy = (data_len < sizeof(sfc_config_t)) ? data_len : sizeof(sfc_config_t);
+    assert(len > 1UL);
+    uint32_t data_len     = len - 1U;
+    uint32_t size_to_copy = (data_len < sizeof(sfc_config_t)) ? data_len : sizeof(sfc_config_t);
 
-    memset(&sfc_config, 0U, sizeof(sfc_config_t));
-    memcpy(&sfc_config, (sfc_config_t *)&data[1], size_to_copy);
+    (void)memset(&sfc_config, 0, sizeof(sfc_config_t));
+    (void)memcpy(&sfc_config, &data[1], size_to_copy);
     SFC_UpdateConfig((const sfc_config_t *)&sfc_config);
 #endif
 }
@@ -467,7 +485,8 @@ static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len)
 static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len)
 {
 #if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
-    SFC_EnableNotification(data[1]);
+    int ena = data[1] != 0 ? 1 : 0;
+    SFC_EnableNotification(ena);
 #endif
 }
 

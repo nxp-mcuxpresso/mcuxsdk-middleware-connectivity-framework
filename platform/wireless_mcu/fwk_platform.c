@@ -419,7 +419,7 @@ int PLATFORM_InitMulticore(void)
     if (rpmsg_status != kStatus_HAL_RpmsgSuccess)
     {
         status = RAISE_ERROR(rpmsg_status, 1);
-        assert(0);
+        assert(false);
     }
     else
     {
@@ -748,7 +748,7 @@ int PLATFORM_InitTimerManager(void)
         if (tm_st != kStatus_TimerSuccess)
         {
             status = RAISE_ERROR(tm_st, 1);
-            assert(0);
+            assert(false);
         }
         else
         {
@@ -1018,7 +1018,7 @@ void PLATFORM_RemoteActiveRel(void)
         {
             pfPlatformErrorCallback(PLATFORM_REMOTE_ACTIVE_REL_ID, -2);
         }
-        assert(0);
+        assert(false);
     }
 
     /* Use BASEPRI masking instead of PRIMASK to create a priority ceiling.

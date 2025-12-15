@@ -179,7 +179,7 @@ static void PWRCli_ConfigureNextLowPowerMode(PWR_LowpowerMode_t nextMode, uint32
     }
     else
     {
-        assert(0);
+        assert(false);
     }
 
     if (timeMs > 0U)
@@ -192,7 +192,7 @@ static void PWRCli_ConfigureNextLowPowerMode(PWR_LowpowerMode_t nextMode, uint32
          * This is to make sure the serial interface becomes available again to the user */
         if (xTimerStart(lpTimer, 0) != pdPASS)
         {
-            assert(0);
+            assert(false);
         }
     }
 }

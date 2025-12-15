@@ -86,7 +86,7 @@ int PLATFORM_InitExternalFlash(void)
     st = Nor_Flash_Init(&norConfig, &norHandle);
     if (st != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     return (int)st;
 }
@@ -176,7 +176,7 @@ int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t offset, 
     st = (int)Nor_Flash_Read(&norHandle, offset, dest, length);
     if (st != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     return (int)st;
 }
@@ -187,7 +187,7 @@ int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address
     st = Nor_Flash_Program(&norHandle, address, data, length);
     if (st != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     return (int)st;
 }

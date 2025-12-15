@@ -117,7 +117,7 @@ void ADC0_IRQHandler(void)
 
         if (WORKQ_Submit(&temperature_ready_work) < 0)
         {
-            assert(0);
+            assert(false);
         }
     }
 
@@ -149,7 +149,7 @@ void PLATFORM_InitAdc(void)
      */
     if (WORKQ_InitSysWorkQ() < 0)
     {
-        assert(0);
+        assert(false);
     }
 #if PLATFORM_TEMPERATURE_FILTER_SIZE > 1U
     /* Initialize the filter shift based on the filter size */
@@ -262,7 +262,7 @@ static void PLATFORM_TemperatureReadyWorkHandler(fwk_work_t *work)
              * If not, the calibration will be ignored. */
             if (PLATFORM_CalibrateXtal32M(xtal_cal_temp) < 0)
             {
-                assert(0);
+                assert(false);
             }
             /* Send temperature to the NBU */
             PLATFORM_SendTemperatureValue(temperature_to_send);
@@ -313,7 +313,7 @@ static int32_t PLATFORM_ComputeMMAOnTemperature(int32_t temperature)
     }
     else
     {
-        assert(0);
+        assert(false);
     }
 #endif
     return result;

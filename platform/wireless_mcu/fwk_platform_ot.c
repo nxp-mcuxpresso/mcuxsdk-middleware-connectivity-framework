@@ -31,7 +31,7 @@ static const uint8_t gIeee802_15_4_ADDR_OUI_c[MAC_ADDR_OUI_PART_SIZE] = {IEEE802
     {                                                                                              \
         if ((__st) < 0)                                                                            \
         {                                                                                          \
-            assert(0);                                                                             \
+            assert(false);                                                                         \
             (__st) = -(int)((uint32_t)(((uint32_t)(-(__st)) << 4) | (uint32_t)(-(__error_code)))); \
             break;                                                                                 \
         }                                                                                          \

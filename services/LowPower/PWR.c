@@ -82,14 +82,14 @@ __attribute__((weak)) bool PWR_SysticksPreProcess(uint32_t xExpectedIdleTime, ui
 {
     (void)xExpectedIdleTime;
     (void)expectedIdleTimeUs;
-    assert(0);
+    assert(false);
     return false;
 }
 __attribute__((weak)) void PWR_SysticksPostProcess(uint64_t expectedIdleTimeUs, uint64_t actualIdleTimeUs)
 {
     (void)expectedIdleTimeUs;
     (void)actualIdleTimeUs;
-    assert(0);
+    assert(false);
 }
 void PWR_Init(void)
 {
@@ -295,7 +295,7 @@ void PWR_AllowDeviceToSleep(void)
     else
     {
         EnableGlobalIRQ(intMask);
-        assert(0);
+        assert(false);
     }
 }
 
@@ -311,7 +311,7 @@ void PWR_DisallowDeviceToSleep(void)
     else
     {
         EnableGlobalIRQ(intMask);
-        assert(0);
+        assert(false);
     }
 }
 
@@ -344,5 +344,5 @@ __WEAK uint32_t PWR_GetRadioNextEventUs(void)
  */
 __attribute__((weak)) void PWR_SysTicksLowPowerInit(void)
 {
-    assert(0);
+    assert(false);
 }

@@ -2172,7 +2172,7 @@ NVM_STATIC int __NvIdle(void)
                 nb_operation++;
                 if (nb_operation > (int)gNvPendingSavesQueueSize_c)
                 {
-                    assert(0);
+                    assert(false);
                     break;
                 }
             }
@@ -2657,7 +2657,7 @@ NVM_STATIC NVM_Status_t __NvModuleInit(bool_t flashInit)
                     }
                     if (pageFreeSpace < (flashEstimateSize + gNvMinimumFreeBytesCountStart_c))
                     {
-                        assert(0);
+                        assert(false);
                         /* Estimated Flash buffer is too small, Need increase the gNVMSectorCountLink_d */
                         status = gNVM_ReservedFlashTooSmall_c;
                     }
@@ -4180,7 +4180,7 @@ NVM_STATIC NVM_Status_t NvInternalCopy(uint32_t              dstAddress,
                 }
                 else
                 {
-                    assert(0);
+                    assert(false);
                     ;
                 }
             }
@@ -5124,7 +5124,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
                             if (gNVM_EccFaultWritingMeta_c == status || gNVM_EccFaultWritingRecord_c == status)
                             {
                                 /* The error happened when reading back after write: desperate case, bailing out */
-                                assert(0);
+                                assert(false);
 #if defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0)
                                 NV_ShowPageMetas(dstPageId, true);
 #endif
@@ -5220,7 +5220,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
                     if (gNVM_EccFaultWritingMeta_c == status || gNVM_EccFaultWritingRecord_c == status)
                     {
                         /* The error happened when reading back after write: desperate case, bailing out */
-                        assert(0);
+                        assert(false);
 #if defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0)
                         NV_ShowPageMetas(dstPageId, true);
 #endif
@@ -5297,7 +5297,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
             }
             else
             {
-                assert(0);
+                assert(false);
 #if defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0)
                 NV_ShowPageMetas(dstPageId, true);
 #endif

@@ -414,14 +414,14 @@ static void PLATFORM_ExitingLowPowerLpCb(uint8_t powerState)
             /* FRO6M was cut : calibrate */
             if (PLATFORM_StartFro6MCalibration() < 0)
             {
-                assert(0);
+                assert(false);
                 /* might do nothing in release build */
             }
         }
     }
     else
     {
-        assert(0);
+        assert(false);
     }
 #endif
     /* kPM_EventExitingSleep */
@@ -449,7 +449,7 @@ static void PLATFORM_ExitingLowPowerLpCb(uint8_t powerState)
         }
         else
         {
-            assert(0);
+            assert(false);
         }
 
         // DBG_LOG_WAKEUP_CHECK();

@@ -131,6 +131,17 @@ typedef PACKED_STRUCT
 }
 NbuEvent_t;
 
+/*! \brief  Interchange of FRO trimming information between MCU and NBU.
+ *
+ */
+typedef struct
+{
+    uint16_t freq;
+    int16_t  ppm_mean;
+    int16_t  ppm;
+    uint16_t fro_trim;
+} FroInfo_t;
+
 /*! \brief  FWK ICS message type.
  *
  *  \details enumarated values for FWK ICS messages

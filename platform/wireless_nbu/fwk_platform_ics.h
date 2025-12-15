@@ -108,6 +108,17 @@ typedef PACKED_STRUCT
 }
 NbuEvent_t;
 
+/*! \brief  Interchange of FRO trimming information between MCU and NBU.
+ *
+ */
+typedef struct
+{
+    uint16_t freq;
+    int16_t  ppm_mean;
+    int16_t  ppm;
+    uint16_t fro_trim;
+} FroInfo_t;
+
 /*! \brief  FWK ICS message type.
  *
  *  \details enumarated values for FWK ICS messages
@@ -186,6 +197,35 @@ int PLATFORM_NotifyNbuInitDone(void);
  * \return int 0 if success, -1 if no memory available, -2 if sending error, -3 if invalid param.
  */
 int PLATFORM_NotifyNbuEvent(NbuEvent_t *event);
+
+/*!
+ * \brief Notify Core0 of NBU incident
+ *
+ * \return int 0 if success, -1 if no memory available, -2 if sending error.
+ *
+ */
+int PLATFORM_NotifyNbuIssue(void);
+
+/*!
+ * \brief Notify core0 of NBU Security Events
+ *
+ * \param[in] securityEventBitmask bit mask of security events
+ *
+ * \return int 0 if success, -1 if no memory available, -2 if sending error.
+ *
+ */
+int PLATFORM_NotifySecurityEvents(uint32_t securityEventBitmask);
+
+/*!
+ * \brief Notify of allocation failure.
+ *
+ * \param[in] poolId pool Id on which allocation failed
+ * \param[in] bufferSize  size of failed allocation
+ *
+ * \return int 0 if success, -1 if no memory available, -2 if sending error.
+ *
+ */
+int PLATFORM_NotifyNbuMemFull(unsigned short poolId, uint16_t bufferSize);
 
 /*!
  * \brief Send a SetLowPowerConstraint command to the host core

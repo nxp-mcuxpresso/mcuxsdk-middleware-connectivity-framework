@@ -277,7 +277,7 @@ static hal_rpmsg_return_status_t PLATFORM_ZbRpmsgRxCallback(void *param, uint8_t
     else
     {
         /* this must not happen */
-        assert(0);
+        assert(false);
         __NOP();
     }
 

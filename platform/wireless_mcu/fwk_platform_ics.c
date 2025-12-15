@@ -46,7 +46,7 @@
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 #ifndef PLATFORM_ICS_RX_QUEUE_SIZE
-#define PLATFORM_ICS_RX_QUEUE_SIZE 10
+#define PLATFORM_ICS_RX_QUEUE_SIZE (10U)
 #endif
 #endif
 
@@ -61,14 +61,6 @@ typedef struct
     uint8_t *data;
 } ics_rx_data_t;
 #endif
-
-typedef struct
-{
-    uint16_t freq;
-    int16_t  ppm_mean;
-    int16_t  ppm;
-    uint16_t fro_trim;
-} fro_data_t;
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -126,8 +118,8 @@ static const FwkSrv_LowPowerConstraintCallbacks_t *pLowPowerConstraintCallbacks 
     (const FwkSrv_LowPowerConstraintCallbacks_t *)NULL;
 
 /* Array of pointer of function used in PLATFORM_FwkSrv_RxCallBack() */
-static void (*PLATFORM_RxCallbackService[gFwkSrvNbu2HostLast_c - gFwkSrvNbu2HostFirst_c - 1U])(uint8_t *data,
-                                                                                               uint32_t len) = {
+static void (*PLATFORM_RxCallbackService[(uint8_t)gFwkSrvNbu2HostLast_c - (uint8_t)gFwkSrvNbu2HostFirst_c - 1U])(
+    uint8_t *data, uint32_t len) = {
     PLATFORM_RxNbuInitDoneService,
     PLATFORM_RxNbuVersionIndicationService,
     PLATFORM_RxNbuApiIndicationService,
@@ -187,7 +179,7 @@ int PLATFORM_FwkSrvInit(void)
         osa_status_t osa_status = OSA_MsgQCreate(icsMsgQueue, PLATFORM_ICS_RX_QUEUE_SIZE, sizeof(ics_rx_data_t));
         if (osa_status != KOSA_StatusSuccess)
         {
-            assert(0);
+            assert(false);
             result = -3;
             break;
         }
@@ -196,7 +188,7 @@ int PLATFORM_FwkSrvInit(void)
         osa_status = OSA_EventCreate(icsEvent, ICS_EVT_AUTO_CLEAR);
         if (osa_status != KOSA_StatusSuccess)
         {
-            assert(0);
+            assert(false);
             result = -4;
             break;
         }
@@ -204,7 +196,7 @@ int PLATFORM_FwkSrvInit(void)
         osa_status = OSA_MutexCreate(nbuApiMutex);
         if (osa_status != KOSA_StatusSuccess)
         {
-            assert(0);
+            assert(false);
             result = -5;
             break;
         }
@@ -212,7 +204,7 @@ int PLATFORM_FwkSrvInit(void)
         osa_status = OSA_MutexCreate(nbuInfoMutex);
         if (osa_status != KOSA_StatusSuccess)
         {
-            assert(0);
+            assert(false);
             result = -6;
             break;
         }
@@ -660,7 +652,7 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
         {
             /* Process message immediately but assert as this is not a desired path */
             process_now = true;
-            assert(0);
+            assert(false);
         }
         else
         {
@@ -674,7 +666,7 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
             {
                 /* Process message immediately but assert as this is not a desired path */
                 process_now = true;
-                assert(0);
+                assert(false);
             }
         }
 
@@ -771,15 +763,11 @@ static void PLATFORM_RxHostReleaseLowPowerConstraintService(uint8_t *data, uint3
 
 static void PLATFORM_RxFroNotificationService(uint8_t *data, uint32_t len)
 {
-    assert(len >= sizeof(fro_data_t) + 1U);
-    fro_data_t fro_notif_data;
+    assert(len >= sizeof(FroInfo_t) + 1U);
+    FroInfo_t fro_notif_data;
 
-    if (len >= (sizeof(fro_data_t) + 1U))
-    {
-        FLib_MemCpy((void *)&fro_notif_data, (void *)&data[1], sizeof(fro_data_t));
-        pfPlatformDebugCallback(fro_notif_data.freq, fro_notif_data.ppm_mean, fro_notif_data.ppm,
-                                fro_notif_data.fro_trim);
-    }
+    FLib_MemCpy((void *)&fro_notif_data, (void *)&data[1], sizeof(FroInfo_t));
+    pfPlatformDebugCallback(fro_notif_data.freq, fro_notif_data.ppm_mean, fro_notif_data.ppm, fro_notif_data.fro_trim);
 }
 
 static void PLATFORM_RxFwkSrvNbuIssueIndicationService(uint8_t *data, uint32_t len)
@@ -806,7 +794,7 @@ static void PLATFORM_RxFwkSrvNbuEventIndicationService(uint8_t *data, uint32_t l
         }
         else
         {
-            assert(0);
+            assert(false);
         }
     }
 }
@@ -834,12 +822,11 @@ static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len)
 
 static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len)
 {
-    uint32_t periodic_interval = 0;
+    uint32_t periodic_interval = 0UL;
 
     if (nbu_request_temperature_callback != NULL)
     {
-        assert(len == (sizeof(uint32_t) + 1));
-
+        assert(len == (sizeof(uint32_t) + 1UL));
         /* Data corresponds to the periodic measurement interval requested by NBU (in Ms) */
         FLib_MemCpy((void *)&periodic_interval, (void *)&data[1], sizeof(uint32_t));
         (*nbu_request_temperature_callback)(periodic_interval);
