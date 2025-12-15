@@ -166,7 +166,7 @@ osa_status_t SecLibMutexCreate(void)
 
         if (KOSA_StatusSuccess != st)
         {
-            assert(0);
+            assert(false);
         }
         else
         {
@@ -261,7 +261,7 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     ret = SSS_aes_operation(&ctx, pInput, 16, NULL, pKey, AES_128_KEY_BITS, pOutput, true, kAlgorithm_SSS_AES_ECB);
     if (ret != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -289,7 +289,7 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     ret = SSS_aes_operation(&ctx, pInput, 16, NULL, pKey, AES_128_KEY_BITS, pOutput, false, kAlgorithm_SSS_AES_ECB);
     if (ret != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -324,7 +324,7 @@ void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t
                                 kAlgorithm_SSS_AES_ECB);
         if (ret != kStatus_Success)
         {
-            assert(0);
+            assert(false);
         }
         SECLIB_MUTEX_UNLOCK();
     }
@@ -577,59 +577,20 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
 void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput)
 {
     int           ret;
-    uint32_t      ctrOffset                     = 0U;
+    size_t        ctrOffset                     = 0U;
     uint8_t       streamBlk[AES_128_BLOCK_SIZE] = {0U};
     aes_context_t ctx;
 
     SECLIB_MUTEX_LOCK();
 
     /* The length of the input does not need to be a multiple of AES 128 block size */
-    ret = SSS_aes128_CTR_operation(&ctx, pInput, inputLen, pCounter, pKey, pOutput, true, streamBlk,
-                                   (size_t *)&ctrOffset);
+    ret = SSS_aes128_CTR_operation(&ctx, pInput, inputLen, pCounter, pKey, pOutput, true, streamBlk, &ctrOffset);
     if (ret != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     SECLIB_MUTEX_UNLOCK();
 }
-
-#if gSecLibAesOfbEnable_d
-/*! *********************************************************************************
- * \brief  This function performs AES-128-OFB encryption on a message block.
- *         This function only accepts input lengths which are multiple
- *         of 16 bytes (AES 128 block size).
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Input message length in bytes.
- *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the ciphered output.
- *
- ********************************************************************************** */
-void AES_128_OFB(
-    const uint8_t *pInput, const uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
-{
-    /* If the input length is not a multiple of AES 128 block size return */
-    if (!((inputLen == 0U) || ((inputLen % AES_128_BLOCK_SIZE) != 0U)))
-    {
-        int           ret;
-        aes_context_t ctx;
-
-        SECLIB_MUTEX_LOCK();
-        ret = SSS_aes_operation(&ctx, pInput, inputLen, pInitVector, pKey, AES_128_KEY_BITS, pOutput, true,
-                                kAlgorithm_SSS_AES_OFB);
-        if (ret != kStatus_Success)
-        {
-            assert(0);
-        }
-        SECLIB_MUTEX_UNLOCK();
-    }
-}
-#endif
 
 /*! *********************************************************************************
  * \brief  This function calculates XOR of individual byte pairs in two uint8_t arrays.
@@ -678,7 +639,7 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     result = SSS_aes_cmac(&cmac_ctx, pKey, AES_128_KEY_BITS, pInput, inputLen, pOutput);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -772,7 +733,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
 
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     /*CALL THIS AT THE END*/
     SSS_aes_cmac_free(&cmac_ctx);
@@ -852,188 +813,10 @@ void AES_CMAC_PRF_128(
     result = SSS_aes_cmac_prf_128(&cmac_ctx, pVarKey, varKeyLen, pInput, inputLen, pOutput);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     SECLIB_MUTEX_UNLOCK();
 }
-
-#if gSecLibAesEaxEnable_d
-/*! *********************************************************************************
- * \brief  This function performs AES-128-EAX encryption on a message block.
- * \param[in]  pInput Pointer to the location of the input message.
- * \param[in]  inputLen Length of the input message in bytes.
- * \param[in]  pNonce Pointer to the location of the nonce.
- * \param[in]  nonceLen Nonce length in bytes.
- * \param[in]  pHeader Pointer to the location of header.
- * \param[in]  headerLen Header length in bytes.
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code.
- * \param[out]  pTag Pointer to the location to store the 128-bit tag.
- *
- ********************************************************************************** */
-secResultType_t AES_128_EAX_Encrypt(const uint8_t *pInput,
-                                    uint32_t       inputLen,
-                                    const uint8_t *pNonce,
-                                    uint32_t       nonceLen,
-                                    const uint8_t *pHeader,
-                                    uint8_t        headerLen,
-                                    const uint8_t *pKey,
-                                    uint8_t       *pOutput,
-                                    uint8_t       *pTag)
-{
-    uint8_t        *buf;
-    uint32_t        buf_len;
-    uint8_t         nonce_mac[AES_128_BLOCK_SIZE] = {0};
-    uint8_t         hdr_mac[AES_128_BLOCK_SIZE]   = {0};
-    uint8_t         data_mac[AES_128_BLOCK_SIZE]  = {0};
-    uint8_t         tempBuff[AES_128_BLOCK_SIZE]  = {0};
-    secResultType_t status                        = gSecSuccess_c;
-    uint32_t        i;
-
-    if (nonceLen > inputLen)
-    {
-        buf_len = nonceLen;
-    }
-    else
-    {
-        buf_len = inputLen;
-    }
-
-    if (headerLen > buf_len)
-    {
-        buf_len = headerLen;
-    }
-
-    buf_len += 16U;
-
-    buf = MEM_BufferAlloc(buf_len);
-
-    if (buf == NULL)
-    {
-        status = gSecAllocError_c;
-    }
-    else
-    {
-        FLib_MemSet(buf, 0, 15);
-
-        buf[15] = 0U;
-        FLib_MemCpy((buf + 16), pNonce, nonceLen);
-        AES_128_CMAC(buf, 16U + nonceLen, pKey, nonce_mac);
-
-        buf[15] = 1U;
-        FLib_MemCpy((buf + 16), pHeader, headerLen);
-        AES_128_CMAC(buf, 16U + (uint32_t)headerLen, pKey, hdr_mac);
-
-        /* keep the original value of nonce_mac, because AES_128_CTR will increment it */
-        FLib_MemCpy(tempBuff, nonce_mac, nonceLen);
-
-        AES_128_CTR(pInput, inputLen, tempBuff, pKey, pOutput);
-
-        buf[15] = 2U;
-        FLib_MemCpy((buf + 16), pOutput, inputLen);
-        AES_128_CMAC(buf, 16U + inputLen, pKey, data_mac);
-
-        for (i = 0U; i < AES_128_BLOCK_SIZE; i++)
-        {
-            pTag[i] = nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i];
-        }
-
-        (void)MEM_BufferFree(buf);
-    }
-
-    return status;
-}
-
-/*! *********************************************************************************
- * \brief  This function performs AES-128-EAX decryption on a message block.
- *
- * \param[in]  pInput Pointer to the location of the input message.
- * \param[in]  inputLen Length of the input message in bytes.
- * \param[in]  pNonce Pointer to the location of the nonce.
- * \param[in]  nonceLen Nonce length in bytes.
- * \param[in]  pHeader Pointer to the location of header.
- * \param[in]  headerLen Header length in bytes.
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code.
- * \param[out]  pTag Pointer to the location to store the 128-bit tag.
- *
- ********************************************************************************** */
-secResultType_t AES_128_EAX_Decrypt(const uint8_t *pInput,
-                                    uint32_t       inputLen,
-                                    const uint8_t *pNonce,
-                                    uint32_t       nonceLen,
-                                    const uint8_t *pHeader,
-                                    uint8_t        headerLen,
-                                    const uint8_t *pKey,
-                                    uint8_t       *pOutput,
-                                    uint8_t       *pTag)
-{
-    uint8_t        *buf;
-    uint32_t        buf_len;
-    uint8_t         nonce_mac[AES_128_BLOCK_SIZE] = {0};
-    uint8_t         hdr_mac[AES_128_BLOCK_SIZE]   = {0};
-    uint8_t         data_mac[AES_128_BLOCK_SIZE]  = {0};
-    secResultType_t status                        = gSecSuccess_c;
-    uint32_t        i;
-
-    if (nonceLen > inputLen)
-    {
-        buf_len = nonceLen;
-    }
-    else
-    {
-        buf_len = inputLen;
-    }
-
-    if (headerLen > buf_len)
-    {
-        buf_len = headerLen;
-    }
-
-    buf_len += 16U;
-
-    buf = MEM_BufferAlloc(buf_len);
-
-    if (buf == NULL)
-    {
-        status = gSecAllocError_c;
-    }
-    else
-    {
-        FLib_MemSet(buf, 0, 15);
-
-        buf[15] = 0U;
-        FLib_MemCpy((buf + 16), pNonce, nonceLen);
-        AES_128_CMAC(buf, 16U + nonceLen, pKey, nonce_mac);
-
-        buf[15] = 1U;
-        FLib_MemCpy((buf + 16), pHeader, headerLen);
-        AES_128_CMAC(buf, 16U + (uint32_t)headerLen, pKey, hdr_mac);
-
-        buf[15] = 2U;
-        FLib_MemCpy((buf + 16), pInput, inputLen);
-        AES_128_CMAC(buf, 16U + inputLen, pKey, data_mac);
-
-        (void)MEM_BufferFree(buf);
-
-        for (i = 0U; i < AES_128_BLOCK_SIZE; i++)
-        {
-            if (pTag[i] != (nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i]))
-            {
-                status = gSecError_c;
-                break;
-            }
-        }
-
-        if (gSecSuccess_c == status)
-        {
-            AES_128_CTR(pInput, inputLen, nonce_mac, pKey, pOutput);
-        }
-    }
-
-    return status;
-}
-#endif
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CCM on a message block.
@@ -1166,7 +949,7 @@ void SHA256_Init(void *pContext)
     result = SSS_sha256_starts_ret(pSha256Ctx, false);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1191,7 +974,7 @@ void SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
     result = SSS_sha256_update_ret(pSha256Ctx, pData, numBytes);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1216,7 +999,7 @@ void SHA256_HashFinish(void *pContext, uint8_t *pOutput)
     result = SSS_sha256_finish_ret(pSha256Ctx, pOutput);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1242,7 +1025,7 @@ void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
     result = SSS_sha256_ret(pData, numBytes, pOutput, false);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     (void)result;
 
@@ -1292,7 +1075,7 @@ void HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
 
     if (SSS_md_hmac_sha256_starts((sss_hmac_sha256_context_t *)pContext, pKey, keyLen) != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1313,7 +1096,7 @@ void HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
 
     if (SSS_md_hmac_sha256_update((sss_hmac_sha256_context_t *)pContext, pData, numBytes) != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1333,7 +1116,7 @@ void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
     SECLIB_MUTEX_LOCK();
     if (SSS_md_hmac_sha256_finish((sss_hmac_sha256_context_t *)pContext, pOutput) != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     SECLIB_MUTEX_UNLOCK();
 }
@@ -1360,7 +1143,7 @@ void HMAC_SHA256(const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uin
     result = SSS_md_hmac_sha256(&hmac_ctx, pKey, keyLen, pData, numBytes, pOutput);
     if (result != kStatus_Success)
     {
-        assert(0);
+        assert(false);
     }
     (void)result;
     SECLIB_MUTEX_UNLOCK();

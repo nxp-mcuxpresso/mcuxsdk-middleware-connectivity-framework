@@ -583,13 +583,13 @@ int RNG_SetSeed(void)
             else
             {
                 status = gRngInternalError_d;
-                assert(0);
+                assert(false);
             }
         }
         else
         {
             status = gRngInternalError_d;
-            assert(0);
+            assert(false);
         }
     } while (false);
     return status;
@@ -643,7 +643,7 @@ int RNG_SetExternalSeed(uint8_t *external_seed)
     }
     else
     {
-        assert(0);
+        assert(false);
     }
     return status;
 }
@@ -803,7 +803,7 @@ static int RNG_Specific_Init(uint32_t *pSeed)
 
         if (TRNG_Init(TRNG0, (const trng_config_t *)&config) != 0)
         {
-            assert(0);
+            assert(false);
             RAISE_ERROR(status, gRngInternalError_d);
         }
 
@@ -811,7 +811,7 @@ static int RNG_Specific_Init(uint32_t *pSeed)
 
         if (TRNG_GetRandomData(TRNG0, pSeed, (size_t)mPRNG_NoOfBytes_c) != 0)
         {
-            assert(0);
+            assert(false);
             RAISE_ERROR(status, gRngInternalError_d);
         }
 
@@ -935,7 +935,7 @@ static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
     {
         if (sss_sscp_rng_free(&rctx) != kStatus_SSS_Success)
         {
-            assert(0);
+            assert(false);
         }
     }
     RNG_MUTEX_UNLOCK();
@@ -1037,7 +1037,7 @@ static int RNG_Specific_Init(uint32_t *pSeed)
     /* no HW specific init is required */
     (void)pSeed;
 
-    RNG_NotifyReseedNeeded();
+    (void)RNG_NotifyReseedNeeded();
 
     return gRngSuccess_d;
 }

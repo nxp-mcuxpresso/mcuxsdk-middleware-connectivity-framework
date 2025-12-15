@@ -26,7 +26,7 @@
 #define gRngReseedPending_d  (-4)
 
 #ifndef gRngMaxRequests_d
-#define gRngMaxRequests_d (100000)
+#define gRngMaxRequests_d (100000UL)
 #endif
 
 #ifndef gRngIsrPrio_c

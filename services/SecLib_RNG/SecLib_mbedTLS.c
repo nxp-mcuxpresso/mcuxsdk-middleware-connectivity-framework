@@ -138,7 +138,7 @@ osa_status_t SecLibMutexCreate(void)
 
         if (KOSA_StatusSuccess != st)
         {
-            assert(0);
+            assert(false);
         }
         else
         {
@@ -232,7 +232,7 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     result = mbedtls_aes_setkey_enc(&aesCtx, pKey, AES_128_KEY_BITS);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_LOCK();
@@ -240,7 +240,7 @@ void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     result = mbedtls_aes_crypt_ecb(&aesCtx, MBEDTLS_AES_ENCRYPT, pInput, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -269,7 +269,7 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     result = mbedtls_aes_setkey_dec(&aesCtx, pKey, AES_128_KEY_BITS);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_LOCK();
@@ -277,7 +277,7 @@ void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutpu
     result = mbedtls_aes_crypt_ecb(&aesCtx, MBEDTLS_AES_DECRYPT, pInput, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -608,7 +608,7 @@ void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, co
     result = mbedtls_aes_setkey_enc(&aesCtx, pKey, AES_128_KEY_BITS);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_LOCK();
@@ -617,61 +617,13 @@ void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, co
                                    pInput, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
 
     mbedtls_aes_free(&aesCtx);
 }
-
-#if gSecLibAesOfbEnable_d
-
-/*! *********************************************************************************
- * \brief  This function performs AES-128-OFB encryption on a message block.
- *         This function only accepts input lengths which are multiple
- *         of 16 bytes (AES 128 block size).
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Input message length in bytes.
- *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the ciphered output.
- *
- ********************************************************************************** */
-void AES_128_OFB(uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, uint8_t *pKey, uint8_t *pOutput)
-{
-    uint8_t tempBuffIn[AES_128_BLOCK_SIZE]  = {0U};
-    uint8_t tempBuffOut[AES_128_BLOCK_SIZE] = {0U};
-
-    if (pInitVector != NULL)
-    {
-        FLib_MemCpy(tempBuffIn, pInitVector, AES_128_BLOCK_SIZE);
-    }
-
-    /* If the input length is not a multiple of AES 128 block size return */
-    if ((inputLen == 0U) || ((inputLen % AES_128_BLOCK_SIZE) != 0U))
-    {
-        return;
-    }
-
-    /* Process all data blocks*/
-    while (inputLen != 0U)
-    {
-        AES_128_Encrypt(tempBuffIn, pKey, tempBuffOut);
-        FLib_MemCpy(tempBuffIn, tempBuffOut, AES_128_BLOCK_SIZE);
-        SecLib_XorN(tempBuffOut, pInput, AES_128_BLOCK_SIZE);
-        FLib_MemCpy(pOutput, tempBuffOut, AES_128_BLOCK_SIZE);
-        pInput += AES_128_BLOCK_SIZE;
-        pOutput += AES_128_BLOCK_SIZE;
-        inputLen -= AES_128_BLOCK_SIZE;
-    }
-}
-#endif /* gSecLibAesOfbEnable_d */
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CMAC on a message block.
@@ -700,7 +652,7 @@ void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t 
     result = mbedtls_cipher_cmac(pCmacCipherInfo, pKey, AES_128_KEY_BITS, pInput, inputLen, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
     SECLIB_MUTEX_UNLOCK();
 }
@@ -736,12 +688,12 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     result = mbedtls_cipher_setup(&cmacCipherCtx, pCmacCipherInfo);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
     result = mbedtls_cipher_cmac_starts(&cmacCipherCtx, pKey, AES_128_KEY_BITS);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     /* Walk the input buffer from the end to the start and reverse the blocks
@@ -771,7 +723,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
             mbedtls_cipher_cmac_update(&cmacCipherCtx, (const unsigned char *)&reversedBlock, currentCmacInputBlkLen);
         if (result != 0)
         {
-            assert(0);
+            assert(false);
         }
 
         SECLIB_MUTEX_UNLOCK();
@@ -782,7 +734,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
     result = mbedtls_cipher_cmac_finish(&cmacCipherCtx, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -818,203 +770,10 @@ void AES_CMAC_PRF_128(
     result = mbedtls_aes_cmac_prf_128(pVarKey, varKeyLen, pInput, inputLen, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
-}
-
-/*! *********************************************************************************
- * \brief  This function performs AES-128-EAX encryption on a message block.
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Length of the input message in bytes.
- *
- * \param[in]  pNonce Pointer to the location of the nonce.
- *
- * \param[in]  nonceLen Nonce length in bytes.
- *
- * \param[in]  pHeader Pointer to the location of header.
- *
- * \param[in]  headerLen Header length in bytes.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code.
- *
- * \param[out]  pTag Pointer to the location to store the 128-bit tag.
- *
- ********************************************************************************** */
-secResultType_t AES_128_EAX_Encrypt(const uint8_t *pInput,
-                                    uint32_t       inputLen,
-                                    const uint8_t *pNonce,
-                                    uint32_t       nonceLen,
-                                    const uint8_t *pHeader,
-                                    uint8_t        headerLen,
-                                    const uint8_t *pKey,
-                                    uint8_t       *pOutput,
-                                    uint8_t       *pTag)
-{
-    uint8_t        *buf;
-    uint32_t        buf_len;
-    uint8_t         nonce_mac[AES_128_BLOCK_SIZE] = {0};
-    uint8_t         hdr_mac[AES_128_BLOCK_SIZE]   = {0};
-    uint8_t         data_mac[AES_128_BLOCK_SIZE]  = {0};
-    uint8_t         tempBuff[AES_128_BLOCK_SIZE]  = {0};
-    secResultType_t status                        = gSecSuccess_c;
-    uint32_t        i;
-
-    if (nonceLen > inputLen)
-    {
-        buf_len = nonceLen;
-    }
-    else
-    {
-        buf_len = inputLen;
-    }
-
-    if (headerLen > buf_len)
-    {
-        buf_len = headerLen;
-    }
-
-    buf_len += 16U;
-
-    buf = MEM_BufferAlloc(buf_len);
-
-    if (buf == NULL)
-    {
-        status = gSecAllocError_c;
-    }
-    else
-    {
-        FLib_MemSet(buf, 0, 15);
-
-        buf[15] = 0U;
-        FLib_MemCpy((buf + 16), pNonce, nonceLen);
-        AES_128_CMAC(buf, 16U + nonceLen, pKey, nonce_mac);
-
-        buf[15] = 1U;
-        FLib_MemCpy((buf + 16), pHeader, headerLen);
-        AES_128_CMAC(buf, 16U + (uint32_t)headerLen, pKey, hdr_mac);
-
-        /* keep the original value of nonce_mac, because AES_128_CTR will increment it */
-        FLib_MemCpy(tempBuff, nonce_mac, nonceLen);
-
-        AES_128_CTR(pInput, inputLen, tempBuff, pKey, pOutput);
-
-        buf[15] = 2U;
-        FLib_MemCpy((buf + 16), pOutput, inputLen);
-        AES_128_CMAC(buf, 16U + inputLen, pKey, data_mac);
-
-        for (i = 0U; i < AES_128_BLOCK_SIZE; i++)
-        {
-            pTag[i] = nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i];
-        }
-
-        (void)MEM_BufferFree(buf);
-    }
-
-    return status;
-}
-
-/*! *********************************************************************************
- * \brief  This function performs AES-128-EAX decryption on a message block.
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Length of the input message in bytes.
- *
- * \param[in]  pNonce Pointer to the location of the nonce.
- *
- * \param[in]  nonceLen Nonce length in bytes.
- *
- * \param[in]  pHeader Pointer to the location of header.
- *
- * \param[in]  headerLen Header length in bytes.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code.
- *
- * \param[out]  pTag Pointer to the location to store the 128-bit tag.
- *
- ********************************************************************************** */
-secResultType_t AES_128_EAX_Decrypt(const uint8_t *pInput,
-                                    uint32_t       inputLen,
-                                    const uint8_t *pNonce,
-                                    uint32_t       nonceLen,
-                                    const uint8_t *pHeader,
-                                    uint8_t        headerLen,
-                                    const uint8_t *pKey,
-                                    uint8_t       *pOutput,
-                                    uint8_t       *pTag)
-{
-    uint8_t        *buf;
-    uint32_t        buf_len;
-    uint8_t         nonce_mac[AES_128_BLOCK_SIZE] = {0};
-    uint8_t         hdr_mac[AES_128_BLOCK_SIZE]   = {0};
-    uint8_t         data_mac[AES_128_BLOCK_SIZE]  = {0};
-    secResultType_t status                        = gSecSuccess_c;
-    uint32_t        i;
-
-    if (nonceLen > inputLen)
-    {
-        buf_len = nonceLen;
-    }
-    else
-    {
-        buf_len = inputLen;
-    }
-
-    if (headerLen > buf_len)
-    {
-        buf_len = headerLen;
-    }
-
-    buf_len += 16U;
-
-    buf = MEM_BufferAlloc(buf_len);
-
-    if (buf == NULL)
-    {
-        status = gSecAllocError_c;
-    }
-    else
-    {
-        FLib_MemSet(buf, 0, 15);
-
-        buf[15] = 0U;
-        FLib_MemCpy((buf + 16), pNonce, nonceLen);
-        AES_128_CMAC(buf, 16U + nonceLen, pKey, nonce_mac);
-
-        buf[15] = 1U;
-        FLib_MemCpy((buf + 16), pHeader, headerLen);
-        AES_128_CMAC(buf, 16U + (uint32_t)headerLen, pKey, hdr_mac);
-
-        buf[15] = 2U;
-        FLib_MemCpy((buf + 16), pInput, inputLen);
-        AES_128_CMAC(buf, 16U + inputLen, pKey, data_mac);
-
-        (void)MEM_BufferFree(buf);
-
-        for (i = 0U; i < AES_128_BLOCK_SIZE; i++)
-        {
-            if (pTag[i] != (nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i]))
-            {
-                status = gSecError_c;
-                break;
-            }
-        }
-
-        if (gSecSuccess_c == status)
-        {
-            AES_128_CTR(pInput, inputLen, nonce_mac, pKey, pOutput);
-        }
-    }
-
-    return status;
 }
 
 /*! *********************************************************************************
@@ -1117,126 +876,6 @@ void SecLib_XorN(uint8_t *pDst, const uint8_t *pSrc, uint8_t n)
     }
 }
 
-#if defined(MBEDTLS_SHA1_C)
-/*! *********************************************************************************
- * \brief  This function allocates a memory buffer for a SHA1 context structure
- *
- * \return    Address of the SHA1 context buffer
- *            Deallocate using SHA1_FreeCtx()
- *
- ********************************************************************************** */
-void *SHA1_AllocCtx(void)
-{
-    void *sha1Ctx = MEM_BufferAlloc(sizeof(mbedtls_sha1_context));
-
-    return sha1Ctx;
-}
-
-/*! *********************************************************************************
- * \brief  This function deallocates the memory buffer for the SHA1 context structure
- *
- * \param [in]    pContext    Address of the SHA1 context buffer
- *
- ********************************************************************************** */
-void SHA1_FreeCtx(void *pContext)
-{
-    (void)MEM_BufferFree(pContext);
-}
-
-/*! *********************************************************************************
- * \brief  This function clones a SHA1 context.
- *         Make sure the size of the allocated destination context buffer is appropriate.
- *
- * \param [in]    pDestCtx    Address of the destination SHA1 context
- * \param [in]    pSourceCtx  Address of the source SHA1 context
- *
- ********************************************************************************** */
-void SHA1_CloneCtx(void *pDestCtx, void *pSourceCtx)
-{
-    mbedtls_sha1_clone(pDestCtx, pSourceCtx);
-}
-
-/*! *********************************************************************************
- * \brief  This function initializes the SHA1 context data
- *
- * \param [in]    pContext    Pointer to the SHA1 context data
- *                            Allocated using SHA1_AllocCtx()
- *
- ********************************************************************************** */
-void SHA1_Init(void *pContext)
-{
-    mbedtls_sha1_context *pSha1Ctx = (mbedtls_sha1_context *)pContext;
-
-    SECLIB_MUTEX_LOCK();
-
-    mbedtls_sha1_init(pSha1Ctx);
-    mbedtls_sha1_starts(pSha1Ctx);
-
-    SECLIB_MUTEX_UNLOCK();
-}
-
-/*! *********************************************************************************
- * \brief  This function performs SHA1 on multiple bytes and updates the context data
- *
- * \param [in]    pContext    Pointer to the SHA1 context data
- *                            Allocated using SHA1_AllocCtx()
- * \param [in]    pData       Pointer to the input data
- * \param [in]    numBytes    Number of bytes to hash
- *
- ********************************************************************************** */
-void SHA1_HashUpdate(void *pContext, uint8_t *pData, uint32_t numBytes)
-{
-    mbedtls_sha1_context *pSha1Ctx = (mbedtls_sha1_context *)pContext;
-
-    SECLIB_MUTEX_LOCK();
-
-    mbedtls_sha1_update(pSha1Ctx, pData, numBytes);
-
-    SECLIB_MUTEX_UNLOCK();
-}
-
-/*! *********************************************************************************
- * \brief  This function performs SHA1 on the last bytes of data and updates the context data.
- *         The final hash value is stored at the provided output location.
- *
- * \param [in]       pContext    Pointer to the SHA1 context data
- *                               Allocated using SHA1_AllocCtx()
- * \param [in,out]   pOutput     Pointer to the output location
- *
- ********************************************************************************** */
-void SHA1_HashFinish(void *pContext, uint8_t *pOutput)
-{
-    mbedtls_sha1_context *pSha1Ctx = (mbedtls_sha1_context *)pContext;
-
-    SECLIB_MUTEX_LOCK();
-
-    mbedtls_sha1_finish(pSha1Ctx, pOutput);
-
-    SECLIB_MUTEX_UNLOCK();
-
-    mbedtls_sha1_free(pSha1Ctx);
-}
-
-/*! *********************************************************************************
- * \brief  This function performs all SHA1 steps on multiple bytes: initialize,
- *         update, finish, and update context data.
- *         The final hash value is stored at the provided output location.
- *
- * \param [in]       pData       Pointer to the input data
- * \param [in]       numBytes    Number of bytes to hash
- * \param [in,out]   pOutput     Pointer to the output location
- *
- ********************************************************************************** */
-void SHA1_Hash(uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
-{
-    SECLIB_MUTEX_LOCK();
-
-    mbedtls_sha1(pData, numBytes, pOutput);
-
-    SECLIB_MUTEX_UNLOCK();
-}
-#endif /* defined(MBEDTLS_SHA1_C) */
-
 /*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a SHA256 context structure
  *
@@ -1292,7 +931,7 @@ void SHA256_Init(void *pContext)
     result = mbedtls_sha256_starts_ret(pSha256Ctx, 0);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1317,7 +956,7 @@ void SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
     result = mbedtls_sha256_update_ret(pSha256Ctx, pData, numBytes);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1342,7 +981,7 @@ void SHA256_HashFinish(void *pContext, uint8_t *pOutput)
     result = mbedtls_sha256_finish_ret(pSha256Ctx, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1368,7 +1007,7 @@ void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
     result = mbedtls_sha256_ret(pData, numBytes, pOutput, 0);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
     (void)result;
 
@@ -1422,7 +1061,7 @@ void HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
     result = mbedtls_md_setup(pMdHmacSha256Ctx, pMdInfo, 1);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_LOCK();
@@ -1430,7 +1069,7 @@ void HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
     result = mbedtls_md_hmac_starts(pMdHmacSha256Ctx, pKey, keyLen);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1455,7 +1094,7 @@ void HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
     result = mbedtls_md_hmac_update(pMdHmacSha256Ctx, pData, numBytes);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1480,7 +1119,7 @@ void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
     result = mbedtls_md_hmac_finish(pMdHmacSha256Ctx, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();
@@ -1512,7 +1151,7 @@ void HMAC_SHA256(const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uin
     result = mbedtls_md_hmac(pMdInfo, pKey, keyLen, pData, numBytes, pOutput);
     if (result != 0)
     {
-        assert(0);
+        assert(false);
     }
 
     SECLIB_MUTEX_UNLOCK();

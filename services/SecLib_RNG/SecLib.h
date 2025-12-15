@@ -61,30 +61,11 @@
 #define AES_128_BLOCK_SIZE AES_BLOCK_SIZE
 #define AESSW_BLK_SIZE     (AES_128_BLOCK_SIZE)
 
-/* Hashes */
-#define SHA1_HASH_SIZE  20u   /* [bytes] */
-#define SHA1_BLOCK_SIZE 64u   /* [bytes] */
-
 #define SHA256_HASH_SIZE  32u /* [bytes] */
 #define SHA256_BLOCK_SIZE 64u /* [bytes] */
 
 #define gHmacIpad_c 0x36u
 #define gHmacOpad_c 0x5Cu
-
-/*! Enable or disable AES-OFB functionality in the SecLib module. */
-#ifndef gSecLibAesOfbEnable_d
-#define gSecLibAesOfbEnable_d 0
-#endif
-
-/*! Enable or disable AES-EAX functionality in the SecLib module. */
-#ifndef gSecLibAesEaxEnable_d
-#define gSecLibAesEaxEnable_d 0
-#endif
-
-/*! Enable or disable SHA1 functionality in the SecLib module. */
-#ifndef gSecLibSha1Enable_d
-#define gSecLibSha1Enable_d 0
-#endif
 
 /*! Enable or disable Bluetooth LE debug keys functionality */
 #ifndef gSecLibUseBleDebugKeys_d
@@ -157,8 +138,8 @@ void SecLib_Init(void);
 void SecLib_ReInit(void);
 
 /*! *********************************************************************************
- * \brief  This function will allow reinitizialize the cryptographic HW acceleration
- * next time we need it, typically after lowpower mode.
+ * \brief  This function will allow reinitialize the cryptographic HW acceleration
+ * next time we need it, typically after low power mode.
  *
  ********************************************************************************** */
 void SecLib_DeInit(void);
@@ -323,27 +304,6 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
 void AES_128_CTR(const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput);
 #endif
 
-#if gSecLibAesOfbEnable_d
-/*! *********************************************************************************
- * \brief  This function performs AES-128-OFB encryption on a message block.
- *         This function only accepts input lengths which are multiple
- *         of 16 bytes (AES 128 block size).
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Input message length in bytes.
- *
- * \param[in]  pInitVector Pointer to the location of the 128-bit initialization vector.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the ciphered output.
- *
- ********************************************************************************** */
-void AES_128_OFB(
-    const uint8_t *pInput, const uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput);
-#endif /* gSecLibAesOfbEnable_d */
-
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CMAC on a message block.
  *
@@ -399,71 +359,6 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
 void AES_CMAC_PRF_128(
     const uint8_t *pInput, uint32_t inputLen, const uint8_t *pVarKey, uint32_t varKeyLen, uint8_t *pOutput);
 
-#if gSecLibAesEaxEnable_d
-/*! *********************************************************************************
- * \brief  This function performs AES-128-EAX encryption on a message block.
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Length of the input message in bytes.
- *
- * \param[in]  pNonce Pointer to the location of the nonce.
- *
- * \param[in]  nonceLen Nonce length in bytes.
- *
- * \param[in]  pHeader Pointer to the location of header.
- *
- * \param[in]  headerLen Header length in bytes.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code.
- *
- * \param[out]  pTag Pointer to the location to store the 128-bit tag.
- *
- ********************************************************************************** */
-secResultType_t AES_128_EAX_Encrypt(const uint8_t *pInput,
-                                    uint32_t       inputLen,
-                                    const uint8_t *pNonce,
-                                    uint32_t       nonceLen,
-                                    const uint8_t *pHeader,
-                                    uint8_t        headerLen,
-                                    const uint8_t *pKey,
-                                    uint8_t       *pOutput,
-                                    uint8_t       *pTag);
-
-/*! *********************************************************************************
- * \brief  This function performs AES-128-EAX decryption on a message block.
- *
- * \param[in]  pInput Pointer to the location of the input message.
- *
- * \param[in]  inputLen Length of the input message in bytes.
- *
- * \param[in]  pNonce Pointer to the location of the nonce.
- *
- * \param[in]  nonceLen Nonce length in bytes.
- *
- * \param[in]  pHeader Pointer to the location of header.
- *
- * \param[in]  headerLen Header length in bytes.
- *
- * \param[in]  pKey Pointer to the location of the 128-bit key.
- *
- * \param[out]  pOutput Pointer to the location to store the 16-byte authentication code.
- *
- * \param[out]  pTag Pointer to the location to store the 128-bit tag.
- *
- ********************************************************************************** */
-secResultType_t AES_128_EAX_Decrypt(const uint8_t *pInput,
-                                    uint32_t       inputLen,
-                                    const uint8_t *pNonce,
-                                    uint32_t       nonceLen,
-                                    const uint8_t *pHeader,
-                                    uint8_t        headerLen,
-                                    const uint8_t *pKey,
-                                    uint8_t       *pOutput,
-                                    uint8_t       *pTag);
-#endif
 #endif
 
 /*! *********************************************************************************
@@ -509,78 +404,6 @@ uint8_t AES_128_CCM(const uint8_t *pInput,
                     uint32_t       flags);
 
 #if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
-#if gSecLibSha1Enable_d
-/*! *********************************************************************************
- * \brief  This function allocates a memory buffer for a SHA1 context structure
- *
- * \return    Address of the SHA1 context buffer
- *            Deallocate using SHA1_FreeCtx()
- *
- ********************************************************************************** */
-void *SHA1_AllocCtx(void);
-
-/*! *********************************************************************************
- * \brief  This function deallocates the memory buffer for the SHA1 context structure
- *
- * \param [in]    pContext    Address of the SHA1 context buffer
- *
- ********************************************************************************** */
-void SHA1_FreeCtx(void *pContext);
-
-/*! *********************************************************************************
- * \brief  This function clones a SHA1 context.
- *         Make sure the size of the allocated destination context buffer is appropriate.
- *
- * \param [in]    pDestCtx    Address of the destination SHA1 context
- * \param [in]    pSourceCtx  Address of the source SHA1 context
- *
- ********************************************************************************** */
-void SHA1_CloneCtx(void *pDestCtx, void *pSourceCtx);
-
-/*! *********************************************************************************
- * \brief  This function initializes the SHA1 context data
- *
- * \param [in]    pContext    Pointer to the SHA1 context data
- *                            Allocated using SHA1_AllocCtx()
- *
- ********************************************************************************** */
-void SHA1_Init(void *pContext);
-
-/*! *********************************************************************************
- * \brief  This function performs SHA1 on multiple bytes and updates the context data
- *
- * \param [in]    pContext    Pointer to the SHA1 context data
- *                            Allocated using SHA1_AllocCtx()
- * \param [in]    pData       Pointer to the input data
- * \param [in]    numBytes    Number of bytes to hash
- *
- ********************************************************************************** */
-void SHA1_HashUpdate(void *pContext, uint8_t *pData, uint32_t numBytes);
-
-/*! *********************************************************************************
- * \brief  This function finalizes the SHA1 hash computation and clears the context data.
- *         The final hash value is stored at the provided output location.
- *
- * \param [in]       pContext    Pointer to the SHA1 context data
- *                               Allocated using SHA1_AllocCtx()
- * \param [out]      pOutput     Pointer to the output location
- *
- ********************************************************************************** */
-void SHA1_HashFinish(void *pContext, uint8_t *pOutput);
-
-/*! *********************************************************************************
- * \brief  This function performs all SHA1 steps on multiple bytes: initialize,
- *         update and finish.
- *         The final hash value is stored at the provided output location.
- *
- * \param [in]       pData       Pointer to the input data
- * \param [in]       numBytes    Number of bytes to hash
- * \param [out]      pOutput     Pointer to the output location
- *
- ********************************************************************************** */
-void SHA1_Hash(uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
-
-#endif
 
 /*! *********************************************************************************
  * \brief  This function allocates a memory buffer for a SHA256 context structure
