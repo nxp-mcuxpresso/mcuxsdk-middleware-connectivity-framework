@@ -177,6 +177,8 @@ PLATFORM_ErrorCallback_t        pfPlatformErrorCallback = (void *)0;
 static Platform_Fro6MCalCtx_t fro6M_calibration_ctx = {
     .ratio = 1U, .started = false, .dwt_state = false, .trcena_state = false};
 
+static volatile uint32_t last_nbu_sw_state = 0U;
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
 /* -------------------------------------------------------------------------- */
@@ -884,6 +886,27 @@ void PLATFORM_RemoteActiveReq(void)
         bool     remote_in_lp = false;
         uint64_t timestamp    = PLATFORM_GetTimeStamp();
 
+        /* Capture NBU software state before wake-up for race condition mitigation.
+         *
+         * The WKUP_TIME register (RFMC->RF2P4GHZ_MAN2) serves as a software handshake
+         * between NBU and host cores, encoding NBU power state as follows:
+         *   - Value 0:        NBU is awake and executing code
+         *   - Value non-zero: NBU is preparing for or in deep sleep
+         *                     Encoded as: (lowPowerEntryCount << 1 | 1)
+         *
+         * The lowPowerEntryCount increments on each deep sleep cycle, allowing us to
+         * detect if the NBU has executed any code since wake-up.
+         *
+         * Rationale: In PLATFORM_RemoteActiveRel(), we must verify the NBU has executed
+         * code before allowing it to return to deep sleep. By capturing this counter here,
+         * we can later detect either:
+         *   1. NBU became active (WKUP_TIME == 0), or
+         *   2. NBU completed execution and started a new deep sleep cycle
+         *      (WKUP_TIME != last_nbu_sw_state)
+         *
+         * Both conditions confirm the NBU processed our wake-up request. */
+        last_nbu_sw_state = RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK;
+
         /* Set lp wakeup delay to 0 to reduce time of execution on host side, NBU will wait XTAL to be ready before
          * starting execution */
         uint32_t lp_wakeup_delay;
@@ -1020,9 +1043,28 @@ void PLATFORM_RemoteActiveRel(void)
                  * the NBU from changing state between our read and timeout evaluation */
                 uint32_t regPrimask = DisableGlobalIRQ();
 
-                /* Check NBU readiness: The NBU firmware clears WKUP_TIME register as an
-                 * acknowledgment that it is now fully wakeup and can be put into low power state */
-                if ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) == 0U)
+                /* Verify NBU code execution before allowing deep sleep re-entry.
+                 *
+                 * Race condition scenario: If PLATFORM_RemoteActiveRel() is called shortly
+                 * after PLATFORM_RemoteActiveReq(), the NBU may have woken up but not yet
+                 * executed meaningful code. Releasing the active request prematurely could
+                 * cause the NBU to enter deep sleep in an inconsistent state.
+                 *
+                 * Solution: Use the WKUP_TIME register to detect NBU execution:
+                 *
+                 * Pass condition 1: nbu_sw_state == 0
+                 *   The NBU is currently awake and actively running code.
+                 *
+                 * Pass condition 2: nbu_sw_state != last_nbu_sw_state
+                 *   The NBU woke up, executed code, and has prepared for a new deep sleep
+                 *   cycle (incrementing lowPowerEntryCount). The differing counter value
+                 *   proves execution occurred since PLATFORM_RemoteActiveReq().
+                 *
+                 * Failure mode: If neither condition is met within the timeout period,
+                 * trigger the error callback. This indicates the NBU is stuck in a
+                 * transitional state and unable to acknowledge the wake-up. */
+                uint32_t nbu_sw_state = RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK;
+                if ((last_nbu_sw_state != nbu_sw_state) || (nbu_sw_state == 0U))
                 {
                     EnableGlobalIRQ(regPrimask);
                     break;
