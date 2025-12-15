@@ -38,7 +38,7 @@ typedef struct
     ota_flash_status_t (*writeData)(uint32_t NoOfBytes, uint32_t Addr, uint8_t *Outbuf);
     ota_flash_status_t (*readData)(uint16_t NoOfBytes, uint32_t Addr, uint8_t *inbuf);
     uint8_t (*isBusy)(void);
-    ota_flash_status_t (*eraseArea)(uint32_t *pAddr, int32_t *pSize, bool non_blocking);
+    ota_flash_status_t (*eraseArea)(uint32_t *pOffs, uint32_t *pSize, bool non_blocking);
     ota_flash_status_t (*flushWriteBuf)(void);
 
 } OtaFlashOps_t;

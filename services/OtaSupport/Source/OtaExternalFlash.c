@@ -1,12 +1,11 @@
 /*! *********************************************************************************
- * Copyright 2021-2023 NXP
- * All rights reserved.
+ * Copyright 2021-2023, 2025-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause.
  *
  * \file
  *
  * This is the Source file for the EEPROM emulated inside the MCU's FLASH
  *
- * SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
 
 /* -------------------------------------------------------------------------- */
@@ -62,7 +61,7 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
 static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void);
 static ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf);
 static uint8_t            ExternalFlash_isBusy(void);
-static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, int32_t *pSize, bool non_blocking);
+static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking);
 #if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
 static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length);
 #endif
@@ -89,9 +88,9 @@ struct OtaExtFlashCtx_t
 ******************************************************************************/
 
 static struct OtaExtFlashCtx_t ctx = {
-    .mWriteBuffer[0 ...(OTA_WRITE_BUFFER_SIZE - 1)] = 0xffU,
+/*    .mWriteBuffer[0 ...(OTA_WRITE_BUFFER_SIZE - 1)] = 0xffU, non standard syntax */
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-    .eraseBitmap[0 ... ERASE_BITMAP_SIZE - 1] = 0U,
+/* .eraseBitmap[0 ... ERASE_BITMAP_SIZE - 1] = 0U, non standard syntax either  */
 #endif
     .mWriteBufferOffs  = 0U,
     .mWriteBufferIndex = 0U,
@@ -149,6 +148,8 @@ static ota_flash_status_t ExternalFlash_Init(void)
         {
             status = kStatus_OTA_Flash_Error;
             status_t st;
+            /* Initialize arrays at runtime */
+            FLib_MemSet(ctx.mWriteBuffer, 0xFFU, OTA_WRITE_BUFFER_SIZE);
 
             st = PLATFORM_InitExternalFlash();
 
@@ -473,10 +474,10 @@ static uint8_t ExternalFlash_isBusy(void)
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, int32_t *pSize, bool non_blocking)
+static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking)
 {
     ota_flash_status_t status;
-    uint32_t           remain_sz  = (uint32_t)*pSize;
+    uint32_t           remain_sz  = *pSize;
     uint32_t           erase_offs = *pOffs;
     /* The erase operation in internal flash is necessarily blocking */
     NOT_USED(non_blocking);
@@ -484,8 +485,13 @@ static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, int32_t *pSiz
     do
     {
         if (!IS_SECTOR_ALIGNED(erase_offs))
-        {
+        { /* Ensure we deal only with sector aligned addresses */
             RAISE_ERROR(status, kStatus_OTA_Flash_AlignmentError);
+        }
+        if (!OtaCheckRangeBelongsToPartition(erase_offs, remain_sz))
+        {
+            /* Ensure erase range belongs to the partition */
+            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
         if (remain_sz != 0U)
         {
@@ -494,7 +500,7 @@ static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, int32_t *pSiz
             {
                 break;
             }
-            erase_offs += remain_sz;
+            erase_offs += remain_sz; /* advance offset by remaining size */
             /* In the case of internal flash the entire erase operation must
              * complete till the end
              */
@@ -503,8 +509,8 @@ static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, int32_t *pSiz
         status = kStatus_OTA_Flash_Success;
     } while (false);
 
-    *pOffs = NEXT_SECTOR_ADDR(erase_offs);
-    *pSize = (int32_t)remain_sz;
+    *pOffs = NEXT_SECTOR_ADDR(erase_offs); /* Round to next sector boundary */
+    *pSize = remain_sz;
 
     return status;
 }
