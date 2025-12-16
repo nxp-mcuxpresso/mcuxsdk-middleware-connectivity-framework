@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "fwk_platform.h"
 #include "fwk_platform_lcl.h"
 #include "fwk_platform_definitions.h"
 #include "FunctionLib.h"
@@ -109,66 +110,96 @@
 #define gAppRfGpoFEM RFMC_GPO_INVALID /* FEM uses RF_GPO[11..8] */
 
 /* Total size of COEX config including several XCVR structures which could be changed */
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
+#define COEX_CONFIG_LEN                                                                                      \
+    (6 + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
+     sizeof(coexRfActiveRfmcConfig_t) + sizeof(coexRfStatusConfig_t) + sizeof(coexRfPriorityConfig_t) +      \
+     sizeof(coexCsConfig_t) + 2)
+#else
 #define COEX_CONFIG_LEN                                                                                      \
     (6 + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
      sizeof(coexRfActiveRfmcConfig_t) + sizeof(coexRfStatusConfig_t) + sizeof(coexRfPriorityConfig_t) + 2)
-
+#endif
 /* Default COEX configuration including several XCVR structures + output/input signals setting + RF_GPO option.
    Details: all output signals activated without inversion/muxing, TSM is source, high priority TX/RX,
             RF_ACTIVE aligned with RF_STATUS & RF_PRIO in RX but TX, RF_NOT_ALLOWED active HIGH on PTC7.
  */
 const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
     /* wiring configuration */
-    0x01,         /* uint8 rf_active_used;  When set to 1, RF_ACTIVE signal will be active */
-    0x01,         /* rf_status_used;        When set to 1 RF_STATUS signal will be active */
-    0x01,         /* rf_prio_used;          0 if not used, 1 if only priority[0] used, 2 for priority[1:0] */
-    gAppRfGpoSRC, /* rfmcGpoCoex;   [0,5]=RF_GPO[6:4]=PORTD[3,2,1]=(*)J14-[16,14,12] as [RF_PRIO,RF_STATUS,RF_ACTIVE]
-                                    [1,4]=RF_GPO[2:0]=PORTA[20,19,18]=(*)J14-[8,6,4]. (*) for FPGA */
-    0x01,         /* tsm_controls_coex;     When set to 1, TSM will control output signals */
+    0x01U,                 /* uint8 rf_active_used;  When set to 1, RF_ACTIVE signal will be active */
+    0x01U,                 /* rf_status_used;        When set to 1 RF_STATUS signal will be active */
+    0x01U,                 /* rf_prio_used;          0 if not used, 1 if only priority[0] used, 2 for priority[1:0] */
+    (uint8_t)gAppRfGpoSRC, /* rfmcGpoCoex;           [0,5]=RF_GPO[6:4]=PORTD[3,2,1]=(*)J14-[16,14,12] as
+                                                     [RF_PRIO,RF_STATUS,RF_ACTIVE]
+                                                     [1,4]=RF_GPO[2:0]=PORTA[20,19,18]=(*)J14-[8,6,4]. (*) for FPGA */
+    0x01U,                 /* tsm_controls_coex;     When set to 1, TSM will control output signals */
     /* -------- */
-    0x01, /* rfactSrc;                  coexRfactSrc_t 0..2 */
+    0x01U, /* rfactSrc;                  coexRfactSrc_t 0..2 */
 /* coexRfSignalInvert_t: */
 #if defined(KW45B41Z82_SERIES) || defined(KW45B41Z83_SERIES)
-    0x01, /* rfna_invert;               KW45 HW bug - RF_NALLOWED is active LOW instead of HIGH */
+    0x01U, /* rfna_invert;               KW45 HW bug - RF_NALLOWED is active LOW instead of HIGH */
 #else
-    0x00, /* rfna_invert;               When set to 1, inverts the RF_NOT_ALLOWED signal in RFMC muxing logic */
+    0x00U, /* rfna_invert;               When set to 1, inverts the RF_NOT_ALLOWED signal in RFMC muxing logic */
 #endif
-    0x00, /* rfact_invert;              When set to 1, inverts the RF_ACTIVE signal in RFMC muxing logic */
-    0x00, /* rfstat_invert;             When set to 1, inverts the RF_STATUS signal in RFMC muxing logic */
-    0x00, /* rfpri_invert[0];           When set to 1, inverts the RF_PRIORITY signals in RFMC muxing logic */
-    0x00, /* rfpri_invert[1];           When set to 1, inverts the RF_PRIORITY signals in RFMC muxing logic */
+    0x00U, /* rfact_invert;              When set to 1, inverts the RF_ACTIVE signal in RFMC muxing logic */
+    0x00U, /* rfstat_invert;             When set to 1, inverts the RF_STATUS signal in RFMC muxing logic */
+    0x00U, /* rfpri_invert[0];           When set to 1, inverts the RF_PRIORITY signals in RFMC muxing logic */
+    0x00U, /* rfpri_invert[1];           When set to 1, inverts the RF_PRIORITY signals in RFMC muxing logic */
     /* coexRfNotAllowedConfig_t: */
-    0x04, /* rfna_pin_enable;           coexRfNotAllowPin_t 1=PTA16, 2=PTA17, 4=PTC7. N/A for FPGA: PTD6 J14-19 */
-    0x01, /* link_layer_rfna_select;    Enable bits for RF_NOT_ALLOWED signal to LLs. Value is the OR'd together of any
-                                        ::coexRfNotAllowLL_t entries 0,1,4,8. */
+    0x04U, /* rfna_pin_enable;           coexRfNotAllowPin_t 1=PTA16, 2=PTA17, 4=PTC7. N/A for FPGA: PTD6 J14-19 */
+    0x01U, /* link_layer_rfna_select;    Enable bits for RF_NOT_ALLOWED signal to LLs. Value is the OR'd together of any
+                                         ::coexRfNotAllowLL_t entries 0,1,4,8. */
     /* coexRfActiveTsmConfig_t: */
-    0x37, /* rf_act_extend;             RF_ACTIVE remains asserted this many microseconds after the end of TSM RX or TX
-                                        sequences. Must be <=255. */
-    0x5D, /* rf_act_tx_advance;         RF_ACTIVE aserts this many microseconds before the end of TX warm up. If this
-                                        value is > than the number of microseconds before end of TX warm  ramp up in
-                                        the TSM timing sequence then an error will be returned. */
-    0x5A, /* rf_act_rx_advance;         RF_ACTIVE aserts this many microseconds before the RX digital is enabled. If
-                                        this value is > than the number of microseconds before end of RX warm  ramp up
-                                        in the TSM timing sequence then an error will be returned. */
+    0x37U, /* rf_act_extend;             RF_ACTIVE remains asserted this many microseconds after the end of TSM RX or TX
+                                         sequences. Must be <=255. */
+    0x5DU, /* rf_act_tx_advance;         RF_ACTIVE aserts this many microseconds before the end of TX warm up. If this
+                                         value is > than the number of microseconds before end of TX warm  ramp up in
+                                         the TSM timing sequence then an error will be returned. */
+    0x5AU, /* rf_act_rx_advance;         RF_ACTIVE aserts this many microseconds before the RX digital is enabled. If
+                                         this value is > than the number of microseconds before end of RX warm  ramp up
+                                         in the TSM timing sequence then an error will be returned. */
     /* coexRfActiveRfmcConfig_t: */
-    0x00, /* deassert_when_tsm_idle;    When set to 1, RFMS will deassert RF_ACTIVE if the TSM is idle. Otherwise
-                                        deassertion is on next low power entry. */
-    0x00, /* wakeup_delay;              RF_ACTIVE asserts this many 32KHz ref. clocks after the XO is enabled.
-                                        Must be less <= 63. */
+    0x00U, /* deassert_when_tsm_idle;    When set to 1, RFMS will deassert RF_ACTIVE if the TSM is idle. Otherwise
+                                         deassertion is on next low power entry. */
+    0x00U, /* wakeup_delay;              RF_ACTIVE asserts this many 32KHz ref. clocks after the XO is enabled.
+                                         Must be less <= 63. */
     /* coexRfStatusConfig_t: */
-    0x5A, /* rf_stat_tx_advance;        RF_STATUS aserts this many microseconds before the end of TX warm up.
-                                        Must < TX_WU=0x70. */
+    0x5AU, /* rf_stat_tx_advance;        RF_STATUS aserts this many microseconds before the end of TX warm up.
+                                         Must < TX_WU=0x70. */
     /* coexRfPriorityConfig_t: */
-    0x5A, /* rf_pri_tx_advance;         RF_PRIORITY aserts this many microseconds before the end of TX warm up. If this
-                                        value is > than the number of microseconds before end of TX warm  ramp up in the
-                                        TSM timing sequence then an error will be returned. */
-    0x5A, /* rf_pri_rx_advance;         RF_PRIORITY aserts this many microseconds before the RX digital is enabled. If
-                                        this value is > than the number of microseconds before end of RX warm  ramp up
-                                        in the TSM timing sequence then an error will be returned. */
-    0x00, /* rf_pri_on_rf_stat;         When set to 1, RF_PRIORITY signal is muxed on  the RF_STATUS signal. */
+    0x5AU, /* rf_pri_tx_advance;         RF_PRIORITY aserts this many microseconds before the end of TX warm up. If this
+                                         value is > than the number of microseconds before end of TX warm  ramp up in the
+                                         TSM timing sequence then an error will be returned. */
+    0x5AU, /* rf_pri_rx_advance;         RF_PRIORITY aserts this many microseconds before the RX digital is enabled. If
+                                         this value is > than the number of microseconds before end of RX warm  ramp up
+                                         in the TSM timing sequence then an error will be returned. */
+    0x00U, /* rf_pri_on_rf_stat;         When set to 1, RF_PRIORITY signal is muxed on  the RF_STATUS signal. */
     /* -------- */
-    0x01, /* rf_pri_rx;                 priority level of RX. 0 LOW, 1 HIGH */
-    0x01, /* rf_pri_tx;                 priority level of TX. 0 LOW, 1 HIGH */
+    0x01U, /* rf_pri_rx;                 priority level of RX. 0 LOW, 1 HIGH */
+    0x01U, /* rf_pri_tx;                 priority level of TX. 0 LOW, 1 HIGH */
+
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
+    /* coexCsConfig_t */
+    0x01U, /* cs_coex_enable;           CS COEX enablement: 0 or 1 */
+    0x00U, /* cs_allow_channel_enable;  CS COEX enablement: 0 or 1. Used only if cs_coex_enable is set */
+           /* Channel N is indicated at cs_allow_channels[N/8] bit N%8 */
+    0xFFU, /* cs_allow_channels[0];     CS allowed channels 0 - 7. */
+    0xFFU, /* cs_allow_channels[1];     CS allowed channels 8 - 15. */
+    0xFFU, /* cs_allow_channels[2];     CS allowed channels 16 - 23. */
+    0xFFU, /* cs_allow_channels[3];     CS allowed channels 24 - 31. */
+    0xFFU, /* cs_allow_channels[4];     CS allowed channels 32 - 39. */
+    0xFFU, /* cs_allow_channels[5];     CS allowed channels 40 - 47. */
+    0xFFU, /* cs_allow_channels[6];     CS allowed channels 48 - 55. */
+    0xFFU, /* cs_allow_channels[7];     CS allowed channels 56 - 63. */
+    0xFFU, /* cs_allow_channels[8];     CS allowed channels 64 - 71. */
+    0xFFU, /* cs_allow_channels[9];     CS allowed channels 72 - 79. */
+    0xFFU, /* cs_allow_channels[10];    CS allowed channels 80 - 87. */
+    0xFFU, /* cs_allow_channels[11];    CS allowed channels 88 - 95. */
+    0xFFU, /* cs_allow_channels[12];    CS allowed channels 96 - 103. */
+    0xFFU, /* cs_allow_channels[13];    CS allowed channels 104 - 111. */
+    0xFFU, /* cs_allow_channels[14];    CS allowed channels 112 - 119. */
+    0xFFU, /* cs_allow_channels[15];    CS allowed channels 120 - 127. */
+#endif
 };
 
 /* Total size of FEM config, equals to (xcvr_pa_fem_config_t + 1) */
@@ -773,7 +804,9 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     coexRfStatusConfig_t   rfstat_tsm_cfg;
     coexRfPriorityConfig_t rfpri_on_stat_tsm_cfg;
     XCVR_COEX_PRIORITY_T   rxPriority, txPriority;
-
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
+    coexCsConfig_t cs_cfg;
+#endif
     /* use the input configuration if provided and its length is correct, otherwise use the default */
     if (p_config != NULL)
     {
@@ -791,6 +824,9 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     {
         config_ptr = default_COEX_config;
     }
+
+    /* Wakeup XCVR */
+    PLATFORM_RemoteActiveReq();
 
     /* convert config data to XCVR parameters */
     rf_active_used    = (bool)config_ptr[0];
@@ -825,6 +861,12 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     rxPriority = (XCVR_COEX_PRIORITY_T)config_ptr[22];
     txPriority = (XCVR_COEX_PRIORITY_T)config_ptr[23];
 
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
+    cs_cfg.cs_coex_enable          = config_ptr[24];
+    cs_cfg.cs_allow_channel_enable = config_ptr[25];
+    (void)memcpy(cs_cfg.cs_allow_channels, &config_ptr[26], sizeof(cs_cfg.cs_allow_channels));
+#endif
+
     /* configure the source of output signals and their inversions */
     xcvrCoexStatus = XCVR_COEX_SelectController(tsm_controls_coex, rfactSrc, &signal_invert_cfg);
 
@@ -840,10 +882,14 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
         }
     }
 
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
     if (xcvrCoexStatus == gXcvrCoexStatusSuccess)
     {
-        xcvrCoexStatus = gXcvrCoexStatusSuccess;
-
+        xcvrCoexStatus = XCVR_COEX_CsInit(&cs_cfg);
+    }
+#endif
+    if (xcvrCoexStatus == gXcvrCoexStatusSuccess)
+    {
         if (rfactSrc == coexRfactTsmLl)
         {
             /* configure RF_ACTIVE signal if requested */
@@ -861,10 +907,8 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
             /* configure RF_PRIO's signal if requested */
             if ((xcvrCoexStatus == gXcvrCoexStatusSuccess) && rf_prio_used)
             {
-                if (xcvrCoexStatus == gXcvrCoexStatusSuccess)
-                {
-                    xcvrCoexStatus = XCVR_COEX_RfPriorityTsmInit(&rfpri_on_stat_tsm_cfg);
-                }
+                xcvrCoexStatus = XCVR_COEX_RfPriorityTsmInit(&rfpri_on_stat_tsm_cfg);
+
                 /* configure TX and RX priorities */
                 if (xcvrCoexStatus == gXcvrCoexStatusSuccess)
                 {
@@ -895,6 +939,7 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
 #endif
     }
 
+    PLATFORM_RemoteActiveRel();
     return status;
 }
 
