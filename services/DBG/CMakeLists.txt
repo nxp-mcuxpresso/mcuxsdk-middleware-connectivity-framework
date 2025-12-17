@@ -7,7 +7,8 @@ mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/SWO)
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers)
     mcux_add_source(
         SOURCES
-                fault_handlers/fwk_fault_handlers.c
+                fault_handlers/fwk_fault_handlers_common.c
+                fault_handlers/fwk_fault_handlers_common.h
                 fault_handlers/fwk_fault_handlers_utils.c
                 fault_handlers/fwk_fault_handlers_utils.h
     )
@@ -25,6 +26,20 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers)
         SOURCES fault_handlers/rtos_port/fwk_fault_handlers_threadx.c
                 fault_handlers/rtos_port/fwk_fault_handlers_rtos_port.h
         COMPONENTS component.osa_threadx
+    )
+endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.nbu_core)
+    mcux_add_source(
+        SOURCES
+                fault_handlers/nbu/fwk_fault_handlers.c
+    )
+endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.fault_handlers.app_core)
+    mcux_add_source(
+        SOURCES
+                fault_handlers/host/fwk_fault_handlers.c
     )
 endif()
 

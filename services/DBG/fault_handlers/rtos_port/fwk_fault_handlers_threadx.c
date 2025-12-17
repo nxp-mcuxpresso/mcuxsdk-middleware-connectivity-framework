@@ -6,6 +6,7 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
+#include <stdbool.h>
 #include "fwk_fault_handlers_rtos_port.h"
 #include "fwk_fault_handlers_utils.h"
 #include "tx_api.h"
@@ -41,13 +42,6 @@ void sys_dump_task_stats(void)
     }
     else
     {
-#if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-        if (_tx_thread_current_ptr != NULL)
-        {
-            NBUDBG_SetThreadContext((uint32_t)_tx_thread_current_ptr->tx_thread_entry,
-                                    _tx_thread_current_ptr->tx_thread_name);
-        }
-#else
         static const char thread_state_char[] = {
             'R', /* TX_READY 0*/
             'C', /* TX_COMPLETED 1*/
@@ -111,8 +105,42 @@ void sys_dump_task_stats(void)
             thread_count++;
             thread_ptr = thread_ptr->tx_thread_created_next;
         } while ((thread_ptr != _tx_thread_created_ptr) && (thread_count < _tx_thread_created_count));
-#endif
     }
+}
+
+int sys_get_current_task_info(dbg_thread_info *thread_info)
+{
+    int status = 0;
+
+    do
+    {
+        if (thread_info == NULL)
+        {
+            status = -1;
+            break;
+        }
+
+        if (_tx_thread_current_ptr == NULL)
+        {
+            status = -2;
+            break;
+        }
+
+        thread_info->thread_entry_addr = (uint32_t)_tx_thread_current_ptr->tx_thread_entry;
+        if (_tx_thread_current_ptr->tx_thread_name != NULL)
+        {
+            /* Copy up to 7 characters and ensure null termination */
+            strncpy(thread_info->thread_name, _tx_thread_current_ptr->tx_thread_name, 7);
+        }
+        else
+        {
+            /* No thread name available, set default */
+            strncpy(thread_info->thread_name, "UNKNOWN", 7);
+        }
+        thread_info->thread_name[7] = '\0';
+    } while (false);
+
+    return status;
 }
 
 /* -------------------------------------------------------------------------- */

@@ -7,10 +7,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 #include <stdint.h>
-#if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-#include "fwk_debug_struct.h"
-#include "fwk_platform_dbg.h"
-#else
+#if !defined(gDBG_LogInLinkLayerDebugStructEnabled_d)
 /* Definition for PRINTF */
 #include "fsl_debug_console.h"
 #endif
@@ -18,15 +15,15 @@
 /* -------------------------------------------------------------------------- */
 /*                               Public macros                                */
 /* -------------------------------------------------------------------------- */
+#define _TEXT_START              m_text_start
+#define _TEXT_END                m_text_end
+#define _STACK_TOP               m_cstack_end
+#define DBG_NO_ACTIVE_DEVICE_IRQ 0xFFFFFFFFU
 #if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
 /* No debug console on NBU core on KW45 */
 #undef PRINTF
 #define PRINTF(...)
 #endif /* gDBG_LogInLinkLayerDebugStructEnabled_d */
-
-#define _TEXT_START m_text_start
-#define _TEXT_END   m_text_end
-#define _STACK_TOP  m_cstack_end
 
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
@@ -73,5 +70,7 @@ void sys_dump_exception_callstack(void);
  * using NVIC functions. It prints information about any pending or active interrupts,
  * which is useful for debugging interrupt-related issues or understanding the system
  * state during fault conditions.
+ *
+ * \return Active device specific irq or DBG_NO_ACTIVE_DEVICE_IRQ if none is found
  */
-void sys_dump_interrupt_status(void);
+unsigned int sys_dump_interrupt_status(void);

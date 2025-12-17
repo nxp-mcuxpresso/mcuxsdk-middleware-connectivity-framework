@@ -57,14 +57,15 @@ void sys_dump_callstack(unsigned int stack_ptr, unsigned int stack_top)
     PRINTF("\r\n");
 }
 
-void sys_dump_interrupt_status(void)
+unsigned int sys_dump_interrupt_status(void)
 {
     unsigned int IRQn;
+    unsigned int device_active_irq   = DBG_NO_ACTIVE_DEVICE_IRQ;
     bool_t       irq_pending_running = FALSE;
 
     PRINTF("\r\n==========INTERRUPT STATUS==========\r\n");
 
-    for (IRQn = 0U; IRQn < IRQN_TYPE_MAX; IRQn++)
+    for (IRQn = 0U; IRQn <= IRQN_TYPE_MAX; IRQn++)
     {
         if (NVIC_GetPendingIRQ((IRQn_Type)IRQn))
         {
@@ -73,9 +74,7 @@ void sys_dump_interrupt_status(void)
         }
         if (NVIC_GetActive((IRQn_Type)IRQn))
         {
-#if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-            NBUDBG_SET_HANDLER_MODE_IRQ((uint32_t)IRQn);
-#endif
+            device_active_irq = IRQn;
             PRINTF("IRQ active : %d\r\n", IRQn);
             irq_pending_running = TRUE;
         }
@@ -85,6 +84,8 @@ void sys_dump_interrupt_status(void)
     {
         PRINTF("No IRQ pending or running\r\n");
     }
+
+    return device_active_irq;
 }
 
 void sys_dump_exception_callstack(void)

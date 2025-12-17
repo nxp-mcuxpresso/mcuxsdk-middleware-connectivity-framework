@@ -6,6 +6,7 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
+#include <stdbool.h>
 #include "fwk_fault_handlers_rtos_port.h"
 #include "fwk_fault_handlers_utils.h"
 #include "FreeRTOS.h"
@@ -79,7 +80,6 @@ void sys_dump_task_stats(void)
             {
                 task_state = eInvalid;
             }
-
             /* If the percentage is zero here then the task has
                consumed less than 1% of the total run time. */
             PRINTF(
@@ -118,6 +118,51 @@ void sys_dump_task_stats(void)
         }
 #endif
     }
+}
+
+int sys_get_current_task_info(dbg_thread_info *thread_info)
+{
+    TaskHandle_t current_task;
+    int          status = 0;
+
+    do
+    {
+        if (thread_info == NULL)
+        {
+            status = -1;
+            break;
+        }
+
+        /* Get handle of currently running task */
+        current_task = xTaskGetCurrentTaskHandle();
+
+        if (current_task == NULL)
+        {
+            status = -2;
+            break;
+        }
+
+        /* Get task name and copy up to 7 characters (leaving room for NULL terminator) */
+        const char *task_name = pcTaskGetName(current_task);
+        if (task_name != NULL)
+        {
+            (void)strncpy(thread_info->thread_name, task_name, sizeof(thread_info->thread_name) - 1);
+            /* Ensure NULL termination */
+            thread_info->thread_name[sizeof(thread_info->thread_name) - 1] = '\0';
+        }
+        else
+        {
+            /* No thread name available, set default */
+            strncpy(thread_info->thread_name, "UNKNOWN", 7);
+        }
+
+        thread_info->thread_name[0] = '\0';
+
+        /* Use task handle as identifier (entry function address not directly accessible) */
+        thread_info->thread_entry_addr = (uint32_t)current_task;
+    } while (false);
+
+    return status;
 }
 
 /* -------------------------------------------------------------------------- */
