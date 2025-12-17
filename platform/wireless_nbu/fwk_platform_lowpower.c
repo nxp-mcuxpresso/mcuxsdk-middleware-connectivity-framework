@@ -35,11 +35,11 @@ extern bool PHY_XCVR_AllowLowPower(void);
 /* Value form which CONVERT_HALF_SLOTS_2_32KTICKS overflows 32 bits using CONVERT_HALF_SLOTS_2_32KTICKS */
 #define OVF_HALF_SLOTS_2_32KTICKS 419430399UL
 /* Macro converting number of BLE half-slots to number of 32kHz ticks */
-#define CONVERT_HALF_SLOTS_2_32KTICKS(hlf_slot) ((((((hlf_slot) << 2) / 5) << 2) / 5) << 4)
+#define CONVERT_HALF_SLOTS_2_32KTICKS(hlf_slot) ((((((hlf_slot) << 2) / 5UL) << 2) / 5UL) << 4)
 /* Macro converting number of microseconds  to number of BLE half-slots */
-#define CONVERT_USEC_2_HALF_SLOTS(usec)   (((usec) << 1) / 625)
-#define BLE_MINIMAL_SLEEP_TIME_ALLOWED_HS CONVERT_USEC_2_HALF_SLOTS(5000u) /* 5ms minimal sleep time */
-#define BLE_SLP_WUP_MARGIN_HS             CONVERT_USEC_2_HALF_SLOTS(1875u) /* 1.875ms margin */
+#define CONVERT_USEC_2_HALF_SLOTS(usec)   (((usec) << 1) / 625UL)
+#define BLE_MINIMAL_SLEEP_TIME_ALLOWED_HS CONVERT_USEC_2_HALF_SLOTS(5000UL) /* 5ms minimal sleep time */
+#define BLE_SLP_WUP_MARGIN_HS             CONVERT_USEC_2_HALF_SLOTS(1875UL) /* 1.875ms margin */
 
 #define ST_INIT                                0x11U
 #define HANDLE_INIT                            0x000EU
@@ -100,7 +100,8 @@ void PLATFORM_LowPowerInit(void)
          * low power */
         BTU2_REG->BTU_RIF_BLE_CLK_CTRL |= BTU2_REG_BTU_RIF_BLE_CLK_CTRL_BLE_CLK_REQ_EARLY_ASSERT(0x1);
 
-        BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES = delayLpoCycle;
+        BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES =
+            BLE2_REG_BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES_WAKEUP_DELAY_LPO_CYCLES(delayLpoCycle);
 
         /* Enable interrupt of the XTAL ready, necessary to read instant value of XTAL_RDY */
         RF_CMC1->IRQ_CTRL |= RF_CMC1_IRQ_CTRL_RDY_IE_MASK;
@@ -115,7 +116,7 @@ void PLATFORM_LowPowerInit(void)
         /* WorkQ used to schedule warning/error indications to Host */
         if (WORKQ_InitSysWorkQ() < 0)
         {
-            assert(0);
+            assert(false);
         }
         initialized = true;
     }
@@ -162,11 +163,12 @@ void PLATFORM_SetWakeupDelay(uint8_t wakeupDelayReceivedFromHost)
 {
     delayLpoCycle = wakeupDelayReceivedFromHost;
     /* Configure BLE timer wakeup delay of 3.2kHz period */
-    BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES = delayLpoCycle;
+    BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES =
+        BLE2_REG_BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES_WAKEUP_DELAY_LPO_CYCLES(delayLpoCycle);
 
     /* Update the variable with the wake-up time of the 32 MHz crystal,
      * adding a margin of a few half-slots to ensure reliable sleep and wake-up timing */
-    bleMinimalSleepTimeAllowedHs = wakeupDelayReceivedFromHost + BLE_SLP_WUP_MARGIN_HS;
+    bleMinimalSleepTimeAllowedHs = (uint32_t)wakeupDelayReceivedFromHost + BLE_SLP_WUP_MARGIN_HS;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -418,7 +420,7 @@ int PLATFORM_SwitchSleepClockSource(bool switchTo32k)
 
         start = PLATFORM_GetTimeStamp();
 
-        while (CIU2->CIU2_LBC_CTRL & CIU2_CIU2_LBC_CTRL_LPO_CLK_SEL_FSM_MASK)
+        while ((CIU2->CIU2_LBC_CTRL & CIU2_CIU2_LBC_CTRL_LPO_CLK_SEL_FSM_MASK) != 0u)
         {
             now = PLATFORM_GetTimeStamp();
             if (now > start)
@@ -467,7 +469,8 @@ void PLATFORM_WaitForXtalReady(void)
          * the NBU wakeup */
         if (WORKQ_Submit(&xtal_warning_ind_work) < 0)
         {
-            assert(0);
+            assert(false);
+            __NOP();
         }
         /* Wait for the XTAL to be ready before running anything else */
         while ((RF_CMC1->IRQ_CTRL & RF_CMC1_IRQ_CTRL_XTAL_RDY_MASK) == 0U)

@@ -183,7 +183,7 @@ void PLATFORM_EnterPowerDown(void)
     /* Warning : For power down, it requires gLowpowerPowerDownEnable_d variable to be set to 1 in linker file.
      *    Generate assertion if not the case */
     extern uint32_t gLowpowerPowerDownEnable_d[];
-    assert((uint32_t)&gLowpowerPowerDownEnable_d == 1);
+    assert((uint32_t)&gLowpowerPowerDownEnable_d == 1UL);
     (void)gLowpowerPowerDownEnable_d;
 
     /* Transmit a message to the nbu via the shared memory to warn it that the host go in power down */
