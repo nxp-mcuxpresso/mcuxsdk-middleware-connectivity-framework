@@ -214,7 +214,7 @@ void PLATFORM_UpdateXtal32MTrim(void)
 {
     uint32_t rfmc_xo;
 
-    if ((newXtal32MTrim != lastXtal32MTrim) && (xtal32MTrimLock == 0))
+    if ((newXtal32MTrim != lastXtal32MTrim) && (xtal32MTrimLock == 0U))
     {
         PLATFORM_RemoteActiveReq();
         rfmc_xo = RFMC->XO_TEST;
@@ -245,9 +245,9 @@ void PLATFORM_UnlockXtal32MTrim(void)
     PLATFORM_ClearInterruptMask(intMask);
 }
 
-void PLATFORM_SetChipRevision(uint8_t chip_rev_l)
+void PLATFORM_SetChipRevision(uint8_t chip_rev)
 {
-    chip_revision = chip_rev_l;
+    chip_revision = chip_rev;
 
     PWR_DBG_LOG("chip rev received:%d", chip_revision);
 }
@@ -525,6 +525,8 @@ static void PLATFORM_SetClock(uint8_t range)
     }
 }
 
+#if 0
+/* Code is unused and duplcates PLATFORM_GetNbuFreq */
 uint32_t PLATFORM_GetClockFreq(void)
 {
     uint32_t fro192M_clock_ctrl;
@@ -536,13 +538,13 @@ uint32_t PLATFORM_GetClockFreq(void)
     {
         fro192M_clock_ctrl = FRO192M0->FROCCSR;
 
-        if ((fro192M_clock_ctrl & FRO192M_FROCCSR_VALID_MASK))
+        if ((fro192M_clock_ctrl & FRO192M_FROCCSR_VALID_MASK) != 0U)
         {
-            /* Read back FOR 192 divisor from FROCCSR whereas it was set from FRODIV */
+            /* Read back FRO 192 divisor from FROCCSR whereas it was set from FRODIV */
             fro192M_div = (fro192M_clock_ctrl & FRO192M_FRODIV_FRODIV_MASK) >> FRO192M_FRODIV_FRODIV_SHIFT;
             fro192M_div += 1u;
             post_div = ((fro192M_clock_ctrl & FRO192M_FROCCSR_POSTDIV_SEL_MASK) >> FRO192M_FROCCSR_POSTDIV_SEL_SHIFT);
-            const uint32_t fro_freq_tb[5] = {16000000, 24000000, 32000000, 48000000, 64000000};
+            const uint32_t fro_freq_tb[5] = {16000000UL, 24000000UL, 32000000UL, 48000000UL, 64000000UL};
 
             if (post_div < sizeof(fro_freq_tb) / sizeof(fro_freq_tb[0]))
             {
@@ -553,6 +555,7 @@ uint32_t PLATFORM_GetClockFreq(void)
     }
     return fro_freq;
 }
+#endif
 
 static uint32_t PLATFORM_GetLowPowerFlag(void)
 {
@@ -571,9 +574,9 @@ static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay)
         /* Request access to SOC XBAR bus - only this bit is writeable */
         RF_CMC1->SOC_LP = RF_CMC1_SOC_LP_BUS_REQ(0x1);
 
-        while ((RF_CMC1->SOC_LP & RF_CMC1_SOC_LP_BUS_AWAKE_MASK) == 0)
+        while ((RF_CMC1->SOC_LP & RF_CMC1_SOC_LP_BUS_AWAKE_MASK) == 0U)
         {
-            asm("NOP");
+            __NOP(); /* asm directives not MISRA compliant */
         }
         /* If the host is in power down, we need to wait an additional delay on OEM part for the SOC to be ready */
         if ((PLATFORM_GetLowPowerFlag() == PLATFORM_HOST_USE_POWER_DOWN) && withDelay)

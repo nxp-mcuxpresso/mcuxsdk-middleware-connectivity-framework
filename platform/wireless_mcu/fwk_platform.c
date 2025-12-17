@@ -170,8 +170,7 @@ static const xtal_temp_comp_lut_t *pXtal32MTempCompLut = NULL;
 /* Number of request for CM3 to remain active */
 static int8_t active_request_nb = 0;
 
-extern PLATFORM_ErrorCallback_t pfPlatformErrorCallback;
-PLATFORM_ErrorCallback_t        pfPlatformErrorCallback = (void *)0;
+PLATFORM_ErrorCallback_t pfPlatformErrorCallback = (void *)0;
 
 /* Used and instantiated only if FRO6M calibration is linked */
 static Platform_Fro6MCalCtx_t fro6M_calibration_ctx = {
@@ -640,7 +639,7 @@ int PLATFORM_SwitchToOsc32k(void)
     int status = 0;
     int cnt    = 0;
 
-    assert((CCM32K->OSC32K_CTRL & CCM32K_OSC32K_CTRL_OSC_EN_MASK) != 0);
+    assert((CCM32K->OSC32K_CTRL & CCM32K_OSC32K_CTRL_OSC_EN_MASK) != 0U);
 
     do
     {
@@ -1098,7 +1097,7 @@ void PLATFORM_RemoteActiveRel(void)
     }
     else
     {
-        assert(0);
+        assert(false);
     }
 
     /* Restore original interrupt masking state */

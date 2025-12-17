@@ -250,11 +250,6 @@ static const sfc_config_t sfcConfig = {
           BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
 
 /* -------------------------------------------------------------------------- */
-/*                         Public memory declarations                        */
-/* -------------------------------------------------------------------------- */
-extern PLATFORM_ErrorCallback_t pfPlatformErrorCallback;
-
-/* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
 
@@ -308,7 +303,7 @@ int PLATFORM_InitBle(void)
         /* Update 32MHz trim value with the one stored in HW parameters */
         PLATFORM_LoadHwParams();
 
-        PLATFORM_SetBleMaxTxPower(gAppMaxTxPowerDbm_c);
+        PLATFORM_SetBleMaxTxPower((int8_t)gAppMaxTxPowerDbm_c);
         /* Initialize log handle for second core */
         BOARD_DBGCONFIGINITNBU(TRUE);
         // DBG_LOG_DUMP();
@@ -365,9 +360,10 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
         }
 
 #ifdef SERIAL_BTSNOOP
-        uint16_t lg = (uint16_t)len - 1U;
-        if (lg > 0U)
+        if (len >= 2U)
         {
+            /* HCI message must have a length greater or equal to 2 to be valid */
+            uint16_t lg = (uint16_t)len - 1U;
             sbtsnoop_write_hci_pkt(msg[0U], 0U, &msg[1], lg);
         }
 #endif
@@ -574,14 +570,22 @@ static int PLATFORM_InitHciLink(void)
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
 {
     hal_rpmsg_return_status_t ret = kStatus_HAL_RL_RELEASE;
-
-    /* len shall be strictly positive as message shall not be empty */
-    assert((len > 0U) && (len <= (uint16_t)UINT16_MAX));
-
     (void)param;
 
-    if ((len > 0U) && (len <= (uint16_t)UINT16_MAX) && (hci_rx_callback != NULL))
+    do
     {
+        /* len shall be strictly positive as message shall not be empty */
+        if ((len < 2U) || (len > (uint32_t)UINT16_MAX))
+        {
+            assert(false);
+            break;
+        }
+
+        if (hci_rx_callback == NULL)
+        {
+            /* no use queueing if callback is not set, and we can't process the message synchronously either */
+            break;
+        }
 #if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
         hci_rx_data_t hci_rx_data = {.len = len, .data = data};
 
@@ -608,7 +612,6 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
         }
 #else
         PLATFORM_RemoteActiveReq();
-
         hci_rx_callback(data[0], &data[1], (uint16_t)(len - 1U));
 
 #ifdef SERIAL_BTSNOOP
@@ -621,8 +624,8 @@ static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_
         }
         PLATFORM_RemoteActiveRel();
 #endif
-    }
 
+    } while (false);
     return ret;
 }
 
@@ -635,14 +638,16 @@ static void PLATFORM_HciRxWorkHandler(fwk_work_t *work)
 
     /* Check if there is any message in the queue
      * Important: do not set a blocking time to prevent blocking the system workqueue */
-    status = OSA_MsgQGet(hciMsgQueue, (void *)&hci_rx_data, 0);
 
+    assert(hci_rx_callback != NULL); /* cannot happen since callback is checked before queuing */
+
+    status = OSA_MsgQGet(hciMsgQueue, (void *)&hci_rx_data, 0UL);
     PLATFORM_RemoteActiveReq();
 
     while (status == KOSA_StatusSuccess)
     {
-        if ((hci_rx_data.data != NULL) && (hci_rx_data.len > 0U) && (hci_rx_data.len <= (uint16_t)UINT16_MAX) &&
-            (hci_rx_callback != NULL))
+        /* The message length must be greater than 2, otherwise it's invalid */
+        if ((hci_rx_data.data != NULL) && (hci_rx_data.len >= 2U) && (hci_rx_data.len <= (uint32_t)UINT16_MAX))
         {
             hci_rx_callback(hci_rx_data.data[0], &hci_rx_data.data[1], (uint16_t)(hci_rx_data.len - 1U));
 
@@ -747,15 +752,13 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
         (void)ret;
 
 #ifndef FWK_RNG_DEPRECATED_API
-        int num;
-        num = RNG_GetPseudoRandomData(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
+        ret = RNG_GetPseudoRandomData(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
 #else
-        int16_t num;
         RNG_SetPseudoRandomNoSeed(NULL);
-        num = RNG_GetPseudoRandomNo(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
+        ret = RNG_GetPseudoRandomNo(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
 #endif
-        assert(num == PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
-        (void)num;
+        assert(ret == (int32_t)PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
+        (void)ret;
 
         /* Set 3 LSB from mac address */
         FLib_MemCpy((void *)bleDeviceAddress, (const void *)macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
@@ -894,5 +897,6 @@ int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len)
 
 void PLATFORM_RegisterHciLogCallback(platform_hci_log_cb_t cb)
 {
+    /* Register HCI logging callback - called by DBG module or application */
     platform_hci_log_cb = cb;
 }

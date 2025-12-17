@@ -14,18 +14,6 @@
 #include "fwk_platform_ble.h"
 
 /* -------------------------------------------------------------------------- */
-/*                         Private memory declarations                        */
-/* -------------------------------------------------------------------------- */
-
-static RPMSG_HANDLE_DEFINE(hciRpmsgHandle);
-const static hal_rpmsg_config_t hciRpmsgConfig = {
-    .local_addr  = 30,
-    .remote_addr = 40,
-};
-
-static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
-
-/* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
 
@@ -46,6 +34,21 @@ static void PLATFORM_InitHciLink(void);
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len);
 
 /* -------------------------------------------------------------------------- */
+/*                         Private memory declarations                        */
+/* -------------------------------------------------------------------------- */
+
+static RPMSG_HANDLE_DEFINE(hciRpmsgHandle);
+
+static const hal_rpmsg_config_t hciRpmsgConfig = {
+    .local_addr  = 30,
+    .remote_addr = 40,
+    .callback    = PLATFORM_HciRpmsgRxCallback,
+    .param       = NULL,
+};
+
+static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
+
+/* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
 
@@ -59,7 +62,7 @@ void PLATFORM_InitBle(void)
 
 #if (defined(gPlatformUseLptmr_d)) && (gPlatformUseLptmr_d == 1U)
     /* Init lptmr2*/
-    PLATFORM_InitTimerManager();
+    (void)PLATFORM_InitTimerManager();
 #endif
 }
 
@@ -89,8 +92,8 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
 /* Initialize hci Rpmsg */
 static void PLATFORM_InitHciLink(void)
 {
-    if (kStatus_HAL_RpmsgSuccess !=
-        HAL_RpmsgInit((hal_rpmsg_handle_t)hciRpmsgHandle, (hal_rpmsg_config_t *)&hciRpmsgConfig))
+    hal_rpmsg_config_t hci_rpmsg_config = hciRpmsgConfig;
+    if (kStatus_HAL_RpmsgSuccess != HAL_RpmsgInit((hal_rpmsg_handle_t)hciRpmsgHandle, &hci_rpmsg_config))
     {
         assert(false);
         return;
@@ -106,9 +109,9 @@ static void PLATFORM_InitHciLink(void)
 
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
 {
-    if (hci_rx_callback != NULL)
+    if ((hci_rx_callback != NULL) && (len >= 2U))
     {
-        hci_rx_callback(data[0], &data[1], len - 1);
+        hci_rx_callback(data[0], &data[1], len - 1U);
     }
 
     (void)param;

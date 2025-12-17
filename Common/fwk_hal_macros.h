@@ -25,8 +25,8 @@
  *****************************************************************************************/
 #if defined(__GNUC__)
 
-#define HAL_CLZ(x) ((uint8_t)(__builtin_clz(x) & 0x3fUL))
-#define HAL_CTZ(x) ((uint8_t)(__builtin_ctz(x) & 0x3fUL))
+#define HAL_CLZ(x) ((uint8_t)((uint32_t)__builtin_clz(x) & 0x3fUL))
+#define HAL_CTZ(x) ((uint8_t)((uint32_t)__builtin_ctz(x) & 0x3fUL))
 static inline uint32_t __hal_revb(uint32_t x)
 {
     unsigned int res;
@@ -37,7 +37,7 @@ static inline uint32_t __hal_revb(uint32_t x)
 
 #elif defined(__IAR_SYSTEMS_ICC__)
 
-#define HAL_CLZ(x)  ((uint8_t)(__iar_builtin_CLZ(x) & 0x3fUL))
+#define HAL_CLZ(x)  ((uint8_t)((uint32_t)__iar_builtin_CLZ(x) & 0x3fUL))
 #define HAL_RBIT(x) ((uint32_t)(__iar_builtin_RBIT(x)))
 
 static inline uint8_t __hal_ctz(uint32_t x)
