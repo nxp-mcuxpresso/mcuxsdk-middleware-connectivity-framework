@@ -19,7 +19,7 @@
 - [DBG] Added debug structure versioning and logging buffer address/size information to debug structure.
 - [DBG] Removed 15.4 region from debug structure as not supported on KW47.
 - [DBG] Added stack overflow detection for armv8_m_mainline architecture.
-- [Platform] Simplified enablement of reset features via pin detection 
+- [Platform] Simplified enablement of reset features via pin detection
     - Automatically selects `gUseResetByLvdForce_c` when `gAppForceLvdResetOnResetPinDet_d` is enabled.
     - Automatically select `gUseResetByDeepPowerDown_c` when `gAppForceDeepPowerDownResetOnResetPinDet_d` is enabled.
 - [RNG] Replaced `gRngHasSecLibDependency_d` compilation switch with `gRngUseSecLib_d`.
@@ -29,7 +29,6 @@
 
 #### Bug fixes
 
-- [wireless_mcu] Fixed race condition in `PLATFORM_RemoteActiveRel()` where NBU could enter deep sleep preparation between RemoteActiveReq() and RemoteActiveRel() calls. Solution sets BLE_WKUP bit to constrain NBU to WFI mode during this period, then clears it and triggers a dummy interrupt to allow deep sleep preparation.
 - [wireless_mcu] Fixed race condition in `PLATFORM_RemoteActiveRel()` by adding verification loop to confirm NBU core execution before releasing power domain.
 - [wireless_mcu] Added instruction synchronization barrier (__ISB()) after interrupt re-enable in `PLATFORM_RemoteActiveRel()` to ensure pending interrupts execute between critical sections.
 - [wireless_mcu] Fixed external IO voltage isolation issue during low-power initialization - isolation is now cleared at init to ensure proper behavior.
