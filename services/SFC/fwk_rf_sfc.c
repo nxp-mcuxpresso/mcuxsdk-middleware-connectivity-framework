@@ -55,7 +55,6 @@ typedef struct
 {
     uint32_t sampleNumber;
     int32_t  sum;
-    uint32_t shift;
 } sfc_filter_state_t;
 
 typedef struct
@@ -189,7 +188,6 @@ static volatile sfc_handle_t sfcHandle = {
         {
             .sampleNumber = 0U,
             .sum          = 0,
-            .shift        = 0U,
         },
 };
 
@@ -216,9 +214,6 @@ void SFC_Init(void)
     /* Enable SFC calibration */
     SFC_Enable(true);
 
-    /* Initialize the filter shift based on the default filter size */
-    sfcHandle.filterState.shift = HAL_GETPOWEROF2SHIFT(sfcConfig.filterSize);
-
     PLATFORM_RemoteActiveReq();
 
     /* Retrieve current FRO32K trim value */
@@ -228,7 +223,7 @@ void SFC_Init(void)
 
     PLATFORM_RemoteActiveRel();
 
-    if ((currentState & kCCM32K_Only32kOscEnabled) != 0U)
+    if (((uint8_t)currentState & (uint8_t)kCCM32K_Only32kOscEnabled) != 0U)
     {
         /* If the osc32k is enabled, it means the application core wants to use this clock source as soon as it is ready
          * So here, to avoid accessing CCM32K later on (and impact power consumption by waking up host core), we tag
@@ -247,11 +242,13 @@ void SFC_Init(void)
     {
         /* Perform a first blocking calibration to make sure the fro32k is within the target ppm before performing
          * any RF activity */
+        int32_t ppm_val;
         do
         {
             SFC_MeasureFreqBlocking();
             SFC_Calibrate();
-        } while (abs(sfcHandle.ppm) > sfcConfig.ppmTarget);
+            ppm_val = sfcHandle.ppm;
+        } while ((uint32_t)abs(ppm_val) > sfcConfig.ppmTarget);
     }
 
     SFC_DBG_LOG("SFC Init: osc32kPending=%d curSrc=%d ppm=%d", sfcHandle.osc32kSwitchPending, currentClockSource,
@@ -309,11 +306,13 @@ void SFC_Process(void)
         {
             if (sfcNotificationEnabled != 0)
             {
-                PLATFORM_FwkSrvFroInfo(sfcHandle.lastFreq, sfcHandle.ppm, sfcHandle.lastPpm,
-                                       (uint16_t)sfcHandle.fro_trim);
+                int32_t  ppm      = sfcHandle.ppm;
+                uint32_t lastFreq = sfcHandle.lastFreq;
+                uint32_t lastPpm  = sfcHandle.lastPpm;
+                uint16_t froTrim  = (uint16_t)sfcHandle.fro_trim;
+                PLATFORM_FwkSrvFroInfo(lastFreq, (int16_t)ppm, lastPpm, froTrim);
             }
-            SFC_DBG_LOG("SFC MeasAvail: lastFreq=%d sfcHandle.ppm=%d sfcHandle.lastPpm=%d", sfcHandle.lastFreq,
-                        sfcHandle.ppm, sfcHandle.lastPpm);
+            SFC_DBG_LOG("SFC MeasAvail: lastFreq=%d sfcHandle.ppm=%d sfcHandle.lastPpm=%d", lastFreq, ppm, lastPpm);
             SFC_Calibrate();
 
             /* Reset the measureAvailable flag */
@@ -354,8 +353,12 @@ void SFC_Process(void)
         }
         else
         {
-            ; /* For MISRA compliancy */
+            ; /* For MISRA compliance */
         }
+    }
+    else
+    {
+        ; /* For MISRA compliance */
     }
 
     if (sfcHandle.osc32kSwitchPending == true)
@@ -375,7 +378,7 @@ void SFC_Process(void)
 
             /* Disable SFA IRQ and deinit SFA driver to avoid having any pending SFA activity later on*/
             NVIC_DisableIRQ(RF_SFA_IRQn);
-            SFA_Deinit(RF_SFA);
+            (void)SFA_Deinit(RF_SFA);
 
             SFC_DBG_LOG("SFC Switch to Osc32k");
         }
@@ -389,7 +392,7 @@ bool SFC_IsBusy(void)
     bool     ret   = false;
     uint32_t state = SFA_GetStatusFlags(RF_SFA);
 
-    if (state & SFA_CNT_STAT_MEAS_STARTED_MASK)
+    if ((state & SFA_CNT_STAT_MEAS_STARTED_MASK) != 0U)
     {
         ret = true;
     }
@@ -418,24 +421,31 @@ void SFC_UpdateConfig(const sfc_config_t *config)
         /* Register the new ppm target */
         sfcConfig.ppmTarget = ppmTarget;
     }
-
-    if ((filterSize != sfcConfig.filterSize) && (filterSize != 0U))
+    else
     {
-        if (filterSize < RF_SFC_MINIMAL_FILTER_SIZE)
-        {
-            /* Make sure the filter is big enough */
-            filterSize = RF_SFC_MINIMAL_FILTER_SIZE;
-        }
-        else if (filterSize > RF_SFC_MAXIMAL_FILTER_SIZE)
+        ; /* For MISRA compliance */
+    }
+
+    if (filterSize < RF_SFC_MINIMAL_FILTER_SIZE)
+    {
+        /* Make sure the filter is big enough */
+        filterSize = RF_SFC_MINIMAL_FILTER_SIZE;
+    }
+    if (filterSize != sfcConfig.filterSize)
+    {
+        if (filterSize > RF_SFC_MAXIMAL_FILTER_SIZE)
         {
             /* Make sure the filter size is not higher than the maximum allowed */
             filterSize = RF_SFC_MAXIMAL_FILTER_SIZE;
         }
 
         /* Update the filter properties and reset it */
-        sfcConfig.filterSize        = filterSize;
-        sfcHandle.filterState.shift = HAL_GETPOWEROF2SHIFT(sfcConfig.filterSize);
+        sfcConfig.filterSize = filterSize;
         SFC_ResetFilterState();
+    }
+    else
+    {
+        ; /* For MISRA compliance */
     }
 
     if ((maxCalibrationIntervalMs != sfcConfig.maxCalibrationIntervalMs) && (maxCalibrationIntervalMs != 0U))
@@ -443,7 +453,10 @@ void SFC_UpdateConfig(const sfc_config_t *config)
         /* Register the new max interval between 2 calibration */
         sfcConfig.maxCalibrationIntervalMs = maxCalibrationIntervalMs;
     }
-
+    else
+    {
+        ; /* For MISRA compliance */
+    }
     if ((trigSampleNumber != sfcConfig.trigSampleNumber) && trigSampleNumber != 0U)
     {
         if (trigSampleNumber >= sfcConfig.filterSize)
@@ -457,7 +470,10 @@ void SFC_UpdateConfig(const sfc_config_t *config)
             sfcConfig.trigSampleNumber = trigSampleNumber;
         }
     }
-
+    else
+    {
+        ; /* For MISRA compliance */
+    }
     EnableGlobalIRQ(irqMask);
 }
 
@@ -474,6 +490,30 @@ bool SFC_IsMeasureAvailable(void)
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
+
+static int32_t SFC_CalculateFreqPpm(uint32_t measuredFreq)
+{
+#if 1
+    int64_t tmp64;
+    tmp64 = ((int64_t)32768 - (int64_t)measuredFreq) * 1000000;
+    return (int32_t)(tmp64 / 32768);
+#else
+    /* No use going to 64 bit arithmetics since the measured frequency is 32768 +/- a few Hz */
+    int32_t tmp32;
+    if (measuredFreq < INT32_MAX)
+    {
+        tmp32 = ((int32_t)32768 - (int32_t)measuredFreq) * 15625;
+        /* Multiplying by 15625 instead of 1000000 avoids 64-bit arithmetic, no overflow */
+        tmp32 = ((int32_t)32768 - (int32_t)measuredFreq) * 15625; /* 10^6 is 5^6 * 2^ 6, so 10^6 / 64 = 15625 */
+        tmp32 /= 512;                                             /* 2^9 = 512, which is 32768 / 64 */
+    }
+    else
+    {
+        tmp32 = INT32_MIN;
+    }
+    return tmp32;
+#endif
+}
 
 static void SFC_HandleHostLowPowerConstraint(bool setConstraint)
 {
@@ -503,11 +543,10 @@ static void SFC_MeasureFreqBlocking(void)
     int32_t  ppm  = 0;
 
     SFA_SetMeasureConfig(RF_SFA, &measureConfigurationImmediate);
-    SFA_MeasureBlocking(RF_SFA);
+    (void)SFA_MeasureBlocking(RF_SFA);
 
-    freq          = SFA_CalculateFrequencyOrPeriod(RF_SFA, 32000000U);
-    int64_t tmp64 = ((int64_t)32768 - (int64_t)freq) * 1000000;
-    ppm           = tmp64 / 32768;
+    freq = SFA_CalculateFrequencyOrPeriod(RF_SFA, 32000000U);
+    ppm  = SFC_CalculateFreqPpm(freq);
 
     sfcHandle.freq = freq;
     sfcHandle.ppm  = ppm;
@@ -528,20 +567,21 @@ static void SFC_StartCalibration(void)
 #if (!defined(gNbuDisableLowpower_d) || (gNbuDisableLowpower_d == 0))
         if (sfcHandle.ppmTargetReached == true)
         {
-            if (((RF_CMC1->RADIO_LP & RF_CMC1_RADIO_LP_BLE_WKUP_MASK) == 0U) &&
-                (sfcHandle.filterState.sampleNumber >= sfcConfig.trigSampleNumber))
+            uint32_t cur_sample_nb  = sfcHandle.filterState.sampleNumber;
+            uint32_t trig_sample_nb = sfcConfig.trigSampleNumber;
+            if (((RF_CMC1->RADIO_LP & RF_CMC1_RADIO_LP_BLE_WKUP_MASK) == 0U) && (cur_sample_nb >= trig_sample_nb))
             {
                 /* When the current precision is within the ppm target, we use the trigger based configuration to
                  * monitor the clock at each wake up from low power if the NBU is allowed to enter low power
                  * If at some point the clock goes out of the ppm target again, the SFC will switch to the NoTrig config
                  */
-                SFA_SetMeasureConfig(RF_SFA, &measureConfigurationTrig);
+                (void)SFA_SetMeasureConfig(RF_SFA, &measureConfigurationTrig);
             }
             else
             {
                 /* Low power is not allowed by the host, so we use the immediate measurement config as the trigger
                  * is based on low power wake up signal */
-                SFA_SetMeasureConfig(RF_SFA, &measureConfigurationImmediate);
+                (void)SFA_SetMeasureConfig(RF_SFA, &measureConfigurationImmediate);
             }
         }
         else
@@ -553,12 +593,12 @@ static void SFC_StartCalibration(void)
             SFA_SetMeasureConfig(RF_SFA, &measureConfigurationImmediate);
         }
 
-        SFA_ClearStatusFlag(RF_SFA, SFA_GetStatusFlags(RF_SFA));
+        (void)SFA_ClearStatusFlag(RF_SFA, SFA_GetStatusFlags(RF_SFA));
 
         /* Call SFA_MeasureNonBlocking() under critical section to avoid the completion of a measure during the setup of
          * a new measurement */
         intMask = PLATFORM_SetInterruptMask();
-        SFA_MeasureNonBlocking(RF_SFA);
+        (void)SFA_MeasureNonBlocking(RF_SFA);
         PLATFORM_ClearInterruptMask(intMask);
     }
 }
@@ -572,14 +612,15 @@ static void SFC_Calibrate(void)
 {
     uint32_t irqMask;
     uint32_t rf2p4ghz_timer;
-
+    int32_t  ppm_value;
     /* Get a timestamp each time a calibration is performed
      * this allows the module to know the last time the calibration was performed and decide to force a calibration
      * process if too much time elapsed since the last calibration */
     sfcHandle.lastCalibrationTimestamp = SFC_GetTimestamp();
 
     /* Check if the FRO needs to be trimmed according to ppm target */
-    if (abs(sfcHandle.ppm) > sfcConfig.ppmTarget)
+    ppm_value = sfcHandle.ppm;
+    if ((uint32_t)abs(ppm_value) > sfcConfig.ppmTarget)
     {
         if (sfcHandle.ppmTargetReached == true)
         {
@@ -612,7 +653,9 @@ static void SFC_Calibrate(void)
              * This will avoid glitches on the output clock */
             rf2p4ghz_timer = RFMC->RF2P4GHZ_TIMER;
             while (RFMC->RF2P4GHZ_TIMER == rf2p4ghz_timer)
-                ;
+            {
+                ; /* Busy wait for timer increment to ensure synchronization */
+            }
 
             /* apply new fro trim value */
             CCM32K->FRO32K_TRIM = sfcHandle.fro_trim & CCM32K_FRO32K_TRIM_FREQ_TRIM_MASK;
@@ -654,14 +697,13 @@ static void SFC_Calibrate(void)
 static void SFC_MeasureCallback(status_t status)
 {
     uint32_t freq = 0U;
-    int32_t  ppm  = 0U;
+    int32_t  ppm  = 0;
 
     if (status == kStatus_SFA_MeasurementCompleted)
     {
         /* Get the frequency and compute the error in ppm compared to 32768 */
-        freq          = SFA_CalculateFrequencyOrPeriod(RF_SFA, 32000000U);
-        int64_t tmp64 = ((int64_t)32768 - (int64_t)freq) * 1000000;
-        ppm           = (int32_t)(tmp64 >> 15); // dividing by 32768
+        freq = SFA_CalculateFrequencyOrPeriod(RF_SFA, 32000000U);
+        ppm  = SFC_CalculateFreqPpm(freq);
 
         /* Update ppm and freq values
          * Apply FIR moving average filter to smoothen the measure error */
@@ -693,22 +735,28 @@ static void SFC_MeasureCallback(status_t status)
  */
 static int32_t SFC_ComputeMMA(int32_t sample)
 {
-    if (sfcHandle.filterState.sampleNumber == 0U)
+    int32_t  factor                    = (int32_t)sfcConfig.filterSize;
+    int32_t  filterState_sum           = sfcHandle.filterState.sum;
+    uint32_t filterState_sample_number = sfcHandle.filterState.sampleNumber;
+
+    if (filterState_sample_number == 0U)
     {
-        sfcHandle.filterState.sum = sample << sfcHandle.filterState.shift;
+        filterState_sum = sample * factor;
     }
     else
     {
-        sfcHandle.filterState.sum -= sfcHandle.filterState.sum >> sfcHandle.filterState.shift;
-        sfcHandle.filterState.sum += sample;
+        filterState_sum -= filterState_sum / factor;
+        filterState_sum += sample;
     }
 
-    if (sfcHandle.filterState.sampleNumber < sfcConfig.filterSize)
+    if (filterState_sample_number < (uint32_t)factor)
     {
-        sfcHandle.filterState.sampleNumber++;
+        filterState_sample_number++;
     }
+    sfcHandle.filterState.sampleNumber = filterState_sample_number;
+    sfcHandle.filterState.sum          = filterState_sum;
 
-    return sfcHandle.filterState.sum >> sfcHandle.filterState.shift;
+    return filterState_sum / factor;
 }
 
 static void SFC_ResetFilterState(void)
@@ -716,8 +764,6 @@ static void SFC_ResetFilterState(void)
     sfcHandle.filterState.sampleNumber = 0U;
     sfcHandle.filterState.sum          = 0;
 }
-
-extern void LL_API_GetBleTiming(uint32_t *pNativeClock, uint16_t *pNativeClockOffset);
 
 static uint32_t SFC_GetTimestamp(void)
 {
