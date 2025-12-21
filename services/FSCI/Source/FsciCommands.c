@@ -940,7 +940,7 @@ void FSCI_SendWakeUpIndication(void)
 #endif /* #if gFSCI_IncludeLpmCommands_c */
 
 /*! *********************************************************************************
- * \brief  This function sends the content of the SIM_UID registers over the
+ * \brief  This function sends the content of the UID registers over the
  *         serial interface
  *
  * \param[in] pData pointer to location of the received data
@@ -974,35 +974,11 @@ bool_t FSCI_ReadUniqueId(clientPacket_t *pData, uint32_t fsciInterface)
     }
     else
     {
-        p                           = pPkt->structured.payload;
-        pPkt->structured.header.len = 4U * sizeof(uint32_t);
-#if defined(SIM_UIDH_UID_MASK) && !defined(SIM_UIDM_UID_MASK)
-        FLib_MemCpy(p, (void *)&SIM->UIDH, sizeof(uint32_t));
-#else
-        FLib_MemSet(p, 0, sizeof(uint32_t));
-#endif
-#if (defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 0U))
-        {
-            p += sizeof(uint32_t);
-#if defined(SIM_UIDMH_UID_MASK)
-            FLib_MemCpy(p, (void const *)((uint32_t *)((uint32_t)&SIM->UIDMH)), sizeof(uint32_t));
-#elif defined(SIM_UIDH_UID_MASK)
-            FLib_MemCpy(p, (void *)&SIM->UIDH, sizeof(uint32_t));
-#endif
-            p += sizeof(uint32_t);
-#if defined(SIM_UIDML_UID_MASK)
-            FLib_MemCpy(p, (void const *)((uint32_t *)((uint32_t)&SIM->UIDML)), sizeof(uint32_t));
-#elif defined(SIM_UIDM_UID_MASK)
-            FLib_MemCpy(p, (void *)&SIM->UIDM, sizeof(uint32_t));
-#endif
-            p += sizeof(uint32_t);
-            FLib_MemCpy(p, (void const *)((uint32_t *)((uint32_t)&SIM->UIDL)), sizeof(uint32_t));
-        }
-#else  /*(defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 0U))*/
-        p += sizeof(uint32_t);
-        // #TODO - use BLE_address instead of 0xFF
-        FLib_MemSet(p, 0xff, sizeof(uint32_t) * 3U);
-#endif /*(defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 0U))*/
+        uint8_t uid_len;
+        p       = pPkt->structured.payload;
+        uid_len = 0U;
+        PLATFORM_GetMCUUid(p, &uid_len);
+        pPkt->structured.header.len = (uint32_t)uid_len;
 
         /* Check if the received buffer was reused. */
         if (pPkt != pData)
