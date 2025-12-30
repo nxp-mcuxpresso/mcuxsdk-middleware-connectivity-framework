@@ -89,7 +89,7 @@ void FLib_MemCpy(void *pDst, const void *pSrc, uint32_t cBytes);
  * \param[in]  from_ptr         Pointer to source memory block
  * \param[in]  number_of_bytes  Number of bytes to copy
  ********************************************************************************** */
-void FLib_MemCpyAligned32bit(void *to_ptr, const void *from_ptr, register uint32_t number_of_bytes);
+void FLib_MemCpyAligned32bit(void *to_ptr, const void *from_ptr, uint32_t number_of_bytes);
 
 /*! *********************************************************************************
  * \brief  Copy the content of one memory block to another. The amount of data to copy
@@ -281,3 +281,4 @@ static inline void FLib_MemCpyWord(void *pDst, void *pSrc)
 #endif
 
 #endif /* FUNCTION_LIB_H */
+
