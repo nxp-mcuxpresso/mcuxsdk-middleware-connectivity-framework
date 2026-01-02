@@ -47,10 +47,15 @@ typedef void (*nbu_dbg_system_cb_t)(const nbu_dbg_context_t *nbu_event);
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
 
-/*!
- * \brief Check if a fault has occured on NBU side
+/**
+ * \brief Check NBU state for faults, asserts, and warnings
  *
+ * When a new condition is detected, the registered callback (via
+ * NBUDBG_RegisterNbuDebugNotificationCb) will be invoked.
+ *
+ * \note Not thread-safe, this function must be called from a single context only (e.g., IDLE task).
  * \note NBU shall be using fault handlers to be able to check its status.
+ * \note Typical usage: Call periodically from the IDLE task to monitor NBU health.
  */
 void NBUDBG_StateCheck(void);
 

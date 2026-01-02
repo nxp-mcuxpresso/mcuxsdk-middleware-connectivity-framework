@@ -134,17 +134,31 @@ static int NBUDBG_SendHciEvent(uint8_t buffer_id, const uint8_t *data, uint32_t 
 
 void NBUDBG_StateCheck(void)
 {
-    nbu_dbg_context_t nbu_event = {0U};
+    nbu_dbg_context_t nbu_event           = {0U};
+    static bool       nbu_fault_notified  = false;
+    static bool       nbu_halted_notified = false;
 
+    /* Retrieve new NBU warning count */
     (void)PLATFORM_IsNbuWarningSet(&nbu_event.nbu_warning_count);
-    nbu_event.nbu_error_count = (uint8_t)PLATFORM_IsNbuFaultSet();
+
+    /* Check for NBU fault - this is a fatal condition, NBU won't recover */
+    if (PLATFORM_IsNbuFaultSet() && !nbu_fault_notified)
+    {
+        /* New fatal fault detected - notify once */
+        nbu_event.nbu_error_count = 1U;
+        nbu_fault_notified        = true;
+    }
 
     extern bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs);
-    if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US))
+    /* Check for NBU stall */
+    if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US) && !nbu_halted_notified)
     {
+        /* Stall detected - notify once */
         nbu_event.nbu_is_halted = 1U;
+        nbu_halted_notified     = true;
     }
-    /* Check if any debug condition is detected and notify via callback */
+
+    /* Check if any new debug condition is detected and notify via callback */
     if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U) || (nbu_event.nbu_is_halted > 0U))
     {
         if (nbu_dbg_system_cb != NULL)
