@@ -1,5 +1,24 @@
 ## Connectivity framework CHANGELOG
 
+### 7.2.1 mcux SDK 26.03.00 pvw1
+
+#### Major Changes
+
+- [wireless_mcu][ot] Removed `gPlatformUseOuiFromIfr` configuration flag. OUI will now be read from IFR by default on mcxw72 platform, with a fallback to the static OUI if no value is found in IFR.
+- [wireless_mcu][ble] Enabled `gPlatformUseUniqueDeviceIdForBdAddr_d = 2` on kw47/mcxw72 platforms to read the complete BD address from IFR. If no address is found in IFR, the system will fall back to generating one using the RNG method.
+- [SecLib] Removed unused cryptographic implementations (SHA1, AES-EAX, AES-OFB) and obsolete `FSL_FEATURE_SOC_AES_HW` option to reduce code size and complexity.
+
+#### Minor Changes
+
+- [wireless_mcu][ble] Added callback registration for HCI log. Users can register a callback to log the HCI commands sent/received on the platform using new wrapper API.
+- [wireless_nbu][CS][COEX] Added Channel Sounding (CS) coexistence enablement support.
+
+#### Bug fixes
+
+- [wireless_nbu][lowpower] Fixed NBU low-power timing issue by forcing LPO delay to 0 during active NBU window. The delay is restored to the default parameter right before re-entering low-power mode to guarantee accurate Link Layer timing calculations.
+- [platform] Removed `PLATFORM_GetClockFreq()` API which contained MISRA violations, was unused, and duplicated `PLATFORM_GetNbuFreq()` functionality.
+- [MISRA] Various MISRA compliance fixes in SFC, SecLib, Platform (including platform_ics and platform low power), FSCI, and PDUM modules.
+
 ### 7.1.3 mcux SDK 25.12.00 RFP
 
 #### Major Changes
