@@ -250,23 +250,35 @@ static void PLATFORM_TemperatureReadyWorkHandler(fwk_work_t *work)
          */
         temperature_to_send = PLATFORM_ComputeMMAOnTemperature(new_temperature_value);
 
-        if ((temperature_to_send >= (last_sent_temperature_value + PLATFORM_TEMP_SENT_NBU_THRESHOLD)) ||
-            (temperature_to_send <= (last_sent_temperature_value - PLATFORM_TEMP_SENT_NBU_THRESHOLD)))
+        /* Check for overflow before threshold comparison */
+        if (((last_sent_temperature_value > 0) &&
+             ((INT32_MAX - last_sent_temperature_value) < PLATFORM_TEMP_SENT_NBU_THRESHOLD)) ||
+            ((last_sent_temperature_value < 0) &&
+             ((INT32_MIN - last_sent_temperature_value) > -PLATFORM_TEMP_SENT_NBU_THRESHOLD)))
         {
-            /* temperature_to_send is in tenth of degrees C, converting to degrees C */
-            xtal_cal_temp = (int16_t)(temperature_to_send / 10);
-
-            /* When a new temperature is available, attempt to calibrate the XTAL32M.
-             * The calibration will be effective if the temperature compensation LUT
-             * was registered previously with PLATFORM_RegisterXtal32MTempCompLut().
-             * If not, the calibration will be ignored. */
-            if (PLATFORM_CalibrateXtal32M(xtal_cal_temp) < 0)
+            /* Threshold comparison would overflow, skip temperature send and raise an error */
+            assert(false);
+        }
+        else
+        {
+            if ((temperature_to_send >= (last_sent_temperature_value + PLATFORM_TEMP_SENT_NBU_THRESHOLD)) ||
+                (temperature_to_send <= (last_sent_temperature_value - PLATFORM_TEMP_SENT_NBU_THRESHOLD)))
             {
-                assert(false);
+                /* temperature_to_send is in tenth of degrees C, converting to degrees C */
+                xtal_cal_temp = (int16_t)(temperature_to_send / 10);
+
+                /* When a new temperature is available, attempt to calibrate the XTAL32M.
+                 * The calibration will be effective if the temperature compensation LUT
+                 * was registered previously with PLATFORM_RegisterXtal32MTempCompLut().
+                 * If not, the calibration will be ignored. */
+                if (PLATFORM_CalibrateXtal32M(xtal_cal_temp) < 0)
+                {
+                    assert(false);
+                }
+                /* Send temperature to the NBU */
+                PLATFORM_SendTemperatureValue(temperature_to_send);
+                last_sent_temperature_value = temperature_to_send;
             }
-            /* Send temperature to the NBU */
-            PLATFORM_SendTemperatureValue(temperature_to_send);
-            last_sent_temperature_value = temperature_to_send;
         }
     }
 }
@@ -300,8 +312,29 @@ static int32_t PLATFORM_ComputeMMAOnTemperature(int32_t temperature)
         }
         else
         {
-            filterState.sum -= filterState.sum / factor_nbr;
-            filterState.sum += temperature;
+            do
+            {
+                int32_t delta = filterState.sum / factor_nbr;
+
+                /* Sanitize possible overflow/underflow on parameters */
+                if ((delta > 0) && (filterState.sum < (INT32_MIN + delta)))
+                {
+                    assert(false);
+                    break;
+                }
+
+                if (((temperature > 0) && (filterState.sum > (INT32_MAX - temperature))) ||
+                    ((temperature < 0) && (filterState.sum < (INT32_MIN - temperature))))
+                {
+                    assert(false);
+                    break;
+                }
+
+                /* Operations on filterState are now safe to perform */
+                filterState.sum -= delta;
+                filterState.sum += temperature;
+
+            } while (false);
         }
 
         if (filterState.sampleNumber < PLATFORM_TEMPERATURE_FILTER_SIZE)
