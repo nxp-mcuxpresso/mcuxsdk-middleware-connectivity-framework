@@ -1092,6 +1092,14 @@ extern NVM_Status_t RecoverNvEntry(uint16_t index, NVM_DataEntry_t *entry);
  ********************************************************************************* */
 bool_t NvIsPendingOperation(void);
 
+/******************************************************************************
+ * \brief Return the current page free space, in bytes
+ *
+ * \return 0u is NVM not uninitialized or other error was encountered when parsing the NVM page.
+ *         otherwise, remaining capacity of the current NVM virtual page in bytes
+ *****************************************************************************/
+uint32_t NvGetPageCapacityInBytes(void);
+
 /*! *********************************************************************************
  *  \brief Register data entry array.
  *  Note: used more specifically in the context of Dual Data Set feature when a single

@@ -7825,6 +7825,33 @@ void NvSetFlashTableVersion(uint16_t version)
 #endif
 }
 
+/******************************************************************************
+ * \brief Return the current page free space, in bytes
+ *
+ * \return 0u is NVM not uninitialized or other error was encountered when parsing the NVM page.
+ *         otherwise, remaining capacity of the current NVM virtual page in bytes
+ *****************************************************************************/
+uint32_t NvGetPageCapacityInBytes(void)
+{
+    NVM_Status_t status = gNVM_OK_c;
+
+    uint32_t page_capacity = 0U;
+    if (mNvModuleInitialized)
+    {
+        /* If the NVM is not initialized yet, no storage capacity available */
+        (void)OSA_MutexLock(mNVMMutexId, osaWaitForever_c);
+        /* Call NvCompletePendingOperationsUnsafe under mutex protection */
+        status = NvGetPageFreeSpace(&page_capacity);
+        if (status != gNVM_OK_c)
+        {
+            /* In case of error return 0 */
+            page_capacity = 0U;
+        }
+        (void)OSA_MutexUnlock(mNVMMutexId);
+    }
+    return page_capacity;
+}
+
 #if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
 /*
  * Internal static debug functions accessing static data of NVM module.
