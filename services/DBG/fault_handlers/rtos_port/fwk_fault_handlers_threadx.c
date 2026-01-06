@@ -130,14 +130,15 @@ int sys_get_current_task_info(dbg_thread_info *thread_info)
         if (_tx_thread_current_ptr->tx_thread_name != NULL)
         {
             /* Copy up to 7 characters and ensure null termination */
-            strncpy(thread_info->thread_name, _tx_thread_current_ptr->tx_thread_name, 7);
+            (void)strncpy(thread_info->thread_name, _tx_thread_current_ptr->tx_thread_name,
+                          sizeof(thread_info->thread_name) - 1U);
         }
         else
         {
             /* No thread name available, set default */
-            strncpy(thread_info->thread_name, "UNKNOWN", 7);
+            (void)strncpy(thread_info->thread_name, "UNKNOWN", 7U);
         }
-        thread_info->thread_name[7] = '\0';
+        thread_info->thread_name[sizeof(thread_info->thread_name) - 1U] = '\0';
     } while (false);
 
     return status;

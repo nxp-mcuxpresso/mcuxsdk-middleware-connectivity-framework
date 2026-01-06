@@ -46,8 +46,6 @@ typedef struct
  *
  * \note This function is only available when using FreeRTOS or ThreadX RTOS
  * \warning If SYS_DEBUG_MAX_TASKS_NB is too small, the task list may be incomplete
- *
- * \param[out] current_thread Pointer to current thread info
  */
 void sys_dump_task_stats(void);
 

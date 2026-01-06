@@ -146,17 +146,15 @@ int sys_get_current_task_info(dbg_thread_info *thread_info)
         const char *task_name = pcTaskGetName(current_task);
         if (task_name != NULL)
         {
-            (void)strncpy(thread_info->thread_name, task_name, sizeof(thread_info->thread_name) - 1);
-            /* Ensure NULL termination */
-            thread_info->thread_name[sizeof(thread_info->thread_name) - 1] = '\0';
+            (void)strncpy(thread_info->thread_name, task_name, sizeof(thread_info->thread_name) - 1U);
         }
         else
         {
             /* No thread name available, set default */
-            strncpy(thread_info->thread_name, "UNKNOWN", 7);
+            (void)strncpy(thread_info->thread_name, "UNKNOWN", 7U);
         }
-
-        thread_info->thread_name[0] = '\0';
+        /* Ensure NULL termination */
+        thread_info->thread_name[sizeof(thread_info->thread_name) - 1U] = '\0';
 
         /* Use task handle as identifier (entry function address not directly accessible) */
         thread_info->thread_entry_addr = (uint32_t)current_task;
