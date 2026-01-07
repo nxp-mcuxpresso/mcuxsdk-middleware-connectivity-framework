@@ -271,7 +271,8 @@ void AES_MMO_HashFinish(void *pContext, uint8_t *pOutput)
     /* At this point, a remainder of at most 15 bytes is pending in the context buffer */
     pu8Buf    = &context->buffer.au8[numBytes];
     *pu8Buf++ = 0x80u;
-    uLen      = numBytes;
+    /* Length including the 0x80 padding byte */
+    uLen = numBytes + 1u;
 
     /*
      * Now we can start to put padding in.
@@ -281,13 +282,14 @@ void AES_MMO_HashFinish(void *pContext, uint8_t *pOutput)
      */
     uAdjust = (uDataLen >= 8192u) ? (AES_MMO_BLOCK_SIZE - 6u) : (AES_MMO_BLOCK_SIZE - 2u);
 
-    if (uAdjust < (1u + uLen))
+    if (uAdjust < uLen)
     {
         /* Can't finish off on this block - pad the rest if any, transform and move on */
-        uCount = AES_MMO_BLOCK_SIZE - (uLen + 1u);
-        while (uCount-- > 0u)
+        uCount = AES_MMO_BLOCK_SIZE - uLen;
+        while (uCount > 0u)
         {
             *pu8Buf++ = 0u;
+            uCount--;
         }
 
         AES_MMO_BlockUpdate(&context->digest, &context->buffer);
@@ -298,7 +300,7 @@ void AES_MMO_HashFinish(void *pContext, uint8_t *pOutput)
     }
     else
     {
-        uPad = uAdjust - (uLen + 1u);
+        uPad = uAdjust - uLen;
     }
     /* Finish off block with length */
     if (uPad > 0u)
