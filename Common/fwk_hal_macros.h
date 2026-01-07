@@ -237,7 +237,13 @@ static inline uint32_t HAL_GetPowerOfTwoShift(uint32_t x)
 
         /* Use Count Leading Zeros to round x to the smallest power of two greater than or equal to x */
         clz_result = (uint32_t)HAL_CLZ(x - 1U);
-        shift_nbr  = (uint32_t)32U - clz_result;
+        if (clz_result > 32U)
+        {
+            /* Should not happen */
+            assert(0);
+            clz_result = 32U;
+        }
+        shift_nbr = (uint32_t)32U - clz_result;
 
         x = (uint32_t)1U << shift_nbr;
 
