@@ -319,19 +319,43 @@ uint8_t PWR_IsDeviceAllowedToSleep(void)
 {
     return lpDisallowCount;
 }
-
 int32_t PWR_LowPowerEnterCritical(int32_t power_mode)
 {
+    PWR_ReturnStatus_t ret;
+
     // PWR_DBG_LOG("");
-    return ((int32_t)PWR_SetLowPowerModeConstraint((PWR_LowpowerMode_t)power_mode));
+
+    /* Validate power_mode is within valid enum range before casting */
+    if ((power_mode < (int32_t)PWR_WFI) || (power_mode > (int32_t)PWR_DeepPowerDown))
+    {
+        ret = PWR_ErrorNotSupported;
+    }
+    else
+    {
+        ret = PWR_SetLowPowerModeConstraint((PWR_LowpowerMode_t)power_mode);
+    }
+
+    return ((int32_t)ret);
 }
 
 int32_t PWR_LowPowerExitCritical(int32_t power_mode)
 {
-    // PWR_DBG_LOG("");
-    return ((int32_t)PWR_ReleaseLowPowerModeConstraint((PWR_LowpowerMode_t)power_mode));
-}
+    PWR_ReturnStatus_t ret;
 
+    // PWR_DBG_LOG("");
+
+    /* Validate power_mode is within valid enum range before casting */
+    if ((power_mode < (int32_t)PWR_WFI) || (power_mode > (int32_t)PWR_DeepPowerDown))
+    {
+        ret = PWR_ErrorNotSupported;
+    }
+    else
+    {
+        ret = PWR_ReleaseLowPowerModeConstraint((PWR_LowpowerMode_t)power_mode);
+    }
+
+    return ((int32_t)ret);
+}
 __WEAK uint32_t PWR_GetRadioNextEventUs(void)
 {
     return 0u; // no next event
