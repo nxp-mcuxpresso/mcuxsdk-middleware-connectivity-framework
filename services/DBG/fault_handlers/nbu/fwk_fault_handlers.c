@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -31,6 +31,15 @@ static int sys_debug_panic_triggered = 0;
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
+
+typedef enum
+{
+    FAULT_REASON_UNKNOWN         = 0x00,
+    FAULT_REASON_HARD_FAULT      = 0x01,
+    FAULT_REASON_MEMMANAGE_FAULT = 0x02,
+    FAULT_REASON_BUS_FAULT       = 0x03,
+    FAULT_REASON_USAGE_FAULT     = 0x04,
+} fault_reason_t;
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -66,8 +75,12 @@ void HardFaultHandler(unsigned long *hardfault_args)
     unsigned int          stack_frame_size;
     unsigned int          active_device_irq;
     dbg_thread_info       current_thread;
+    fault_reason_t        exception_reason;
+
+    exception_reason = FAULT_REASON_UNKNOWN;
 
     __asm volatile(" mov %0, lr" : "=r"(EXEC_RETURN));
+    stacked_psr = ((unsigned int)hardfault_args[7]);
 
     if (!NBUDBG_IS_NBU_ASSERT())
     {
@@ -78,7 +91,6 @@ void HardFaultHandler(unsigned long *hardfault_args)
         stacked_r12 = ((unsigned int)hardfault_args[4]);
         stacked_lr  = ((unsigned int)hardfault_args[5]);
         stacked_pc  = ((unsigned int)hardfault_args[6]);
-        stacked_psr = ((unsigned int)hardfault_args[7]);
 
         __asm volatile(" mov %0, r4" : "=r"(stacked_r4));
         __asm volatile(" mov %0, r5" : "=r"(stacked_r5));
@@ -124,7 +136,13 @@ void HardFaultHandler(unsigned long *hardfault_args)
         NBUDBG_SET_REG(r12, stacked_r12);
 
 #if (__CORTEX_M == 33) || (__CORTEX_M == 3)
-        NBUDBG_SET_EXCEPTION_ID(__get_IPSR());
+        uint32_t ipsr = __get_IPSR();
+        if (ipsr >= 3U && ipsr <= 6U)                       /* Either Hardfault, MemFault, BusFault, UsageFault */
+        {
+            exception_reason = (fault_reason_t)(ipsr - 2U); /* Map to fault_reason_t */
+        }
+
+        NBUDBG_SET_EXCEPTION_ID(ipsr);
         NBUDBG_SET_REG(cfsr, SCB->CFSR);
 
         if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0U)
@@ -167,6 +185,13 @@ void HardFaultHandler(unsigned long *hardfault_args)
 
     /* NBU failure indication to host core */
     PLATFORM_Nbu2HostFaultIndication();
+
+#if defined(gFaultHandlerCoredumpEnabled_d) && (gFaultHandlerCoredumpEnabled_d > 0U)
+    extern void bt_dbg_gen_exception_handler(fault_reason_t reason, uint32_t SP, uint32_t xPSR);
+    bt_dbg_gen_exception_handler(exception_reason, (uint32_t)hardfault_args, (uint32_t)stacked_psr);
+#else
+    (void)exception_reason;
+#endif
 
     while (true)
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -67,6 +67,15 @@ void UsageFault_Handler(void)
 {
     __asm volatile(" b HardFault_Handler \n");
 }
+
+void DebugMon_Handler(void)
+{
+#if defined(gFaultHandlerCoredumpEnabled_d) && (gFaultHandlerCoredumpEnabled_d > 0U)
+    extern void __tx_DBGHandler(void);
+    __tx_DBGHandler();
+#endif
+}
+
 #endif
 
 /* -------------------------------------------------------------------------- */

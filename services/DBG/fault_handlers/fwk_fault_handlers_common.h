@@ -1,15 +1,23 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
+#include "fwk_config.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Public macros                                */
 /* -------------------------------------------------------------------------- */
+/* Enable coredump debug feature in fault handler
+ * When enabled, the fault handler will capture and send core dump information
+ * to the host for debugging purposes.
+ */
+#ifndef gFaultHandlerCoredumpEnabled_d
+#define gFaultHandlerCoredumpEnabled_d 0
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
