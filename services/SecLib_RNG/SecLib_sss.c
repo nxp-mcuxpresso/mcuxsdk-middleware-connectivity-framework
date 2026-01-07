@@ -484,7 +484,7 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
         uint8_t last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
         /* compute new length */
         roundedLen      = AES_WHOLE_BLOCK_BYTES(inputLen);
-        last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
+        last_blk_msg_sz = (uint8_t)(AES_PARTIAL_BLOCK_BYTES(inputLen));
         /* Perform AES-CBC operation on whole AES blocks */
         if (AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
         {
