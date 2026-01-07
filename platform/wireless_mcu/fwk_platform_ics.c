@@ -395,8 +395,8 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
         uint8_t data[2 + NBU_API_MAX_PARAM_LENGTH];
 
         /* start with API identifier */
-        data[0U] = (uint8_t)api_id;
-        data[1U] = (uint8_t)(api_id >> 8U) & 0xffU;
+        data[0U] = (uint8_t)(api_id & 0xFFU);
+        data[1U] = (uint8_t)((api_id >> 8U) & 0xFFU);
 
         uint16_t data_len = 2U;
         uint32_t param;
@@ -436,18 +436,18 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
                         }
                         else
                         {
-                            data[data_len++] = (uint8_t)param;
-                            data[data_len++] = (uint8_t)(param >> 8U);
+                            data[data_len++] = (uint8_t)(param & 0xFFU);
+                            data[data_len++] = (uint8_t)((param >> 8U) & 0xFFU);
                         }
                         break;
 
                     case 4U:
                         param = tab[j];
                         j++;
-                        data[data_len++] = (uint8_t)param;
-                        data[data_len++] = (uint8_t)(param >> 8U);
-                        data[data_len++] = (uint8_t)(param >> 16U);
-                        data[data_len++] = (uint8_t)(param >> 24U);
+                        data[data_len++] = (uint8_t)(param & 0xFFU);
+                        data[data_len++] = (uint8_t)((param >> 8U) & 0xFFU);
+                        data[data_len++] = (uint8_t)((param >> 16U) & 0xFFU);
+                        data[data_len++] = (uint8_t)((param >> 24U) & 0xFFU);
                         break;
 
                     default:
