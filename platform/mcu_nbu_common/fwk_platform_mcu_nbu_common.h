@@ -1,18 +1,83 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FWK_PLATFORM_MCU_NBU_COMMON_H_
 #define _FWK_PLATFORM_MCU_NBU_COMMON_H_
+
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "fsl_device_registers.h"
-#include "fsl_tstmr.h"
+#include "fwk_platform_definitions.h"
 
 /* -------------------------------------------------------------------------- */
 /*                           Macro definitions                                */
 /* -------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------
+   -- TSTMR Register Masks
+   ---------------------------------------------------------------------------- */
+
+#define FWK_TSTMR_L_VALUE_MASK  (0x00FFFFFFFFU)
+#define FWK_TSTMR_L_VALUE_SHIFT (0U)
+/*! VALUE - TIMESTAMP Low */
+#define FWK_TSTMR_L_VALUE(x) (((uint32_t)(((uint32_t)(x)) << FWK_TSTMR_L_VALUE_SHIFT)) & FWK_TSTMR_L_VALUE_MASK)
+
+#define FWK_TSTMR_H_VALUE_MASK  (0xFFFFFFU)
+#define FWK_TSTMR_H_VALUE_SHIFT (0U)
+/*! VALUE - TIMESTAMP High */
+#define FWK_TSTMR_H_VALUE(x) (((uint32_t)(((uint32_t)(x)) << FWK_TSTMR_H_VALUE_SHIFT)) & FWK_TSTMR_H_VALUE_MASK)
+
+/* MRCC clock configuration definitions*/
+#define FWK_MRCC_TSTMR0_CLK_DIS                   0x00U
+#define FWK_MRCC_TSTMR0_CLK_EN_NO_LP_STALL        0x01U
+#define FWK_MRCC_TSTMR0_CLK_EN_LP_STALL_IDLE      0x02U
+#define FWK_MRCC_TSTMR0_CLK_EN_LP_STALL_DEEPSLEEP 0x03U
+
+/*! CC - Clock Config
+ *  0b00..Peripheral clocks are disabled; module does not stall low power mode entry
+ *  0b01..Peripheral clocks are enabled; module does not stall low power mode entry
+ *  0b10..Peripheral clocks are enabled unless module is idle; low power mode entry stalls until module is idle
+ *  0b11..Peripheral clocks are enabled unless in SLEEP (or lower) mode; low power mode entry stalls until module
+ *        is idle. Peripheral functional clocks that remain enabled in SLEEP mode are enabled and do not stall low
+ *        power mode entry unless entering DEEPSLEEP (or lower) mode
+ */
+#define FWK_MRCC_TSTMR0_CC_MASK  (0x3U)
+#define FWK_MRCC_TSTMR0_CC_SHIFT (0U)
+#define FWK_MRCC_TSTMR0_CC(x)    (((uint32_t)(((uint32_t)(x)) << FWK_MRCC_TSTMR0_CC_SHIFT)) & FWK_MRCC_TSTMR0_CC_MASK)
+
+/*! MUX - Functional Clock Mux Select
+ *  0b000..FRO_6M
+ *  0b001..FRO_HF_DIV
+ *  0b010..CLK_IN
+ *  0b011..CLK_32K
+ *  0b101..CLK_1M
+ */
+/* TSTMR0 is always configured with 1MHz clock */
+#define FWK_MRCC_TSTMR0_MUX_MASK  (0x70U)
+#define FWK_MRCC_TSTMR0_MUX_SHIFT (4U)
+#define FWK_MRCC_TSTMR0_MUX(x)    (((uint32_t)(((uint32_t)(x)) << FWK_MRCC_TSTMR0_MUX_SHIFT)) & FWK_MRCC_TSTMR0_MUX_MASK)
+#define FWK_MRCC_TSTMR0_DIV_MASK  (0xF00U)
+#define FWK_MRCC_TSTMR0_DIV_SHIFT (8U)
+#define FWK_MRCC_TSTMR0_DIV(x)    (((uint32_t)(((uint32_t)(x)) << FWK_MRCC_TSTMR0_DIV_SHIFT)) & FWK_MRCC_TSTMR0_DIV_MASK)
+
+/*! RSTB - Reset Negation
+ *  0b0..Module is held in reset
+ *  0b1..Module released from reset
+ */
+#define FWK_MRCC_TSTMR0_RSTB_MASK  (0x40000000U)
+#define FWK_MRCC_TSTMR0_RSTB_SHIFT (30U)
+#define FWK_MRCC_TSTMR0_RSTB(x)    (((uint32_t)(((uint32_t)(x)) << FWK_MRCC_RSTB_SHIFT)) & FWK_MRCC_RSTB_MASK)
+
+/*! PR - Peripheral Present
+ *  0b0..Module is not present; writes to this register are ignored
+ *  0b1..Module is present
+ */
+#define FWK_MRCC_TSTMR0_PR_MASK  (0x80000000U)
+#define FWK_MRCC_TSTMR0_PR_SHIFT (31U)
+#define FWK_MRCC_TSTMR0_PR(x)    (((uint32_t)(((uint32_t)(x)) << FWK_MRCC_PR_SHIFT)) & FWK_MRCC_PR_MASK)
 
 /* gPlatformTstmr32Bit_d should have the same definition between MCU and NBU.
 * For better performance and to avoid hazardous glitches at LOW counter rollover,
@@ -34,16 +99,19 @@
 #define gPlatformTstmr32Bit_d 1 /* Unless otherwise defined , default to 32-bit timer */
 #endif
 
-#define EXTRACT_TSTMR_LSB32(x64) ((uint32_t)((x64)&TSTMR_L_VALUE_MASK))
+#define EXTRACT_TSTMR_LSB32(x64) ((uint32_t)((x64)&FWK_TSTMR_L_VALUE_MASK))
 
 #if defined gPlatformTstmr32Bit_d && (gPlatformTstmr32Bit_d > 0)
-#define PLATFORM_TSTMR_MAX_VAL   ((uint64_t)TSTMR_L_VALUE_MASK)
+#define PLATFORM_TSTMR_MAX_VAL   ((uint64_t)FWK_TSTMR_L_VALUE_MASK)
 #define EXTRACT_TSTMR_MSB32(x64) ((uint32_t)0UL)
 #else
 /* Maximum value of 56 bit counter */
-#define PLATFORM_TSTMR_MAX_VAL   ((uint64_t)TSTMR_L_VALUE_MASK | ((uint64_t)TSTMR_H_VALUE_MASK << 32))
+#define PLATFORM_TSTMR_MAX_VAL   ((uint64_t)FWK_TSTMR_L_VALUE_MASK | ((uint64_t)FWK_TSTMR_H_VALUE_MASK << 32))
 #define EXTRACT_TSTMR_MSB32(x64) ((uint32_t)(((x64) >> 32) & TSTMR_H_VALUE_MASK))
 #endif
+
+#define TSTMR_1MHZ_ID  0U /* TSTMR counting on a 1MHz clock : exists on all KW4x and MCXW7x platforms */
+#define TSTMR_32KHZ_ID 1U /* TSTMR counting on a 32kHz clock : exists on KW43 and MCXW70 only */
 
 /* TSTMR timestamp is a 56 bit quantity, leaving 8 free bits in a 64 bit timestamp representation */
 /* Bit 31 of timestamp MSB is used by core#0 to indicate that timestamp is being updated */
@@ -90,6 +158,16 @@ extern "C" {
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
+/*!
+ * brief Enable or disable TSTMR module.
+ *
+ *
+ * \param tstmrId TSTMR instance id - 0 on all MCU/NBUs, 1 on KW43 only.
+ * \param enablenDisable true to enable TSTMR, false to disable it.
+ */
+void PLATFORM_TSTMR_Enable(uint8_t tstmrId, bool enablenDisable);
+
 /*!
  * \brief Get TSTMR timestamp.
  *
@@ -98,9 +176,11 @@ extern "C" {
  * implementation, nonetheless the code performing the read of MSB bits [32..55] is kept in case it
  * becomes useful.
  *
+ * \param tstmrId 0 for TSTMR0, 1 for TSTMR1
+ *
  * \return timestamp the value is either a 32-bit or 56-bit timestamp.
  */
-uint64_t PLATFORM_TSTMR_ReadTimeStamp(TSTMR_Type *base);
+uint64_t PLATFORM_TSTMR_ReadTimeStamp(uint8_t tstmrId);
 
 /*!
  * \brief Compute number of ticks between 2 timestamps expressed in number of TSTMR ticks

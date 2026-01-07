@@ -26,10 +26,10 @@
 #define PLATFORM_INTFLASH_PHRASE_SIZE FSL_FEATURE_FLASH_PFLASH_PHRASE_SIZE
 
 /* IFR has 4 sectors */
-#define IFR_SECT_ROMCFG  0u /* ROM Bootload configurations */
-#define IFR_SECT_USER    1u /* Reserved for customer usage */
-#define IFR_SECT_CMAC    2u /* Reserved CMAC */
-#define IFR_SECT_OTA_CFG 3u /* OTACFG */
+#define IFR_SECT_ROMCFG  0U /* ROM Bootload configurations */
+#define IFR_SECT_USER    1U /* Reserved for customer usage */
+#define IFR_SECT_CMAC    2U /* Reserved CMAC */
+#define IFR_SECT_OTA_CFG 3U /* OTACFG */
 #ifndef FSL_FEATURE_IFR0_START_ADDRESS
 #define FSL_FEATURE_IFR0_START_ADDRESS (0x02000000U)
 #endif
@@ -87,11 +87,13 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define gPlatformRamStartAddress_c (0x20000000U)
 #define gPlatformRamEndAddress_c   (0x2003FFFFU)
 
-#define SPC_TEST_ADDR            (SPC0_BASE + 0xf0u)
-#define SPC_TRIM_LOCK            (SPC0_BASE + 0x18u)
+#define SPC_TEST_ADDR            (SPC0_BASE + 0xf0U)
+#define SPC_TRIM_LOCK            (SPC0_BASE + 0x18U)
 #define RF_CMC_RADIO_LP_SHUTDOWN RF_CMC1_RADIO_LP_CK(0x2)
 
-#define MRCC_TSTMR0_REG            MRCC->MRCC_TSTMR0
-#define MRCC_MRCC_TSTMR0_CLKSEL_CC MRCC_MRCC_TSTMR0_CC
+#define FWK_MRCC_TSTMR0_REG       (volatile uint32_t *)(0x4001C0C0U)
+#define FWK_MRCC_TSTMR0_CLKSEL_CC (0x3U)
+#define FWK_TSRMR0_BASE           0x40030000U
+#define FWK_TSTMR_NB_INST         1U
 
 #endif /* _FWK_PLAT_DEFS_H_ */

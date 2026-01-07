@@ -22,7 +22,6 @@
 #include "fsl_spc.h"
 #endif
 
-#include "FunctionLib.h"
 #include "fsl_component_timer_manager.h"
 #include "fsl_os_abstraction.h"
 #include "fsl_adapter_rpmsg.h"
@@ -118,11 +117,6 @@
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
  * the returned status will be negative  */
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
-
-#define MRCC_TSTMR_CLK_DIS                   0x00u
-#define MRCC_TSTMR_CLK_EN_NO_LP_STALL        0x01u
-#define MRCC_TSTMR_CLK_EN_LP_STALL_IDLE      0x02u
-#define MRCC_TSTMR_CLK_EN_LP_STALL_DEEPSLEEP 0x03u
 
 /* Basepri masking to allow high priority IRQs to execute */
 #define PLATFORM_MAX_INTERRUPT_PRIORITY         4U
@@ -767,7 +761,7 @@ void PLATFORM_DeinitTimerManager(void)
 uint64_t PLATFORM_GetTimeStamp(void)
 {
     /* TSTMR0 counts 1MHz ticks */
-    return PLATFORM_TSTMR_ReadTimeStamp(TSTMR0);
+    return PLATFORM_TSTMR_ReadTimeStamp(0U);
 }
 
 uint64_t PLATFORM_GetMaxTimeStamp(void)
@@ -1172,7 +1166,7 @@ int PLATFORM_StartFro6MCalibration(void)
     ctx->trcena_state = (bool)((CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk) != 0U);
     ctx->dwt_state    = (bool)((DWT->CTRL & 1U) != 0U);
 
-    MRCC_TSTMR0_REG = MRCC_MRCC_TSTMR0_CLKSEL_CC(MRCC_TSTMR_CLK_EN_LP_STALL_IDLE);
+    *FWK_MRCC_TSTMR0_REG = FWK_MRCC_TSTMR0_CC(FWK_MRCC_TSTMR0_CLK_EN_LP_STALL_IDLE);
 
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     ctx->initial_ts = PLATFORM_GetTimeStamp();

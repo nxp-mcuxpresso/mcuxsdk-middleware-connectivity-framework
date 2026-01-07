@@ -1,7 +1,7 @@
-/* -------------------------------------------------------------------------- */
-/*                        Copyright 2023, 2025 NXP                            */
-/*                    SPDX-License-Identifier: BSD-3-Clause                   */
-/* -------------------------------------------------------------------------- */
+/*
+ * Copyright 2023-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "fwk_platform_reset.h"
+#include "fwk_platform.h"
 
 #if defined(gPlatResetMethod_c)
 /* SDK drivers */
@@ -35,8 +36,6 @@
 /* Binding beetween WUU register and LPTMR modules */
 #define PLATFORM_WUU_MOD_LPTMR_IDX 0u
 
-#define TS_READ_ADDR ((volatile uint64_t *)(void *)TSTMR0)
-
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
@@ -53,42 +52,6 @@ static const cmc_power_domain_config_t CmcDeepPowerDownModeCfg = {
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
-
-static bool IsTimeoutExpired(uint64_t timestamp, uint64_t delayUs)
-{
-    volatile uint64_t now;
-    uint64_t          duration;
-
-    /* A complete read operation should include both TSTMR LOW and HIGH reads. If a HIGH read does not follow a LOW
-     * read, then any other Time Stamp value read will be locked at a fixed value. The TSTMR LOW read should occur
-     * first, followed by the TSTMR HIGH read.  */
-    now = *TS_READ_ADDR;
-
-    if (now < timestamp)
-    {
-        /* Handle counter wrapping */
-
-        duration = ((uint64_t)UINT64_MAX) - timestamp + now;
-    }
-    else
-    {
-        duration = now - timestamp;
-    }
-    return (duration >= delayUs);
-}
-
-static void WaitTimeout(uint64_t timestamp, uint64_t delayUs)
-{
-    while (!(IsTimeoutExpired(timestamp, delayUs)))
-    {
-    }
-}
-
-static void DelayUs(uint64_t delayUs)
-{
-    /* PLATFORM_Delay() is similar to PLATFORM_WaitTimeout() but timestamp is taken right now */
-    WaitTimeout(*TS_READ_ADDR, delayUs);
-}
 
 #if defined(gPlatResetMethod_c) && \
     ((gPlatResetMethod_c == gUseResetByLvdForce_c) || (gPlatResetMethod_c == gUseResetByDeepPowerDown_c))
@@ -111,7 +74,7 @@ static void PLATFORM_ShutdownRadio(void)
     RFMC->CTRL |= RFMC_CTRL_RFMC_RST(0x1U);
     /* Wait for a few microseconds before releasing the NBU reset,
      * without this the system may hang in the loop waiting for FRO clock valid */
-    DelayUs(31u);
+    PLATFORM_Delay(31u);
     /* Release RFMC / NBU reset */
     RFMC->CTRL &= ~RFMC_CTRL_RFMC_RST_MASK;
 
@@ -199,7 +162,7 @@ void PLATFORM_ForceDeepPowerDownReset(void)
     PLATFORM_ShutdownRadio();
 
     /* *Wait for 500us for radio to shutdown */
-    DelayUs(500U);
+    PLATFORM_Delay(500U);
 
     /* Cancel all wake sources */
     PLATFORM_DisableWakeSources();
@@ -238,7 +201,7 @@ void PLATFORM_ForceLvdReset(void)
     PLATFORM_ShutdownRadio();
 
     /* *Wait for 500us for radio to shutdown */
-    DelayUs(500U);
+    PLATFORM_Delay(500U);
 
     /* Allow write to SPC_TEST */
     *((volatile uint32_t *)SPC_TRIM_LOCK) = 0x5a5a0001u;
@@ -265,7 +228,7 @@ void PLATFORM_NvicSystemReset(void)
 {
     /* Disable IRQ using PRIMASK */
     __disable_irq();
-    DelayUs(500U);
+    PLATFORM_Delay(500U);
 
     NVIC_SystemReset();
 }
