@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2025 NXP                          */
+/*                           Copyright 2021-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -20,7 +20,6 @@
 #if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
-#include "fsl_trdc.h"
 #endif
 
 #include "FunctionLib.h"
@@ -36,6 +35,10 @@
 
 #if defined(gMWS_Enabled_d) && (gMWS_Enabled_d > 0)
 #include "fwk_platform_mws.h"
+#endif
+
+#if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d > 0)
+#include "fsl_trdc.h"
 #endif
 
 #include "fwk_debug.h"

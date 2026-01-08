@@ -180,7 +180,7 @@
  *      in non secure mode.
  * */
 #if !defined(gPlatformNbuDebugGpioDAccessEnabled_d)
-#define gPlatformNbuDebugGpioDAccessEnabled_d 1
+#define gPlatformNbuDebugGpioDAccessEnabled_d 0
 #endif
 
 /*********************************************************************

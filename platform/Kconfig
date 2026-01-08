@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 rsource "*/Kconfig.defconfig"
@@ -35,7 +35,6 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
     select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
-    select MCUX_COMPONENT_driver.trdc
     select MCUX_COMPONENT_driver.tstmr
     select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     select MCUX_COMPONENT_component.flash_adapter
@@ -43,6 +42,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71
     select MCUX_COMPONENT_component.rpmsg_adapter
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     select MCUX_COMPONENT_component.timer_manager
+    imply MCUX_COMPONENT_driver.trdc
     depends on  MCUX_HW_DEVICE_MCXW716C || MCUX_HW_DEVICE_MCXW716A ||       \
                 MCUX_HW_DEVICE_KW45B41Z52 || MCUX_HW_DEVICE_KW45B41Z53 ||   \
                 MCUX_HW_DEVICE_KW45B41Z82 || MCUX_HW_DEVICE_KW45B41Z83  ||  \
@@ -62,7 +62,6 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
     select MCUX_COMPONENT_component.osa
     select MCUX_COMPONENT_driver.ccm32k
     select MCUX_COMPONENT_driver.spc
-    select MCUX_COMPONENT_driver.trdc
     select MCUX_COMPONENT_driver.tstmr
     select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     select MCUX_COMPONENT_component.flash_adapter
@@ -70,6 +69,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
     select MCUX_COMPONENT_component.rpmsg_adapter
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     select MCUX_COMPONENT_component.timer_manager
+    imply MCUX_COMPONENT_driver.trdc
     depends on  MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_KW47B42ZB6 ||\
                 MCUX_HW_DEVICE_KW47B42ZB3 || MCUX_HW_DEVICE_KW47B42ZB2 ||\
                 MCUX_HW_DEVICE_KW47B42Z83 || MCUX_HW_DEVICE_KW47B42Z96 ||\
@@ -104,7 +104,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
     select MCUX_COMPONENT_component.osa
     #select MCUX_COMPONENT_driver.ccm32k
     #select MCUX_COMPONENT_driver.spc
-    #select MCUX_COMPONENT_driver.trdc
+    #imply MCUX_COMPONENT_driver.trdc
     #select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     #select MCUX_COMPONENT_component.flash_adapter
     select MCUX_COMPONENT_driver.tstmr
