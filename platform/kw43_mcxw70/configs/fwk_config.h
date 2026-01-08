@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -237,6 +237,12 @@
 /* Disable LDO force mode on the platform */
 #ifndef gPlatformEnableLdoForce
 #define gPlatformEnableLdoForce 0
+#endif
+
+/* Automatically set BLE Max TX power when calling PLATFORM_InitBle()
+ * The max TX power value is defined by gAppMaxTxPowerDbm_c */
+#ifndef gPlatformSetBleMaxTxPowerAtInit_d
+#define gPlatformSetBleMaxTxPowerAtInit_d 1
 #endif
 
 /*********************************************************************

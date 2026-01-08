@@ -229,10 +229,15 @@ int PLATFORM_InitBle(void)
         PLATFORM_SendWakeupDelay(BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT);
 #endif
 
+#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
         /* Update 32MHz trim value with the one stored in HW parameters */
         PLATFORM_LoadHwParams();
+#endif
 
+#if defined(gPlatformSetBleMaxTxPowerAtInit_d) && (gPlatformSetBleMaxTxPowerAtInit_d > 0)
         PLATFORM_SetBleMaxTxPower((int8_t)gAppMaxTxPowerDbm_c);
+#endif
+
         /* Initialize log handle for second core */
         BOARD_DBGCONFIGINITNBU(TRUE);
         // DBG_LOG_DUMP();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -260,6 +260,12 @@
  */
 #ifndef gPlatformUseUniqueDeviceIdForBdAddr_d
 #define gPlatformUseUniqueDeviceIdForBdAddr_d 2
+#endif
+
+/* Automatically set BLE Max TX power when calling PLATFORM_InitBle()
+ * The max TX power value is defined by gAppMaxTxPowerDbm_c */
+#ifndef gPlatformSetBleMaxTxPowerAtInit_d
+#define gPlatformSetBleMaxTxPowerAtInit_d 1
 #endif
 
 /*********************************************************************
