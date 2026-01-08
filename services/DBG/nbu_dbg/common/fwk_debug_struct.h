@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -16,7 +16,7 @@
 /* -------------------------------------------------------------------------- */
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
-#define NBUDBG_VERSION 1U
+#define NBUDBG_VERSION 2U
 /* Logging not yet supported. Setting the size to 0 */
 #define NBUDBG_LOGGING_SIZE   0U
 #define NBUDBG_LOGGING_OFFSET 0xFFFFFFFFU
@@ -30,6 +30,7 @@
 #define NBUDBG_SET_SHA(val)          ((debug_struct)->nbu_dbg_info.nbu_sha1 = (val))
 #define NBUDBG_BLE_STRUCT            debug_struct->dbg_ble
 #define NBUDBG_15_4_STRUCT           debug_struct->dbg_15_4
+#define NBUDBG_MAX_NB_WARNINGS       7U
 
 /* Magic pattern to identify handler mode faults */
 #define NBUDBG_EXCEPTION_ID_FOR_ASSERT_MAGIC 0x00A55E27U
@@ -119,6 +120,8 @@ typedef struct
         assert_info_t assert_info;
     };
     execution_context_t execution_context;
+    uint8_t             warnings[NBUDBG_MAX_NB_WARNINGS]; /* Circular buffer to track warning IDs */
+    uint8_t             warning_index;
 } nbu_dbg_info_t;
 
 typedef struct
