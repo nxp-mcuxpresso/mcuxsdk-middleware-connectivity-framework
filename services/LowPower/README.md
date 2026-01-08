@@ -1,27 +1,27 @@
-# LowPower
-## Low Power reference user guide
+# Low Power
+## Low power reference user guide
 ---------------------------------
 
 This Readme file describes the connectivity software architecture and provides the general low power enablement user guide.
 
-## 1- Connectivity Low Power SW architecture
+## Connectivity Low Power Software architecture
 
 The connectivity low power software architecture is composed of various components. These are described from the lower layer to the application layer:
-1. The SDK power manager in component/power_manager. This component provides the basic low power framework. It is not specific to the connectivity but generic across devices. it covers:
-    - gather the low power constraints for upper layer and take the decision on the best suitable low power state the device is allowed to go to fullfill the constraints.
-    - call the low power entry and exit function callbacks 
-    - call the appropriate SW routines to switch the device into the suitable low power state
+1. The SDK power manager in `component/power_manager`. This component provides the basic low power framework. It is not specific to the connectivity but generic across devices. It performs the following functions:
+    - Gathers the low power constraints for upper layer and takes the decision on the best suitable low power state the device is allowed to go to fullfill the constraints.
+    - Calls the low power entry and exit function callbacks. 
+    - Calls the appropriate SW routines to switch the device into the suitable low power state.
 
 2. Connectivity Low power module in the connectivity framework. This module is composed of:
     - The low power service called PWR inside framework/LowPower (this folder), This module is generic to all connectivity devices. 
     - The platform lowpower: fwk_platform_lowpower.[ch] located in framework\platform\\<platform_name>. These files are a collection of low power routines functions for the PWR module and upper layer. These are specific to the device.
 
-      Both PWR and platform lowpower files are detailed in section below.
+    Both PWR and platform lowpower files are detailed in the section below.
 
-3. Low power Application modules, it consists of 3 parts:
-    - Application initialization file app_services_init.c where the application initializes the low power framework, see next section 'Demo example for typical usage of low power framework'
-    - Application Idle task from application to call the main low power entry function PWR_EnterLowPower() to switch the device into lowpower. This function is application specific, one example is given in the section 1.3.3
-    - Low power board files : board_lp.[ch] located in board/lowpower. These files implement the low power entry and exit functions related to the application and board. Customers shall modify these files for their own needs. Example code is given for the connectivity applications.
+3. Low power Application modules, which consists of three parts:
+    - Application initialization file `app_services_init.c` where the application initializes the low power framework. See the next section 'Demo example for typical usage of low power framework'.
+    - Application Idle task from application to call the main low power entry function `PWR_EnterLowPower()` to switch the device into low power. This function is application specific, one example is given in the section 1.3.3.
+    - Low power board files : `board_lp.[ch]` located in `board/lowpower`. These files implement the low power entry and exit functions related to the application and board. Users must modify these files for their own needs. Example code is given for the connectivity applications.
 
       User guide is provided in section 1.3 below.
 > **Note :** Linker script may also be impacted for power down mode support in order to provide an RAM area for ROM warm boot (depends on the platform) and application warmboot stack
@@ -49,11 +49,11 @@ However, more advanced features such as configuring the wake-up sources are only
 In addition to the SDK Power Manager, the PWR module uses the software resources from lower level drivers but is independent of the platform used.
 
 #### 1.2.1 - Functional description
-Initialization of the PWR module should be done through PWR_Init() function. This is mainly to initialize the SDK power manager and the platform for low power. It also registers PWR low power entry/exit callback PWR_LowpowerCb() to the SDK power manager. This function will be called back when entering and exiting low power to perform mandatory save/restore operations for connectivity stacks. The application can perform extra optional save/restore operations in the board_lp file where it can register to the SDK Power Manager its own callback. This is usually used to handle optional peripherals such as serial interfaces, GPIOs, and so on.The main entry function is PWR_EnterLowPower(). It should be called from Idle task when no SW activity is required. The maximum duration for lowpower is given as argument timeoutUs in useconds. This function will check the next Hardware event in the connectivity stack, typically the next Radio activity. A wakeup timer is programmed if the timeoutUs value is shorter than the next radio event timing. Passing a timeout of 0us will be interpreted as no timeout on the application side.
+Initialization of the PWR module should be done through the `PWR_Init()` function. This is mainly to initialize the SDK Power Manager and the platform for low power. It also registers the PWR low power entry or exit callback function `PWR_LowpowerCb()` to the SDK Power Manager. This function is called back while entering and exiting the low power modes to perform mandatory save or restore operations for connectivity stacks. The application can perform extra optional save/restore operations in the `board_lp` file where it can register to the SDK Power Manager its own callback. This method is usually used to handle optional peripherals such as serial interfaces, GPIOs, and so on.The main entry function is `PWR_EnterLowPower()`. It must be called from Idle task when no SW activity is required. The maximum duration for low power is given as argument `timeoutUs` in microseconds. This function checks the next Hardware event in the connectivity stack, typically the next Radio activity. A wakeup timer is programmed if the `timeoutUs` value is shorter than the next radio event timing. Passing a timeout of `0us` is interpreted as no timeout on the application side.
 
-On device wakeup from low power state, the function will return the time duration the device has been in low power state.
+On device wakeup from low power state, the function returns the time duration the device has been in low power state.
 
-Two APi are provided to set and release low power state constraints : PWR_SetLowPowerModeConstraint() and PWR_ReleaseLowPowerModeConstraint(). These are helper functions. User can use directly the SDK power manager if needed.
+Two APIs are provided to set and release low power state constraints: `PWR_SetLowPowerModeConstraint()` and `PWR_ReleaseLowPowerModeConstraint()`. These are helper functions. Users can use the SDK power manager directly if needed.
 
 The PWR module also provides some API to be set as callbacks into other components to prevent from going to low power state. It can be used in following examples :
   1. If a DMA is running, the module in charge of the DMA would need to set a constraint to avoid the system from going to a low power state when the RAM and system bus are no longer available.
@@ -63,9 +63,9 @@ The PWR module also provides some API to be set as callbacks into other componen
 #### 1.2.2 - Tickless mode support
 This module also provides some routines functions PWR_SysticksPreProcess() and PWR_SysticksPostProcess() from PWR_systicks.c in order to support the tickless mode when using FreeRTOS. The tickless mode is the capability to suspend the periodic system ticks from FreeRTOS and keep timebase tracking using another low power counter. In this implementation, the Timer Manager and time_stamp component are used for this purpose. 
 
-Idle task shall call these functions PWR_SysticksPreProcess() and PWR_SysticksPostProcess() before and after the call to the main low power entry function PWR_EnterLowPower().
+Idle task shall call these functions `PWR_SysticksPreProcess() and `PWR_SysticksPostProcess()` before and after the call to the main low power entry function PWR_EnterLowPower().
 
-Refer to framework/LowPower/PWR_systicks.c file or section 2.1 below for more information.
+Refer to the *framework/LowPower/PWR_systicks.c* file or Section 2.1 below for more information.
 
 ### 1.3 - Low power platform submodule
 Low power platform module file fwk_platform_lowpower.c provides the necessary helper functions to support low power device initialization, device entry, and exit routines. These are platform and device specific. Typically, the PWR module uses the low power platform submodule for all low power specific routines.
@@ -124,10 +124,10 @@ Low power initialization and configuration are performed in APP_ServiceInitLowpo
 The default Low Power mode configured in APP_InitServices() is Deep Sleep mode. In Bluetooth LE, (or any other stack technology), Deep Sleep mode fits for all use cases. For instance, for Bluetooth LE states: Advertising, Connected, Scanning states. This mode already performs a very good level of power saving and likely, this is not required to optimize more if the device is powered from external supply.
 
 APP_ServiceInitLowpower() function performs the following initialization and configuration:
-- Initialize the Connectivity framework Low power module PWR_Init(), this function initialized the SDK power manager.
+- Initialize the Connectivity framework Low power module PWR_Init(), this function initialized the SDK Power Manager.
 - Configure the wakeup sources such as serial manager wake up source for UART, or button for IO wake up configuration. These are typical wakeup sources used in the connectivity application. Developer may want to add additional wake up sources here specific for the application.
 
-> **Note :** The low power timer wakeup source and wakeup from Radio domain are directly enabled from the Connectivity framework Low power module PWR as it is mandatory for the connectivity stack. If your application supports other peripherals (such as i2c, spi, and others) that require wake sources from low power, developer should add additional wake up sources setting in this function APP_ServiceInitLowpower(). The complete list of wakeup sources are available from the SDK power manager component, see file fsl_pm_board.h in component/boards/<device_name>/.
+> **Note :** The low power timer wakeup source and wakeup from Radio domain are directly enabled from the Connectivity framework Low power module PWR as it is mandatory for the connectivity stack. If your application supports other peripherals (such as i2c, spi, and others) that require wake sources from low power, developer should add additional wake up sources setting in this function APP_ServiceInitLowpower(). The complete list of wakeup sources are available from the SDK Power Manager component, see file fsl_pm_board.h in component/boards/<device_name>/.
 - Initialize and register the Low power board file used to register and implement low power entry and exit callback function used for peripheral. This is done by calling the BOARD_LowPowerInit() function.
 - Register low power Enter and exit critical function to driver component to enable / disable low power when the Hardware is active. Example is given for serial manager that needs to disable low power when the TX ring buffer contains data so the device does not enter low power until the buffer is empty.
 
@@ -205,14 +205,14 @@ The low power callback functions can be categorized in two groups:
 
 Note that distinction can be done between clock gating mode (Deep Sleep mode), and power gated mode (Power down mode) when entering and exiting Low Power mode. The BOARD_EnterLowPowerCb() and BOARD_ExitLowPowerCb() functions provide the code to call the various peripheral entry and exit functions to go and exit Deep Sleep mode: serial manager, button, debug console, and others.
 
-However, the processing to save and restore the Hardware peripheral is implemented in different functions BOARD_EnterPowerDownCb() and BOARD_ExitPowerDownCb(). These two functions should be called when exiting power gated modes of the power domain. These two should implement specific code for such case (likely the complete reinitialization of each peripheral). In order to know the Low Power mode that the wake up domain, or main domain has been entered, the low-power platform API PLATFORM_GetLowpowerMode() can be called.
+However, the processing to save and restore the Hardware peripheral is implemented in different functions `BOARD_EnterPowerDownCb()` and `BOARD_ExitPowerDownCb()`. These two functions must be called when exiting the power gated modes of the power domain. These two should implement specific code for such case (likely the complete reinitialization of each peripheral). In order to know the Low Power mode that the wake up domain, or main domain has been entered, the low-power platform API `PLATFORM_GetLowpowerMode()` can be called.
 
-> **Note :** BOARD_ExitPowerDownCb() is called before BOARD_ExitLowPowerCb() as it is generally required to restore the Hardware peripheral contexts before reconfiguring the pin mux to avoid any signal glitches on the pads
+> **Note :** The `BOARD_ExitPowerDownCb()` API is called before `BOARD_ExitLowPowerCb()` as it is generally required to restore the Hardware peripheral contexts before reconfiguring the pin mux to avoid any signal glitches on the pads. 
 
-Also, It is important to know whether the location of the Hardware peripheral is in the main domain or wake up domain. The two power domains can go into different power modes with the limitation that the wakeup domain cannot go to a deepest Low Power mode than the main domain. Depending on the constraint set on SDK power manager, the wake up domain could remain in active while the main domain can go to deep sleep or power down modes. In this case, the peripherals in the wake up domain does not required to be restored, as explained in the section Power Down. Likely, only pin mux reconfiguration is required in this case.
+Also, it is important to know whether the location of the hardware peripheral is in the main domain or wake up domain. The two power domains can go into different power modes with the limitation that the wakeup domain cannot go to a deepest Low Power mode than the main domain. Depending on the constraint set on SDK Power Manager, the wake up domain could remain in active while the main domain can go to deep sleep or power down modes. In this case, the peripherals in the wake up domain does not required to be restored, as explained in the **Power Down** section. Likely, only pin mux reconfiguration is required in this case.
 
-**example**
-Low power entry and exit functions shall be registered to the SDK power manager so these functions will be called when the device will enter and exit low power mode. This is done by BOARD_LowPowerInit() typically called from application source code in app_services_init.c file
+**Example**
+The Low power entry and exit functions must be registered with the SDK Power Manager so that these functions are called when the device enters and exits low power mode. This is done by `BOARD_LowPowerInit()` typically called from the application source code in the `app_services_init.c` file.
 
 ```c
 static pm_notify_element_t boardLpNotifyGroup = {
@@ -230,11 +230,11 @@ void BOARD_LowPowerInit(void)
 }
 ```
 
-BOARD_LowpowerCb() callback function will handle both the entry and exit sequences. An argument is passed to the function to indicate the lowpower state the device enter/exit. Typical implementation is given below. Customer shall make sure to differentiate low power entry and exit, and the various low power states.
+The BOARD_LowpowerCb() callback function handles both the entry and exit sequences. An argument is passed to the function to indicate the low power state the device enters or exits. A typical implementation is given below. Users must ensure to differentiate low power entry and exit, and the various low power states.
 
 Typically, nothing is expected to be done if low power state is WFI or Sleep mode. These modes are some light low power states and the system can be woken up by interrupt trigger.
 
-In Deep sleep mode, the clock tree and source clocks are off, the system needs to be woken up from an event from the WUU module. 
+In Deep sleep mode, the clock tree and the source clocks are off, and the system needs to be woken up from an event from the WUU module. 
 
 In Power down mode, some peripherals are likely to be powered off, context save and restore may need to be done in these functions.
 
@@ -293,9 +293,9 @@ Except for the board file update as seen in previous section, the application do
 #### 2.4.1 - Changing the Default Application low power constraint after firmware initialization
 The Low power reference design applications (central or peripheral) provides demonstration on how to change the Application low power constraint. In the Application main entry point BluetoothLEHost_AppInit(), Deep Sleep mode is configured by default from APP_ServiceInitLowpower() function.
 
-> **Note :** It is recommended to keep Deep Sleep mode as default during all the stack initialization phase until BluetoothLEHost_Initialized() and BleApp_StartInit() functions are called. In case of Bonded device with privacy, it is recommended to wait for gControllerPrivacyStateChanged_c event to be called.
+> **Note :** It is recommended to keep Deep Sleep mode as default during all the stack initialization phase until `BluetoothLEHost_Initialized()` and `BleApp_StartInit()` functions are called. In case of Bonded device with privacy, it is recommended to wait for `gControllerPrivacyStateChanged_c` event to be called.
 
-BleApp_LowpowerInit() function provides an example of code on how to release the default Deep sleep low-power constraint and set a new constraint such as Power down mode for the application. This deeper low-power mode is used when no Bluetooth LE activity is on going, and if no other higher Low-power constraint is set by another components or layer. For instance, if some serial transmission is on going by the serial manager, or if the SecLib module has on going activity on the HW crypto accelerator, the low-power mode could less deep.
+The `BleApp_LowpowerInit()` function provides an example of code on how to release the default Deep sleep low-power constraint and set a new constraint such as Power down mode for the application. This deeper low-power mode is used when no Bluetooth LE activity is ongoing, and if no other higher Low-power constraint is set by another component or layer. For instance, if some serial transmission is ongoing by the serial manager, or if the SecLib module has on going activity on the HW crypto accelerator, the low-power mode could be less deep.
 
 ```c
 static void BleApp_LowpowerInit(void)
@@ -334,41 +334,39 @@ static void BleApp_LowpowerInit(void)
 #### 2.4.2 - Changing the Application lowest low power constraint during application execution
 In the various application use cases, (in the various Bluetooth LE activity states, advertising, connected, scanning), some lower low-power constraint can be set, as Power down for advertising, Deep Sleep for connected, or Scanning. Customer can change the level of Low Power mode in the various use case mainly depending of the time duration the device is supposed to remain in low-power. The longer the time that the device remains in low power, the higher the benefit for a deeper Low Power mode such as Power down mode. However, please note that the wake up from power down mode takes significantly more time than deep sleep as ROM code is re executed and the hardware logic needs to be restored. Sections Deep Sleep and Power Down provide some guidance on when to use Deep Sleep mode or Power Down modes respectively.
 
-In the low power reference design applications, four application compilations macros are defined to adjust the low-power mode into advertising, scanning, connected, or no Bluetooth LE activity. Other use cases can be added as desired. For instance, If application needs to run a DMA transfer, or if application needs to wakeup regularly to process data from external device, it may be useful to set WFI constraint (in case of DMA transfer), or Deep Sleep constraint (in case of regular wake up to process external data), rather than power down or a even lower low-power mode.
+In the low power reference design applications, four application compilations macros are defined to adjust the low power mode into advertising, scanning, connected, or no Bluetooth LE activity. Other use cases can be added as desired. For instance, If application needs to run a DMA transfer, or if application needs to wakeup regularly to process data from external device, it may be useful to set WFI constraint (in case of DMA transfer), or Deep Sleep constraint (in case of regular wake up to process external data), rather than power down or a even lower low-power mode.
 
-The 4 application compilation macros can be found in app_preinclude.h file of the project. See app_preinclude.h for low power reference design peripheral application :
+The four application compilation macros can be found in `app_preinclude.h` file of the project. See `app_preinclude.h` for low power reference design peripheral application:
 ```c
-/*! Lowpower Constraint setting for various BLE states (Advertising, Scanning, connected mode)
+/*! Lowpower Constraint setting for various BLE states (Advertising, Scanning, and Connected mode)
     The value shall map with the type defintion PWR_LowpowerMode_t in PWR_Interface.h
       0 : no LowPower, WFI only
       1 : Reserved
       2 : Deep Sleep
       3 : Power Down
       4 : Deep Power Down
-    Note that if a Ble State is configured to Power Down mode, please make sure
-       gLowpowerPowerDownEnable_d variable is set to 1 in Linker Script
-    The PowerDown mode will allow lowest power consumption but the wakeup time is longer
-       and the first 16K in SRAM is reserved to ROM code (this section will be corrupted on
-       each power down wakeup so only temporary data could be stored there.)
-	   Power down feature not supported. */
+    Note that if a Bluetooth LE State is configured to Power Down mode, you must ensure that the
+       gLowpowerPowerDownEnable_d variable is set to 1 in the Linker Script.
+    The PowerDown mode allows lowest power consumption but the wake-up time is longer and the first 16K in SRAM is reserved to ROM code (this section will be corrupted on        each power down wake-up so only temporary data could be stored there.)
+	Power down feature not supported. */
 
-#define gAppLowPowerConstraintInAdvertising_c          3
+#define gAppLowPowerConstraintInAdvertising_c`         3
 /* Scanning not supported on peripheral */
-//#define gAppLowPowerConstraintInScanning_c             2
+//#define gAppLowPowerConstraintInScanning_c           2
 #define gAppLowPowerConstraintInConnected_c            2
 #define gAppLowPowerConstraintInNoBleActivity_c        4
 ```
 
-In lowpower_central.c lowpower_preripheral.c files, the application sets and releases the low power constraint from BleApp_SetLowPowerModeConstraint() and BleApp_ReleaseLowPowerModeConstraint() functions. These functions are called with the macro value passed as argument.
+In `lowpower_central.c` and the `lowpower_preripheral.c` files, the application sets and releases the low power constraint from `BleApp_SetLowPowerModeConstraint()` and `BleApp_ReleaseLowPowerModeConstraint()` functions. These functions are called with the macro value passed as argument.
 
-> **Important Note :** Setting the application low power constraint shall be done on new Bluetooth LE state request so the new constraint is applied immediately, while the application low-power mode constraint shall be released when the Bluetooth LE state is exited. For example, setting the new low power constraint for Advertising shall be done when the application requests advertising to start. Releasing the low power constraint shall be done in the advertising stop callback (advertising has been stopped).
+> **Important Note :** Setting the application low power constraint must be done on new Bluetooth LE state request so the new constraint is applied immediately. In contrast, the application low-power mode constraint must be released when the Bluetooth LE state is exited. For example, setting the new low power constraint for Advertising must be done when the application requests advertising to start. Releasing the low power constraint must be done in the advertising stop callback (advertising has been stopped).
 
 After releasing the low power constraint, the previous low power constraint, (likely the one that has been set during firmware initialization in APP_ServiceInitLowpower() function, or the updated low power constraint in BleApp_StartInit() function) applies again.
 
 #### 2.4.3 - Idle task implementation example
 
 ##### 2.4.3.1 Tickless mode support and Low power entry function
-Idle task configuration from FreeRTOS shall be enabled by configUSE_TICKLESS_IDLE in FreeRTOSConfig.h. This will have the effect to have vPortSuppressTicksAndSleep() called from Idle task created by FreeRTOS. Here is a typical implementation of this function: 
+Idle task configuration from FreeRTOS must be enabled by using the parameter `configUSE_TICKLESS_IDLE` in `FreeRTOSConfig.h`. This has the effect to have vPortSuppressTicksAndSleep() called from Idle task created by FreeRTOS. Here is a typical implementation of this function: 
 
 ```c
 void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
@@ -400,7 +398,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 
 ##### 2.4.3.2 Connectivity background tasks and Idle hook function example
 
-Some process needs to be run in background before going into low power. This is the case for writing in NVM, or firmware update OTA to be writen in Flash. If so, configUSE_IDLE_HOOK shall be enabled in FreeRTOSCOnfig.h so vApplicationIdleHook() will be called prior to vPortSuppressTicksAndSleep(). Typical implementation of vApplicationIdleHook() function can be found here :
+A few processes need to be run in the background before going into low power. This is the case for writing in NVM, or firmware update OTA to be writen in Flash. If so, configUSE_IDLE_HOOK must be enabled in `FreeRTOSCOnfig.h`. This enables vApplicationIdleHook() to be called prior to `vPortSuppressTicksAndSleep()`. Typical implementation of `vApplicationIdleHook()` function can be found here :
 ```c
 void vApplicationIdleHook(void)
 {
@@ -415,30 +413,30 @@ void vApplicationIdleHook(void)
 #endif
 }
 ```
-PLATFORM_CheckNextBleConnectivityActivity() function implemented in low power platform file fwk_platform_lowpower.c typically checks the next connectivity event and returns true if there's enough time to perform time consuming tasks such as flash erase/write operations (can be defined by the compile macro depending on the platform).
+`PLATFORM_CheckNextBleConnectivityActivity()` function implemented in low power platform file `fwk_platform_lowpower.c` typically checks the next connectivity event and returns `true` if there is enough time to perform time consuming tasks such as flash erase/write operations (These operations can be defined by the compile macro depending on the platform).
 
 ## 2. Low power features
 
 ### 2.1 - FreeRTOS systicks
-Low power module in framework supports the systick generation for FreeRTOS. Systicks in FreeRTOS are most of the time not required in the Bluetooth LE demos applications because the framework already supports timers by the timer manager component, so the application can use the timers from this module. The systicks in FreeRTOS are useful for all internal timer service provided by FreeRTOS (through OSA) like OSA_TimeDelay(), OSA_TimeGetMsec(), OSA_EventWait(). When systicks are enabled, an interrupt (systick interrupt) is triggered and executed on a periodic basis. In order to save power, periodic systick interrupts are undesirable and thus disabled when going to low-power mode. This feature is called low power FreeRTOS tickless mode. When entering the low power state, the system ticks shall be disabled and switch to a low power timer. On wake-up, the module retrieves the time passed in low power and compensate the ticks count accordingly. This feature does not apply on bare metal scheduler.
+Low power module in the framework supports the systick generation for FreeRTOS. Systicks in FreeRTOS are generally not required in the Bluetooth LE demos applications. The framework already supports timers through the timer manager component, so the application can use the timers from this module. The systicks in FreeRTOS are useful for all internal timer service provided by FreeRTOS (through OSA) such as `OSA_TimeDelay()`, `OSA_TimeGetMsec()`, `OSA_EventWait()`. When systicks are enabled, an interrupt (systick interrupt) is triggered and executed on a periodic basis. In order to save power, periodic systick interrupts are undesirable and thus disabled when going to low-power mode. This feature is called low power FreeRTOS tickless mode. When entering the low power state, the system ticks must be disabled and switch to a low power timer. On wake-up, the module retrieves the time passed in low power and compensates the ticks count accordingly. This feature does not apply on bare metal scheduler.
 
-On FreeRTOS, the vPortSuppressTicksAndSleep() function implemented in the app_low_power.c file will be called when going to idle. FreeRTOS will give to this function the xExpectedIdleTime, time in tick periods before a task is due to be moved into the Ready state. This function will manage the systicks (disable/enable) through PWR_SysticksPreProcess() and PWR_SysticksPostProcess() calls. Then, when calling PWR_EnterLowPower(), a time out duration in micro seconds will be given and the function will set a timer before entering low power. In addition, this function will return the low power period duration, used to compensate the ticks count.
+On FreeRTOS, the `vPortSuppressTicksAndSleep()` function implemented in the `app_low_power.c` file is called when going to idle state. FreeRTOS provides to this function the `xExpectedIdleTime`, which is the time in tick periods before a task is due to be moved into the Ready state. This function manages the systicks (disable/enable) through `PWR_SysticksPreProcess()` and `PWR_SysticksPostProcess()` calls. Then, when calling `PWR_EnterLowPower()`, a time out duration in micro seconds is given and the function sets a timer before entering low power. In addition, this function returns the low power period duration, used to compensate the ticks count.
 
-In our example low power reference design peripheral application, an OSA_EventWait() has been added to demonstrate the tickless mode feature. You can adjust the timeout with the gAppTaskWaitTimeout_ms_c flag in the app_preinclude.h file, its value in our demo is 8000ms. So 8 seconds after stopping any activity we will wake up from low power. If the flag is not defined in the application its value will be osaWaitForever_c and there will be no OS wake up.
+In our example low power reference design peripheral application, a function `OSA_EventWait()` has been added to demonstrate the tickless mode feature. You can adjust the timeout with the `gAppTaskWaitTimeout_ms_c` flag in the `app_preinclude.h` file, its value in our demo is `8000ms`. So 8 seconds after stopping any activity we will wake up from low power. If the flag is not defined in the application, its value is `osaWaitForever_c` and there will be no OS wake up.
 
 ### 2.2 - Selective RAM bank retention
-To optimize the consumption in low power, the linker script specific function PLATFORM_GetDefaultRamBanksRetained() is implemented. This function obtains the RAM banks that need to be retained when the device goes in low power, in order to set them with PLATFORM_SetRamBanksRetained() function. The RAM banks that are not needed are set in power off state, when the device goes in low power mode.
+To optimize the consumption in low power, the linker script specific function `PLATFORM_GetDefaultRamBanksRetained()` is implemented. This function obtains the RAM banks that need to be retained when the device goes in low power, in order to set them with `PLATFORM_SetRamBanksRetained()` function. The RAM banks that are not needed are set in power off state, when the device goes in low power mode.
 
-The function PLATFORM_GetDefaultRamBanksRetained() is linker script specific. Hence, it cannot be adapted for a different application. If these functions are called from board_lp.c, it is possible to give to PLATFORM_SetRamBanksRetained() a different bank_mask adapted to your specific application.
+The function `PLATFORM_GetDefaultRamBanksRetained()` is linker script specific. Hence, it cannot be adapted for a different application. If these functions are called from the `board_lp.c`, it is possible to give to `PLATFORM_SetRamBanksRetained()` a different `bank_mask` adapted to your specific application.
 
-In deep power down, this feature does not have any impact because in this power mode, all RAM banks are already powered off.
+In deep power down mode, this feature does not have any impact because in this power mode, all RAM banks are already powered off.
 
 ## 3 - Low power modes overview
-PWR module API provides the capability to set low power mode constraints from various components or from the application. These constraints are provided to the SDK power manager. Upper layer (all Application code, connectivity stacks, etc.) can call directly the SDK Power Manger if it requires more advanced tuning. The PWR API can be found in PWR_Interface.h.
+PWR module API provides the capability to set low power mode constraints from various components or from the application. These constraints are provided to the SDK Power Manager. Upper layer (such as all Application code, connectivity stacks) can call directly the SDK Power Manger if it requires more advanced tuning. The PWR API can be found in `PWR_Interface.h`.
 
 > **Note :** 'Upper layer' signifies all layers, applications, components, or modules that are above the connectivity framework in the Software architecture.
 
-> **Note :** Each power domain has its own Low Power mode capability. The Low Power modes described below are for the main domain and it is supposed that the wake up domain goes to the same Low Power mode. This is not always true as the wake up domain that contains some wake up peripheral can go a lower Low Power mode state than the main domain so the peripherals in the wake up domain can remain operational when the main domain is in Low Power mode (deep sleep or power down modes). In this case, the context of the Hardware peripheral located in the wake up domain does not need to be saved and restored as for the peripherals located in the main domain
+> **Note :** Each power domain has its own low power mode capability. The low power modes described below are for the main domain and it is supposed that the wake up domain goes to the same low power mode. This is not always true as the wake up domain that contains some wake up peripheral can go to a lower low power mode state than the main domain so the peripherals in the wake up domain can remain operational when the main domain is in low power mode (deep sleep or power down modes). In this case, the context of the Hardware peripheral located in the wake up domain does not need to be saved and restored as for the peripherals located in the main domain
 
 ### 3.1 Wait for Interrupt (WFI)
 **Definition**
@@ -447,19 +445,19 @@ In the Wait for Interrupt (WFI) state, the CPU core is powered on, but is in an 
 
 **Wake up time and typical use case**
 
-The wakeup time from this Low Power mode is insignificant because the Fast clock from FRO is still running.
+The wakeup time from this low power mode is insignificant because the Fast clock from FRO is still running.
 
-This Low Power mode is mainly used when there is an hardware activity while the Software runs the Idle task. This allows the code execution to be temporarily suspende, thus reducing a bit the power consumption of the device by switching off the processor clock. When an interrupt fires, the processor clock is instantaneously restored to process the Interrupt Service Routine (ISR).
+The WFI low power mode is mainly used when there is an hardware activity while the Software runs the Idle task. This allows the code execution to be temporarily suspende, thus reducing a bit the power consumption of the device by switching off the processor clock. When an interrupt fires, the processor clock is instantaneously restored to process the Interrupt Service Routine (ISR).
 
 **Usage**
 
-In order to prevent the software from programming the device to go to a lower Low Power mode (such as Deep Sleep, Power Down mode or Deep Power Down mode), the component responsible for the hardware drivers shall call PWR_SetLowPowerModeConstraint(PWR_WFI) function. When the Hardware activity is completed, the component shall release the constraint by calling PWR_ReleaseLowPowerModeConstraint(PWR_WFI).
+In order to prevent the software from programming the device to go to a lower low power mode (such as Deep Sleep, Power Down mode or Deep Power Down mode), the component responsible for the hardware drivers must` call PWR_SetLowPowerModeConstraint(PWR_WFI)` function. When the Hardware activity is completed, the component shall release the constraint by calling `PWR_ReleaseLowPowerModeConstraint(PWR_WFI)`.
 
-Alternatively, the component can call PWR_LowPowerEnterCritical() and then PWR_LowPowerExitCritical() functions.
+Alternatively, the component can call `PWR_LowPowerEnterCritical()` and then `PWR_LowPowerExitCritical()` functions.
 
-For fine tuning of the Low Power mode allowing more power saving, the component can call directly the SDK power manager API with PM_SetConstraints() function using the appropriate Low Power mode and low power constraint. However, this is reserved for more advanced user that knows the device very well. It is not recommended to do so.
+For fine tuning of the low power mode allowing more power saving, the component can call directly the SDK Power Manager API with `PM_SetConstraints()` function using the appropriate low power mode and low power constraint. However, this is reserved for more advanced users who know the device very well. It is not recommended to do so.
 
-The PWR module has no external dependencies, so the low-power entry and exit callback functions must be defined by the user for each peripheral that has specific low power constraints It is consequently convenient to register to the component the low power callbacks structure that is used for entering and exit low power critical sections. In Bluetooth LE, you can take the example in the app_conn.c file as shown here :
+The PWR module has no external dependencies, so the low-power entry and exit callback functions must be defined by the user for each peripheral that has specific low power constraints It is consequently convenient to register to the component the low power callbacks structure that is used for entering and exit low power critical sections. In Bluetooth LE, you can take the example in the `app_conn.c` file as shown below:
 
 ```c
 #if defined(gAppLowpowerEnabled_d) && (gAppLowpowerEnabled_d>0)
@@ -491,42 +489,42 @@ No limitation when using the WFI mode.
 
 ### 3.2 Sleep mode
 
-Sleep mode is similar to WFI low power mode but with some additional clock gating. The Sleep mode is device specific, please consult the Hardware reference manuel of the device for more information. 
+Sleep mode is similar to WFI low power mode but with some additional clock gating. The Sleep mode is device-specific. Therefore, you may refer to the hardware Reference manual of the device for more information. 
 
 ### 3.2 Deep Sleep mode
 **Definition**
 
 In Deep Sleep mode, the fast clock is turned off, and the CPU along with the main power domain are placed into a retention state, with the voltage being scaled down to support state retention only. Because no high frequency clock is running, the voltage applied on the power domain can be reduced to reduce leakage on the hardware logic. This reduces the overall power consumption in the Deep Sleep mode. When waking up from Deep sleep mode, the core voltage is increased back to nominal voltage and the fast clock (FRO) is turned back on, the peripheral in this domain can be reused as normal.
 
-To same more additional power, Some unused RAM banks can be powered off. this prevents from having current leakage and consequently, allow to reduce even more the power consumption in Deep SLeep mode. This is achieved by calling PLATFORM_SetRamBanksRetained() from low power entry function from board_lp.c file.
+To same more additional power, Some unused RAM banks can be powered off. this prevents from having current leakage and consequently, allow to reduce even more the power consumption in Deep SLeep mode. This is achieved by calling `PLATFORM_SetRamBanksRetained()` from low power entry function from the `board_lp.c` file.
 
 **Usage**
 
-All firmware is able to implement Deep Sleep mode transparently to the application thanks to the PWR module, low power platform submodule and low power board file. This is described in the section Low-power implementation.
+All firmware is able to implement Deep Sleep mode transparently to the application due to the PWR module, low power platform submodule, and the low power board file. This is described in the section Low-power implementation.
 
-When entering this mode, it is recommended to turn the output pins into input mode, or high impedance to reduce leakage on the pads. This is typically done in pin_mux.c file, called from board.c file and executed from the low power callback in board_lp.c file. As an example, the TX line of the UART peripheral can be turned to disabled so it prevents the current from being drawn by the pad in Low Power mode.
+When entering this mode, it is recommended to turn the output pins into input mode, or high impedance to reduce leakage on the pads. This is typically done in `pin_mux.c` file, called from `board.c` file and executed from the low power callback in `board_lp.c` file. As an example, the TX line of the UART peripheral can be turned to disabled so it prevents the current from being drawn by the pad in low power mode.
 
 **Wake up time and typical use case**
 
-The wake up time is very fast, it takes mostly the time for the Fast FRO to start up again (couple of hundreds of microseconds) so this mode is a very good balance between power consumption in low-power mode and wake up latency and shall be used extensively in most of the use cases of the application.
+The wake up time is very fast, it takes mostly the time for the Fast FRO to start up again (couple of hundreds of microseconds). Therefore, this mode is a very good balance between power consumption in low-power mode and wake up latency. This mode is used extensively in most of the use cases of the application.
 
 **Limitations**
 
-In Deep Sleep mode, the clock is disabled to the CPU and the main peripheral domain, so peripheral activity (for example, an on-going DMA transfer) is not possible in Deep Sleep mode.
+In Deep Sleep mode, the clock is disabled to the CPU and the main peripheral domain, so peripheral activity (for example, an ongoing DMA transfer) is not possible in Deep Sleep mode.
 
-### 3.3 Power Down mode
+### 3.3 Power down mode
 
 **Definition**
 
-In Power Down mode, both the clock, and power are shut off to the CPU and the main peripheral domain. SRAM is retained, but register values are lost. The SDK power manager handles the restore of the processor registers and dependencies such as interrupt controller and similar ones transparently from the application.
+In power-down mode, both the clock, and power are shut off to the CPU and the main peripheral domain. The SRAM is retained but register values are lost. The SDK Power Manager handles the restore of the processor registers and dependencies such as interrupt controller and similar ones transparently from the application.
 
 **Usage**
 
-The application, with the help of the low power board files, saves and restores the peripherals that were located in the power domain during the entry and exit of the power down mode. This is done from low power board_lp files in the entry/exit low power callbacks. Example is given for the serial manager and debug console in *board_lp.c* file in function *BOARD_ExitPowerDownCb()*.
+The application, with the help of the low power board files, saves and restores the peripherals that were located in the power domain during the entry and exit of the power down mode. This is done from low power board_lp files in the entry/exit low power callbacks. An example is given for the serial manager and debug console in `board_lp.c` file in the function `BOARD_ExitPowerDownCb()`.
 
-If the device contains a dedicated wake up power domain where some wake up peripherals are located, if this wake up domain is not turned into power down mode but only Deep sleep mode or active mode, this peripheral does not need for a save and restore on low power entry/exit. For instance, on KW45, This is basically achieved when enabling the wakeup source of the peripheral *PWR_EnableWakeUpSource()* from *APP_ServiceInitLowpower()* function. Alternatively, this can be directly achieved by setting the constraint to the SDK power manager by calling *PM_SetConstraints()*, (use APP_LPUART0_WAKEUP_CONSTRAINTS for wakeup from UART constraint).
+If the device contains a dedicated wake up power domain where some wake up peripherals are located, if this wake up domain is not turned into power down mode but only Deep sleep mode or active mode, this peripheral does not need for a save and restore on low power entry/exit. For instance, on KW45, This is basically achieved when enabling the wakeup source of the peripheral `*PWR_EnableWakeUpSource()*` from `APP_ServiceInitLowpower()` function. Alternatively, this can be directly achieved by setting the constraint to the SDK power manager by calling *`PM_SetConstraints()`*, (use `APP_LPUART0_WAKEUP_CONSTRAINTS` for wakeup from UART constraint).
 
-On exit from low power, The low power state of power domain can be retrieved by Platform API PLATFORM_GetLowpowerMode(). This API shall be called from low power exit callback function only.
+On exit from low power, The low power state of power domain can be retrieved by Platform API `PLATFORM_GetLowpowerMode()`. This API shall be called from low power exit callback function only.
 
 As for Deep Sleep mode, software shall configure the output pins into input or high impedance during the Low Power mode to avoid leakage on the pads.
 
@@ -538,7 +536,7 @@ Depending on the wakeup time of the platform and the low power time duration, Th
 
 **Limitations**
 
-In addition to the Deep Sleep limitation (no Hardware processing on going when going to Power down mode) and the significant increase of the wake time, the Power Down mode requires the ROM code to execute and this last uses significant amount of memory in SRAM.
+In addition to the Deep Sleep limitation (no Hardware processing on going when going to Power down mode) and the significant increase of the wake time, the Power Down mode requires the ROM code to execute and this last uses a significant amount of memory in the SRAM.
 
 Typically, The first SRAM bank (16 KBytes) is used by the ROM code during execution so the Application firmware can use this section of SRAM for storing bss, rw data, or stacks. Only temporary data could be stored here and this location is overwritten on every Power Down exit sequence.
 
@@ -550,17 +548,17 @@ In order to avoid placing firmware data section (bss, rw, etc.) in the first SRA
 
 **Definition**
 
-In Deep Power Down mode, the SRAM is not retained. This power mode is the lowest disponible, it is exited through reset sequence.
+In Deep Power Down mode, the SRAM memory is not retained. This power mode consumes the lowest power and is exited through a reset sequence.
 
 **Usage**
 
-In addition to the Power Down limitation, the Deep Power Down mode shut down all memory in SRAM. Because it is exited through reset sequence the wake time is also longer.
+In addition to the Power Down limitation, the Deep Power Down mode shuts down all the memory in the SRAM. Since it is exited through a reset sequence, the wake up time is also longer.
 
 **Wake up time and typical use case**
 
-As this low-power mode is exited through the reset sequence, the wake up time is longer than any other mode. In Bluetooth LE, this mode is possible in no Bluetooth LE activity, and is preferred if we know that there will be no Bluetooth LE activity before a several amount of time.
+This low-power mode is exited through a reset sequence. Consequently, the wake up time is longer than in any other mode. In Bluetooth LE, using this mode is possible when there is no Bluetooth LE activity. It is preferable to use this mode if there is no Bluetooth LE activity before a certain time interval.
 
 **Limitations**
 
-All memory in SRAM will be shut down in deep power down, the main limitation in going in this low-power mode is that the context will not be saved.
+All the memory in SRAM is shut down in the Deep Power Down mode. The main limitation in going to this low-power mode is that the context is not saved.
 
