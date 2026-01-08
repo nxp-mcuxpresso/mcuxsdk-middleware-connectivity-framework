@@ -255,6 +255,18 @@
 #define gPlatformSetBleMaxTxPowerAtInit_d 1
 #endif
 
+/* Automatically send the SFC config to the NBU when calling PLATFORM_InitBle()
+ * The SFC config will be sent only if the application is not using the default values */
+#ifndef gPlatformSetSfcConfigAtInit_d
+#define gPlatformSetSfcConfigAtInit_d 1
+#endif
+
+/* Automatically send the wake up delay to the NBU when calling PLATFORM_InitBle()
+ * The wake up delay will be sent only if the application is not using the default value */
+#ifndef gPlatformSetWakeUpDelayAtInit_d
+#define gPlatformSetWakeUpDelayAtInit_d 1
+#endif
+
 /*********************************************************************
  *        Configuration check
  *********************************************************************/

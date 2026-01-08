@@ -10,10 +10,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-/* Get BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT if defined in board.h for 32MHz settings
- * BOARD_FRO32K_PPM_TARGET and BOARD_FRO32K_FILTER_SIZE for fro32k calibration settings */
-#include "board_platform.h"
-
 #include "fsl_adapter_rpmsg.h"
 #include "fwk_config.h"
 #include "fwk_platform_definitions.h"
@@ -29,11 +25,6 @@
 
 #ifdef SERIAL_BTSNOOP
 #include "sbtsnoop.h"
-#endif
-
-#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
-#include "fwk_sfc.h"
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -62,15 +53,6 @@
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
  * the returned status will be negative */
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
-
-/*!
- * \brief Default calibration settings for the FRO32K, can be overriden in board.h with BOARD_FRO32K_PPM_TARGET
- *        and BOARD_FRO32K_FILTER_SIZE
- */
-#define PLATFORM_DEFAULT_FRO32K_PPM_TARGET                  200U
-#define PLATFORM_DEFAULT_FRO32K_FILTER_SIZE                 128U
-#define PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS 1000U
-#define PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER          3U
 
 #if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
 #ifndef PLATFORM_HCI_RX_QUEUE_SIZE
@@ -144,33 +126,6 @@ static OSA_MSGQ_HANDLE_DEFINE(hciMsgQueue, PLATFORM_HCI_RX_QUEUE_SIZE, sizeof(hc
 static fwk_work_t hci_work = {.handler = PLATFORM_HciRxWorkHandler};
 #endif
 
-#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
-static const sfc_config_t sfcConfig = {
-#ifdef BOARD_FRO32K_PPM_TARGET
-    .ppmTarget = BOARD_FRO32K_PPM_TARGET,
-#else
-    .ppmTarget                = PLATFORM_DEFAULT_FRO32K_PPM_TARGET,
-#endif /* BOARD_FRO32K_PPM_TARGET */
-#ifdef BOARD_FRO32K_FILTER_SIZE
-    .filterSize = BOARD_FRO32K_FILTER_SIZE,
-#else
-    .filterSize               = PLATFORM_DEFAULT_FRO32K_FILTER_SIZE,
-#endif /* BOARD_FRO32K_FILTER_SIZE */
-#ifdef BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS
-    .maxCalibrationIntervalMs = BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
-#else
-    .maxCalibrationIntervalMs = PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
-#endif /* BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS */
-#ifdef BOARD_FRO32K_TRIG_SAMPLE_NUMBER
-    .trigSampleNumber = BOARD_FRO32K_TRIG_SAMPLE_NUMBER
-#else
-    .trigSampleNumber         = PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER,
-#endif /* BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
-};
-#endif /* BOARD_FRO32K_PPM_TARGET || BOARD_FRO32K_FILTER_SIZE ||  BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS || \
-          BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
-
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -212,9 +167,10 @@ int PLATFORM_InitBle(void)
         status = PLATFORM_FwkSrvInit();
         CHECK_AND_RAISE_ERROR(status, -5);
 
-#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
-    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
-        PLATFORM_FwkSrvSetRfSfcConfig((void *)&sfcConfig, (uint16_t)sizeof(sfc_config_t));
+#if defined(gPlatformSetSfcConfigAtInit_d) && (gPlatformSetSfcConfigAtInit_d > 0)
+        /* Send the SFC config if the application is not using the default values */
+        status = PLATFORM_InitSfc();
+        CHECK_AND_RAISE_ERROR(status, -8);
 #endif
 
         /* Send chip revision (A0 or A1) to NBU */
@@ -225,8 +181,11 @@ int PLATFORM_InitBle(void)
         status = PLATFORM_SetNbuSharedCtxAddress();
         CHECK_AND_RAISE_ERROR(status, -7);
 #endif
-#ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
-        PLATFORM_SendWakeupDelay(BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT);
+
+#if defined(gPlatformSetWakeUpDelayAtInit_d) && (gPlatformSetWakeUpDelayAtInit_d > 0)
+        /* Send the wake up delay to the NBU if the application is not using the default value */
+        status = PLATFORM_InitWakeUpDelay();
+        CHECK_AND_RAISE_ERROR(status, -9);
 #endif
 
 #if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)

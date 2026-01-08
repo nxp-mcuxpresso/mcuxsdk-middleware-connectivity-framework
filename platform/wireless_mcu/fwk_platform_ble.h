@@ -194,10 +194,24 @@ uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
 void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power);
 
 /*!
- * \brief Send to the NBU the value of BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT to be setted on its side
+ * \brief Send the wake up delay to the NBU if the application is not using the default value.
+          The value to be sent is BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT.
  *
+ * \return int 0 if success, negative value if error
  */
-void PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu);
+int PLATFORM_InitWakeUpDelay(void);
+
+/*!
+ * \brief Send the SFC config to the NBU if the application is not using the default values.
+ *        The SCF config can be customized through board defines:
+ *          - BOARD_FRO32K_PPM_TARGET
+ *          - BOARD_FRO32K_FILTER_SIZE
+ *          - BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS
+ *          - BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+ *
+ * \return int 0 if success, negative value if error
+ */
+int PLATFORM_InitSfc(void);
 
 /*!
  * \brief Check if there is a pending connectivity activity

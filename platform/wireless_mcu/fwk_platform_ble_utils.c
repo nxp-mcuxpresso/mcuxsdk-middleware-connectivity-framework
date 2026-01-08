@@ -7,6 +7,10 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+/* Get BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT if defined in board.h for 32MHz settings
+ * BOARD_FRO32K_PPM_TARGET and BOARD_FRO32K_FILTER_SIZE for fro32k calibration settings */
+#include "board_platform.h"
+
 #include "fwk_hal_macros.h"
 #include "fwk_config.h"
 #include "fwk_platform_ble.h"
@@ -23,6 +27,11 @@
 #if defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d > 0)
 #include "fwk_platform_definitions.h"
 #include "fwk_platform.h"
+#endif
+
+#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
+#include "fwk_sfc.h"
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -46,6 +55,15 @@
 #define PLATFORM_BLE_SLOT_USEC     625U                /* BLE slot is 625 usec */
 #define PLATFORM_TSTMR_MASK        0xFFFFFFFFFFFFFFULL /* 56 bit max value */
 
+/*!
+ * \brief Default calibration settings for the FRO32K, can be overriden in board.h with BOARD_FRO32K_PPM_TARGET
+ *        and BOARD_FRO32K_FILTER_SIZE
+ */
+#define PLATFORM_DEFAULT_FRO32K_PPM_TARGET                  200U
+#define PLATFORM_DEFAULT_FRO32K_FILTER_SIZE                 128U
+#define PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS 1000U
+#define PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER          3U
+
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -57,6 +75,14 @@
  *
  */
 STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress);
+
+#ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
+/*!
+ * \brief Send to the NBU the value of BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT to be setted on its side
+ *
+ */
+STATIC int PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu);
+#endif
 
 /*!
  * \brief Compute time elapsed since ll_ts (timestamp from Rx PDU descriptor) and time retrieved by core#0
@@ -84,6 +110,33 @@ STATIC uint32_t PLATFORM_ComputeTimeDiffNbu2HostTstmr(uint64_t tstmr0);
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
 STATIC const uint8_t gBD_ADDR_OUI_c[PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
+
+#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
+static const sfc_config_t sfcConfig = {
+#ifdef BOARD_FRO32K_PPM_TARGET
+    .ppmTarget = BOARD_FRO32K_PPM_TARGET,
+#else
+    .ppmTarget                = PLATFORM_DEFAULT_FRO32K_PPM_TARGET,
+#endif /* BOARD_FRO32K_PPM_TARGET */
+#ifdef BOARD_FRO32K_FILTER_SIZE
+    .filterSize = BOARD_FRO32K_FILTER_SIZE,
+#else
+    .filterSize               = PLATFORM_DEFAULT_FRO32K_FILTER_SIZE,
+#endif /* BOARD_FRO32K_FILTER_SIZE */
+#ifdef BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS
+    .maxCalibrationIntervalMs = BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
+#else
+    .maxCalibrationIntervalMs = PLATFORM_DEFAULT_FRO32K_MAX_CALIBRATION_INTERVAL_MS,
+#endif /* BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS */
+#ifdef BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+    .trigSampleNumber = BOARD_FRO32K_TRIG_SAMPLE_NUMBER
+#else
+    .trigSampleNumber         = PLATFORM_DEFAULT_FRO32K_TRIG_SAMPLE_NUMBER,
+#endif /* BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
+};
+#endif /* BOARD_FRO32K_PPM_TARGET || BOARD_FRO32K_FILTER_SIZE ||  BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS || \
+          BOARD_FRO32K_TRIG_SAMPLE_NUMBER */
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -225,10 +278,24 @@ void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
 #endif
 }
 
-void PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu)
+int PLATFORM_InitWakeUpDelay(void)
 {
-    (void)PLATFORM_FwkSrvSendPacket(gFwkSrvNbuWakeupDelayLpoCycle_c, &wakeupDelayToBeSendToNbu,
-                                    (uint16_t)sizeof(wakeupDelayToBeSendToNbu));
+    int ret = 0;
+
+#ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
+    ret = PLATFORM_SendWakeupDelay(BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT);
+#endif
+
+    return ret;
+}
+
+int PLATFORM_InitSfc(void)
+{
+#if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
+    defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
+    PLATFORM_FwkSrvSetRfSfcConfig((void *)&sfcConfig, (uint16_t)sizeof(sfc_config_t));
+#endif
+    return 0;
 }
 
 /*
@@ -305,6 +372,14 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
                     PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
     }
 }
+
+#ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
+STATIC int PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu)
+{
+    return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuWakeupDelayLpoCycle_c, &wakeupDelayToBeSendToNbu,
+                                     (uint16_t)sizeof(wakeupDelayToBeSendToNbu));
+}
+#endif
 
 /*!
  * \brief Compute TSTMR ticks elapsed between call to Controller_GetTimestampEx and now.
