@@ -1,5 +1,5 @@
 /*!
- * Copyright 20021-2024 NXP
+ * Copyright 20021-2024, 2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -8,8 +8,11 @@
 #define _PLATFORM_OT_H_
 
 #include "EmbeddedTypes.h"
+
+#ifndef __ZEPHYR__
 #include "clock_config.h"
 #include "fsl_component_serial_manager.h"
+#endif
 
 #if !defined(OT_APP_UART_INSTANCE)
 #define OT_APP_UART_INSTANCE 1
