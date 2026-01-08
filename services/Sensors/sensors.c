@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2025 NXP
+ * Copyright 2021-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -7,6 +7,8 @@
 /************************************************************************************
  * Include
  ************************************************************************************/
+
+#include <stdbool.h>
 
 #include "sensors.h"
 #include "fwk_workq.h"
@@ -72,6 +74,7 @@ typedef enum _sensors_measurement_s
 *************************************************************************************
 *********************************************************************************** */
 
+static bool    initialized      = false;
 static uint8_t LastBatteryLevel = VALUE_NOT_AVAILABLE_8;
 static int32_t LastTemperature  = (int32_t)VALUE_NOT_AVAILABLE_32;
 
@@ -226,36 +229,50 @@ static timer_status_t Sensors_InitTimer(void)
  */
 void SENSORS_Init(void)
 {
-    PLATFORM_InitAdc();
-
-    if (PLATFORM_InitTimerManager() < 0)
+    do
     {
-        assert(0);
-    }
+        if (initialized == true)
+        {
+            break;
+        }
+
+        PLATFORM_InitAdc();
+
+        if (PLATFORM_InitTimerManager() < 0)
+        {
+            assert(0);
+            break;
+        }
 
 #if gSensorsUseMutex_c
-    /*! Initialize the ADC Mutex here. */
-    if (KOSA_StatusSuccess != OSA_MutexCreate((osa_mutex_handle_t)mADCMutexId))
-    {
-        assert(0);
-    }
+        /*! Initialize the ADC Mutex here. */
+        if (KOSA_StatusSuccess != OSA_MutexCreate((osa_mutex_handle_t)mADCMutexId))
+        {
+            assert(0);
+            break;
+        }
 #endif
 
-    if (kStatus_TimerSuccess != Sensors_InitTimer())
-    {
-        assert(0);
-    }
+        if (kStatus_TimerSuccess != Sensors_InitTimer())
+        {
+            assert(0);
+            break;
+        }
 
-    /* The workqueue is used to post and execute the temperature
-     * trigger function upon periodic timer timeout events.
-     */
-    if (WORKQ_InitSysWorkQ() < 0)
-    {
-        assert(0);
-    }
+        /* The workqueue is used to post and execute the temperature
+         * trigger function upon periodic timer timeout events.
+         */
+        if (WORKQ_InitSysWorkQ() < 0)
+        {
+            assert(0);
+            break;
+        }
 
-    PLATFORM_RegisterNbuTemperatureRequestEventCb(&Sensors_TemperatureReqCb);
-    PLATFORM_RegisterTemperatureReadyEventCb(&Sensors_TemperatureReadyCb);
+        PLATFORM_RegisterNbuTemperatureRequestEventCb(&Sensors_TemperatureReqCb);
+        PLATFORM_RegisterTemperatureReadyEventCb(&Sensors_TemperatureReadyCb);
+
+        initialized = true;
+    } while (false);
 }
 
 /*!
@@ -279,6 +296,7 @@ void SENSORS_Deinit(void)
 
     PLATFORM_RegisterNbuTemperatureRequestEventCb(NULL);
     PLATFORM_RegisterTemperatureReadyEventCb(NULL);
+    initialized = false;
     ADC_MUTEX_UNLOCK();
 }
 
