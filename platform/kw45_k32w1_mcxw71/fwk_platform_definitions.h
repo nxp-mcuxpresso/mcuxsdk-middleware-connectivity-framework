@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -8,13 +8,7 @@
 #define _FWK_PLAT_DEFS_H_
 
 #include "fsl_device_registers.h"
-
-#ifndef KB
-#define KB(x) (((uint32_t)x) << 10u)
-#endif
-#ifndef MB
-#define MB(x) (((uint32_t)x) << 20u)
-#endif
+#include "fwk_hal_macros.h"
 
 #define gPlatformFlashStartAddress_c (FSL_FEATURE_FLASH_PFLASH_START_ADDRESS)
 #define gPlatformFlashEndAddress_c   (FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE)
