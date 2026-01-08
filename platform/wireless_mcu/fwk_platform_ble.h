@@ -81,14 +81,23 @@ extern "C" {
 int PLATFORM_InitBle(void);
 
 /*!
+ * \brief Extra procedures during HCI init from Host, likely to check if the
+ *        HCI link is valid and execute Vendor specific init
+ *
+ * \return int return status: >=0 for success, <0 for errors
+ */
+int PLATFORM_StartHci(void);
+
+/*!
  * \brief Registers HCI RX callback for upper layers, likely called from Host's
  *        HCI transport layers. The callback is called when PLATFORM has
  *        received a message from lower transport layers such as RPMSG or UART
  *
  * \param[in] callback function pointer to callback. Can be NULL to unregister
  *            the callback.
+ * \return int return status: >=0 for success, <0 for errors
  */
-void PLATFORM_SetHciRxCallback(void (*callback)(uint8_t packetType, uint8_t *data, uint16_t len));
+int PLATFORM_SetHciRxCallback(void (*callback)(uint8_t packetType, uint8_t *data, uint16_t len));
 
 /*!
  * \brief Sends a HCI message to Controller.

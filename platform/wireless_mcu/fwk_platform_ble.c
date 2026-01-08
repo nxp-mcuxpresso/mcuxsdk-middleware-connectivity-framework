@@ -255,10 +255,17 @@ static const sfc_config_t sfcConfig = {
 
 int PLATFORM_InitBle(void)
 {
-    int status = 0;
+    static bool initialized = false;
+    int         status      = 0;
 
     do
     {
+        if (initialized == true)
+        {
+            status = 1;
+            break;
+        }
+
         /* When waking up from deep power down mode (following Deep power down reset), it is necessary to release IO
          * isolation. this is usually done in Low power initialization but it is necessary also
          * to be done if the Application does not support low power */
@@ -308,10 +315,11 @@ int PLATFORM_InitBle(void)
         BOARD_DBGCONFIGINITNBU(TRUE);
         // DBG_LOG_DUMP();
 
+        initialized = true;
     } while (false);
 
     /* Error callback set by PLATFORM_RegisterBleErrorCallback() */
-    if ((status != 0) && (pfPlatformErrorCallback != NULL))
+    if ((status < 0) && (pfPlatformErrorCallback != NULL))
     {
         pfPlatformErrorCallback(PLATFORM_INIT_BLE_ID, status);
     }
@@ -319,30 +327,19 @@ int PLATFORM_InitBle(void)
     return status;
 }
 
-/*!
- * \brief Registers HCI RX callback for upper layers, likely called from Host's
- *        HCI transport layers. The callback is called when PLATFORM has
- *        received a message from lower transport layers such as RPMSG or UART
- *
- * \param[in] callback function pointer to callback. Can be NULL to unregister
- *            the callback.
- */
-void PLATFORM_SetHciRxCallback(void (*callback)(uint8_t packetType, uint8_t *data, uint16_t len))
+int PLATFORM_StartHci(void)
+{
+    /* Not implemented on this platform */
+    return 0;
+}
+
+int PLATFORM_SetHciRxCallback(void (*callback)(uint8_t packetType, uint8_t *data, uint16_t len))
 {
     /* Assign value to global hci_rx_callback function pointer */
     hci_rx_callback = callback;
+    return 0;
 }
 
-/*!
- * \brief Sends a HCI message to Controller.
- *        This is usually called from Host's HCI transport layers.
- *        This allows complete abstraction of physical transport layers from one
- *        platform to another.
- *
- * \param[in] msg pointer to HCI message buffer
- * \param[in] len size of the message
- * \return int 0 if success, negative value if error
- */
 int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
 {
     int status = 0;
@@ -437,12 +434,7 @@ void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
     PLATFORM_GenerateNewBDAddr(bleDeviceAddress);
 #endif
 }
-/*!
- * \brief enable secure key management for BLE.
- *
- * \return status of the operation, whether the security enabling was successful (=0) or failed.
- *
- */
+
 int32_t PLATFORM_EnableBleSecureKeyManagement(void)
 {
     int32_t ret = 0;
