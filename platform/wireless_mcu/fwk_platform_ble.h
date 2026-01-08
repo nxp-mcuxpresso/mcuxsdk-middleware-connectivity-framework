@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2022 NXP                          */
-/*                            All rights reserved.                            */
+/*                           Copyright 2021-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -73,6 +72,10 @@ typedef void (*platform_hci_log_cb_t)(uint8_t packet_type, const uint8_t *data, 
 extern "C" {
 #endif
 
+/* -------------------------------------------------------------------------- */
+/*                            PLATFORM BLE HCI APIs                           */
+/* -------------------------------------------------------------------------- */
+
 /*!
  * \brief Low level initialization for BLE Controller
  *
@@ -127,41 +130,6 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len);
 int PLATFORM_SendHciMessageAlt(uint8_t packetType, uint8_t *msg, uint32_t len);
 
 /*!
- * \brief retrieve BLE device address
- *
- * \param[out] bleDeviceAddress pointer to BLE device address bytes
- *
- */
-void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress);
-
-/*!
- * \brief enable secure key management for BLE.
- *
- * \return status of the operation, whether the security enabling was successful (=0) or failed.
- *
- */
-int32_t PLATFORM_EnableBleSecureKeyManagement(void);
-
-/*!
- * \brief Check if there is a pending connectivity activity
- * \note  Deprecated - shall use PLATFORM_GetRadioIdleDuration32K() API instead
- *
- * \return bool true  : No next connectivity activity
- *                 false : Pending connectivity activity
- */
-bool PLATFORM_CheckNextBleConnectivityActivity(void);
-
-/*!
- * \brief Get number of microseconds elapsed between current value (now) and the argument of this function.
- *
- * \param[in] controllerTimestamp timestamp coming from BLE link layer controller expressed in microseconds.
- *            This value is in the range [0 .. 2^30-1]
- *
- * \return uint64_t time difference expressed in microseconds, 0U in case of error.
- */
-uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
-
-/*!
  * \brief Process HCI vendor event reception
  *
  * \details This function sends system-generated HCI vendor events into the HCI
@@ -187,6 +155,58 @@ int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len);
  * \param[in] cb callback to be registered, NULL to unregister
  */
 void PLATFORM_RegisterHciLogCallback(platform_hci_log_cb_t cb);
+
+/* -------------------------------------------------------------------------- */
+/*                           PLATFORM BLE utils APIs                          */
+/* -------------------------------------------------------------------------- */
+
+/*!
+ * \brief retrieve BLE device address
+ *
+ * \param[out] bleDeviceAddress pointer to BLE device address bytes
+ *
+ */
+void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress);
+
+/*!
+ * \brief enable secure key management for BLE.
+ *
+ * \return status of the operation, whether the security enabling was successful (=0) or failed.
+ *
+ */
+int32_t PLATFORM_EnableBleSecureKeyManagement(void);
+
+/*!
+ * \brief Get number of microseconds elapsed between current value (now) and the argument of this function.
+ *
+ * \param[in] controllerTimestamp timestamp coming from BLE link layer controller expressed in microseconds.
+ *            This value is in the range [0 .. 2^30-1]
+ *
+ * \return uint64_t time difference expressed in microseconds, 0U in case of error.
+ */
+uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp);
+
+/*!
+ * \brief Configure max TX power in dBm for BLE
+ *
+ * \param[in] max_tx_power Desired max TX power in dBm
+ */
+void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power);
+
+/*!
+ * \brief Send to the NBU the value of BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT to be setted on its side
+ *
+ */
+void PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu);
+
+/*!
+ * \brief Check if there is a pending connectivity activity
+ * \note  Deprecated - shall use PLATFORM_GetRadioIdleDuration32K() API instead
+ *
+ * \return bool true  : No next connectivity activity
+ *                 false : Pending connectivity activity
+ */
+bool PLATFORM_CheckNextBleConnectivityActivity(void);
 
 #ifdef __cplusplus
 }

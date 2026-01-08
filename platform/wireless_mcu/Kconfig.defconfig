@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -25,10 +25,15 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
     select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ble
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
+    imply MCUX_COMPONENT_middleware.wireless.framework.platform.ble_utils
+    imply MCUX_COMPONENT_middleware.wireless.framework.workq
+
+config MCUX_COMPONENT_middleware.wireless.framework.platform.ble_utils
     select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     select MCUX_COMPONENT_middleware.wireless.framework.seclib_rng
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
-    imply MCUX_COMPONENT_middleware.wireless.framework.workq
     imply MCUX_COMPONENT_middleware.wireless.controller_api
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
@@ -96,10 +101,15 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.rng
     select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ble
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
+    imply MCUX_COMPONENT_middleware.wireless.framework.platform.ble_utils
+    imply MCUX_COMPONENT_middleware.wireless.framework.workq
+
+config MCUX_COMPONENT_middleware.wireless.framework.platform.ble_utils
     #select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
     select MCUX_COMPONENT_middleware.wireless.framework.seclib_rng
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
-    imply MCUX_COMPONENT_middleware.wireless.framework.workq
     imply MCUX_COMPONENT_middleware.wireless.controller_api
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
