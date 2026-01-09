@@ -67,6 +67,13 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug)
         INCLUDES
                 nbu_dbg/nbu_interface
     )
+
+    mcux_add_configuration(
+    # define to force initialization of sqram_debug_region after reset
+    # only required for GCC as IAR already initialize correctly this region
+        TOOLCHAINS armgcc
+        AS "        -DINIT_BLE_DEBUG_DAT"
+    )
 endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.dbg.nbu_debug.dbg_struct_legacy)
