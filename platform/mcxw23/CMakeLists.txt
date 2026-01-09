@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23)
@@ -48,6 +48,16 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23)
 
         mcux_add_include(INCLUDES
             ../wireless_mcu
+            DEVICE_IDS ${MCXW23_FAMILY}
+            CORE_IDS "cm33_core0"
+        )
+    endif()
+
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ble_utils)
+        mcux_add_source(
+            SOURCES
+            ../wireless_mcu/fwk_platform_ble.h
+            fwk_platform_ble_utils.c
             DEVICE_IDS ${MCXW23_FAMILY}
             CORE_IDS "cm33_core0"
         )
