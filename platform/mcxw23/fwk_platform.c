@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -11,14 +11,20 @@
 #include "fsl_rom_api.h"
 #include "fsl_trng.h"
 #include "fsl_power.h"
-#include "fsl_component_timer_manager.h"
+#include "fwk_config.h"
 #include "fwk_platform.h"
+#include "fwk_platform_ics.h"
+
 #ifdef TIMER_PORT_TYPE_CTIMER
 #include "fsl_ctimer.h"
 #else
 #include "fsl_ostimer.h"
 #endif /* TIMER_PORT_TYPE_CTIMER */
-#include "fwk_platform_ics.h"
+
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
+#include "fsl_component_timer_manager.h"
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                                 Definitions                                */
 /* -------------------------------------------------------------------------- */
@@ -41,6 +47,7 @@
 #ifdef TIMER_PORT_TYPE_CTIMER
 int PLATFORM_InitTimerManager(void)
 {
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
     /*Initialize timer manager*/
     timer_config_t timerConfig;
     timer_status_t status;
@@ -64,12 +71,13 @@ int PLATFORM_InitTimerManager(void)
         (void)status;
         timer_manager_initialized = 1;
     }
-
+#endif /* gPlatformUseTimerManager_d */
     return 0;
 }
 #else
 int PLATFORM_InitTimerManager(void)
 {
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
     /*Initialize timer manager*/
     timer_config_t timerConfig;
     timer_status_t status;
@@ -91,7 +99,7 @@ int PLATFORM_InitTimerManager(void)
         (void)status;
         timer_manager_initialized = 1;
     }
-
+#endif /* gPlatformUseTimerManager_d */
     return 0;
 }
 #endif /*TIMER_PORT_TYPE_CTIMER*/
@@ -101,7 +109,6 @@ uint64_t PLATFORM_GetTimeStamp(void)
 #ifdef TIMER_PORT_TYPE_CTIMER
     return (uint64_t)(CTIMER_GetTimerCountValue(SOC_CTIMER_BASE) / CLOCK_GetCTimerClkFreq(0));
 #else
-
     return (uint64_t)(OSTIMER_GetCurrentTimerValue(SOC_OSTIMER_BASE) / CLOCK_GetOSTimerClkFreq());
 #endif /* TIMER_PORT_TYPE_CTIMER */
 }

@@ -22,11 +22,14 @@
 #include "fsl_spc.h"
 #endif
 
-#include "fsl_component_timer_manager.h"
 #include "fsl_os_abstraction.h"
 #include "fsl_adapter_rpmsg.h"
 
 #include "rpmsg_platform.h"
+
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
+#include "fsl_component_timer_manager.h"
+#endif
 
 #if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
 #include "HWParameter.h"
@@ -150,7 +153,9 @@ typedef struct
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
 
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
 static volatile int timer_manager_initialized = 0;
+#endif
 
 static int nbu_init    = 0;
 static int nbu_started = 0;
@@ -714,6 +719,7 @@ int PLATFORM_InitTimerManager(void)
 {
     int status = 0;
 
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
     if (timer_manager_initialized == 0)
     {
         timer_status_t tm_st;
@@ -746,16 +752,19 @@ int PLATFORM_InitTimerManager(void)
         /* Timer Manager already initialized */
         status = 1;
     }
+#endif
     return status;
 }
 
 void PLATFORM_DeinitTimerManager(void)
 {
+#if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
     if (timer_manager_initialized == 1)
     {
         TM_Deinit();
         timer_manager_initialized = 0;
     }
+#endif
 }
 
 uint64_t PLATFORM_GetTimeStamp(void)

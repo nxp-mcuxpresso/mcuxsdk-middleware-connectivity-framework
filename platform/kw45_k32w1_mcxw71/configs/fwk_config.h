@@ -267,6 +267,11 @@
 #define gPlatformSetWakeUpDelayAtInit_d 1
 #endif
 
+/* Enable TimerManager support */
+#ifndef gPlatformUseTimerManager_d
+#define gPlatformUseTimerManager_d 1
+#endif
+
 /*********************************************************************
  *        Configuration check
  *********************************************************************/
