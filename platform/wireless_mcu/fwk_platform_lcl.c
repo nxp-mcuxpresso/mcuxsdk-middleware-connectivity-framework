@@ -107,7 +107,11 @@
 #define gAppRfGpoSRC RFMC_GPO_COEX_3_0_LANT_3_0 /* hardware dependancy: LCL uses group RF_GPO[3:0] */
 #endif
 
-#define gAppRfGpoFEM RFMC_GPO_INVALID /* FEM uses RF_GPO[11..8] */
+#if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
+#define gAppRfGpoFEM RFMC_GPO_LANT_3_0_FEM_3_0 /* RF_GPO9 not available in RF_GPO[11..8] */
+#else
+#define gAppRfGpoFEM RFMC_GPO_INVALID          /* FEM uses RF_GPO[11..8] */
+#endif
 
 /* Total size of COEX config including several XCVR structures which could be changed */
 #if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
@@ -247,6 +251,9 @@ const uint8_t default_FEM_config[FEM_CONFIG_LEN] = {
 /* variables to detect conflict between Localisation, Coexistence and FEM */
 static rfmcGpoCoex_t rfmcGpoSRC = RFMC_GPO_INVALID; /* the current RFMC_GPO value */
 static uint8_t       rfmcGpoOBE = 0U;               /* the current COEXT_RFGPO_OBE value */
+static uint8_t       lantActive = 0U;               /* if Localization is active */
+static uint8_t       coexActive = 0U;               /* if Coexistence is active */
+static uint8_t       femActive  = 0U;               /* if FEM is active */
 
 /*******************************************************************************
  *  private functions
@@ -435,8 +442,10 @@ static uint8_t PLATFORM_COEX_pin_init(rfmcGpoCoex_t       rfmcGpoCoex,
     else if ((rfmcGpoCoex == RFMC_GPO_FEM_3_0_COEX_3_0) || (rfmcGpoCoex == RFMC_GPO_LANT_3_0_COEX_3_0))
     {
         /* detect collision with Localization, FEM */
-        if (rfmcGpoSRC == RFMC_GPO_COEX_3_0_FEM_3_0 || rfmcGpoSRC == RFMC_GPO_LANT_3_0_FEM_3_0 ||
-            rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0 || rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0)
+        if (((lantActive == 1U) &&
+             ((rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0) || (rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0))) ||
+            ((femActive == 1U) &&
+             ((rfmcGpoSRC == RFMC_GPO_COEX_3_0_FEM_3_0) || (rfmcGpoSRC == RFMC_GPO_LANT_3_0_FEM_3_0))))
         {
             return 1U;
         }
@@ -472,8 +481,10 @@ static uint8_t PLATFORM_COEX_pin_init(rfmcGpoCoex_t       rfmcGpoCoex,
     else if ((rfmcGpoCoex == RFMC_GPO_COEX_3_0_FEM_3_0) || (rfmcGpoCoex == RFMC_GPO_COEX_3_0_LANT_3_0))
     {
         /* detect collision with Localization, FEM */
-        if (rfmcGpoSRC == RFMC_GPO_FEM_3_0_COEX_3_0 || rfmcGpoSRC == RFMC_GPO_LANT_3_0_FEM_3_0 ||
-            rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0 || rfmcGpoSRC == RFMC_GPO_LANT_3_0_COEX_3_0)
+        if (((lantActive == 1U) &&
+             ((rfmcGpoSRC == RFMC_GPO_LANT_3_0_COEX_3_0) || (rfmcGpoSRC == RFMC_GPO_LANT_3_0_FEM_3_0))) ||
+            ((femActive == 1U) &&
+             ((rfmcGpoSRC == RFMC_GPO_FEM_3_0_COEX_3_0) || (rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0))))
         {
             return 1U;
         }
@@ -578,8 +589,10 @@ static uint8_t PLATFORM_FEM_pin_init(rfmcGpoCoex_t rfgpo_sel, uint8_t ant_sel_pi
         if (rfgpo_sel == RFMC_GPO_COEX_3_0_FEM_3_0 || rfgpo_sel == RFMC_GPO_LANT_3_0_FEM_3_0)
         {
             /* detect collision with Localization, Coex */
-            if (rfmcGpoSRC == RFMC_GPO_FEM_3_0_COEX_3_0 || rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0 ||
-                rfmcGpoSRC == RFMC_GPO_LANT_3_0_COEX_3_0 || rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0)
+            if (((lantActive == 1U) &&
+                 ((rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0) || (rfmcGpoSRC == RFMC_GPO_FEM_3_0_LANT_3_0))) ||
+                ((coexActive == 1U) &&
+                 ((rfmcGpoSRC == RFMC_GPO_LANT_3_0_COEX_3_0) || (rfmcGpoSRC == RFMC_GPO_FEM_3_0_COEX_3_0))))
             {
                 return 1U;
             }
@@ -608,8 +621,10 @@ static uint8_t PLATFORM_FEM_pin_init(rfmcGpoCoex_t rfgpo_sel, uint8_t ant_sel_pi
         else if (rfgpo_sel == RFMC_GPO_FEM_3_0_COEX_3_0 || rfgpo_sel == RFMC_GPO_FEM_3_0_LANT_3_0)
         {
             /* detect collision with Localization, Coex */
-            if (rfmcGpoSRC == RFMC_GPO_COEX_3_0_FEM_3_0 || rfmcGpoSRC == RFMC_GPO_LANT_3_0_FEM_3_0 ||
-                rfmcGpoSRC == RFMC_GPO_LANT_3_0_COEX_3_0 || rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0)
+            if (((lantActive == 1U) &&
+                 ((rfmcGpoSRC == RFMC_GPO_LANT_3_0_COEX_3_0) || (rfmcGpoSRC == RFMC_GPO_LANT_3_0_FEM_3_0))) ||
+                ((coexActive == 1U) &&
+                 ((rfmcGpoSRC == RFMC_GPO_COEX_3_0_LANT_3_0) || (rfmcGpoSRC == RFMC_GPO_COEX_3_0_FEM_3_0))))
             {
                 return 1U;
             }
@@ -786,6 +801,7 @@ uint8_t PLATFORM_InitLcl(void)
     PLATFORM_InitLclDtest();
 #endif
 
+    lantActive = 1U;
     return status;
 }
 
@@ -939,7 +955,10 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
 #endif
     }
 
+    /* Release wake up to NBU */
     PLATFORM_RemoteActiveRel();
+
+    coexActive = 1U;
     return status;
 }
 
@@ -968,6 +987,9 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
         config_ptr = default_FEM_config;
     }
     assert(config_ptr[2] == 1); /* tx_rx_switch_pins_enable must enabled */
+
+    /* Wakeup XCVR */
+    PLATFORM_RemoteActiveReq();
 
     /* convert config data to xcvr_pa_fem_config_t */
     pa_fem_settings.op_mode                  = (XCVR_ANTX_MODE_T)config_ptr[0];
@@ -1004,5 +1026,10 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
     {
         status = 1U;
     }
+
+    /* Release wake up to NBU */
+    PLATFORM_RemoteActiveRel();
+
+    femActive = 1U;
     return status;
 }
