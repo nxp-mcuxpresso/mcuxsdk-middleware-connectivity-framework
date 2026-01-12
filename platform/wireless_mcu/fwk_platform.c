@@ -7,8 +7,11 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#ifndef __ZEPHYR__
 /* Get some BOARD_***_DEFAULT macro values if defined in board.h for 32kHz settings */
 #include "board_platform.h"
+#endif
+
 #include "fwk_platform_definitions.h"
 #include "fwk_platform.h"
 #include "fwk_config.h"
