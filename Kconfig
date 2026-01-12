@@ -14,8 +14,6 @@ menu "Service Modules"
 
 rsource "services/FactoryDataProvider/Kconfig"
 rsource "services/FunctionLib/Kconfig"
-rsource "services/PDM/Kconfig"
-rsource "services/PDUM/Kconfig"
 rsource "services/ModuleInfo/Kconfig"
 rsource "services/MWSCoexistence/Kconfig"
 rsource "services/NVM/Kconfig"
