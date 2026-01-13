@@ -668,7 +668,7 @@ void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput, uint32_t inputLen, const 
 #if defined(ELE_FEATURE_MAC_MULTIPART) && (ELE_FEATURE_MAC_MULTIPART != 0)
     /* ELE supports partial operations with CMAC update only on KW47 not on KW45 */
     status_t           result;
-    cmac_aes_context_t cmac_ctx; /* structure is 64 bytes */
+    cmac_aes_context_t cmac_ctx = {0}; /* structure is 64 bytes */
 
     do
     {

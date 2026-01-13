@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                             Copyright 2024 NXP                             */
+/*                          Copyright 2024, 2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -9,6 +9,7 @@
 
 #include "fwk_platform_intflash.h"
 #include "fsl_adapter_flash.h"
+#include "cmsis_compiler.h"
 
 #include <setjmp.h>
 
@@ -90,7 +91,7 @@ extern uint32_t Image$$NVM_region$$Length;
 
 #define NVM_LENGTH ((uint32_t)((uint8_t *)NV_STORAGE_END_ADDRESS) - (uint32_t)((uint8_t *)NV_STORAGE_START_ADDRESS))
 
-void FaultRecovery(void);
+__NO_RETURN void FaultRecovery(void);
 
 __attribute__((section(".after_vectors"))) void BusFault_Handler(void)
 {
@@ -98,7 +99,7 @@ __attribute__((section(".after_vectors"))) void BusFault_Handler(void)
     FaultRecovery();
 }
 
-void FaultRecovery(void)
+__NO_RETURN void FaultRecovery(void)
 {
     /* Detect whether Bus Fault is caused by ECC fault */
     if (HAL_FlashEccStatusRaised())

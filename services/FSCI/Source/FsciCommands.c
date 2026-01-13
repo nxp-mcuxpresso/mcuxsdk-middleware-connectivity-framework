@@ -585,7 +585,7 @@ bool_t FSCI_ReadMemoryBlock(clientPacket_t *pData, uint32_t fsciInterface)
 #else  /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
     FSCI_Error((uint8_t)gFsciError_c, fsciInterface);
     (void)MEM_BufferFree(pData);
-    status                       = FALSE;
+    status = FALSE;
 #endif /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
     return status;
 }
@@ -620,7 +620,6 @@ bool_t FSCI_Ping(clientPacket_t *pData, uint32_t fsciInterface)
  ********************************************************************************** */
 bool_t FSCI_MsgResetCPUReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
 {
-    bool_t status = FALSE;
 #if gFSCI_IncludeMacCommands_c && gFsciHost_802_15_4_c
     /* Get Host FSCI interface for MAC instance and forward packet */
     clientPacket_t *pFsciPacket = MEM_BufferAlloc(sizeof(clientPacketHdr_t) + 9);
@@ -630,7 +629,6 @@ bool_t FSCI_MsgResetCPUReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
     if (NULL == pFsciPacket)
     {
         FSCI_Error(gFsciOutOfMessages_c, fsciInterface);
-        status = FALSE;
     }
     else
     {
@@ -658,11 +656,15 @@ bool_t FSCI_MsgResetCPUReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
     OSA_DisableIRQGlobal();
     PLATFORM_Delay(500U);
     HAL_ResetMCU();
-#endif
-#endif
 
+    /* Statement unreachable, device should be reset */
+    return FALSE;
+#endif
+#else
+    /* The device is not reset and can return */
     (void)MEM_BufferFree(pData);
-    return status;
+    return FALSE;
+#endif
 }
 
 /*! *********************************************************************************

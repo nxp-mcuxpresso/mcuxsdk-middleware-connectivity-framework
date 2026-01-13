@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                          Copyright 2023, 2025 NXP                          */
+/*                        Copyright 2023, 2025-2026 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -21,6 +21,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#include "cmsis_compiler.h"
 #include "fwk_config.h"
 
 /* -------------------------------------------------------------------------- */
@@ -43,7 +44,7 @@
  * \note If debugger is attached, the lowpower entry will be denied and the
  *       reset will fail.
  */
-void PLATFORM_ForceDeepPowerDownReset(void);
+__NO_RETURN void PLATFORM_ForceDeepPowerDownReset(void);
 
 /*!
  * \brief  Trigger a deep power down reset if last reset was a pin reset.
@@ -57,7 +58,7 @@ void PLATFORM_CheckAndForceDeepPowerDownResetOnResetPin(void);
  * \brief  Shutdown radio then trigger an LVD reset
  *
  */
-void PLATFORM_ForceLvdReset(void);
+__NO_RETURN void PLATFORM_ForceLvdReset(void);
 
 /*!
  * \brief  Trigger an LVD reset if last reset was a pin reset.(see PLATFORM_ForceLvdReset)
@@ -70,7 +71,7 @@ void PLATFORM_ForceLvdResetFromResetPin(void);
  * \brief  Trigger a plain system reset.
  *
  */
-void PLATFORM_NvicSystemReset(void);
+__NO_RETURN void PLATFORM_NvicSystemReset(void);
 
 /*!
  * \brief  Implement a custom reset based on gPlatResetMethod_c definition
@@ -79,7 +80,7 @@ void PLATFORM_NvicSystemReset(void);
  *       gUseResetByDeepPowerDown_c force a Deep Power Down reset
  *
  */
-void PLATFORM_ResetCpu(void);
+__NO_RETURN void PLATFORM_ResetCpu(void);
 
 /*!
  * @}  end of FWK_Platform_Reset addtogroup

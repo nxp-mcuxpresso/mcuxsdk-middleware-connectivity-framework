@@ -154,7 +154,7 @@ static void PLATFORM_LaunchLpTmrWake(uint32_t nb_32kticks_to_reset)
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
 
-void PLATFORM_ForceDeepPowerDownReset(void)
+__NO_RETURN void PLATFORM_ForceDeepPowerDownReset(void)
 {
     (void)__set_BASEPRI(0);
     PLATFORM_DisableAllIrqs();
@@ -193,7 +193,7 @@ void PLATFORM_CheckAndForceDeepPowerDownResetOnResetPin(void)
 #endif /* (gPlatResetMethod_c == gUseResetByDeepPowerDown_c) */
 
 #if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByLvdForce_c)
-void PLATFORM_ForceLvdReset(void)
+__NO_RETURN void PLATFORM_ForceLvdReset(void)
 {
     (void)__set_BASEPRI(0);
     PLATFORM_DisableAllIrqs();
@@ -224,7 +224,7 @@ void PLATFORM_ForceLvdResetFromResetPin(void)
 }
 #endif
 
-void PLATFORM_NvicSystemReset(void)
+__NO_RETURN void PLATFORM_NvicSystemReset(void)
 {
     /* Disable IRQ using PRIMASK */
     __disable_irq();
@@ -233,7 +233,7 @@ void PLATFORM_NvicSystemReset(void)
     NVIC_SystemReset();
 }
 
-void PLATFORM_ResetCpu(void)
+__NO_RETURN void PLATFORM_ResetCpu(void)
 {
 #if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByLvdForce_c)
     PLATFORM_ForceLvdReset();

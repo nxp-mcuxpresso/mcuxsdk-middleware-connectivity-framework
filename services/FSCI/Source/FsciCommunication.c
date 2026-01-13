@@ -67,9 +67,16 @@
 * Private prototypes
 *************************************************************************************
 ************************************************************************************/
+
+// clang-format off
 #if defined(gFsciUseDedicatedTask_c) && (gFsciUseDedicatedTask_c == 1)
+#if USE_RTOS
+static __NO_RETURN void FSCI_Task(osa_task_param_t argument);
+#else
 static void FSCI_Task(osa_task_param_t argument);
 #endif
+#endif
+// clang-format on
 
 fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint8_t *pVIntf);
 
@@ -337,6 +344,8 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
 }
 
 #endif /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
+
+// clang-format off
 /*! *********************************************************************************
  * \brief   The main task of the FSCI module, maily used to process a packet
  *          after it has been fully received
@@ -345,7 +354,11 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
  *
  ********************************************************************************** */
 #if defined(gFsciUseDedicatedTask_c) && (gFsciUseDedicatedTask_c == 1)
+#if USE_RTOS
+static __NO_RETURN void FSCI_Task(osa_task_param_t argument)
+#else
 static void FSCI_Task(osa_task_param_t argument)
+#endif
 {
     osa_event_flags_t mFsciTaskEventFlags = 0;
 
@@ -394,6 +407,7 @@ static void FSCI_Task(osa_task_param_t argument)
     }
 }
 #endif /* gFsciUseDedicatedTask_c */
+// clang-format on
 
 /*! *********************************************************************************
  * \brief  Receives data from the serial interface and checks to see if we have a valid packet.
