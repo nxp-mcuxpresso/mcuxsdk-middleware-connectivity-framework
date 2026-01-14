@@ -31,7 +31,8 @@ The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) 
   - NBU fault detection
   - Debug structure extraction
   - System error callback management
-  - NBU warning detection and notification
+  - NBU warning detection and notification with ID tracking
+  - HCI logging callback registration
 
 ### NBU Interface
 
@@ -40,6 +41,7 @@ The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) 
 - **Description**: NBU-side implementation for debug data collection
 - **Responsibilities**:
   - Debug structure region definition
+  - Warning notification support
 
 ### Platform Support
 
@@ -66,6 +68,7 @@ The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) 
 ### Warning Detection
 - NBU warning status monitoring
 - Warning count reporting
+- Circular buffer tracking of last 7 warnings
 
 ### Assert Detection and Analysis
 - Fatal assert detection from NBU
@@ -75,6 +78,11 @@ The NBU Debug module provides debugging capabilities for NBU (Narrow Band Unit) 
 - Debug structure transmission over HCI vendor events
 - RAM log transmission capability
 - Configurable event generation
+
+### HCI Logging
+- HCI packet logging callback support
+- Captures both TX and RX HCI packets
+- Platform-level integration
 
 ### Debug Information Extraction
 - Complete register state capture
@@ -107,12 +115,20 @@ When a fatal assert occurs on the NBU:
 - **Magic Pattern**: A special exception ID (0x00A55E27) identifies assert conditions
 - **Context Preservation**: Assert information shares memory space with register dump to optimize memory usage
 
+### Warning Context
+When warnings occur on the NBU:
+- **Warning ID**: Each warning has a unique identifier for root cause analysis
+- **Circular Buffer**: Last 7 warnings are tracked in a circular buffer
+- **Warning Index**: Current position in the circular buffer is maintained
+
 ## API Overview
 
 ### Main Functions
 
 ```c
 // Check if NBU fault, assert, or warning condition has occurred
+// Note: Not thread-safe, must be called from a single context only (e.g., IDLE task)
+// Prevents duplicate notifications - each condition reported only once
 void NBUDBG_StateCheck(void);
 
 // Register NBU system debug callback - Called upon NBUDBG_StateCheck if fault/assert/warning is detected
@@ -123,6 +139,10 @@ int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
 
 // Configure HCI vendor event transmission for debug information
 void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask);
+
+// Register HCI logging callback for packet monitoring
+// The callback will be invoked for all HCI packets (TX and RX)
+void NBUDBG_RegisterHciLogCallback(platform_hci_log_cb_t cb);
 ```
 
 ## Usage Examples
@@ -163,6 +183,19 @@ static void BOARD_NbuDebugNotifyCb(const nbu_dbg_context_t *nbu_event)
         {
             PRINTF("!! Host Debug version 0x%04X != NBU debug version 0x%04X !!\n", (uint16_t)NBUDBG_VERSION, debug_info.version);
             PRINTF("!! The following analysis may be incorrect !!\n");
+        }
+
+        if (nbu_event->nbu_warning_count > 0U)
+        {
+            PRINTF("=== Warning Circular Table ===\n");
+            for(uint8_t i = 0U; i < NBUDBG_MAX_NB_WARNINGS; i++)
+            {
+                if (i == debug_info.nbu_dbg_info.warning_index)
+                {
+                    PRINTF("->");
+                }
+                PRINTF("%u\n", debug_info.nbu_dbg_info.warnings[i]);
+            }
         }
 
         if ((nbu_event->nbu_error_count > 0U))
@@ -207,6 +240,9 @@ int BOARD_DbgNbuInit(void)
     NBUDBG_ConfigureHciVendorEvent(NBUDBG_HCI_EVENT_DEBUG_STRUCT);
     // Or enable both debug structure and RAM log transmission:
     // NBUDBG_ConfigureHciVendorEvent(NBUDBG_HCI_EVENT_ALL);
+
+    // Optional: Register HCI logging callback
+    // NBUDBG_RegisterHciLogCallback(BOARD_HciLogCallback);
     return 0;
 }
 
