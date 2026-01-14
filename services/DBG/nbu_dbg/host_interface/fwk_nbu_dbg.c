@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -25,7 +25,7 @@
 /* HCI packet structure constants */
 #define HCI_VENDOR_SPECIFIC_EVENT_CODE (0xFFU)
 
-#define HCI_VENDOR_SUBEVENT_FATAL_ERROR   (0xF1U)
+#define HCI_VENDOR_SUBEVENT_DBG           (0xF1U)
 #define HCI_MAX_VENDOR_EVENT_PAYLOAD_SIZE (255U)
 #define HCI_EVENT_BUFFER_SIZE             (HCI_MAX_VENDOR_EVENT_PAYLOAD_SIZE + 2U) /* event code, length, payload */
 
@@ -94,7 +94,7 @@ static int NBUDBG_SendHciEvent(uint8_t buffer_id, const uint8_t *data, uint32_t 
 
         /* Initialize HCI packet header fields that remain constant */
         nbudbg_hci_vndr_evt[HCI_EVENT_CODE_OFFSET]               = HCI_VENDOR_SPECIFIC_EVENT_CODE;
-        nbudbg_hci_vndr_evt[HCI_VENDOR_SUBEVENT_CODE_OFFSET]     = HCI_VENDOR_SUBEVENT_FATAL_ERROR;
+        nbudbg_hci_vndr_evt[HCI_VENDOR_SUBEVENT_CODE_OFFSET]     = HCI_VENDOR_SUBEVENT_DBG;
         nbudbg_hci_vndr_evt[HCI_VENDOR_BUFFER_ID_OFFSET]         = buffer_id;
         nbudbg_hci_vndr_evt[HCI_VENDOR_LAST_SEGMENT_FLAG_OFFSET] = HCI_VENDOR_SEGMENT_NOT_LAST;
 
@@ -156,6 +156,11 @@ void NBUDBG_StateCheck(void)
         /* Stall detected - notify once */
         nbu_event.nbu_is_halted = 1U;
         nbu_halted_notified     = true;
+        if ((nbu_dbg_hci_vendor_event_config & NBUDBG_HCI_EVENT_STALL_EVENT) != 0U)
+        {
+            /* Send stall information as HCI vendor event */
+            (void)NBUDBG_SendHciEvent(NBUDBG_BUFFER_ID_STALL_EVENT, (uint8_t *)&nbu_halted_notified, 1U);
+        }
     }
 
     /* Check if any new debug condition is detected and notify via callback */

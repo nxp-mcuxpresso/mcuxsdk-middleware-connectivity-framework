@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -20,12 +20,14 @@
 /* Debug buffer identifiers */
 #define NBUDBG_BUFFER_ID_DEBUG_STRUCT (0x00U)
 #define NBUDBG_BUFFER_ID_RAM_LOG      (0x01U) /* Not supported yet */
+#define NBUDBG_BUFFER_ID_STALL_EVENT  (0x02U)
 
 /* HCI vendor event configuration bitmask */
 #define NBUDBG_HCI_EVENT_NONE         (0U)
 #define NBUDBG_HCI_EVENT_DEBUG_STRUCT (1U << 0U)
 #define NBUDBG_HCI_EVENT_RAM_LOG      (1U << 1U)
-#define NBUDBG_HCI_EVENT_ALL          (NBUDBG_HCI_EVENT_DEBUG_STRUCT | NBUDBG_HCI_EVENT_RAM_LOG)
+#define NBUDBG_HCI_EVENT_STALL_EVENT  (1U << 2U)
+#define NBUDBG_HCI_EVENT_ALL          (NBUDBG_HCI_EVENT_DEBUG_STRUCT | NBUDBG_HCI_EVENT_RAM_LOG | NBUDBG_HCI_EVENT_STALL_EVENT)
 
 /* -------------------------------------------------------------------------- */
 /*                           Public type definitions                          */
