@@ -81,7 +81,7 @@ void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb);
  *
  * \return int 0 if success, negative value if error
  */
-int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
+int NBUDBG_StructDump(nbu_debug_struct_t *debug_info);
 
 /*!
  * \brief Configure HCI vendor event transmission for debug information

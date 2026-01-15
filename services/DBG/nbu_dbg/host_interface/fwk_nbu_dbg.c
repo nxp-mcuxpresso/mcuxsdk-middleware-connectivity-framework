@@ -82,7 +82,7 @@ static int NBUDBG_SendHciEvent(uint8_t buffer_id, const uint8_t *data, uint32_t 
 {
     uint32_t bytes_to_be_sent = length;
     int      ret              = 0;
-
+    uint8_t  payload_len      = 0U;
     do
     {
         /* Validate input parameter */
@@ -101,8 +101,16 @@ static int NBUDBG_SendHciEvent(uint8_t buffer_id, const uint8_t *data, uint32_t 
         /* Fragment and send debug data */
         while (bytes_to_be_sent > 0U)
         {
-            /* Calculate payload size for this segment */
-            uint8_t payload_len = MIN(HCI_MAX_VENDOR_DATA_SIZE, bytes_to_be_sent);
+            /* Use explicit comparison instead of MIN macro for MISRA compliance */
+            if (bytes_to_be_sent > HCI_MAX_VENDOR_DATA_SIZE)
+            {
+                payload_len = (uint8_t)HCI_MAX_VENDOR_DATA_SIZE;
+            }
+            else
+            {
+                /* Safe cast: we know bytes_to_be_sent <= HCI_MAX_VENDOR_DATA_SIZE (252) which fits in uint8_t */
+                payload_len = (uint8_t)bytes_to_be_sent;
+            }
 
             /* Update packet header for this segment */
             nbudbg_hci_vndr_evt[HCI_PARAMETER_LENGTH_OFFSET] = payload_len + HCI_MAX_VENDOR_PAYLOAD_HEADER_SIZE;
@@ -117,7 +125,7 @@ static int NBUDBG_SendHciEvent(uint8_t buffer_id, const uint8_t *data, uint32_t 
             (void)memcpy(&nbudbg_hci_vndr_evt[HCI_VENDOR_DATA_OFFSET], data, payload_len);
 
             /* Send HCI vendor event */
-            (void)PLATFORM_SendHciVendorEvent(nbudbg_hci_vndr_evt, payload_len + HCI_VENDOR_DATA_OFFSET);
+            (void)PLATFORM_SendHciVendorEvent(nbudbg_hci_vndr_evt, (uint32_t)payload_len + HCI_VENDOR_DATA_OFFSET);
 
             /* Update for next segment */
             bytes_to_be_sent -= payload_len;
@@ -197,10 +205,21 @@ int NBUDBG_StructDump(nbu_debug_struct_t *debug_info)
     if ((nbu_dbg_hci_vendor_event_config & NBUDBG_HCI_EVENT_RAM_LOG) != 0U)
     {
         ram_log_ptr = dbg_ext_logging_start;
-        ram_log_len = (uint32_t)(dbg_ext_logging_end - dbg_ext_logging_start + 1U);
+        if ((uint32_t)dbg_ext_logging_end >= (uint32_t)dbg_ext_logging_start)
+        {
+            ram_log_len = (uint32_t)dbg_ext_logging_end - (uint32_t)dbg_ext_logging_start;
+            if (ram_log_len < UINT32_MAX)
+            {
+                ram_log_len++;
+            }
+            else
+            {
+                ram_log_len = UINT32_MAX;
+            }
 
-        /* Dump RAMLOG buffer as HCI vendor event */
-        (void)NBUDBG_SendHciEvent(NBUDBG_BUFFER_ID_RAM_LOG, ram_log_ptr, ram_log_len);
+            /* Dump RAMLOG buffer as HCI vendor event */
+            (void)NBUDBG_SendHciEvent(NBUDBG_BUFFER_ID_RAM_LOG, ram_log_ptr, ram_log_len);
+        }
     }
 
     if (debug_info != NULL)

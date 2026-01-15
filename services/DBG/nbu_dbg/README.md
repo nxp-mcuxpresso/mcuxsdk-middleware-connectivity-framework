@@ -135,7 +135,7 @@ void NBUDBG_StateCheck(void);
 void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb);
 
 // Extract debug information from NBU and optionally send via HCI vendor events
-int NBUDBG_StructDump(nbu_debug_struct_t *debug_struct);
+int NBUDBG_StructDump(nbu_debug_struct_t *debug_info);
 
 // Configure HCI vendor event transmission for debug information
 void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask);
@@ -201,14 +201,14 @@ static void BOARD_NbuDebugNotifyCb(const nbu_dbg_context_t *nbu_event)
         if ((nbu_event->nbu_error_count > 0U))
         {
             nbu_dbg_info = &debug_info.nbu_dbg_info;
-            regs = &debug_info.nbu_dbg_info.reg_info;
+            regs = &debug_info.nbu_dbg_info.u.reg_info;
             PRINTF("\n=== NBU Fault/Assert Analysis ===\n\n");
             if (nbu_dbg_info->exception_id == NBUDBG_EXCEPTION_ID_FOR_ASSERT_MAGIC)
             {
                 /* Assert on NBU side */
                 PRINTF("NBU Assert Detected\n");
-                PRINTF("  Line: %u\n", nbu_dbg_info->assert_info.line);
-                PRINTF("  File name: %s\n", nbu_dbg_info->assert_info.file_name);
+                PRINTF("  Line: %u\n", nbu_dbg_info->u.assert_info.line);
+                PRINTF("  File name: %s\n", nbu_dbg_info->u.assert_info.file_name);
             }
             else
             {
