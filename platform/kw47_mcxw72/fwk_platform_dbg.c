@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2025 NXP                               */
+/*                           Copyright 2025-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -39,7 +39,7 @@
 
 bool PLATFORM_IsNbuFaultSet(void)
 {
-    return (RFMC->RF2P4GHZ_RADIO2HOST & NBU2HOST_ERROR_INDICATION) != 0;
+    return (RFMC->RF2P4GHZ_RADIO2HOST & NBU2HOST_ERROR_INDICATION) != 0U;
 }
 
 /*!
@@ -84,6 +84,11 @@ bool PLATFORM_IsNbuWarningSet(uint8_t *pCount)
                 new_warnings = (NBU2HOST_WARNING_MAX - last_register_count) + current_warning_count;
             }
             hasNewWarning = true;
+        }
+        else
+        {
+            /* Warning count unchanged - no new warnings to report */
+            /* new_warnings remains 0, hasNewWarning remains false */
         }
 
         last_register_count = current_warning_count;
