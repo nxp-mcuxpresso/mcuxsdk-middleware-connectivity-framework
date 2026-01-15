@@ -18,6 +18,7 @@
 #include "FunctionLib.h"
 #include "OtaPrivate.h"
 #include "OtaSupport.h"
+#include "fwk_hal_macros.h"
 
 /******************************************************************************
 *******************************************************************************
@@ -54,16 +55,16 @@
 * Private Prototypes
 *******************************************************************************
 ******************************************************************************/
-static ota_flash_status_t ExternalFlash_Init(void);
-static ota_flash_status_t ExternalFlash_PartitionErase(void);
-static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size);
-static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf);
+STATIC ota_flash_status_t ExternalFlash_Init(void);
+STATIC ota_flash_status_t ExternalFlash_PartitionErase(void);
+STATIC ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size);
+STATIC ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf);
 static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void);
-static ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf);
-static uint8_t            ExternalFlash_isBusy(void);
-static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking);
+STATIC ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf);
+STATIC uint8_t            ExternalFlash_isBusy(void);
+STATIC ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking);
 #if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
-static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length);
+STATIC ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length);
 #endif
 /******************************************************************************
 *******************************************************************************
@@ -127,7 +128,7 @@ static const OtaFlashOps_t ext_flash_ops = {
  * \return   true range belongs to OTA partition false otherwise.
  *
  ***********************************************************************************/
-static bool OtaCheckRangeBelongsToPartition(uint32_t offset, uint32_t range_sz)
+STATIC bool OtaCheckRangeBelongsToPartition(uint32_t offset, uint32_t range_sz)
 {
     return ((offset + range_sz) <= ota_ext_partition->size);
 }
@@ -138,7 +139,7 @@ static bool OtaCheckRangeBelongsToPartition(uint32_t offset, uint32_t range_sz)
  * \return    kStatus_HAL_Flash_Success if successful, other values in case of error
  *
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_Init(void)
+STATIC ota_flash_status_t ExternalFlash_Init(void)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
 
@@ -175,7 +176,7 @@ static ota_flash_status_t ExternalFlash_Init(void)
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  *
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_PartitionErase(void)
+STATIC ota_flash_status_t ExternalFlash_PartitionErase(void)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
     uint32_t           i;
@@ -208,7 +209,7 @@ static ota_flash_status_t ExternalFlash_PartitionErase(void)
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  *
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size)
+STATIC ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size)
 {
     ota_flash_status_t status;
     uint32_t           end_offs = offs + size;
@@ -280,7 +281,7 @@ static ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size)
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf)
+STATIC ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
 
@@ -359,7 +360,7 @@ static ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
+STATIC ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
 {
     ota_flash_status_t status;
     status_t           st;
@@ -415,7 +416,7 @@ static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf)
+STATIC ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Error;
     status_t           st;
@@ -451,7 +452,7 @@ static ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t of
  *
  * \return    1 if busy, 0 otherwise
  ***********************************************************************************/
-static uint8_t ExternalFlash_isBusy(void)
+STATIC uint8_t ExternalFlash_isBusy(void)
 {
     status_t st;
     bool     isBusy = true;
@@ -474,7 +475,7 @@ static uint8_t ExternalFlash_isBusy(void)
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking)
+STATIC ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking)
 {
     ota_flash_status_t status;
     uint32_t           remain_sz  = *pSize;
@@ -527,7 +528,7 @@ static ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSi
  *
  * \return    kStatus_OTA_Flash_Success if identical, kStatus_OTA_Flash_Fail otherwise
  ***********************************************************************************/
-static ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length)
+STATIC ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
     uint8_t            read_page_buf[PLATFORM_EXTFLASH_PAGE_SIZE];
