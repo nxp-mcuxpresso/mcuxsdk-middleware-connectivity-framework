@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2025 NXP
- * All rights reserved.
+ * Copyright 2016-2017, 2025-2026 NXP
  *
  * \file
  *
@@ -220,7 +219,7 @@ void FSCI_LogToFile(char *fileName, uint8_t *pData, uint16_t dataSize, uint8_t m
     checksum ^= FSCI_computeChecksum(pData, dataSize);
 
     // Transmit data
-#if gFsciUseEscapeSeq_c
+#if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
     buffer = &pFsciData->raw[0];
     pFsciData->structured.header.len =
         (uint16_t)(sizeof(fileNameSize) + dataSize + gFsciTimestampSize_c + fileNameSize);
@@ -252,7 +251,7 @@ void FSCI_LogToFile(char *fileName, uint8_t *pData, uint16_t dataSize, uint8_t m
     buffer[size++] = gFSCI_EndMarker_c;
     (void)Serial_SyncWrite(gFsciSerialInterfaces[gFsciLoggingInterface_c], buffer, size);
 
-#else /* gFsciUseEscapeSeq_c */
+#else /* defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0) */
     pFsciData->structured.header.len = gFsciTimestampSize_c + sizeof(fileNameSize) + fileNameSize + dataSize;
     (void)Serial_SyncWrite(gFsciSerialInterfaces[gFsciLoggingInterface_c], pFsciData->raw,
                            sizeof(clientPacketHdr_t) + idx);

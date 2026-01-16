@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017,2024 NXP
- * All rights reserved.
+ * Copyright 2016-2017,2024,2026 NXP
  *
  * \file
  *
@@ -116,12 +115,14 @@ extern bool_t gFsciTxDisable;
 * Public prototypes
 *************************************************************************************
 ********************************************************************************** */
-void     FSCI_commInit(serial_handle_t *pSerCfg);
-void     FSCI_receivePacket(void *param);
-uint8_t  FSCI_GetVirtualInterface(uint32_t fsciInterface);
+void    FSCI_commInit(serial_handle_t *pSerCfg);
+void    FSCI_receivePacket(void *param);
+uint8_t FSCI_GetVirtualInterface(uint32_t fsciInterface);
+#if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
 uint32_t FSCI_encodeEscapeSeq(const uint8_t *pDataIn, uint32_t len, uint8_t *pDataOut);
 void     FSCI_decodeEscapeSeq(uint8_t *pData, uint32_t len);
-uint8_t  FSCI_computeChecksum(const void *pBuffer, uint16_t size);
+#endif
+uint8_t FSCI_computeChecksum(const void *pBuffer, uint16_t size);
 
 #if gFsciHostSupport_c
 void FSCI_HostSyncLock(uint32_t fsciInstance, opGroup_t OG, opCode_t OC);

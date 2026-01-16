@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2018, 2022-2025 NXP
- * All rights reserved.
+ * Copyright 2016-2018, 2022-2026 NXP
  *
  * \file
  *
@@ -511,7 +510,7 @@ bool_t FSCI_WriteMemoryBlock(clientPacket_t *pData, uint32_t fsciInterface)
         len = 0U;
     }
 
-    pData->structured.header.len = (uint16_t)sizeof(len);
+    pData->structured.header.len = (uint8_t)sizeof(len);
     pData->structured.payload[0] = (uint8_t)len;
 #else  /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
     FSCI_Error((uint8_t)gFsciError_c, fsciInterface);
@@ -536,7 +535,7 @@ bool_t FSCI_ReadMemoryBlock(clientPacket_t *pData, uint32_t fsciInterface)
     bool_t status = TRUE; /* Try to reuse the received buffer */
 #if !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0)
     clientPacket_t *pPkt;
-    uint16_t        len;
+    uint8_t         len;
     uint32_t       *addr;
 
     FLib_MemCpy(&addr, pData->structured.payload, sizeof(uint8_t *));
@@ -707,7 +706,7 @@ bool_t FSCI_MsgWriteExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInter
     {
         FSCI_Error(gFsciOutOfMessages_c, fsciInterface);
         pData->structured.payload[0] = gFsciOutOfMessages_c;
-        pData->structured.header.len = sizeof(clientPacketStatus_t);
+        pData->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
         return FALSE;
     }
     else
@@ -728,7 +727,7 @@ bool_t FSCI_MsgWriteExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInter
 #else
     pData->structured.payload[0] = (uint8_t)gFsciRequestIsDisabled_c;
 #endif /* gFSCI_IncludeMacCommands_c */
-    pData->structured.header.len = sizeof(clientPacketStatus_t);
+    pData->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
     return TRUE;
 }
 
@@ -781,7 +780,7 @@ bool_t FSCI_MsgReadExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInterf
         pPkt->structured.header.len = sizeof(clientPacketStatus_t) + sizeof(uint64_t);
 #else
         pPkt->structured.payload[0] = (uint8_t)gFsciRequestIsDisabled_c;
-        pPkt->structured.header.len = sizeof(clientPacketStatus_t);
+        pPkt->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
 #endif
 
         if (pPkt != pData)
@@ -815,7 +814,7 @@ bool_t FSCI_MsgReadExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInterf
 bool_t FSCI_GetLastLqiValue(clientPacket_t *pData, uint32_t fsciInterface)
 {
     pData->structured.payload[0] = PhyGetLastRxLqiValue();
-    pData->structured.header.len = sizeof(clientPacketStatus_t);
+    pData->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
     return TRUE;
 }
 #endif
@@ -980,7 +979,7 @@ bool_t FSCI_ReadUniqueId(clientPacket_t *pData, uint32_t fsciInterface)
         p       = pPkt->structured.payload;
         uid_len = 0U;
         PLATFORM_GetMCUUid(p, &uid_len);
-        pPkt->structured.header.len = (uint32_t)uid_len;
+        pPkt->structured.header.len = (uint8_t)uid_len;
 
         /* Check if the received buffer was reused. */
         if (pPkt != pData)
@@ -1013,7 +1012,7 @@ bool_t FSCI_ReadUniqueId(clientPacket_t *pData, uint32_t fsciInterface)
  ********************************************************************************** */
 bool_t FSCI_ReadMCUId(clientPacket_t *pData, uint32_t fsciInterface)
 {
-    pData->structured.header.len = sizeof(uint32_t);
+    pData->structured.header.len = (uint8_t)sizeof(uint32_t);
 #if (defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 0U))
     FLib_MemCpy(pData->structured.payload, (void const *)((uint32_t *)((uint32_t)&SIM->SDID)), sizeof(uint32_t));
 #else

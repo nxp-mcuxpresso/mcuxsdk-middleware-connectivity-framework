@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2022 NXP
- * All rights reserved.
+ * Copyright 2016-2022,2026 NXP
  *
  * \file
  *
@@ -126,7 +125,7 @@ bool_t FSCI_MsgNVSaveReqFunc(void *pData, uint32_t fsciInterface)
     uint16_t         dataSetElement      = 0;
     NVM_DataEntry_t *pNVM_DataTableEntry = NULL;
 
-    ((clientPacket_t *)pData)->structured.header.len = sizeof(clientPacketStatus_t);
+    ((clientPacket_t *)pData)->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
 
     dataSetIndex = ((clientPacket_t *)pData)->structured.payload[1];
     dataSetIndex <<= 8;
@@ -281,7 +280,7 @@ bool_t FSCI_MsgSetNVMonitoring(void *pData, uint32_t fsciInterface)
 #else
     nvmMonitorOn                                     = !!((clientPacket_t *)pData)->structured.payload[0];
     ((clientPacket_t *)pData)->structured.payload[0] = 0;
-    ((clientPacket_t *)pData)->structured.header.len = sizeof(clientPacketStatus_t);
+    ((clientPacket_t *)pData)->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
     return TRUE;
 #endif /* gNvStorageIncluded_d*/
 }
@@ -296,7 +295,7 @@ None
 ******************************************************************************/
 bool_t FSCI_MsgNVFormatReq(void *pData, uint32_t fsciInterface)
 {
-    ((clientPacket_t *)pData)->structured.header.len = sizeof(clientPacketStatus_t);
+    ((clientPacket_t *)pData)->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
     ((clientPacket_t *)pData)->structured.payload[0] = NvFormat();
     return TRUE;
 }
@@ -356,7 +355,7 @@ bool_t FSCI_MsgNVRestoreReq(void *pData, uint32_t fsciInterface)
         countInd++;
     }
 
-    ((clientPacket_t *)pData)->structured.header.len = sizeof(clientPacketStatus_t);
+    ((clientPacket_t *)pData)->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
     ((clientPacket_t *)pData)->structured.payload[0] = status;
     return TRUE;
 }

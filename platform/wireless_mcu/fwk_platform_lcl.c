@@ -1,5 +1,5 @@
 /*!
- * Copyright 2021, 2024-2025 NXP
+ * Copyright 2021, 2024-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -128,7 +128,7 @@
    Details: all output signals activated without inversion/muxing, TSM is source, high priority TX/RX,
             RF_ACTIVE aligned with RF_STATUS & RF_PRIO in RX but TX, RF_NOT_ALLOWED active HIGH on PTC7.
  */
-const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
+static const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
     /* wiring configuration */
     0x01U,                 /* uint8 rf_active_used;  When set to 1, RF_ACTIVE signal will be active */
     0x01U,                 /* rf_status_used;        When set to 1 RF_STATUS signal will be active */
@@ -212,7 +212,7 @@ const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
 /* Default FEM configuration which is xcvr_pa_fem_config_t + RF_GPO option */
 /* Remark: gAppRfGpoFEM = RFMC_GPO_INVALID is a valid parameter, see PLATFORM_FEM_pin_init() ! */
 
-const uint8_t default_FEM_config[FEM_CONFIG_LEN] = {
+static const uint8_t default_FEM_config[FEM_CONFIG_LEN] = {
     1U, /* dual mode  XCVR_ANTX_MODE_T op_mode;  operating mode for the PA/FEM interface */
     0U, /* Disabled   uint8_t ant_sel_pins_enable;  control whether ANT_A & ANT_B pads should be active
                       (0=Disabled, 1=Enabled) */
@@ -240,8 +240,9 @@ const uint8_t default_FEM_config[FEM_CONFIG_LEN] = {
                       high or low  (0=Active HIGH, 1=Active LOW) */
     0U, /* HIGH       XCVR_RX_TX_POLARITY_MODE_T rx_switch_pol_control;  control whether RX_SWITCH pad should be active
                       high or low  (0=Active HIGH, 1=Active LOW) */
-    gAppRfGpoFEM, /* RF_GPO[11:8]   uint8_t  control which RF_GPOs to use, [0,2]=RF_GPO[3:0], [1,3]=RF_GPO[7:4],
-                     6=RF_GPO[11:8], otherwise invalid */
+    (uint8_t)
+        gAppRfGpoFEM, /* RF_GPO[11:8]   uint8_t  control which RF_GPOs to use, [0,2]=RF_GPO[3:0], [1,3]=RF_GPO[7:4],
+                         6=RF_GPO[11:8], otherwise invalid */
 };
 
 /*******************************************************************************
@@ -465,11 +466,11 @@ static uint8_t PLATFORM_COEX_pin_init(rfmcGpoCoex_t       rfmcGpoCoex,
         }
         if (rf_prio_used)
         {
-            PORT_SetPinMux(PORTA, 20U, kPORT_MuxAlt6); /* RF_GPO 2 J1-7 RF_PRIO[0] */
+            PORT_SetPinMux(PORTA, 20U, kPORT_MuxAlt6);  /* RF_GPO 2 J1-7 RF_PRIO[0] */
         }
-        // PORT_SetPinMux(PORTA, 21U, kPORT_MuxAlt6);  /* RF_GPO 3 J1-8 RF_PRIO[1] useless */
+        /* PORT_SetPinMux(PORTA, 21U, kPORT_MuxAlt6);*/ /* RF_GPO 3 J1-8 RF_PRIO[1] useless */
 
-        rfmcGpoOBE |= prio_stat_active; /* set b2b1b0 to RFGPO_OBE */
+        rfmcGpoOBE |= prio_stat_active;                 /* set b2b1b0 to RFGPO_OBE */
 
         rfmcStatus = RFMC_SetRfGpoConfig(rfmcGpoCoex, rfmcGpoOBE);
 
@@ -578,9 +579,9 @@ static uint8_t PLATFORM_FEM_pin_init(rfmcGpoCoex_t rfgpo_sel, uint8_t ant_sel_pi
         PORT_SetPinMux(PORTA, 4U, kPORT_MuxAlt3);  /* RF_GPO 9  J4-4 RX_SWITCH */
         if (ant_sel_pins_enable == 1U)
         {
-            PORT_SetPinMux(PORTA, 21U, kPORT_MuxAlt9); /* RF_GPO 10 J1-8 ANT_B */
-            // PORT_SetPinMux(PORTA,  1U, kPORT_MuxAlt4); /* RF_GPO 10 J?-? ANT_B other option ? */
-            PORT_SetPinMux(PORTA, 0U, kPORT_MuxAlt4); /* RF_GPO 11 J?-? ANT_A */
+            PORT_SetPinMux(PORTA, 21U, kPORT_MuxAlt9);      /* RF_GPO 10 J1-8 ANT_B */
+            /* PORT_SetPinMux(PORTA,  1U, kPORT_MuxAlt4);*/ /* RF_GPO 10 J?-? ANT_B other option ? */
+            PORT_SetPinMux(PORTA, 0U, kPORT_MuxAlt4);       /* RF_GPO 11 J?-? ANT_A */
         }
         status = 0U;
     }
@@ -637,10 +638,10 @@ static uint8_t PLATFORM_FEM_pin_init(rfmcGpoCoex_t rfgpo_sel, uint8_t ant_sel_pi
             PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt4); /* RF_GPO 5 J4-2 RX_SWITCH */
             if (ant_sel_pins_enable == 1U)
             {
-                PORT_SetPinMux(PORTD, 3U, kPORT_MuxAlt4);  /* RF_GPO 6 J4-3 ANT_B */
-                PORT_SetPinMux(PORTA, 17U, kPORT_MuxAlt7); /* RF_GPO 7 J1-2 ANT_A */
-                // PORT_SetPinMux(PORTA, 21U, kPORT_MuxAlt7);  /* RF_GPO 7 J1-8 ANT_A other option ? */
-                rfmcGpoOBE |= BIT_7654; /* set b7b6b5b4 to RFGPO_OBE */
+                PORT_SetPinMux(PORTD, 3U, kPORT_MuxAlt4);        /* RF_GPO 6 J4-3 ANT_B */
+                PORT_SetPinMux(PORTA, 17U, kPORT_MuxAlt7);       /* RF_GPO 7 J1-2 ANT_A */
+                /* PORT_SetPinMux(PORTA, 21U, kPORT_MuxAlt7); */ /* RF_GPO 7 J1-8 ANT_A other option ? */
+                rfmcGpoOBE |= BIT_7654;                          /* set b7b6b5b4 to RFGPO_OBE */
             }
             else
             {
@@ -859,7 +860,7 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     signal_invert_cfg.rfpri_invert[1] = (bool)config_ptr[10];
 
     rf_not_allowed_cfg.rfna_pin_enable        = (coexRfNotAllowPin_t)config_ptr[11];
-    rf_not_allowed_cfg.link_layer_rfna_select = (coexRfNotAllowLL_t)config_ptr[12];
+    rf_not_allowed_cfg.link_layer_rfna_select = config_ptr[12];
 
     rfact_tsm_cfg.rf_act_extend     = config_ptr[13];
     rfact_tsm_cfg.rf_act_tx_advance = config_ptr[14];
@@ -888,7 +889,7 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
 
     if (xcvrCoexStatus == gXcvrCoexStatusSuccess)
     {
-        if (rf_not_allowed_cfg.link_layer_rfna_select == coexRfNotAllowLLBluetooth)
+        if (rf_not_allowed_cfg.link_layer_rfna_select == (uint8_t)coexRfNotAllowLLBluetooth)
         {
             xcvrCoexStatus = XCVR_COEX_RfNotAllowedInit(&rf_not_allowed_cfg);
         }
@@ -973,7 +974,7 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
     /* use the input configuration if provided and its length is correct, otherwise use the default */
     if (p_config != NULL)
     {
-        if (config_len == FEM_CONFIG_LEN)
+        if (config_len == (uint8_t)FEM_CONFIG_LEN)
         {
             config_ptr = p_config;
         }

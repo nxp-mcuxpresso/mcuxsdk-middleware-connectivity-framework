@@ -341,10 +341,11 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
     }
     else
 #elif defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d == 2)
-    if (FLib_MemCmpToVal((const void *)IFR_BLE_BD_ADDR, 0xFFU, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == false)
+    if (FLib_MemCmpToVal((const void *)(uint32_t *)IFR_BLE_BD_ADDR, 0xFFU, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == false)
     {
         /* Copy BLE BD address from dedicated IFR0 section */
-        FLib_MemCpy((void *)bleDeviceAddress, (const void *)IFR_BLE_BD_ADDR, PLATFORM_BLE_BD_ADDR_FULL_SIZE);
+        FLib_MemCpy((void *)bleDeviceAddress, (const void *)(uint32_t *)IFR_BLE_BD_ADDR,
+                    PLATFORM_BLE_BD_ADDR_FULL_SIZE);
     }
     else
 #endif

@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017,2020, 2025 NXP
- * All rights reserved.
+ * Copyright 2016-2017,2020, 2025-2026 NXP
  *
  * \file
  *
@@ -294,7 +293,7 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
 #endif    /* gFsciRxTimeout_c */
 
         } /* for */
-        if (i != gFsciMaxInterfaces_c)
+        if (i != (uint32_t)gFsciMaxInterfaces_c)
         {
             ret = kStatus_Fail;
             break;
@@ -460,7 +459,7 @@ void FSCI_receivePacket(void *param)
             {
                 pCommData->pPacketFromClient->raw[pCommData->bytesReceived++] = c;
 
-#if defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0)
+#if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
                 FSCI_decodeEscapeSeq(pCommData->pPacketFromClient->raw, pCommData->bytesReceived);
 #endif
 
@@ -527,7 +526,7 @@ void FSCI_receivePacket(void *param)
                             }
                         }
 #else
-                        mFsciSrcInterface = (uint32_t)param;
+                        mFsciSrcInterface = (uint32_t)(uint32_t *)param;
 #endif /* gFsciMaxVirtualInterfaces_c > 0*/
 
 #if defined gFsciTxAck_c && (gFsciTxAck_c != 0)
@@ -783,7 +782,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
 #endif
 
             index = 0;
-#if gFsciUseEscapeSeq_c
+#if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
             index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&header, sizeof(header), &buffer_ptr[index]);
             index += (uint16_t)FSCI_encodeEscapeSeq(pMsg, msgLen, &buffer_ptr[index]);
             /* Store the Checksum*/
@@ -797,7 +796,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
 #endif /* gFsciMaxVirtualInterfaces_c */
             buffer_ptr[index++] = gFSCI_EndMarker_c;
 
-#else  /* gFsciUseEscapeSeq_c */
+#else  /* defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0) */
             FLib_MemCpy(&buffer_ptr[index], &header, sizeof(header));
             index += sizeof(header);
             FLib_MemCpy(&buffer_ptr[index], pMsg, msgLen);
@@ -810,7 +809,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
                 buffer_ptr[index++] = checksum2;
             }
 #endif /* gFsciMaxVirtualInterfaces_c */
-#endif /* gFsciUseEscapeSeq_c */
+#endif /* defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0) */
 
 #if (defined gFsciOverRpmsgBridge_c) && (gFsciOverRpmsgBridge_c == 1)
             (void)PLATFORM_SendHciMessage(buffer_ptr, index);
@@ -1010,7 +1009,7 @@ uint8_t FSCI_computeChecksum(const void *pBuffer, uint16_t size)
  * \return  The number of bytes added in the new buffer
  *
  ********************************************************************************** */
-#if gFsciUseEscapeSeq_c
+#if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
 uint32_t FSCI_encodeEscapeSeq(const uint8_t *pDataIn, uint32_t len, uint8_t *pDataOut)
 {
     uint32_t index, new_index = 0UL;
@@ -1044,7 +1043,7 @@ uint32_t FSCI_encodeEscapeSeq(const uint8_t *pDataIn, uint32_t len, uint8_t *pDa
  *
  *
  ********************************************************************************** */
-#if gFsciUseEscapeSeq_c
+#if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
 void FSCI_decodeEscapeSeq(uint8_t *pData, uint32_t len)
 {
     uint32_t index, new_index;
