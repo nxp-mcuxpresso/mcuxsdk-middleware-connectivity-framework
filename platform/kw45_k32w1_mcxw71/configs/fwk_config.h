@@ -159,6 +159,11 @@
 #define gRngUseSecureSubSystem_d 1
 #endif
 
+/* Enable RNG auto reseed using system workqueue */
+#ifndef gRngEnableAutoReseed_d
+#define gRngEnableAutoReseed_d 1
+#endif
+
 /*********************************************************************
  *        SecLib
  *********************************************************************/

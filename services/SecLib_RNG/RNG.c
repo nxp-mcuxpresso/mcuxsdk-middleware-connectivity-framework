@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2019, 2023-2025 NXP
+ * Copyright 2016-2017, 2019, 2023-2026 NXP
  *
  * \file
  *
@@ -14,11 +14,12 @@
 #include "fsl_common.h" /* includes fsl_device_registers.h */
 #include "fsl_os_abstraction.h"
 #include "fwk_platform_rng.h"
-#if !defined(gPlatformIsNbu_d)
-#include "fwk_workq.h"
-#endif
 #if defined(gPlatformHasNbu_d) || defined(gPlatformIsNbu_d)
 #include "fwk_platform_ics.h"
+#endif
+
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
+#include "fwk_workq.h"
 #endif
 
 #ifndef gRngUseSecLib_d
@@ -149,7 +150,8 @@ static void     Rng_save_seed_to_flash(uint32_t seed);
 #endif
 
 static int RNG_GetPseudoRandomDataWithContext(void *ctx_data, unsigned char *output, size_t len);
-#if !defined(gPlatformIsNbu_d)
+
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
 static void RNG_seed_needed_handler(fwk_work_t *work);
 #endif
 
@@ -167,7 +169,7 @@ static RNG_context_t rng_ctx = {
     .mPRNG_Requests                            = gRngMaxRequests_d,
 };
 
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
 static fwk_work_t seed_needed_work = {
     .handler = RNG_seed_needed_handler,
 };
@@ -197,15 +199,7 @@ int RNG_Init(void)
             status = gRngSuccess_d;
             break;
         }
-#if !defined(gPlatformIsNbu_d)
-        /* The workqueue is used to post and schedule seed
-         * trig upon user demand using RNG_NotifyReseedNeeded().
-         */
-        if (WORKQ_InitSysWorkQ() < 0)
-        {
-            break;
-        }
-#endif
+
 #if gRngUseSecLib_d
         /* Create mutex here in case it was not done already.
          * Does nothing without error otherwise.
@@ -215,13 +209,26 @@ int RNG_Init(void)
             break;
         }
 #endif
+
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
+        /* The workqueue is used to post and schedule seed
+         * trig upon user demand using RNG_NotifyReseedNeeded().
+         */
+        if (WORKQ_InitSysWorkQ() < 0)
+        {
+            break;
+        }
+#endif
+
 #if defined(gPlatformHasNbu_d)
+        /* Enabled reseed requests from NBU */
         PLATFORM_RegisterReceivedSeedRequest(&RNG_NotifyReseedNeeded);
 #endif
 
 #if defined(gPlatformIsNbu_d)
         PLATFORM_RegisterSetNewSeed(&RNG_SetExternalSeed);
 #endif
+
         rng_ctx.mPrngIsSeeded  = FALSE;
         rng_ctx.needReseed     = FALSE;
         rng_ctx.mPRNG_Requests = gRngMaxRequests_d;
@@ -610,7 +617,7 @@ int RNG_NotifyReseedNeeded(void)
             break;
         }
         rng_ctx.needReseed = TRUE;
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
         /* On MCU, submit a seed request to work queue  */
         status = WORKQ_Submit(&seed_needed_work);
         if (status < 0)
@@ -1094,10 +1101,10 @@ static uint32_t RNG_LCG(uint32_t prev_state)
 }
 #endif
 
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
 static void RNG_seed_needed_handler(fwk_work_t *work)
 {
-    /* Execute ressed request from WorkQ */
+    /* Execute reseed request from WorkQ */
     if (rng_ctx.needReseed == TRUE)
     {
         (void)RNG_SetSeed();

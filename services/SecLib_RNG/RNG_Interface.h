@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2024 NXP
- * All rights reserved.
+ * Copyright 2016-2024, 2026 NXP
  *
  * \file
  *
@@ -164,6 +163,10 @@ int RNG_SetExternalSeed(uint8_t *external_seed);
 
  * PRNG will still work but quality of the number generated will decrease RNG_SetSeed()
  * or RNG_SetExternalSeed() will need to be called asynchronously from another task.
+ * If gRngEnableAutoReseed_d is enabled, this function will use the system workqueue
+ * to post a work and reseed the PRNG asynchronously. If not, the reseeding must be
+ * done manually by calling RNG_SetSeed() or RNG_SetExternalSeed() from another task,
+ * usually the idle task.
  *
  ********************************************************************************** */
 int RNG_NotifyReseedNeeded(void);

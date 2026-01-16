@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2025 NXP
+ * Copyright 2016-2026 NXP
  *
  * \file
  *
@@ -17,11 +17,12 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/md.h"
-#if !defined(gPlatformIsNbu_d)
-#include "fwk_workq.h"
-#endif
 #if defined(gPlatformHasNbu_d) || defined(gPlatformIsNbu_d)
 #include "fwk_platform_ics.h"
+#endif
+
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
+#include "fwk_workq.h"
 #endif
 
 /*! *********************************************************************************
@@ -65,7 +66,7 @@ typedef struct rng_ctx_t
 ********************************************************************************** */
 
 static int RNG_entropy_func(void *data, unsigned char *output, size_t len);
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
 static void RNG_seed_needed_handler(fwk_work_t *work);
 #endif
 
@@ -87,7 +88,7 @@ static RNG_context_t rng_ctx = {
     .mNeedReseed        = FALSE,
 };
 
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
 static fwk_work_t seed_needed_work = {
     .handler = RNG_seed_needed_handler,
 };
@@ -127,7 +128,7 @@ int RNG_Init(void)
             result = gRngSuccess_d;
             break;
         }
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
         /* The workqueue is used to post and schedule seed
          * trig upon user demand using RNG_NotifyReseedNeeded().
          */
@@ -135,6 +136,7 @@ int RNG_Init(void)
         {
             break;
         }
+
 #endif
         (void)SecLibMutexCreate();
 
@@ -463,7 +465,7 @@ int RNG_NotifyReseedNeeded(void)
 
     rng_ctx.mNeedReseed = TRUE;
 
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
     status = WORKQ_Submit(&seed_needed_work);
 #endif
     return status;
@@ -534,7 +536,7 @@ static int RNG_entropy_func(void *data, unsigned char *output, size_t len)
     return result;
 }
 
-#if !defined(gPlatformIsNbu_d)
+#if defined(gRngEnableAutoReseed_d) && (gRngEnableAutoReseed_d > 0)
 static void RNG_seed_needed_handler(fwk_work_t *work)
 {
     if (rng_ctx.mNeedReseed == TRUE)
