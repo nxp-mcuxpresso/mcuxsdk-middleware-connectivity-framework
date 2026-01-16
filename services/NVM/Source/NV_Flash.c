@@ -1,13 +1,8 @@
-/*! *********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2019-2025 NXP
- * All rights reserved.
- *
- * \file
- *
- *
+/*
+ * Copyright 2015 Freescale
+ * Copyright 2016-2017, 2019-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
- ********************************************************************************** */
+ */
 
 #include "EmbeddedTypes.h"
 #include "NV_Flash.h"
@@ -1639,7 +1634,7 @@ NVM_STATIC NVM_Status_t NvSaveAllDataSetEntry(uint32_t *pDstAddr)
     bool_t          isSaveError;
     NVM_Status_t    status = gNVM_OK_c;
 
-    if ((mNvPreviousActivePageId != gVirtualPageNone_c) && (mNvTableSizeInFlash > 0))
+    if ((mNvPreviousActivePageId != gVirtualPageNone_c) && (mNvTableSizeInFlash > 0U))
     {
         /* startAddr = page raw sector start address + page counter size + table marker + table version */
         srcStartAddr =
@@ -2005,7 +2000,13 @@ NVM_STATIC NVM_Status_t __NvFormat(void)
         if (gNVM_OK_c != status)
         {
             /* Could not read previous value force it to 1, do not not exit without calling NvInternalFormat  */
+#if gNvUseExtendedFeatureSet_d
+            tableInfo.fields.NvPageCounter  = 1UL;
+            tableInfo.fields.NvTableMarker  = 0U; /* will be filled in by NvInternalFormat */
+            tableInfo.fields.NvTableVersion = 0U;
+#else
             tableInfo.fields.NvPageCounter = 1ULL;
+#endif
         }
         status = NvInternalFormat((uint32_t)tableInfo.fields.NvPageCounter);
         if (gNVM_OK_c != status)
@@ -4858,65 +4859,76 @@ NVM_STATIC NVM_Status_t NvCopyRecord(uint32_t             *dstMetaAddress,
                                      uint32_t *bytesToCopy)
 {
     NVM_Status_t status;
-    /* if the copy operation must take elements from ram */
+
+    do
+    {
+        /* if the copy operation must take elements from ram */
 #if gNvUseExtendedFeatureSet_d
 
 #if gNvDualImageSupport_d
-    NVM_DataEntry_t flashDataEntry;
-    /* if the srcTableEntryIdx is invalid, it means the entry is from NVM,
-       then it not need to check if NvTable is changed from RAM  */
-    if (*srcTableEntryIdx == gNvInvalidTableEntryIndex_c)
-    {
-        NvGetTableEntry(srcMetaInfo->fields.NvmDataEntryID, &flashDataEntry);
-
-        if (mNvTableUpdated && *tableUpgraded &&
-            *bytesToCopy < (uint32_t)flashDataEntry.ElementsCount * flashDataEntry.ElementSize)
+        NVM_DataEntry_t flashDataEntry = {0};
+        /* if the srcTableEntryIdx is invalid, it means the entry is from NVM,
+         * then it is not needed to check if NvTable is changed from RAM  */
+        if (*srcTableEntryIdx == gNvInvalidTableEntryIndex_c)
         {
-            /* make sure the adress can hold the entire space (+ what is taken from ram) */
-            *dstRecordAddress -= NvUpdateSize((uint32_t)flashDataEntry.ElementsCount * flashDataEntry.ElementSize);
+            if (NvGetTableEntry(srcMetaInfo->fields.NvmDataEntryID, &flashDataEntry))
+            {
+                if (mNvTableUpdated && *tableUpgraded &&
+                    *bytesToCopy < (uint32_t)flashDataEntry.ElementsCount * flashDataEntry.ElementSize)
+                {
+                    /* make sure the address can hold the entire space (+ what is taken from ram) */
+                    *dstRecordAddress -=
+                        NvUpdateSize((uint32_t)flashDataEntry.ElementsCount * flashDataEntry.ElementSize);
+                }
+                else
+                {
+                    /* compute the destination record start address */
+                    *dstRecordAddress -= NvUpdateSize(*bytesToCopy);
+                }
+            }
+            else
+            {
+                /* Entry was not found, so flashDataEntry remained empty */
+                status = gNVM_Error_c;
+                break;
+            }
         }
         else
-        {
-            /* compute the destination record start address */
-            *dstRecordAddress -= NvUpdateSize(*bytesToCopy);
-        }
-    }
-    else
 #endif /* gNvDualImageSupport_d */
-        if (mNvTableUpdated && *tableUpgraded &&
-            *bytesToCopy < (uint32_t)pNVM_DataTable[*srcTableEntryIdx].ElementsCount *
-                               pNVM_DataTable[*srcTableEntryIdx].ElementSize)
-        {
-            /* make sure the adress can hold the entire space (+ what is taken from ram) */
-            *dstRecordAddress -= NvUpdateSize((uint32_t)pNVM_DataTable[*srcTableEntryIdx].ElementsCount *
-                                              pNVM_DataTable[*srcTableEntryIdx].ElementSize);
-        }
-        else
+            if (mNvTableUpdated && *tableUpgraded &&
+                *bytesToCopy < (uint32_t)pNVM_DataTable[*srcTableEntryIdx].ElementsCount *
+                                   pNVM_DataTable[*srcTableEntryIdx].ElementSize)
+            {
+                /* make sure the address can hold the entire space (+ what is taken from ram) */
+                *dstRecordAddress -= NvUpdateSize((uint32_t)pNVM_DataTable[*srcTableEntryIdx].ElementsCount *
+                                                  pNVM_DataTable[*srcTableEntryIdx].ElementSize);
+            }
+            else
 #endif /* gNvUseExtendedFeatureSet_d */
-        {
-            /* compute the destination record start address */
-            *dstRecordAddress -= NvUpdateSize(*bytesToCopy);
-        }
+            {
+                /* compute the destination record start address */
+                *dstRecordAddress -= NvUpdateSize(*bytesToCopy);
+            }
 
 #if gNvFragmentation_Enabled_d
-    /*
-     * single element record
-     */
-    if (srcMetaInfo->fields.NvValidationStartByte == gValidationByteSingleRecord_c)
-    {
-        status = NvInternalDefragmentedCopy(*srcMetaAddress, *srcTableEntryIdx, *dstMetaAddress, *dstRecordAddress,
-                                            (NVM_RecordMetaInfo_t *)(*tblEntryMetaAddress));
-    }
-    else
+        /*
+         * single element record
+         */
+        if (srcMetaInfo->fields.NvValidationStartByte == gValidationByteSingleRecord_c)
+        {
+            status = NvInternalDefragmentedCopy(*srcMetaAddress, *srcTableEntryIdx, *dstMetaAddress, *dstRecordAddress,
+                                                (NVM_RecordMetaInfo_t *)(*tblEntryMetaAddress));
+        }
+        else
 #endif /* gNvFragmentation_Enabled_d */
-    /*
-     * full table entry
-     */
-    {
-        status = NvInternalCopy(*dstRecordAddress, *dstMetaAddress, srcMetaInfo, *srcTableEntryIdx,
-                                (uint16_t)(*bytesToCopy));
-    }
-
+        /*
+         * full table entry
+         */
+        {
+            status = NvInternalCopy(*dstRecordAddress, *dstMetaAddress, srcMetaInfo, *srcTableEntryIdx,
+                                    (uint16_t)(*bytesToCopy));
+        }
+    } while (false);
     return status;
 }
 
@@ -5327,7 +5339,7 @@ NVM_STATIC NVM_Status_t NvInternalFormat(uint32_t pageCounterValue)
     /* increment the page counter value */
     if (pageCounterValue == (uint32_t)gPageCounterMaxValue_c - 1U)
     {
-        pageCounterValue = 1;
+        pageCounterValue = 1U;
     }
     else
     {
@@ -5413,7 +5425,7 @@ NVM_STATIC NVM_Status_t NvSaveRamTable(NVM_VirtualPageID_t pageId)
         {
             break;
         }
-#else /* gNvDualImageSupport_d */
+#else  /* gNvDualImageSupport_d */
         for (uint16_t idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
         {
             NVM_EntryInfo_t entryInfo;
@@ -5435,12 +5447,12 @@ NVM_STATIC NVM_Status_t NvSaveRamTable(NVM_VirtualPageID_t pageId)
 
             /* increment table entry index */
         }
-#endif
-
+        /* We may have exited the for loop with an error status */
         if (gNVM_OK_c != status)
         {
             break;
         }
+#endif /* gNvDualImageSupport_d */
 
         FLib_MemSet((uint8_t *)&tbInfo, 0xffU, sizeof(NVM_TableInfo_t));
         tbInfo.fields.NvPageCounter = 0U;
@@ -5756,6 +5768,7 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
             if ((pNVM_DataTable[idx].pData == NULL) || (pNVM_DataTable[idx].ElementSize == 0U) ||
                 (pNVM_DataTable[idx].ElementsCount == 0U))
             {
+                /* ensures among other things that elt_sz cannot be 0 */
                 continue; /* Skip invalid table entries */
             }
             uintptr_t tableEntryAddr = (uintptr_t)(uint8_t *)pNVM_DataTable[idx].pData;
@@ -5792,8 +5805,10 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
                 endAddr = tableEntryAddr + (uintptr_t)tb_sz;
                 if (dataAddr < endAddr)
                 {
+                    uint32_t index;
                     /* Use integer arithmetic instead of pointer subtraction */
-                    uint32_t index       = offset / elt_sz;
+                    /* elt_sz cannot be 0 due to earlier continue statement */
+                    index                = offset / elt_sz;
                     pIndex->elementIndex = (uint16_t)index;
                     pIndex->entryId      = pNVM_DataTable[idx].DataEntryID;
                     status               = gNVM_OK_c;
@@ -6847,11 +6862,16 @@ uint16_t GetFlashTableVersion(void)
 {
     uint16_t ret = 0U;
 #if gNvStorageIncluded_d && gNvUseExtendedFeatureSet_d
-    InitNVMConfig();
-    if (gVirtualPageNone_c != mNvActivePageId)
+    /* Avoid recursion: read directly without calling InitNVMConfig() */
+    if (mNvFlashConfigInitialised && (gVirtualPageNone_c != mNvActivePageId))
     {
         ret = (*(NVM_TableInfo_t *)(mNvVirtualPageProperty[mNvActivePageId].NvRawSectorStartAddress))
                   .fields.NvTableVersion;
+    }
+    else
+    {
+        /* If not initialized, return default/invalid version */
+        ret = 0U;
     }
 #endif
     return ret;
@@ -8204,4 +8224,23 @@ void NV_MutexUnlock(void)
 #if gNvStorageIncluded_d
     (void)OSA_MutexUnlock(mNVMMutexId);
 #endif
+}
+
+/*! *********************************************************************************
+ *  Nv_GetPartitionAddressAndSize getter for NVM storage partition parameters.
+ */
+void Nv_GetPartitionAddressAndSize(uint32_t *partition_address, uint32_t *partition_size)
+{
+    /* Need to assume that arguments are not NULL pointers */
+    assert(partition_address != NULL);
+    assert(partition_size != NULL);
+    *partition_address = (uint32_t)(NV_STORAGE_START_ADDRESS);
+    /* The number of sectors is multiplied by sector size to get total partition size */
+    /* This size must be smaller than 2*64kB because NVM offsets are coded on a uint16_t */
+    uint32_t sector_sz   = (uint32_t)(NV_STORAGE_SECTOR_SIZE) & (uint32_t)UINT16_MAX;
+    uint32_t max_sectors = (uint32_t)(NV_STORAGE_MAX_SECTORS) & (uint32_t)UINT16_MAX;
+    ;
+
+    *partition_size = sector_sz * max_sectors;
+    assert(*partition_size <= 2U * (uint32_t)UINT16_MAX);
 }

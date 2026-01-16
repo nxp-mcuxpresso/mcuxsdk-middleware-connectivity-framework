@@ -42,6 +42,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
     select MCUX_COMPONENT_component.flash_adapter
+    imply MCUX_COMPONENT_middleware.wireless.framework.nvm
+
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
     select MCUX_COMPONENT_middleware.wireless.framework.platform.ics

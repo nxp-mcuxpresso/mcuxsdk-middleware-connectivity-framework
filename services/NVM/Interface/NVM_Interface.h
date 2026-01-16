@@ -1,12 +1,8 @@
-/**********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2020-2024 NXP
- *
- *
- * Non-volatile storage module interface declarations for the CORTEX-M4 processor
- *
+/*
+ * Copyright 2015 Freescale
+ * Copyright 2016-2017, 2020-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
- ********************************************************************************** */
+ */
 
 #ifndef _NVM_INTERFACE_H
 #define _NVM_INTERFACE_H
@@ -280,7 +276,7 @@ extern "C" {
  * Description: application version, used for table upgrade
  */
 #ifndef gNvFlashTableVersion_c
-#define gNvFlashTableVersion_c 1
+#define gNvFlashTableVersion_c 1U
 #endif
 /*
  * Name: gNvEnableCriticalSection_c
@@ -1194,6 +1190,15 @@ void NV_MutexLock(void);
  *
  ********************************************************************************* */
 void NV_MutexUnlock(void);
+
+/*! *********************************************************************************
+ *  \brief Nv_GetPartitionAddressAndSize retrieves NVM storage partition parameters.
+ * Returns the NV storage partition start address and total size.
+ * \param [out] partition_address Pointer to store the NV storage start address
+ * \param [out] partition_size Pointer to store the NV storage total partition size in bytes.
+ *
+ */
+void Nv_GetPartitionAddressAndSize(uint32_t *partition_address, uint32_t *partition_size);
 
 /*!
  * @}  end of NVM addtogroup

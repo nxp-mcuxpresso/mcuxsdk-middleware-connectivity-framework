@@ -1,7 +1,7 @@
-/* -------------------------------------------------------------------------- */
-/*                          Copyright 2024, 2026 NXP                          */
-/*                    SPDX-License-Identifier: BSD-3-Clause                   */
-/* -------------------------------------------------------------------------- */
+/*
+ * Copyright 2024-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -9,20 +9,34 @@
 
 #include "fwk_platform_intflash.h"
 #include "fsl_adapter_flash.h"
+#include "fwk_platform_definitions.h"
 #include "cmsis_compiler.h"
-
 #include <setjmp.h>
 
+#if defined gInterceptEccBusFaults_d && (gInterceptEccBusFaults_d > 0)
+/* required for Nv_GetPartitionAddressAndSize */
+#include "NVM_Interface.h"
+#endif
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
-#define INT_FLASH_SECTOR_SZ_LOG2 13u
-#define INT_FLASH_PHRASE_SZ_LOG2 4u
-#define INT_FLASH_SECTOR_SIZE    (1 << INT_FLASH_SECTOR_SZ_LOG2)
+#define INT_FLASH_SECTOR_SZ_LOG2 13U
+#define INT_FLASH_PHRASE_SZ_LOG2 4U
+#define INT_FLASH_SECTOR_SIZE    (1UL << INT_FLASH_SECTOR_SZ_LOG2)
+#define INT_FLASH_PHRASE_SIZE    (1UL << INT_FLASH_PHRASE_SZ_LOG2)
 
 #undef ROUND_FLOOR
 #define ROUND_FLOOR(_X_, _SHIFT_) ((((uint32_t)_X_) >> (_SHIFT_)) << (_SHIFT_))
+
+/* -------------------------------------------------------------------------- */
+/*                             Private prototypes                             */
+/* -------------------------------------------------------------------------- */
+
+#if defined      gInterceptEccBusFaults_d && (gInterceptEccBusFaults_d > 0)
+void             BusFault_Handler(void);
+__NO_RETURN void FaultRecovery(void);
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
@@ -78,21 +92,6 @@ WEAK void PLATFORM_TreatEccFault(uint32_t ecc_fault_addr)
 
 #if defined gInterceptEccBusFaults_d && (gInterceptEccBusFaults_d > 0)
 
-#if (!(defined(__CC_ARM) || defined(__UVISION_VERSION) || defined(__ARMCC_VERSION)))
-extern uint32_t NV_STORAGE_START_ADDRESS[];
-extern uint32_t NV_STORAGE_END_ADDRESS[];
-#else
-extern uint32_t Image$$NVM_region$$ZI$$Base[];
-extern uint32_t Image$$NVM_region$$ZI$$Limit[];
-extern uint32_t Image$$NVM_region$$Length;
-#define NV_STORAGE_START_ADDRESS (Image$$NVM_region$$ZI$$Base)
-#define NV_STORAGE_END_ADDRESS   (Image$$NVM_region$$ZI$$Limit)
-#endif /* __CC_ARM */
-
-#define NVM_LENGTH ((uint32_t)((uint8_t *)NV_STORAGE_END_ADDRESS) - (uint32_t)((uint8_t *)NV_STORAGE_START_ADDRESS))
-
-__NO_RETURN void FaultRecovery(void);
-
 __attribute__((section(".after_vectors"))) void BusFault_Handler(void)
 {
     /* If we want to catch the ECC fault without undergoing the reset and implement */
@@ -104,15 +103,32 @@ __NO_RETURN void FaultRecovery(void)
     /* Detect whether Bus Fault is caused by ECC fault */
     if (HAL_FlashEccStatusRaised())
     {
-        uint32_t bfar             = SCB->BFAR;
-        uint32_t nv_storage_start = (uint32_t)NV_STORAGE_START_ADDRESS;
-        /* Check is the Bus Fault Address is within NV storage range */
-        if ((bfar >= nv_storage_start) && (bfar < (nv_storage_start + NVM_LENGTH)))
+        uint32_t bfar = SCB->BFAR;
+        uint32_t nv_storage_start;
+        uint32_t nvm_length;
+        Nv_GetPartitionAddressAndSize(&nv_storage_start, &nvm_length);
+#if defined FSL_FEATURE_FLASH_PFLASH_START_ADDRESS && (FSL_FEATURE_FLASH_PFLASH_START_ADDRESS > 0)
+        if (nv_storage_start >= FSL_FEATURE_FLASH_PFLASH_START_ADDRESS)
+#endif
         {
-            /* We have now ascertained that the ECC fault raised within the NV storage area.
-             * The brutal solution, relies on the fact that when mounting the partition, NVS, or LittleFs
-             * will detect the missing sector and reformat if required */
-            PLATFORM_TreatEccFault(bfar);
+            /* Check is the Bus Fault Address is within NV storage range */
+            if (bfar >= nv_storage_start)
+            {
+                uint32_t end_addr;
+
+                if ((nvm_length < FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE) &&
+                    (nv_storage_start < (FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE - nvm_length)))
+                {
+                    end_addr = nv_storage_start + nvm_length;
+                    if (bfar < end_addr)
+                    {
+                        /* We have now ascertained that the ECC fault raised within the NV storage area.
+                         * The brutal solution, relies on the fact that when mounting the partition, NVS, or LittleFs
+                         * will detect the missing sector and reformat if required */
+                        PLATFORM_TreatEccFault(bfar);
+                    }
+                }
+            }
         }
     }
 #ifdef UNITY_DUMP_RESULT
