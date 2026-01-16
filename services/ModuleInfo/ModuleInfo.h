@@ -1,13 +1,13 @@
-/**********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2022 NXP
- * All rights reserved.
- *
+/*
+ * Copyright 2015 Freescale
+ * Copyright 2016-2022, 2024-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+/*
+ * \file
  *
  * This file contains the structure used by every module present to identify itself
- *
- * SPDX-License-Identifier: BSD-3-Clause
- ********************************************************************************** */
+ */
 
 #ifndef MODULE_INFO_H
 #define MODULE_INFO_H
@@ -160,49 +160,12 @@ moduleInfo_t;
 #define RegisterModuleInfo(moduleName, moduleNameString, moduleId, versionNoMajor, versionNoMinor, versionNoPatch, \
                            buildNo)
 extern const moduleInfo_t SET_MODULE_NAME(moduleName);
-const moduleInfo_t        SET_MODULE_NAME(moduleName) =
-    {&moduleNameString, moduleId, {versionNoMajor, versionNoMinor, versionNoPatch}, buildNo} #warning Unknown
-    / undefined toolchain !
+const moduleInfo_t        SET_MODULE_NAME(moduleName) = {&moduleNameString,
+                                                         moduleId,
+                                                         {versionNoMajor, versionNoMinor, versionNoPatch},
+                                                         buildNo} #warning Unknown
+                                                 / undefined toolchain !
 #endif
-
-/**********************************************************************************
-*************************************************************************************
-* Public prototypes
-*************************************************************************************
-********************************************************************************** */
-
-/*! *********************************************************************************
- * \brief  This function will retrieve the number of registered modules on the secondary
- *         core on a multicore platform.
- *
- * \return  uint8_t  Number of registered modules
- *
- ********************************************************************************** */
-uint8_t ModVer_GetNoOfEntries_Multicore(void);
-
-/*! *********************************************************************************
- * \brief  This function will retrieve a string containing information about the
- *         registered modules on the secondary core on a multicore platform in a format
- *         required by FSCI.
- *
- * \param[out]  pString pointer to a string
- *
- * \return  uint8_t  Length of the out string
- *
- ********************************************************************************** */
-uint8_t ModVer_GetInfoFSCIFormat_Multicore(uint8_t *pString);
-
-/*! *********************************************************************************
- * \brief  This function will retrieve a string containing information about the
- *         registered modules on the secondary core on a multicore platform in a format
- *         required by shell.
- *
- * \param[out]  pString pointer to a string
- *
- * \return  bool_t  TRUE if modules found, FALSE otherwise
- *
- ********************************************************************************** */
-bool_t ModVer_GetInfoShellFormat_Multicore(uint8_t *pString);
 
 /*!
  * @} end of ModuleInfo addtogroup

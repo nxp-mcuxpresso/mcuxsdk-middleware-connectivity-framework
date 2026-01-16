@@ -1,8 +1,7 @@
-/* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2022,2025 NXP                          */
-/*                            All rights reserved.                            */
-/*                    SPDX-License-Identifier: BSD-3-Clause                   */
-/* -------------------------------------------------------------------------- */
+/*
+ * Copyright 2021-2022, 2024-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -26,21 +25,45 @@
 /*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
 
-static nor_config_t norConfig = {NULL};
-static nor_handle_t norHandle = {NULL};
+static nor_config_t fwkNorConfig = {NULL};
+static nor_handle_t fwkNorHandle = {NULL};
 
 /* -------------------------------------------------------------------------- */
 /*                               Private functions                               */
 /* -------------------------------------------------------------------------- */
 
-static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
+STATIC bool MemCmpToEraseValue(void *ptr, uint32_t blen)
 {
     bool ret = true;
 
-    if (blen > 0U)
+    do
     {
-        uint32_t  remaining_len = blen;
-        uint32_t *p_32          = (uint32_t *)ptr;
+        uint8_t  *p_8;
+        uint32_t *p_32;
+        uint32_t  remaining_len;
+        if (blen == 0U)
+        {
+            /* Exit if no data to compare  */
+            break;
+        }
+        remaining_len = blen;
+        /* Check for unaligned bytes first reading byte by byte */
+        p_8 = (uint8_t *)ptr;
+        while ((((uint32_t)p_8 & 0x3U) != 0U) && remaining_len > 0u) /* Continue until 32 bit aligned address found */
+        {
+            if (*p_8 != 0xFFU)
+            {
+                ret = false;
+                break;
+            }
+            p_8++;
+            remaining_len--;
+        }
+        if (!ret)
+        {
+            break;
+        }
+        p_32 = (uint32_t *)(void *)p_8; /* Aligned now so read word by word */
         while (remaining_len >= sizeof(uint32_t))
         {
             if (*p_32 != ~0UL)
@@ -51,25 +74,23 @@ static bool MemCmpToEraseValue(uint8_t *ptr, uint32_t blen)
             p_32++;
             remaining_len -= sizeof(uint32_t);
         }
-        if (ret)
+        if (!ret)
         {
-            uint8_t *p_8 = (uint8_t *)p_32;
-            while (remaining_len > 0U)
-            {
-                if (*p_8 != 0xFFU)
-                {
-                    ret = false;
-                    break;
-                }
-                p_8++;
-                remaining_len--;
-            }
+            break;
         }
-    }
-    else
-    {
-        ret = false;
-    }
+        /* Still no mismatch found, handle remaining bytes */
+        p_8 = (uint8_t *)(void *)p_32;
+        while (remaining_len > 0U)
+        {
+            if (*p_8 != 0xFFU)
+            {
+                ret = false;
+                break;
+            }
+            p_8++;
+            remaining_len--;
+        }
+    } while (false);
     return ret;
 }
 
@@ -83,7 +104,7 @@ int PLATFORM_InitExternalFlash(void)
 
     BOARD_InitExternalFlash();
 
-    st = Nor_Flash_Init(&norConfig, &norHandle);
+    st = Nor_Flash_Init(&fwkNorConfig, &fwkNorHandle);
     if (st != kStatus_Success)
     {
         assert(false);
@@ -95,7 +116,7 @@ int PLATFORM_UninitExternalFlash(void)
 {
     status_t status;
 
-    status = Nor_Flash_Enter_Lowpower(&norHandle);
+    status = Nor_Flash_Enter_Lowpower(&fwkNorHandle);
     assert(status == kStatus_Success);
 
     BOARD_UninitExternalFlash();
@@ -109,7 +130,7 @@ int PLATFORM_ReinitExternalFlash(void)
 
     BOARD_InitExternalFlash();
 
-    status = Nor_Flash_Exit_Lowpower(&norHandle);
+    status = Nor_Flash_Exit_Lowpower(&fwkNorHandle);
     assert(status == kStatus_Success);
 
     return (int)status;
@@ -156,7 +177,7 @@ int PLATFORM_EraseExternalFlash(uint32_t address, uint32_t size)
             nbSectors = 1U;
         }
 
-        st = Nor_Flash_Erase(&norHandle, index * PLATFORM_EXTFLASH_SECTOR_SIZE,
+        st = Nor_Flash_Erase(&fwkNorHandle, index * PLATFORM_EXTFLASH_SECTOR_SIZE,
                              nbSectors * PLATFORM_EXTFLASH_SECTOR_SIZE);
         if (st != kStatus_Success)
         {
@@ -173,7 +194,7 @@ int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t offset, 
     status_t st;
     (void)requestFastRead;
 
-    st = (int)Nor_Flash_Read(&norHandle, offset, dest, length);
+    st = (int)Nor_Flash_Read(&fwkNorHandle, offset, dest, length);
     if (st != kStatus_Success)
     {
         assert(false);
@@ -184,7 +205,7 @@ int PLATFORM_ReadExternalFlash(uint8_t *dest, uint32_t length, uint32_t offset, 
 int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address)
 {
     status_t st;
-    st = Nor_Flash_Program(&norHandle, address, data, length);
+    st = Nor_Flash_Program(&fwkNorHandle, address, data, length);
     if (st != kStatus_Success)
     {
         assert(false);
@@ -194,7 +215,7 @@ int PLATFORM_WriteExternalFlash(uint8_t *data, uint32_t length, uint32_t address
 
 int PLATFORM_IsExternalFlashBusy(bool *isBusy)
 {
-    return (int)Nor_Flash_Is_Busy(&norHandle, isBusy);
+    return (int)Nor_Flash_Is_Busy(&fwkNorHandle, isBusy);
 }
 
 bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
@@ -210,12 +231,12 @@ bool PLATFORM_ExternalFlashAreaIsBlank(uint32_t address, uint32_t len)
         {
             uint32_t read_sz;
             read_sz = MIN(remaining_sz, PLATFORM_EXTFLASH_PAGE_SIZE);
-            if (kStatus_Success != Nor_Flash_Read(&norHandle, address, (uint8_t *)read_buf, read_sz))
+            if (kStatus_Success != Nor_Flash_Read(&fwkNorHandle, address, (uint8_t *)read_buf, read_sz))
             {
                 /* If no data could be read, exit loop now, read_buf cannot have been updated anyway */
                 break;
             }
-            if (!MemCmpToEraseValue((uint8_t *)read_buf, read_sz))
+            if (!MemCmpToEraseValue(read_buf, read_sz))
             {
                 /* Can stop at once if one byte differ */
                 break;

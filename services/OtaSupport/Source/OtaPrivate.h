@@ -1,15 +1,14 @@
-
+/*
+ * Copyright 2015 Freescale
+ * Copyright 2021-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*! *********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2021-2024 NXP
- * All rights reserved.
- *
  * \file
  *
- * This is the header file for the OTA Internal Flash adaption.
+ * This is the header file for the OTA Internal definiions.
  * It is to remain a private header - not a public interface.
  *
- ** SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
 #ifndef __OTA_PRIVATE_H__
 #define __OTA_PRIVATE_H__
@@ -109,10 +108,10 @@ typedef struct
     uint32_t
         OtaImageLengthWritten; /*! Size actually written into OTA storage must be less than OtaImageCurrentLength */
 
-    int          cnt_idle_op;  /*! Number of polling: OTA_TransactionResume calls  */
-    int          max_cnt_idle;
-    int          q_sz;         /*!< Number of pending operations in op_queue transaction queue */
-    int          q_max;        /*!< Maximum value reached by q_sz */
+    uint32_t     cnt_idle_op;  /*! Number of polling: OTA_TransactionResume calls  */
+    uint32_t     max_cnt_idle;
+    uint32_t     q_sz;         /*!< Number of pending operations in op_queue transaction queue */
+    uint32_t     q_max;        /*!< Maximum value reached by q_sz */
     void        *PostedQ_storage;
     uint8_t      PostedQ_capacity;
     uint8_t      PostedQ_nb_in_queue;

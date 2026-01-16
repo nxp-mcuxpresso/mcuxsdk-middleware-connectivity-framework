@@ -183,7 +183,7 @@ STATIC ota_flash_status_t InternalFlash_PartitionErase(void)
  *
  * \return    kStatus_OTA_Flash_Success if successful, other values in case of error
  ***********************************************************************************/
-static ota_flash_status_t InternalFlashWriteAndVerify(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf)
+STATIC ota_flash_status_t InternalFlashWriteAndVerify(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf)
 {
     ota_flash_status_t status = kStatus_OTA_Flash_Success;
 

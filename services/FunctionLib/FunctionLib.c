@@ -538,6 +538,7 @@ void FLib_AddOffsetToPointer(void **pPtr, uint32_t offset)
 
 /*! *********************************************************************************
  * \brief  This function returns the length of a NULL terminated string.
+ *        The parsing of the string is limited to 4096 bytes to prevent overflow.
  *
  * \param[in]  str  A NULL terminated string
  *
@@ -546,15 +547,20 @@ void FLib_AddOffsetToPointer(void **pPtr, uint32_t offset)
  ********************************************************************************** */
 uint32_t FLib_StrLen(const char *str)
 {
+#define MAX_STR_LEN (4096U)
 #if gUseToolchainMemFunc_d
-    return strlen(str);
+    return strnlen(str, MAX_STR_LEN);
 #else
-    register uint32_t len = 0;
+    register uint32_t len = 0U;
 
-    while (*str != '\0')
+    while (str[len] != '\0')
     {
-        str++;
         len++;
+        if (len > MAX_STR_LEN) /* Limit string length to prevent overflow */
+        {
+            len = ~0UL;
+            break;
+        }
     }
 
     return len;

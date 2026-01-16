@@ -59,7 +59,7 @@ STATIC ota_flash_status_t ExternalFlash_Init(void);
 STATIC ota_flash_status_t ExternalFlash_PartitionErase(void);
 STATIC ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size);
 STATIC ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t offs, uint8_t *Outbuf);
-static ota_flash_status_t ExternalFlash_FlushWriteBuffer(void);
+STATIC ota_flash_status_t ExternalFlash_FlushWriteBuffer(void);
 STATIC ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t offs, uint8_t *inbuf);
 STATIC uint8_t            ExternalFlash_isBusy(void);
 STATIC ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSize, bool non_blocking);
@@ -311,6 +311,13 @@ STATIC ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
                 uint32_t sizeToCopy;
                 uint32_t pageId   = offs / OTA_WRITE_BUFFER_SIZE;
                 uint32_t pageOffs = pageId * OTA_WRITE_BUFFER_SIZE;
+                /* COVERITY Impossible but let's satisfy Coverity */
+                if (pageOffs > (UINT32_MAX - OTA_WRITE_BUFFER_SIZE))
+                {
+                    status = kStatus_OTA_Flash_InvalidArgument;
+                    break;
+                }
+
                 /* Coverity [overflow:FALSE] */ /* pageEndOffs cannot overflow */
                 uint32_t pageEndOffs          = pageOffs + OTA_WRITE_BUFFER_SIZE - 1U;
                 uint32_t remainingBytesInPage = pageEndOffs - offs + 1U;

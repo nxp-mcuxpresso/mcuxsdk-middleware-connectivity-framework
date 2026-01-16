@@ -78,18 +78,10 @@
 /* \brief FSCI Bootloader related settings */
 #define gFsciBootTrigger_c (0xF5C18007U)
 
-#if ((defined(CPU_QN908X)) && (CPU_QN908X > 0U))
-#define gBootImageFlagsAddress_c (5 * 1024 + NUMBER_OF_INT_VECTORS * 4)
-#elif (defined(CPU_MKW36Z512VFP4) || defined(CPU_MKW36Z512VHT4))
-#define gBootImageFlagsAddress_c (mFlashEndAddress_c / 64 + NUMBER_OF_INT_VECTORS * 4)
-#elif (defined(CPU_K32W042S1M2VPJ_cm4))
-#define gBootImageFlagsAddress_c (16 * 1024)
-#else
 #ifndef GCOV_DO_COVERAGE
 #define gBootImageFlagsAddress_c (mFlashEndAddress_c / 32 + NUMBER_OF_INT_VECTORS * 4)
 #else
 #define gBootImageFlagsAddress_c (mFlashEndAddress_c - (uint32_t)FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE)
-#endif
 #endif
 
 #if defined(gFSCI_MemAllocTest_Enabled_d) && (gFSCI_MemAllocTest_Enabled_d)
@@ -1037,15 +1029,7 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
     clientPacket_t *pPkt;
     moduleInfo_t   *pInfo                    = gVERSION_TAGS_startAddr_d;
     uint8_t         noOfEntriesSecondaryCore = 0U;
-#if defined(CPU_K32W042S1M2VPJ_cm4) && (CPU_K32W042S1M2VPJ_cm4 == 1)
-    uint8_t *pString  = MEM_BufferAlloc(MAX_REGISTERED_MODULES_STRLEN);
-    uint8_t  totalLen = 0U;
-    if (NULL != pString)
-    {
-        noOfEntriesSecondaryCore = ModVer_GetNoOfEntries_Multicore();
-    }
-#endif
-    uint16_t size = (uint16_t)(sizeof(clientPacketHdr_t) + gFsci_TailBytes_c +
+    uint16_t        size                     = (uint16_t)(sizeof(clientPacketHdr_t) + gFsci_TailBytes_c +
                                gVERSION_TAGS_entries_d * gVERSION_TAGS_entrySizeNoPadding_d +
                                noOfEntriesSecondaryCore * gVERSION_TAGS_entrySizeNoPadding_d);
 
@@ -1078,15 +1062,6 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
             pInfo++;
         }
 
-#if defined(CPU_K32W042S1M2VPJ_cm4) && (CPU_K32W042S1M2VPJ_cm4 == 1)
-        if (NULL != pString)
-        {
-            totalLen = ModVer_GetInfoFSCIFormat_Multicore(pString);
-            FLib_MemCpy(&pPkt->structured.payload[size], pString, totalLen);
-            size += totalLen;
-            (void)MEM_BufferFree(pString);
-        }
-#endif
         pPkt->structured.header.len = (uint8_t)size;
 
         /* Check if the received buffer was reused. */
