@@ -57,13 +57,6 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72)
         )
     endif()
 
-    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls)
-            mcux_add_source(SOURCES
-            configs/SecLib_mbedtls_config.h
-            DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
-            CORE_IDS "cm33_core0" "cm33"
-        )
-    endif()
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
         mcux_add_source(SOURCES
             fwk_platform_dbg.c

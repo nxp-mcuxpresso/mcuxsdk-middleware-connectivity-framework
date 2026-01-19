@@ -1,10 +1,10 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x
 
 choice MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port
-    default MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls
+    default MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa
 endchoice
 
 choice MCUX_COMPONENT_middleware.mbedtls.port.selection

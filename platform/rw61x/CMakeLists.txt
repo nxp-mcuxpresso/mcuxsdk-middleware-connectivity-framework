@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 mcux_set_list(RW61x_FAMILY "RW610 RW612")
@@ -13,14 +13,6 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x)
         ../include/fwk_platform_rng.h
         DEVICE_IDS ${RW61x_FAMILY}
     )
-
-    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls)
-        mcux_add_source(SOURCES
-            configs/rw61x-mbedtls-config.h
-            configs/SecLib_mbedtls_config.h
-            DEVICE_IDS ${RW61x_FAMILY}
-        )
-    endif()
 
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
         mcux_add_source(SOURCES

@@ -183,13 +183,6 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.lfs_config
     help
       Littlefs config for given platform.
 
-config MCUX_COMPONENT_middleware.wireless.framework.platform.mbedtls_config
-    bool "mbedtls config"
-    depends on  MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x
-    help
-      Use the mbedtls config provided by the Connectivity Framework for the current platform.
-      This should be left disabled if the user wants to use a custom configuration.
-
 config MCUX_COMPONENT_middleware.wireless.framework.platform.ble
     bool "BLE"
     depends on  MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x || \

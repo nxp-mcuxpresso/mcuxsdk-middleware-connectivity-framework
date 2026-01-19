@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng)
@@ -12,7 +12,6 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng)
         SOURCES SecLib.h
                 SecLib_ecp256.h
                 CryptoLibSW.h
-                SecLib_aes_mmo.c
                 RNG_Interface.h
                 README.md
     )
@@ -43,18 +42,6 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng)
         FPU SP_FPU
     )
 
-endif()
-
-if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.mbedtls)
-    mcux_add_source(
-       SOURCES SecLib_mbedTLS.c
-    )
-    mcux_add_macro(CONNFWK_SECLIB_MBEDTLS)
-
-    mcux_add_macro(gRngUseSecureSubSystem_d=0)
-    mcux_add_source(
-        SOURCES RNG_mbedTLS.c
-    )
 endif()
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.secure_subsystem)
