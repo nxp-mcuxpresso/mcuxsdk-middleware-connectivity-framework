@@ -72,6 +72,9 @@ bool PLATFORM_IsNbuWarningSet(uint8_t *pCount)
         }
         else if (current_warning_count != last_register_count)
         {
+            last_register_count &= (uint8_t)NBU2HOST_WARNING_MAX;
+            current_warning_count &= (uint8_t)NBU2HOST_WARNING_MAX;
+
             /* Calculate new warnings since last read */
             if (current_warning_count > last_register_count)
             {
