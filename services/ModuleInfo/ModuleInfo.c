@@ -81,7 +81,7 @@ uint8_t ModVer_GetInfoFSCIFormat_Multicore(uint8_t *pString)
     uint8_t       totalLen = 0;
     moduleInfo_t *pInfo    = gVERSION_TAGS_startAddr_d;
 
-    while (pInfo < gVERSION_TAGS_endAddr_d)
+    while ((void *)pInfo < (void *)gVERSION_TAGS_endAddr_d)
     {
         if ((totalLen + gVERSION_TAGS_entrySizeNoPaddingNoModuleString_d) > MAX_REGISTERED_MODULES_STRLEN)
         {
@@ -116,7 +116,7 @@ bool_t ModVer_GetInfoShellFormat_Multicore(uint8_t *pString)
         return FALSE;
     }
 
-    while (pInfo < gVERSION_TAGS_endAddr_d)
+    while ((void *)pInfo < (void *)gVERSION_TAGS_endAddr_d)
     {
         moduleStrLen = FLib_StrLen(*pInfo->moduleString);
         if ((totalLen + moduleStrLen + 2) > MAX_REGISTERED_MODULES_STRLEN)

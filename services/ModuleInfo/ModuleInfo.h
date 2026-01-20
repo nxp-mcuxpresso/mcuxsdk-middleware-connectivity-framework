@@ -76,8 +76,10 @@ extern uint32_t __stop_VERSION_TAGS[];
 #warning Module informaion will not be stored!
 #endif
 
-#define gVERSION_TAGS_entries_d \
-    (((uint32_t)gVERSION_TAGS_endAddr_d - (uint32_t)gVERSION_TAGS_startAddr_d) / sizeof(moduleInfo_t))
+#define gVERSION_TAGS_entries_d                                  \
+    (((uint32_t)(uint32_t *)(void *)gVERSION_TAGS_endAddr_d -    \
+      (uint32_t)(uint32_t *)(void *)gVERSION_TAGS_startAddr_d) / \
+     sizeof(moduleInfo_t))
 
 #define gVERSION_TAGS_entrySizeNoPadding_d (sizeof(moduleInfo_t) - sizeof(((moduleInfo_t *)(void *)0)->padding))
 

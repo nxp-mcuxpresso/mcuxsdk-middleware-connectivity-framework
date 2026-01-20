@@ -167,7 +167,7 @@ static gFsciErrorMsg_t mFsciErrorMsg = {
             .startMarker = gFSCI_StartMarker_c,
             .opGroup     = gFSCI_CnfOpcodeGroup_c,
             .opCode      = mFsciMsgError_c,
-            .len         = sizeof(clientPacketStatus_t),
+            .len         = (uint8_t)sizeof(clientPacketStatus_t),
         },
     .status    = (uint8_t)gFsciSuccess_c,
     .checksum  = 0U,
@@ -438,7 +438,7 @@ bool_t FSCI_MsgModeSelectReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
     }
 
     pData->structured.payload[0] = (uint8_t)gFsciSuccess_c;
-    pData->structured.header.len = sizeof(uint8_t);
+    pData->structured.header.len = (uint8_t)sizeof(uint8_t);
     return TRUE;
 }
 
@@ -627,7 +627,7 @@ bool_t FSCI_MsgResetCPUReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
 
     if (NULL == pFsciPacket)
     {
-        FSCI_Error(gFsciOutOfMessages_c, fsciInterface);
+        FSCI_Error((uint8_t)gFsciOutOfMessages_c, fsciInterface);
     }
     else
     {
@@ -704,7 +704,7 @@ bool_t FSCI_MsgWriteExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInter
     clientPacket_t *pFsciPacket = MEM_BufferAlloc(sizeof(clientPacketHdr_t) + sizeof(uint64_t) + gFsci_TailBytes_c);
     if (NULL == pFsciPacket)
     {
-        FSCI_Error(gFsciOutOfMessages_c, fsciInterface);
+        FSCI_Error((uint8_t)gFsciOutOfMessages_c, fsciInterface);
         pData->structured.payload[0] = gFsciOutOfMessages_c;
         pData->structured.header.len = (uint8_t)sizeof(clientPacketStatus_t);
         return FALSE;
@@ -767,7 +767,7 @@ bool_t FSCI_MsgReadExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInterf
     if (NULL == pPkt)
     {
         MEM_BufferFree(pData);
-        FSCI_Error(gFsciOutOfMessages_c, fsciInterface);
+        FSCI_Error((uint8_t)gFsciOutOfMessages_c, fsciInterface);
         status = FALSE;
     }
     else
@@ -785,7 +785,7 @@ bool_t FSCI_MsgReadExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInterf
 
         if (pPkt != pData)
         {
-            MEM_BufferFree(pData);
+            (void)MEM_BufferFree(pData);
             pPkt->structured.header.opGroup = gFSCI_CnfOpcodeGroup_c;
             pPkt->structured.header.opCode  = mFsciMsgReadExtendedAdrReq_c;
             FSCI_transmitFormatedPacket(pPkt, fsciInterface);
@@ -1068,9 +1068,9 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
     else
     {
         pPkt->structured.payload[0] = (uint8_t)(gVERSION_TAGS_entries_d + noOfEntriesSecondaryCore);
-        size                        = sizeof(uint8_t);
+        size                        = (uint16_t)sizeof(uint8_t);
 
-        while (pInfo < gVERSION_TAGS_endAddr_d)
+        while ((void *)pInfo < (void *)gVERSION_TAGS_endAddr_d)
         {
             FLib_MemCpy(&pPkt->structured.payload[size], &pInfo->moduleId,
                         gVERSION_TAGS_entrySizeNoPaddingNoModuleString_d);
@@ -1148,7 +1148,7 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
         size                              = 0U;
 
         FLib_MemCpy(&pPkt->structured.payload[0], &nbu_info, 3);
-        size += 3;
+        size += 3U;
 
         pPkt->structured.payload[size] = MAX_SHA_SZ;
         size++;
@@ -1159,7 +1159,7 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
         tag_lg                         = (uint8_t)strlen(&nbu_info.repo_tag[0]);
         pPkt->structured.payload[size] = tag_lg;
         size++;
-        if (tag_lg > 0)
+        if (tag_lg > 0U)
         {
             FLib_MemCpy(&pPkt->structured.payload[size], &nbu_info.repo_tag, tag_lg);
         }
@@ -1247,7 +1247,7 @@ bool_t FSCI_MemAllocTest(clientPacket_t *pData, uint32_t fsciInterface)
     {
         /* Prepare gFsciError_c packet, no test conditions enabled */
         pData->structured.payload[0] = gFsciError_c;
-        pData->structured.header.len = sizeof(uint8_t);
+        pData->structured.header.len = (uint8_t)sizeof(uint8_t);
     }
     else
     {
@@ -1262,7 +1262,7 @@ bool_t FSCI_MemAllocTest(clientPacket_t *pData, uint32_t fsciInterface)
 
         /* Prepare confirm packet  */
         pData->structured.payload[0] = gFsciSuccess_c;
-        pData->structured.header.len = sizeof(uint8_t);
+        pData->structured.header.len = (uint8_t)sizeof(uint8_t);
     }
 
     return TRUE;

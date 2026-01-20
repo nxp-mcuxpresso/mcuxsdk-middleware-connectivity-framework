@@ -85,7 +85,7 @@
 #endif
 
 #ifndef gFsciMaxInterfaces_c
-#define gFsciMaxInterfaces_c 1
+#define gFsciMaxInterfaces_c 1U
 #endif
 
 #ifndef gFsciMaxVirtualInterfaces_c

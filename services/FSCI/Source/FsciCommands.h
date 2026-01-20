@@ -173,7 +173,7 @@ gFsciAckMsg_t;
 #endif
 
 #ifndef gFSCI_ResetCpu_c
-#define gFSCI_ResetCpu_c !(gSerialMgrUseUSB_c || gSerialMgrUseUSB_VNIC_c)
+#define gFSCI_ResetCpu_c 1
 #endif
 
 #if defined(gFSCI_MemAllocTest_Enabled_d) && (gFSCI_MemAllocTest_Enabled_d)

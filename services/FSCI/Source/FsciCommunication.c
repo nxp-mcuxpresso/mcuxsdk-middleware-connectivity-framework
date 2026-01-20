@@ -47,7 +47,7 @@
 ************************************************************************************/
 #define gFsciUseBlockingTx_c 1
 #define MIN_VALID_PACKET_LEN (sizeof(clientPacketHdr_t))
-#define FSCI_txCallback      MEM_BufferFree
+#define FSCI_txCallback      (void)MEM_BufferFree
 
 #ifndef mFsciRxAckTimeoutMs_c
 #define mFsciRxAckTimeoutMs_c 100U /* milliseconds */
@@ -125,9 +125,13 @@ bool_t gFsciTxDisable  = FALSE;
 
 /* FSCI serial manager handle list */
 serial_handle_t gFsciSerialInterfaces[gFsciMaxInterfaces_c];
+
+#if !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0)
 /* FSCI serial manager read handle buffer */
-uint32_t gFsciSerialReadHandle[gFsciMaxInterfaces_c]
-                              [((SERIAL_MANAGER_READ_HANDLE_SIZE + sizeof(uint32_t) - 1U) / sizeof(uint32_t))];
+static uint32_t gFsciSerialReadHandle[gFsciMaxInterfaces_c]
+                                     [((SERIAL_MANAGER_READ_HANDLE_SIZE + sizeof(uint32_t) - 1U) / sizeof(uint32_t))];
+#endif
+
 /* FSCI serial manager write handle buffer */
 uint32_t gFsciSerialWriteHandle[gFsciMaxInterfaces_c]
                                [((SERIAL_MANAGER_WRITE_HANDLE_SIZE + sizeof(uint32_t) - 1U) / sizeof(uint32_t))];
@@ -293,23 +297,20 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
 #endif    /* gFsciRxTimeout_c */
 
         } /* for */
-        if (i != (uint32_t)gFsciMaxInterfaces_c)
+        if (ret == kStatus_Success)
         {
-            ret = kStatus_Fail;
-            break;
-        }
 #if defined(gFsciUseDedicatedTask_c) && (gFsciUseDedicatedTask_c == 1)
-        mFsciClientPacketInfo.pFsciPacketToProcess = NULL;
-        mFsciClientPacketInfo.fsciInterface        = mFsciInvalidInterface_c;
+            mFsciClientPacketInfo.pFsciPacketToProcess = NULL;
+            mFsciClientPacketInfo.fsciInterface        = mFsciInvalidInterface_c;
 
-        /* Init Fsci task */
-        status = OSA_EventCreate((osa_event_handle_t)mFsciTaskEventId, TRUE);
-        assert(KOSA_StatusSuccess == status);
-        status = OSA_TaskCreate((osa_task_handle_t)gFsciTaskId, OSA_TASK(FSCI_Task), NULL);
-        assert(KOSA_StatusSuccess == status);
-        (void)status;
+            /* Init Fsci task */
+            status = OSA_EventCreate((osa_event_handle_t)mFsciTaskEventId, 1U);
+            assert(KOSA_StatusSuccess == status);
+            status = OSA_TaskCreate((osa_task_handle_t)gFsciTaskId, OSA_TASK(FSCI_Task), NULL);
+            assert(KOSA_StatusSuccess == status);
+            (void)status;
 #endif /* gFsciUseDedicatedTask_c */
-        ret = kStatus_Success;
+        }
     } while (false);
     assert(ret == kStatus_Success);
     NOT_USED(ret);
@@ -331,7 +332,7 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
     MSG_QueueInit(&mFsciInputQueue);
 
     /* Init Fsci task */
-    status = OSA_EventCreate((osa_event_handle_t)mFsciTaskEventId, TRUE);
+    status = OSA_EventCreate((osa_event_handle_t)mFsciTaskEventId, 1U);
     assert(KOSA_StatusSuccess == status);
     status = OSA_TaskCreate((osa_task_handle_t)gFsciTaskId, OSA_TASK(FSCI_Task), NULL);
     assert(KOSA_StatusSuccess == status);
@@ -365,7 +366,7 @@ static void FSCI_Task(osa_task_param_t argument)
     while (true)
 #endif
     {
-        (void)OSA_EventWait((osa_event_handle_t)mFsciTaskEventId, osaEventFlagsAll_c, FALSE, osaWaitForever_c,
+        (void)OSA_EventWait((osa_event_handle_t)mFsciTaskEventId, osaEventFlagsAll_c, 0U, osaWaitForever_c,
                             &mFsciTaskEventFlags);
 
         if (mFsciTaskEventFlags == (uint32_t)gFSCI_ClientPacketReady_c)
@@ -526,7 +527,7 @@ void FSCI_receivePacket(void *param)
                             }
                         }
 #else
-                        mFsciSrcInterface = (uint32_t)(uint32_t *)param;
+                        mFsciSrcInterface = (uint8_t)(uint32_t)(uint32_t *)param;
 #endif /* gFsciMaxVirtualInterfaces_c > 0*/
 
 #if defined gFsciTxAck_c && (gFsciTxAck_c != 0)
@@ -754,7 +755,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
     if (FALSE == gFsciTxDisable)
     {
         /* Compute size */
-        buffer_size = sizeof(clientPacketHdr_t) + msgLen + gFsci_TailBytes_c;
+        buffer_size = ((uint16_t)sizeof(clientPacketHdr_t)) + msgLen + ((uint16_t)gFsci_TailBytes_c);
 
 #if gFsciUseEscapeSeq_c
         buffer_size = buffer_size * 2U;
@@ -768,7 +769,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
             header.startMarker = gFSCI_StartMarker_c;
             header.opGroup     = OG;
             header.opCode      = OC;
-            header.len         = msgLen;
+            header.len         = (uint8_t)msgLen;
 
             /* Compute CRC for TX packet, on opcode group, opcode, payload length, and payload fields */
             checksum = FSCI_computeChecksum((uint8_t *)&header + 1, sizeof(header) - 1U);
@@ -781,7 +782,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
             }
 #endif
 
-            index = 0;
+            index = 0U;
 #if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
             index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&header, sizeof(header), &buffer_ptr[index]);
             index += (uint16_t)FSCI_encodeEscapeSeq(pMsg, msgLen, &buffer_ptr[index]);
@@ -798,7 +799,7 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
 
 #else  /* defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0) */
             FLib_MemCpy(&buffer_ptr[index], &header, sizeof(header));
-            index += sizeof(header);
+            index += (uint16_t)sizeof(header);
             FLib_MemCpy(&buffer_ptr[index], pMsg, msgLen);
             index += msgLen;
             /* Store the Checksum */
@@ -850,7 +851,7 @@ uint8_t *FSCI_GetFormattedPacket(uint8_t OG, uint8_t OC, void *pMsg, uint16_t ms
         header.startMarker = gFSCI_StartMarker_c;
         header.opGroup     = OG;
         header.opCode      = OC;
-        header.len         = msgLen;
+        header.len         = (uint8_t)msgLen;
 
         /* Copy message Header */
         FLib_MemCpy(pBuff, &header, sizeof(header));

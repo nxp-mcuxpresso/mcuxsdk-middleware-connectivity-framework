@@ -115,13 +115,13 @@
 
 /* Total size of COEX config including several XCVR structures which could be changed */
 #if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
-#define COEX_CONFIG_LEN                                                                                      \
-    (6 + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
-     sizeof(coexRfActiveRfmcConfig_t) + sizeof(coexRfStatusConfig_t) + sizeof(coexRfPriorityConfig_t) +      \
+#define COEX_CONFIG_LEN                                                                                       \
+    (6U + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
+     sizeof(coexRfActiveRfmcConfig_t) + sizeof(coexRfStatusConfig_t) + sizeof(coexRfPriorityConfig_t) +       \
      sizeof(coexCsConfig_t) + 2)
 #else
-#define COEX_CONFIG_LEN                                                                                      \
-    (6 + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
+#define COEX_CONFIG_LEN                                                                                       \
+    (6U + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
      sizeof(coexRfActiveRfmcConfig_t) + sizeof(coexRfStatusConfig_t) + sizeof(coexRfPriorityConfig_t) + 2)
 #endif
 /* Default COEX configuration including several XCVR structures + output/input signals setting + RF_GPO option.
@@ -207,7 +207,7 @@ static const uint8_t default_COEX_config[COEX_CONFIG_LEN] = {
 };
 
 /* Total size of FEM config, equals to (xcvr_pa_fem_config_t + 1) */
-#define FEM_CONFIG_LEN (1 + sizeof(xcvr_pa_fem_config_t))
+#define FEM_CONFIG_LEN (1U + sizeof(xcvr_pa_fem_config_t))
 
 /* Default FEM configuration which is xcvr_pa_fem_config_t + RF_GPO option */
 /* Remark: gAppRfGpoFEM = RFMC_GPO_INVALID is a valid parameter, see PLATFORM_FEM_pin_init() ! */

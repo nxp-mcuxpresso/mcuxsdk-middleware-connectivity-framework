@@ -57,7 +57,7 @@ static const cmc_power_domain_config_t CmcDeepPowerDownModeCfg = {
     ((gPlatResetMethod_c == gUseResetByLvdForce_c) || (gPlatResetMethod_c == gUseResetByDeepPowerDown_c))
 static void PLATFORM_DisableAllIrqs(void)
 {
-    for (uint8_t irq = 0u; irq <= (NUMBER_OF_INT_VECTORS - 16u); irq++)
+    for (uint8_t irq = 0u; irq <= (((uint8_t)NUMBER_OF_INT_VECTORS) - 16u); irq++)
     {
         NVIC_DisableIRQ((IRQn_Type)irq);
         NVIC_ClearPendingIRQ((IRQn_Type)irq);
