@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2025 NXP
+ * Copyright 2021-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -218,7 +218,7 @@ int PLATFORM_FwkSrvSendPacket(eFwkSrvMsgType msg_type, void *msg, uint16_t msg_l
 /*!
  * \brief Send NbuInfo request to NBU and spin waiting for response.
  *
- * \param[in] nbu_info_p pointer to externally allocated NbuInfo_t
+ * \param[out] nbu_info_p Pointer to structure that will be filled with NBU information.
  * \return int 0 if OK, -1 in case of Rpmsg error, -10 if NBU did not respond in time.
  */
 int PLATFORM_GetNbuInfo(NbuInfo_t *nbu_info_p);

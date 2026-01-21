@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2025 NXP
+ * Copyright 2021-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
@@ -102,7 +102,7 @@ static const hal_rpmsg_config_t fwkRpmsgConfig = {
 };
 
 /* flag notifying of NBU Infor reception from CM3 */
-static NbuInfo_t    *g_nbu_info_p    = (NbuInfo_t *)NULL;
+static NbuInfo_t     g_nbu_info      = {0};
 static volatile bool g_nbu_init_done = false;
 
 static volatile bool                 m_nbu_api_rpmsg_status;
@@ -289,14 +289,20 @@ int PLATFORM_GetNbuInfo(NbuInfo_t *nbu_info_p)
             st = -2;
             break;
         }
-
-        /* Need a storage supplied by the caller to copy result from RPMSG memory */
+        /* Verify the destination pointer given by the caller is valid */
         if (nbu_info_p == NULL)
         {
             break;
         }
-        g_nbu_info_p = nbu_info_p;
-        st           = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuVersionRequest_c, (void *)NULL, 0);
+
+        if (!(FLib_MemCmpToVal(&g_nbu_info, 0U, sizeof(NbuInfo_t))))
+        {
+            /* g_nbu_info is already populated, no need to request it again */
+            st = 0;
+            break;
+        }
+
+        st = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuVersionRequest_c, (void *)NULL, 0);
         if (0 != st)
         {
             break;
@@ -313,10 +319,11 @@ int PLATFORM_GetNbuInfo(NbuInfo_t *nbu_info_p)
             st = -10;
         }
     } while (false);
-    /* The Rx Call back has already filled the structure the global pointer can
-     be cleared. Should the indication arrive late - becasue of a breakpoint in
-     the CM3 for instance, the callback would simply drop the indication  */
-    g_nbu_info_p = NULL;
+    if (st == 0)
+    {
+        /* Copy the NBU info to the caller's buffer */
+        FLib_MemCpy(nbu_info_p, &g_nbu_info, sizeof(NbuInfo_t));
+    }
 
     if (mutex_status == KOSA_StatusSuccess)
     {
@@ -685,18 +692,14 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
 
 static void PLATFORM_RxNbuVersionIndicationService(uint8_t *data, uint32_t len)
 {
-    if (g_nbu_info_p != NULL)
-    {
-        FLib_MemCpy(g_nbu_info_p, &data[1], sizeof(NbuInfo_t));
+    FLib_MemCpy(&g_nbu_info, &data[1], sizeof(NbuInfo_t));
 
 #if defined(NBU_VERSION_DBG) && (NBU_VERSION_DBG == 1)
-        PRINTF("NBU v%d.%d.%d\r\n", g_nbu_info_p->versionNumber[0], g_nbu_info_p->versionNumber[1],
-               g_nbu_info_p->versionNumber[2]);
-        PRINTF("NBU SHA %02x%02x%02x%02x\r\n", g_nbu_info_p->repo_digest[0], g_nbu_info_p->repo_digest[1],
-               g_nbu_info_p->repo_digest[2], g_nbu_info_p->repo_digest[3]);
+    PRINTF("NBU v%d.%d.%d\r\n", g_nbu_info.versionNumber[0], g_nbu_info.versionNumber[1], g_nbu_info.versionNumber[2]);
+    PRINTF("NBU SHA %02x%02x%02x%02x\r\n", g_nbu_info.repo_digest[0], g_nbu_info.repo_digest[1],
+           g_nbu_info.repo_digest[2], g_nbu_info.repo_digest[3]);
 #endif
-        /* no longer required to hold since copy is done in allocated pointer */
-    }
+    /* no longer required to hold since copy is done in allocated pointer */
 
     /* Notify waiting task that NBU information has been received */
     (void)OSA_EventSet(icsEvent, ICS_EVT_NBU_INF_IND);
