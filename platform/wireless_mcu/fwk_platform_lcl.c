@@ -9,6 +9,9 @@
 #include "fwk_platform_definitions.h"
 #include "FunctionLib.h"
 #include "RNG_Interface.h"
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
+#include "controller_api.h"
+#endif
 
 #if defined(gAppLowpowerEnabled_d) && (gAppLowpowerEnabled_d > 0)
 // TODO : remove dependancy
@@ -1031,6 +1034,15 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
     /* Release wake up to NBU */
     PLATFORM_RemoteActiveRel();
 
+#if defined(NXP_RADIO_GEN) && (NXP_RADIO_GEN >= 470)
+    if (status == 0U)
+    {
+        /* send the xcvr_pa_fem_config_t to NBU for CS since XCVR timings dynamically change */
+        osa_status_t osa_status = Controller_SetFemConfig(config_ptr, FEM_CONFIG_LEN - 1U);
+
+        status = (osa_status == KOSA_StatusSuccess) ? 0U : 1U;
+    }
+#endif
     femActive = 1U;
     return status;
 }

@@ -59,6 +59,7 @@ void PLATFORM_InitLclGpioDebug(bool_t debug);
  *
  * \return 0/1 which is Success/Failure correspondingly
  * \remarks Must be called after NBU initiation since it relies on common RF parameters.
+ *          All failures need a hardware reset since XCVR setting can not be restored!
  ********************************************************************************** */
 uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len);
 
@@ -68,6 +69,7 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len);
  *
  * \return 0/1 which is Success/Failure correspondingly
  * \remarks Must be called after NBU initiation since it relies on common RF parameters.
+ *          All failures need a hardware reset since XCVR setting can not be restored!
  ********************************************************************************** */
 uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len);
 
