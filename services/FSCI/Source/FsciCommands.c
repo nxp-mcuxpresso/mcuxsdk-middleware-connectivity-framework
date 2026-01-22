@@ -1123,7 +1123,8 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
 
     do
     {
-        uint8_t tag_lg;
+        uint32_t nbu_info_size;
+        uint8_t  tag_lg, size = 0U;
 
         /* Pointer on NbuInfo structure received from NBU :
          * potentially to be released when used */
@@ -1134,9 +1135,9 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
             break;
         }
 #endif /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
-        uint16_t size = (uint16_t)(sizeof(clientPacketHdr_t) + gFsci_TailBytes_c + sizeof(NbuInfo_t));
+        nbu_info_size = (uint32_t)(sizeof(clientPacketHdr_t) + gFsci_TailBytes_c + sizeof(NbuInfo_t));
 
-        pPkt = MEM_BufferAlloc(size);
+        pPkt = MEM_BufferAlloc(nbu_info_size);
 
         if (pPkt == NULL)
         {
@@ -1145,7 +1146,6 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
         }
 
         nbu_info.repo_tag[MAX_TAG_SZ - 1] = '\0';
-        size                              = 0U;
 
         FLib_MemCpy(&pPkt->structured.payload[0], &nbu_info, 3);
         size += 3U;
@@ -1156,7 +1156,7 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
         FLib_MemCpy(&pPkt->structured.payload[size], &nbu_info.repo_digest, MAX_SHA_SZ);
         size += MAX_SHA_SZ;
 
-        tag_lg                         = (uint8_t)strlen(&nbu_info.repo_tag[0]);
+        tag_lg                         = (uint8_t)strnlen(&nbu_info.repo_tag[0], MAX_TAG_SZ);
         pPkt->structured.payload[size] = tag_lg;
         size++;
         if (tag_lg > 0U)
@@ -1166,9 +1166,9 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
         size += tag_lg;
 
         FLib_MemCpy(&pPkt->structured.payload[size], &nbu_info.versionBuildNo, 1);
-        size += 1;
+        size += 1U;
 
-        pPkt->structured.header.len = (uint8_t)size;
+        pPkt->structured.header.len = size;
 
         /* A new buffer was allocated. Fill with additional information */
         pPkt->structured.header.opGroup = gFSCI_CnfOpcodeGroup_c;
