@@ -326,6 +326,36 @@ void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen);
 void PLATFORM_ConfigureSmuDmemMapping(void);
 
 /*!
+ * \brief Get the SMU base address and its configured size.
+ *
+ * This function deduces the size of SMU from applied SMU / DMEM mapping configuration.
+ *
+ * \param[out] mem_start pointer to memory start address
+ * \param[out] mem_szz pointer to memory size in bytes
+ *
+ * \return None
+ *
+ * \note This function should be called to retrieve geometry of configured SMU / DMEM.
+ * Only implemented for KW47 / MCXW72 families.
+ */
+void PLATFORM_GetSharedMemConfig(uint32_t *mem_start, uint32_t *mem_sz);
+
+/*!
+ * \brief Get the DMEM base address and its configured size.
+ *
+ * This function deduces the size of DMEM from applied SMU / DMEM mapping configuration.
+ *
+ * \param[out] mem_start pointer to memory start address
+ * \param[out] mem_sz pointer to memory size in bytes
+ *
+ * \return None
+ *
+ * \note This function should be called to retrieve geometry of configured  DMEM.
+ * Only implemented for KW47 / MCXW72 families.
+ */
+void PLATFORM_GetDMemConfig(uint32_t *mem_start, uint32_t *mem_sz);
+
+/*!
  * \brief Get NBU core frequency.
  *
  * \return frequency value in Hz.

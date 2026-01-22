@@ -78,6 +78,11 @@ typedef struct smu_dmem_config
 
 #define PLATFORM_XTAL32M_TRIM_INVALID 0xFFU
 
+#if (defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
+#define SHARED_RAM_BASE_ADDR 0xB0000000UL
+#define DMEM_BASE_ADDR       0x00140000UL
+#endif
+
 /************************************************************************************
  * Private memory declarations
  ************************************************************************************/
@@ -424,7 +429,7 @@ void PLATFORM_ConfigureSmuDmemMapping(void)
     bool     config_found;
 
     /* Ensure the start symbols are correct */
-    if (((uint32_t)&m_dmem_start != 0x140000U) || ((uint32_t)&m_shared_ram_start != 0xB0000000U))
+    if (((uint32_t)&m_dmem_start != DMEM_BASE_ADDR) || ((uint32_t)&m_shared_ram_start != SHARED_RAM_BASE_ADDR))
     {
         assert(false);
     }
@@ -463,6 +468,53 @@ void PLATFORM_ConfigureSmuDmemMapping(void)
     ram_mux_ctrl |= smuDmemMapping;
 
     RF_CMC1->RAM_MUX_CTRL = ram_mux_ctrl;
+#endif
+}
+
+void PLATFORM_GetSharedMemConfig(uint32_t *mem_start, uint32_t *mem_sz)
+{
+    *mem_sz = 0UL;
+#if (defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
+    *mem_start = SHARED_RAM_BASE_ADDR;
+
+    const size_t table_size = sizeof(smu_dmem_lookup_table) / sizeof(smu_dmem_lookup_table[0]);
+
+    uint32_t ram_mux_ctl =
+        (RF_CMC1->RAM_MUX_CTRL & RF_CMC1_RAM_MUX_CTRL_SMU_MEM_SEL_MASK) >> RF_CMC1_RAM_MUX_CTRL_SMU_MEM_SEL_SHIFT;
+
+    for (int i = 0; i < table_size; i++)
+    {
+        if (smu_dmem_lookup_table[i].mapping_value == ram_mux_ctl)
+        {
+            *mem_sz = smu_dmem_lookup_table[i].shared_ram_size;
+            break;
+        }
+    }
+#else
+    *mem_start = ~0UL;
+#endif
+}
+
+void PLATFORM_GetDMemConfig(uint32_t *mem_start, uint32_t *mem_sz)
+{
+    *mem_sz = 0U;
+#if (defined(FWK_KW47_MCXW72_NBU_FAMILIES)) && (FWK_KW47_MCXW72_NBU_FAMILIES == 1)
+    *mem_start              = DMEM_BASE_ADDR;
+    const size_t table_size = sizeof(smu_dmem_lookup_table) / sizeof(smu_dmem_lookup_table[0]);
+
+    uint32_t ram_mux_ctl =
+        (RF_CMC1->RAM_MUX_CTRL & RF_CMC1_RAM_MUX_CTRL_SMU_MEM_SEL_MASK) >> RF_CMC1_RAM_MUX_CTRL_SMU_MEM_SEL_SHIFT;
+
+    for (int i = 0; i < table_size; i++)
+    {
+        if (smu_dmem_lookup_table[i].mapping_value == ram_mux_ctl)
+        {
+            *mem_sz = smu_dmem_lookup_table[i].shared_ram_size;
+            break;
+        }
+    }
+#else
+    *mem_start = ~0UL;
 #endif
 }
 
