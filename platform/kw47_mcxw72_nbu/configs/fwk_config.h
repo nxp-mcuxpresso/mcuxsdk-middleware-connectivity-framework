@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -56,6 +56,9 @@
 /* Enable a dummy interrupt on NBU core that will be triggered by PLATFORM_RemoteActiveReq() on host core each time it
  * needs to access to NBU power domain */
 #define gPlatformLowpowerEnableWakeUpInterrupt_d 1
+
+/* Enable coredump debug feature */
+#define gFaultHandlerCoredumpEnabled_d 1
 
 #if defined(gNbuLowpowerRetentionRamOptimized) && (gNbuLowpowerRetentionRamOptimized == 1)
 /* RAM retention mask optimized for low-power mode when NBU operates with a limited feature set (e.g., Matter use cases)
