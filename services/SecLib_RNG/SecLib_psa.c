@@ -1,17 +1,15 @@
-
 /*
  * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 /*! *********************************************************************************
- *
  * \file
+ *
  *
  * This is the source file for the security module used by the connectivity stacks. The Security
  *    Module SecLib provides an abstraction from the Hardware to the upper layer.
  *    In this file, a wrapper to PSA API component is implemented.
- *
- ********************************************************************************** */
+ ***********************************************************************************/
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -688,8 +686,13 @@ bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey)
  ************************************************************************************/
 secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
 {
-    return ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint,
-                                  pDhKeyData->keepInternalBlob);
+    secResultType_t res = gSecBadArgument_c;
+    if (pDhKeyData != NULL)
+    {
+        res = ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint,
+                                     pDhKeyData->keepInternalBlob);
+    }
+    return res;
 }
 
 /************************************************************************************
@@ -710,7 +713,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
     do
     {
         /* Check if output DH key pointer is valid */
-        if ((pOutDhKey == NULL) || (pInPeerPublicKey == NULL))
+        if ((pInPrivateKey == NULL) || (pInPeerPublicKey == NULL) || (pOutDhKey == NULL))
         {
             ret = gSecBadArgument_c;
             break;
@@ -751,7 +754,12 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
  ************************************************************************************/
 secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
 {
-    return ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
+    secResultType_t res = gSecBadArgument_c;
+    if (pDhKeyData != NULL)
+    {
+        res = ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
+    }
+    return res;
 }
 
 /************************************************************************************
@@ -832,25 +840,23 @@ secEcp256Status_t ECP256_GeneratePublicKey(uint8_t       *pOutPublicKey,
                                            const uint8_t *pInPrivateKey,
                                            void          *pMultiplicationBuffer)
 {
-    secEcp256Status_t ret;
-
+    secEcp256Status_t ret = gSecEcp256BadParameters_c;
+    if ((pOutPublicKey != NULL) && (pInPrivateKey != NULL))
+    {
 #if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d != 0))
-    if (pMultiplicationBuffer == NULL)
-    {
-        ret = gSecEcp256BadParameters_c;
-    }
-    else
-    {
-        big_int256_t  privKey;
-        ecp256Point_t out;
-        FLib_MemCpyReverseOrder((uint8_t *)&privKey, pInPrivateKey, sizeof(big_int256_t));
-        ret = ECP256_GeneratePublicKeySeg(&out.raw[0], (uint8_t *)&privKey, pMultiplicationBuffer);
-        ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, &out.raw[0]);
-    }
+        if (pMultiplicationBuffer != NULL)
+        {
+            big_int256_t  privKey;
+            ecp256Point_t out;
+            FLib_MemCpyReverseOrder((uint8_t *)&privKey, pInPrivateKey, sizeof(big_int256_t));
+            ret = ECP256_GeneratePublicKeySeg(&out.raw[0], (uint8_t *)&privKey, pMultiplicationBuffer);
+            ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, &out.raw[0]);
+        }
 #else
-    NOT_USED(pMultiplicationBuffer);
-    ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
+        NOT_USED(pMultiplicationBuffer);
+        ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
 #endif
+    }
     return ret;
 }
 

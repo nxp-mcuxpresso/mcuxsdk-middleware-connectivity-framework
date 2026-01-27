@@ -2,6 +2,12 @@
  * Copyright 2019, 2022, 2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
+/*! *********************************************************************************
+ * \file
+ *
+ * This is the header file for the security module.
+ *
+ ********************************************************************************** */
 
 #ifndef _CRYPTOLIBSW_H_
 #define _CRYPTOLIBSW_H_
@@ -109,8 +115,6 @@ secEcdhStatus_t Ecdh_ComputeDhKey(const ecdhPrivateKey_t *pPrivateKey,
  * \param[in] pPeerPublicKey  pointer on ECP256R1 public key received from peer.
  *
  * \param[out] pOutDhKey  pointer on buffer to receive DH shared secret.
- *
- * \param[in] pMultiplicationBuffer  pointer on work buffer for multiplication buffer.
  *
  * \return  gSecEcdhSuccess_c if success.
  * Note:    Does not retry if private key is not suitable

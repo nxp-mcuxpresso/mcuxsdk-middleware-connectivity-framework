@@ -2,6 +2,15 @@
  * Copyright 2022-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
+/*! *********************************************************************************
+ * \file
+ * This file contains the APIs for the Security module Elliptic curve operations required
+ * for EC P256 R1 Key generation and Diffie Hellman exchange.
+ * There is support for a legacy segmented (multistep) implementation used when the processor
+ * has neither DSP Extension nor an Elliptic Curve  Hw accelerator.
+ * Even when Hw accelerator ispresent, some operations such as point validation may resort
+ * to SW implementation.
+ ********************************************************************************** */
 
 #ifndef __SECLIB_ECP256_H__
 #define __SECLIB_ECP256_H__
@@ -151,7 +160,7 @@ typedef struct computeDhKeyParams_tag
     pfDhKeyCallback_t pFCallback;    /*!< The function to be called when asynchronous computation completes */
     void *pMsg; /*!< Pointer to a pre-allocated message to be injected in the SM state machine when asynchronous
                    computation completes */
-    bool_t   keepInternalBlob; /*!< Keep internal object foir later usage? */
+    bool_t   keepInternalBlob; /*!< Keep internal object for later usage? */
     uint32_t aUserData[1];     /*!< Hold upper layer private data */
 } computeDhKeyParam_t;
 
@@ -172,6 +181,8 @@ extern "C" {
  * \brief  This function performs initialization of the callback used to offload
  * elliptic curve multiplication.
  *
+ * \note Only exists for SW implementation, but is not used in the case of DSP extensions
+ *
  * \param[in]  pfCallback Pointer to the function used to handle multiplication.
  *
  ********************************************************************************** */
@@ -179,6 +190,8 @@ void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback);
 
 /*! *********************************************************************************
  * \brief  This function performs calls the multiplication Callback.
+ *
+ * \note Only exists for SW implementation, but is not used in the case of DSP extensions.
  *
  * \param[in]  pMsg Pointer to the data used in multiplication.
  *

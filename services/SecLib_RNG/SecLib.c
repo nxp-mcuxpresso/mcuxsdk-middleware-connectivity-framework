@@ -1,8 +1,14 @@
-/*! *********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2018,2020-2026 NXP
+/*
+ * Copyright 2015 Freescale
+ * Copyright 2016-2018, 2020-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
+/*! *********************************************************************************
+ * \file
+ *
+ * This is the source file for the security module.
+ *
+ ********************************************************************************** */
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -1354,36 +1360,37 @@ secResultType_t SecLib_AES_CMAC_PRF_128(
                                             *    output. */
         if ((pInput == NULL) || (pVarKey == NULL) || (pOutput == NULL))
         {
-            status = gSecBadArgument_c;
-            break;
+            RAISE_ERROR(status, gSecBadArgument_c);
         }
 
-        if (varKeyLen > 0u)
+        if (varKeyLen == 0u)
         {
-            if (varKeyLen != 16u)
+            /* NIST SP 800‑38B and RFC 4493 allow empty message input.
+             * RFC 4615 could mathematically accepts variable-length to be 0, nonetheless it is strongly discouraged
+             * and ought to be rejected because of the lack of entropy. Using it could let the PRF be predictable
+             * */
+            RAISE_ERROR(status, gSecBadArgument_c);
+        }
+
+        if (varKeyLen != 16u)
+        {
+            uint8_t K0[16] = {0x00u, 0x00,  0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
+                              0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u};
+            /*! Perform AES 128 CMAC on the variable key if it has a length which
+             *  is different from 16 bytes using a 128 bit key with all zeroes and
+             *  set the CMAC key to point to the result. */
+
+            status = SecLib_AES_128_CMAC(pVarKey, varKeyLen, K0, K);
+            if (status != gSecSuccess_c)
             {
-                uint8_t K0[16] = {0x00u, 0x00,  0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
-                                  0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u};
-                /*! Perform AES 128 CMAC on the variable key if it has a length which
-                 *  is different from 16 bytes using a 128 bit key with all zeroes and
-                 *  set the CMAC key to point to the result. */
-
-                status = SecLib_AES_128_CMAC(pVarKey, varKeyLen, K0, K);
-                if (status != gSecSuccess_c)
-                {
-                    break;
-                }
-                pCmacKey = K;
+                break;
             }
+            pCmacKey = K;
+        }
 
-            /*! Perform the CMAC operation which generates the output using the local
-             *  key pointer whcih will be set to the initial key or the generated one. */
-            status = SecLib_AES_128_CMAC(pInput, inputLen, pCmacKey, pOutput);
-        }
-        else
-        {
-            status = gSecError_c;
-        }
+        /*! Perform the CMAC operation which generates the output using the local
+         *  key pointer whcih will be set to the initial key or the generated one. */
+        status = SecLib_AES_128_CMAC(pInput, inputLen, pCmacKey, pOutput);
     } while (false);
     return status;
 }
@@ -1871,10 +1878,6 @@ secResultType_t SecLib_HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
         {
             break;
         }
-        if (st != gSecSuccess_c)
-        {
-            break;
-        }
         st = SecLib_SHA256_HashUpdate(sha_ctx, hash1, SHA256_HASH_SIZE);
         if (st != gSecSuccess_c)
         {
@@ -1964,12 +1967,24 @@ secEcp256Status_t ECP256_GeneratePublicKey(uint8_t       *pOutPublicKey,
                                            const uint8_t *pInPrivateKey,
                                            void          *pMultiplicationBuffer)
 {
+    secEcp256Status_t ret = gSecEcp256BadParameters_c;
+    if ((pOutPublicKey != NULL) && (pInPrivateKey != NULL))
+    {
 #if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
-    return ECP256_GeneratePublicKeySeg(pOutPublicKey, pInPrivateKey, pMultiplicationBuffer);
+        if (pMultiplicationBuffer != NULL)
+        {
+            big_int256_t  privKey;
+            ecp256Point_t out;
+            FLib_MemCpyReverseOrder((uint8_t *)&privKey, pInPrivateKey, sizeof(big_int256_t));
+            ret = ECP256_GeneratePublicKeySeg(&out.raw[0], (uint8_t *)&privKey, pMultiplicationBuffer);
+            ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, &out.raw[0]);
+        }
 #else
-    NOT_USED(pMultiplicationBuffer);
-    return ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
+        NOT_USED(pMultiplicationBuffer);
+        ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
 #endif
+    }
+    return ret;
 }
 /************************************************************************************
  * \brief Generates a new ECDH P256 Private/Public key pair
@@ -2067,7 +2082,6 @@ secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
         {
             RAISE_ERROR(result, gSecBadArgument_c);
         }
-#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
         /* The callback is NULL when there is no async ECDH */
         if (pfSecLibMultCallback == NULL)
         {
@@ -2085,13 +2099,12 @@ secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
             pDhKeyData->pWorkBuffer = pMultiplicationBuffer;
             if (gSecEcdhSuccess_c != Ecdh_GenerateNewKeysSeg(pDhKeyData))
             {
+                (void)MEM_BufferFree(pDhKeyData->pWorkBuffer);
+                pDhKeyData->pWorkBuffer = NULL;
                 RAISE_ERROR(result, gSecError_c);
             }
             result = gSecResultPending_c;
         }
-#else
-        result = ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
-#endif
     } while (false);
     return result;
 }
@@ -2202,6 +2215,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
 {
     secResultType_t result = gSecSuccess_c;
     secEcdhStatus_t ecdhStatus;
+    NOT_USED(keepBlobDhKey);
     do
     {
         if ((pInPrivateKey == NULL) || (pInPeerPublicKey == NULL) || (pOutDhKey == NULL))
@@ -2362,24 +2376,34 @@ secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
 {
     secResultType_t result;
 #if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
-
-    if (pfSecLibMultCallback == NULL)
-    {
-        result =
-            ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint, FALSE);
-    }
-    else
+    do
     {
         secEcdhStatus_t ecdhStatus;
+        void           *pMultiplicationBuffer;
 
-        void *pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
+        if (pDhKeyData == NULL)
+        {
+            RAISE_ERROR(result, gSecBadArgument_c);
+        }
+
+        if (pfSecLibMultCallback == NULL)
+        {
+            /* One shot operation */
+            result = ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint,
+                                            FALSE);
+            break;
+        }
+
+        pMultiplicationBuffer = MEM_BufferAlloc(gEcP256_MultiplicationBufferSize_c);
         if (NULL == pMultiplicationBuffer)
         {
-            result = gSecAllocError_c;
+            RAISE_ERROR(result, gSecAllocError_c);
         }
         else
         {
-            ecdhStatus = Ecdh_ComputeDhKeySeg(pDhKeyData);
+            pDhKeyData->pWorkBuffer = pMultiplicationBuffer;
+            ecdhStatus              = Ecdh_ComputeDhKeySeg(pDhKeyData);
+            result                  = gSecResultPending_c;
 
             if (gSecEcdhInvalidPublicKey_c == ecdhStatus)
             {
@@ -2389,12 +2413,13 @@ secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
             {
                 result = gSecError_c;
             }
-            else
+            if (result != gSecResultPending_c)
             {
-                result = gSecResultPending_c;
+                (void)MEM_BufferFree(pDhKeyData->pWorkBuffer);
+                pDhKeyData->pWorkBuffer = NULL;
             }
         }
-    }
+    } while (false);
 #else
     result = ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint, FALSE);
 #endif
@@ -2417,8 +2442,8 @@ secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
  ************************************************************************************/
 bool_t SecLib_HandleMultiplyStep(computeDhKeyParam_t *pData)
 {
-    bool_t  result = FALSE;
-    uint8_t steps  = ((255U + 1U) / gSecLibEcStepsAtATime);
+    bool_t        result = FALSE;
+    const uint8_t steps  = ((255U + 1U) / gSecLibEcStepsAtATime);
 
     /* Intermediate step */
     if (pData->procStep < steps)
@@ -2427,7 +2452,8 @@ bool_t SecLib_HandleMultiplyStep(computeDhKeyParam_t *pData)
         Ecdh_ComputeJacobiChunk(255U - (pData->procStep * gSecLibEcStepsAtATime), gSecLibEcStepsAtATime, pData);
         /* Go to the next step */
         pData->procStep++;
-        result = FALSE;
+        pData->result = gSecResultPending_c;
+        result        = FALSE;
     }
     /* Final step was completed -> resume SecLib procedure */
     else
@@ -2444,8 +2470,8 @@ bool_t SecLib_HandleMultiplyStep(computeDhKeyParam_t *pData)
             FLib_MemCpyReverseOrder(pData->outY, mReversedEcdhKey.components_8bit.y, sizeof(pData->outY));
         }
 #endif /* mDbgRevertKeys_d */
-
-        result = TRUE;
+        pData->result = gSecSuccess_c;
+        result        = TRUE;
     }
     return result;
 }

@@ -1007,6 +1007,14 @@ secResultType_t SecLib_AES_CMAC_PRF_128(
         {
             RAISE_ERROR(ret, gSecBadArgument_c);
         }
+        if (varKeyLen == 0u)
+        {
+            /* NIST SP 800‑38B and RFC 4493 allow empty message input.
+             * RFC 4615 could mathematically accepts variable-length to be 0, nonetheless it is strongly discouraged
+             * and ought to be rejected because of the lack of entropy. Using it could let the PRF be predictable
+             * */
+            RAISE_ERROR(ret, gSecBadArgument_c);
+        }
 
         SECLIB_MUTEX_LOCK();
 
@@ -1603,21 +1611,23 @@ secEcp256Status_t ECP256_GeneratePublicKey(uint8_t       *pOutPublicKey,
                                            const uint8_t *pInPrivateKey,
                                            void          *pMultiplicationBuffer)
 {
-    secEcp256Status_t ret;
-
-#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
-    if (pMultiplicationBuffer == NULL)
+    secEcp256Status_t ret = gSecEcp256BadParameters_c;
+    if ((pOutPublicKey != NULL) && (pInPrivateKey != NULL))
     {
-        ret = gSecEcp256BadParameters_c;
-    }
-    else
-    {
-        ret = ECP256_GeneratePublicKeySeg(pOutPublicKey, pInPrivateKey, pMultiplicationBuffer);
-    }
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d != 0))
+        if (pMultiplicationBuffer != NULL)
+        {
+            big_int256_t  privKey;
+            ecp256Point_t out;
+            FLib_MemCpyReverseOrder((uint8_t *)&privKey, pInPrivateKey, sizeof(big_int256_t));
+            ret = ECP256_GeneratePublicKeySeg(&out.raw[0], (uint8_t *)&privKey, pMultiplicationBuffer);
+            ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, &out.raw[0]);
+        }
 #else
-    NOT_USED(pMultiplicationBuffer);
-    ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
+        NOT_USED(pMultiplicationBuffer);
+        ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
 #endif
+    }
     return ret;
 }
 
@@ -1647,7 +1657,12 @@ bool_t ECP256_IsKeyValid(const ecp256Point_t *pKey)
  ************************************************************************************/
 secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
 {
-    return ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
+    secResultType_t res = gSecBadArgument_c;
+    if (pDhKeyData != NULL)
+    {
+        res = ECDH_P256_GenerateKeys(&pDhKeyData->outPoint, &pDhKeyData->privateKey);
+    }
+    return res;
 }
 
 /************************************************************************************
@@ -1673,7 +1688,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
         ecdhPoint_t EcdhPubKey = {0U};
         size_t      wrk_buf_sz;
 
-        if ((pOutDhKey == NULL) || (pInPeerPublicKey == NULL))
+        if ((pInPrivateKey == NULL) || (pInPeerPublicKey == NULL) || (pOutDhKey == NULL))
         {
             ret = gSecBadArgument_c;
             break;
@@ -1747,8 +1762,13 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
  ************************************************************************************/
 secResultType_t ECDH_P256_ComputeDhKeySeg(computeDhKeyParam_t *pDhKeyData)
 {
-    return ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint,
-                                  pDhKeyData->keepInternalBlob);
+    secResultType_t res = gSecBadArgument_c;
+    if (pDhKeyData != NULL)
+    {
+        res = ECDH_P256_ComputeDhKey(&pDhKeyData->privateKey, &pDhKeyData->peerPublicKey, &pDhKeyData->outPoint,
+                                     pDhKeyData->keepInternalBlob);
+    }
+    return res;
 }
 
 /************************************************************************************
@@ -1923,7 +1943,7 @@ secResultType_t SecLib_GenerateBluetoothF5Keys(uint8_t       *pMacKey,
             RAISE_ERROR(result, gSecBadArgument_c);
         }
 
-        /*! Compute the f5 function key T using the predefined salt as key for AES-128-CAMC */
+        /*! Compute the f5 function key T using the predefined salt as key for AES-128-CMAC */
         result = SecLib_AES_128_CMAC_LsbFirstInput((const uint8_t *)pW, 32, (const uint8_t *)f5Salt, f5T);
         if (result != gSecSuccess_c)
         {

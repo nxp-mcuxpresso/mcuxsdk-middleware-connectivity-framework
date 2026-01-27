@@ -22,7 +22,9 @@
  * library. The flags may be set to 0 if this library is not required. It mainly makes sense for Matter SPAKE2P
  * procedures and for BLE point validation.
  */
+#ifndef gSecLibUseDspExtension_d
 #define gSecLibUseDspExtension_d 1
+#endif
 
 /*********************************************************************
  *        HW parameters enablement and placement
