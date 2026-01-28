@@ -121,7 +121,7 @@
 #define COEX_CONFIG_LEN                                                                                       \
     (6U + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \
      sizeof(coexRfActiveRfmcConfig_t) + sizeof(coexRfStatusConfig_t) + sizeof(coexRfPriorityConfig_t) +       \
-     sizeof(coexCsConfig_t) + 2)
+     sizeof(coexCsConfig_t) + 2U)
 #else
 #define COEX_CONFIG_LEN                                                                                       \
     (6U + sizeof(coexRfSignalInvert_t) + sizeof(coexRfNotAllowedConfig_t) + sizeof(coexRfActiveTsmConfig_t) + \

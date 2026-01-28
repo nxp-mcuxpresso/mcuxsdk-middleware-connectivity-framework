@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2024-2025 NXP
+ * Copyright 2021, 2024-2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -17,10 +17,10 @@
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
 
-#define MAX_TAG_SZ        40
-#define MAX_SHA_SZ        20
-#define MAX_VARIANT_SZ    25
-#define MAX_BUILD_TYPE_SZ 10
+#define MAX_TAG_SZ        40U
+#define MAX_SHA_SZ        20U
+#define MAX_VARIANT_SZ    25U
+#define MAX_BUILD_TYPE_SZ 10U
 
 /* maximum size for API return parameters including status in bytes.
    should be same as the one defined in the NBU core */

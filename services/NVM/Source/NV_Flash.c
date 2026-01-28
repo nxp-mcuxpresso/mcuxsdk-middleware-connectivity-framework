@@ -4989,7 +4989,7 @@ NVM_STATIC NVM_Status_t NvCopyPage(NvTableEntryId_t skipEntryId)
         dstMetaAddress = mNvVirtualPageProperty[dstPageId].NvRawSectorStartAddress + gNvFirstMetaOffset_c;
 #if gNvDualImageSupport_d
         /* Need to determine mNvNeedAddEntryCnt */
-        NvGetEntryInfoNeedToAddInNVM();
+        (void)NvGetEntryInfoNeedToAddInNVM();
 
         dstMetaAddress += (sizeof(NVM_TableInfo_t) * mNvNeedAddEntryCnt);
 #endif /* gNvDualImageSupport_d */

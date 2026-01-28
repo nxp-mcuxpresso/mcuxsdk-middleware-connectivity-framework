@@ -28,10 +28,10 @@
 /* -------------------------------------------------------------------------- */
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
-#define MAX_TAG_SZ        40
-#define MAX_SHA_SZ        20
-#define MAX_VARIANT_SZ    25
-#define MAX_BUILD_TYPE_SZ 10
+#define MAX_TAG_SZ        40U
+#define MAX_SHA_SZ        20U
+#define MAX_VARIANT_SZ    25U
+#define MAX_BUILD_TYPE_SZ 10U
 
 #ifndef NBU_VERSION_DBG
 #define NBU_VERSION_DBG 0

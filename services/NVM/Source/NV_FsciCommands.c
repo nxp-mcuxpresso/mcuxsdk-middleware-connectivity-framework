@@ -106,7 +106,7 @@ void NV_FsciMsgHandler(void *pData, void *param, uint32_t fsciInterface)
     }
     else
     {
-        MEM_BufferFree(pData);
+        (void)MEM_BufferFree(pData);
     }
 }
 

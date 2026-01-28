@@ -766,7 +766,7 @@ bool_t FSCI_MsgReadExtendedAdrReqFunc(clientPacket_t *pData, uint32_t fsciInterf
 
     if (NULL == pPkt)
     {
-        MEM_BufferFree(pData);
+        (void)MEM_BufferFree(pData);
         FSCI_Error((uint8_t)gFsciOutOfMessages_c, fsciInterface);
         status = FALSE;
     }
@@ -1145,7 +1145,7 @@ bool_t FSCI_ReadNbuVer(clientPacket_t *pData, uint32_t fsciInterface)
             break;
         }
 
-        nbu_info.repo_tag[MAX_TAG_SZ - 1] = '\0';
+        nbu_info.repo_tag[MAX_TAG_SZ - 1U] = '\0';
 
         FLib_MemCpy(&pPkt->structured.payload[0], &nbu_info, 3);
         size += 3U;

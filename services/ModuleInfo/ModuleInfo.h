@@ -67,8 +67,8 @@ extern uint32_t Image$$VERSION_TAGS$$Limit[];
 extern uint32_t __start_VERSION_TAGS[];
 extern uint32_t __stop_VERSION_TAGS[];
 
-#define gVERSION_TAGS_startAddr_d ((moduleInfo_t *)__start_VERSION_TAGS)
-#define gVERSION_TAGS_endAddr_d   ((moduleInfo_t *)__stop_VERSION_TAGS)
+#define gVERSION_TAGS_startAddr_d ((moduleInfo_t *)(void *)__start_VERSION_TAGS)
+#define gVERSION_TAGS_endAddr_d   ((moduleInfo_t *)(void *)__stop_VERSION_TAGS)
 
 #else
 #define gVERSION_TAGS_startAddr_d ((moduleInfo_t *)0)
