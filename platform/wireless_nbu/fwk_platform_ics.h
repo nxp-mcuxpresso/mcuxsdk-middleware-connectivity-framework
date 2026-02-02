@@ -70,7 +70,8 @@ typedef PACKED_STRUCT
     {
         /* No data for gNbuInfoReserved_c */
         /* New info data to be added here */
-    };
+        uint8_t dummy; /* Ensures the union has a consistent non-zero size across compilers */
+    } u;
 }
 NbuInfoData_t;
 
@@ -81,7 +82,8 @@ typedef PACKED_STRUCT
         /* No data for gNbuWarningReserved_c */
         /* No data for gNbuWarningXtal32MhzNotReadyAtWakeUp */
         /* New warnings data to be added here */
-    };
+        uint8_t dummy; /* Ensures the union has a consistent non-zero size across compilers */
+    } u;
 }
 NbuWarningData_t;
 
@@ -91,7 +93,8 @@ typedef PACKED_STRUCT
     {
         /* No data for gNbuErrorReserved_c */
         /* New errors data to be added here */
-    };
+        uint8_t dummy; /* Ensures the union has a consistent non-zero size across compilers */
+    } u;
 }
 NbuErrorData_t;
 
@@ -100,11 +103,10 @@ typedef PACKED_STRUCT
     eNbuEventType eventType;
     union
     {
-        uint8_t          dummy; /* Ensures the union has a consistent non-zero size across compilers */
         NbuInfoData_t    infoData;
         NbuWarningData_t warningData;
         NbuErrorData_t   errorData;
-    };
+    } u;
 }
 NbuEvent_t;
 
