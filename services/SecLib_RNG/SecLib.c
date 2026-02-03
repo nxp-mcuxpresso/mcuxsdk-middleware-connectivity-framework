@@ -1,14 +1,8 @@
-/*! *********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2018,2020-2025 NXP
- * All rights reserved.
- *
- * \file
- *
- * This is the source file for the security module.
- *
+/*
+ * Copyright 2015 Freescale
+ * Copyright 2016-2018, 2020-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
- ********************************************************************************** */
+ */
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -1691,6 +1685,27 @@ DHKey: ab85843a 2f6d883f 62e5684b 38e30733 5fe6e194 5ecd1960 4105c6f2 3221eb69
 */
 
 /************************************************************************************
+ * \brief Generates a public key from a scalar given as input
+ *
+ * This function performs the multiplication of the scalar by the EC P 256 G point.
+ * The resulting point is the public key corresponding to the private key constituted by the scalar.
+ * This calculation is also involved in the compute L stage if the SPAKE2+ not necessarily.
+ *
+ * \return gSecSuccess_c or error
+ *
+ ************************************************************************************/
+secEcp256Status_t ECP256_GeneratePublicKey(uint8_t       *pOutPublicKey,
+                                           const uint8_t *pInPrivateKey,
+                                           void          *pMultiplicationBuffer)
+{
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
+    return ECP256_GeneratePublicKeySeg(pOutPublicKey, pInPrivateKey, pMultiplicationBuffer);
+#else
+    NOT_USED(pMultiplicationBuffer);
+    return ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
+#endif
+}
+/************************************************************************************
  * \brief Generates a new ECDH P256 Private/Public key pair
  *
  * \return gSecSuccess_c or error
@@ -1708,6 +1723,7 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
         result = gSecAllocError_c;
     }
     else
+
     {
 #if (defined(mDbgRevertKeys_d) && (mDbgRevertKeys_d > 0))
         if (gSecEcp256Success_c !=
@@ -1732,7 +1748,7 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
     }
 #else
     ecp256KeyPair_t KeyPair;
-    if (gSecEcp256Success_c != ECP256_GenerateKeyPairUltraFast(&KeyPair.public_key, &KeyPair.private_key, NULL))
+    if (gSecEcp256Success_c != ECP256_GenerateKeyPairUltraFast(&KeyPair.public_key, &KeyPair.private_key))
     {
         result = gSecError_c;
     }
@@ -1954,7 +1970,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
         ecp256Point_t      dh_secret;
         ECP256_PointCopy_and_change_endianness(&peer_public_key.raw[0], (const uint8_t *)pInPeerPublicKey);
         ECP256_coordinate_copy_and_change_endianness(&self_private_key.raw_8bit[0], (const uint8_t *)pInPrivateKey);
-        ecdhStatus = Ecdh_ComputeDhKeyUltraFast(&self_private_key, &peer_public_key, &dh_secret, NULL);
+        ecdhStatus = Ecdh_ComputeDhKeyUltraFast(&self_private_key, &peer_public_key, &dh_secret);
         if (ecdhStatus == gSecEcdhSuccess_c)
         {
             ECP256_PointCopy_and_change_endianness(&pOutDhKey->raw[0], (const uint8_t *)&dh_secret);

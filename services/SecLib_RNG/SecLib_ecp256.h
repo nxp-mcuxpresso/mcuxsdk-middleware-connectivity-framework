@@ -1,11 +1,7 @@
-/*! *********************************************************************************
- * Copyright 2022-2023, 2025 NXP
- * All rights reserved.
- *
- * \file
- *
+/*
+ * Copyright 2022-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
- ********************************************************************************** */
+ */
 
 #ifndef __SECLIB_ECP256_H__
 #define __SECLIB_ECP256_H__
@@ -171,6 +167,8 @@ extern "C" {
 *************************************************************************************
 ************************************************************************************/
 
+#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
+
 /*! *********************************************************************************
  * \brief  This function performs initialization of the callback used to offload
  * elliptic curve multiplication.
@@ -180,7 +178,6 @@ extern "C" {
  ********************************************************************************** */
 void SecLib_SetExternalMultiplicationCb(secLibCallback_t pfCallback);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief  This function performs calls the multiplication Callback.
  *
@@ -192,6 +189,9 @@ void SecLib_ExecMultiplicationCb(computeDhKeyParam_t *pMsg);
 
 /************************************************************************************
  * \brief Generates a new ECDH P256 Private/Public key pair
+ *
+ * \param[out] pOutPublicKey Pointer to the public key output buffer - X, Y 32 byte coordinates.
+ * \param[out] pOutPrivateKey Pointer to the private key output buffer - 32 byte scalar.
  *
  * \return gSecSuccess_c or error
  *
@@ -287,17 +287,25 @@ secResultType_t ECDH_P256_ComputeA2BKeySecure(const ecdhPublicKey_t *pInPeerPubl
  ************************************************************************************/
 secResultType_t ECDH_P256_FreeE2EKeyDataSecure(ecdhDhKey_t *pE2EKeyData);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
- * \brief ECP256R1 generate public from private key passed as argument
+ * \brief EC P256 R1 generate public from private key passed as argument
  *
- *  See : ECP256_GenerateKeyPair
+ * In normal BLE operation, ECP256_GenerateKeyPair is used instead. That generates a
+ * random scalar to be the private key, then invokes ECP256_GeneratePublicKey internally.
+ * This function is used in unit tests to inject a known scalar as private key in order to
+ * be able to anticipate the expected public key. Nonetheless it is also used in the
+ * Matter SPAKE2+ ComputeL operation where the W1 argument is used as pInPrivateKey
+ * scalar after its modular reduction.
  *
- * \param[out]  pOutPublicKey   pointer on ECP256R1 public key.
- *              64 byte Storage provided by caller.
- * \param[in] pInPrivateKey   pointer on ECP256R1 private key.
- *              32 byte storage provided by caller.
- * \param[in] pMultiplicationBuffer   pointer on work buffer for multiplication buffer.
+ *  See also: ECP256_GenerateKeyPair
+ *
+ * \param[out]  pOutPublicKey   pointer on ECP256R1 public key / point X,Y affine coordinates.
+ *              64 byte Storage provided by caller - expressed in Big Endian
+ * \param[in] pInPrivateKey   pointer on ECP256R1 private key / 32 byte scalar.
+ *              storage provided by caller - expressed in Big Endian.
+ * \param[in] pMultiplicationBuffer   pointer on work buffer for multiplication buffer
+ *              used only in the legacy (slow) operation that does the EC P256 R1
+ *              multiplication of the G point by the scalar in multiple steps.
  *
  * \return  gSecEcp256Success_c if success.
  * Note:    Does not retry if private key is not suitable
@@ -426,8 +434,8 @@ secEcdsaStatus_t ECDSA_VerifyMessageSignature(const uint8_t  pSignature[SEC_ECP2
  *          private key (random 32 byte number)
  *          and compute matching public key
  *
- * \param[in] pOutPublicKey pointer on 64 byte storage to receive generate public key
- * \param[in] pOutPrivateKey pointer on 32 byte storage to receive the scalar private key
+ * \param[out] pOutPublicKey pointer on 64 byte storage to receive generate public key
+ * \param[out] pOutPrivateKey pointer on 32 byte storage to receive the scalar private key
  * \param[in] pMultiplicationBuffer  pointer on work buffer (can be NULL if using NCCL optimization)
  *
  * \return    gSecEcp256Success_c (0) if success,
@@ -464,8 +472,6 @@ void ECP256_KeyPairSerialize(uint8_t          serialized_key[SEC_ECP256_POINT_LE
 void ECP256_KeyPairDeserialize(ecp256KeyPair_t *keypair,
                                uint8_t          serialized_key[SEC_ECP256_POINT_LEN + SEC_ECP256_SCALAR_LEN]);
 
-#endif
-
 /*! *********************************************************************************
  * \brief Load point structure from octet string
  *
@@ -491,7 +497,6 @@ void ECP256_PointLoad(ecp256Point_t *R, const uint8_t *in, bool change_endiannes
  ********************************************************************************** */
 void ECP256_PointWrite(uint8_t *out, const ecp256Point_t *P, bool change_endianness);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief Load  scalar and forcing it to belong to field
  *        R = fe mod N
@@ -583,7 +588,6 @@ secEcp256Status_t ECP256_DoublePointMulAdd(
  *
  ********************************************************************************** */
 secEcp256Status_t ECP256_PointInvert(uint32_t *R, uint32_t const *P);
-#endif
 
 /*! *********************************************************************************
  * \brief Return whether point is valid or not, i.e it belongs to the curve
@@ -595,7 +599,6 @@ secEcp256Status_t ECP256_PointInvert(uint32_t *R, uint32_t const *P);
  ********************************************************************************** */
 bool ECP256_PointValid(const ecp256Point_t *P);
 
-#if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
  * \brief Multiply ECP256R1 point by scalar i.e R = fe * P
  *
@@ -624,21 +627,6 @@ secEcp256Status_t ECP256_PointMult(ecp256Point_t *R, const uint8_t *P, const uin
  *
  ********************************************************************************** */
 secEcp256Status_t ECP256_GeneratePrivateKey(big_int256_t *pOutPrivateKey);
-
-/*! *********************************************************************************
- * \brief Generate an ECP256 Key pair using Ultra fast library
- *
- * \param[out] pOutPublicKey pointer ecp256Point_t storage to receive public key.
- * \param[out] pOutPrivateKey pointer on big_int256_t storage to receive private key
- * \param[in]  pMultiplicationBuffer not used
- *
- * \pre       RNG initialization must have been run
- *
- ********************************************************************************** */
-secEcp256Status_t ECP256_GenerateKeyPairUltraFast(ecp256Point_t *pOutPublicKey,
-                                                  big_int256_t  *pOutPrivateKey,
-                                                  void          *pMultiplicationBuffer);
-#endif
 
 #ifdef __cplusplus
 }

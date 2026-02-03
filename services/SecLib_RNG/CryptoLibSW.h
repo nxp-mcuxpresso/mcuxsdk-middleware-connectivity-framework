@@ -1,13 +1,7 @@
-/*! *********************************************************************************
- * Copyright 2019, 2022 NXP
- * All rights reserved.
- *
- * \file
- *
- * This is the header file for the security module.
- *
+/*
+ * Copyright 2019, 2022-2024, 2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
- ********************************************************************************** */
+ */
 
 #ifndef _CRYPTOLIBSW_H_
 #define _CRYPTOLIBSW_H_
@@ -125,8 +119,7 @@ secEcdhStatus_t Ecdh_ComputeDhKey(const ecdhPrivateKey_t *pPrivateKey,
  ********************************************************************************** */
 secEcdhStatus_t Ecdh_ComputeDhKeyUltraFast(const ecdhPrivateKey_t *pPrivateKey,
                                            const ecdhPublicKey_t  *pPeerPublicKey,
-                                           ecdhDhKey_t            *pOutDhKey,
-                                           void                   *pMultiplicationBuffer);
+                                           ecdhDhKey_t            *pOutDhKey);
 
 /*! *********************************************************************************
  * \brief Duplicate ECP256 affine coordinate without endianess modification
@@ -197,6 +190,71 @@ void ECP256_PointCopy_and_change_endianness(uint8_t dest_XY[SEC_ECP256_POINT_LEN
  *  Internal API for Debug
  */
 void ECP256_PointDisplay(const char *str, const uint8_t *point);
+
+/*! *********************************************************************************
+ * \brief Generate an ECP256 Key pair using Ultra fast library
+ *
+ * Note In the SecLib SW variant, this function is called by ECDH_P256_GenerateKeys
+ * if DSP extension option is present, whereas ECDH_P256_GenerateKeys relies entirely
+ * on the Secure Subsystem in the SecLib SSS variant. This API is exposed separately
+ * because it can turnout handy when both SSS and DSP extension coexist.
+ *
+ * \param[out] pOutPublicKey pointer ecp256Point_t storage to receive public key.
+ * \param[out] pOutPrivateKey pointer on big_int256_t storage to receive private key
+ *
+ * \pre       RNG initialization must have been run
+ *
+ ********************************************************************************** */
+secEcp256Status_t ECP256_GenerateKeyPairUltraFast(ecp256Point_t *pOutPublicKey, big_int256_t *pOutPrivateKey);
+
+/*! *********************************************************************************
+ * \brief EC P256 R1 generate public from private key passed as argument
+ *
+ * In normal BLE operation, ECP256_GenerateKeyPair is used instead. That generates a
+ * random scalar to be the private key, then invokes ECP256_GeneratePublicKey internally.
+ * This function is used in unit tests to inject a known scalar as private key in order to
+ * be able to anticipate the expected public key. Nonetheless it is also used in the
+ * Matter SPAKE2+ ComputeL operation where the W1 argument is used as pInPrivateKey
+ * scalar after its modular reduction.
+ *
+ *  See also: ECP256_GenerateKeyPair
+ *
+ * \param[out]  pOutPublicKey   pointer on ECP256R1 public key.
+ *              64 byte Storage provided by caller.
+ * \param[in] pInPrivateKey   pointer on ECP256R1 private key.
+ *              32 byte storage provided by caller.
+ *
+ * \return  gSecEcp256Success_c if success.
+ * Note:    Does not retry if private key is not suitable
+ *
+ ********************************************************************************** */
+secEcp256Status_t ECP256_GeneratePublicKeyUltraFast(uint8_t *pOutPublicKey, const uint8_t *pInPrivateKey);
+
+/*! *********************************************************************************
+ * \brief EC P256 R1 generate public from private key passed as argument
+ *
+ * Similar to ECP256_GeneratePublicKeyUltraFast but without DSP extension.
+ * In normal BLE operation, ECP256_GenerateKeyPair is used instead. That generates a
+ * random scalar to be the private key, then invokes ECP256_GeneratePublicKey internally.
+ * This function is used in unit tests to inject a known scalar as private key in order to
+ * be able to anticipate the expected public key. Nonetheless it is also used in the
+ * Matter SPAKE2+ ComputeL operation where the W1 argument is used as pInPrivateKey
+ * scalar after its modular reduction.
+ *
+ *  See also: ECP256_GenerateKeyPair
+ *
+ * \param[out]  pOutPublicKey   pointer on ECP256R1 public key.
+ *              64 byte Storage provided by caller.
+ * \param[in] pInPrivateKey   pointer on ECP256R1 private key.
+ *              32 byte storage provided by caller.
+ *
+ * \return  gSecEcp256Success_c if success.
+ * Note:    Does not retry if private key is not suitable
+ *
+ ********************************************************************************** */
+secEcp256Status_t ECP256_GeneratePublicKeySeg(uint8_t       *pOutPublicKey,
+                                              const uint8_t *pInPrivateKey,
+                                              void          *pMultiplicationBuffer);
 
 #ifdef __cplusplus
 }

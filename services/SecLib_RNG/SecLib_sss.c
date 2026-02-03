@@ -1,14 +1,14 @@
+/*
+ * Copyright 2022-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*! *********************************************************************************
- * Copyright 2022-2025 NXP
- * All rights reserved.
- *
  * \file
  *
  * This is the source file for the security module used by the connectivity stacks. The Security
  *    Module SecLib provides an abstraction from the Hardware to the upper layer.
  *    In this file, a wrapper to SSS component is implemented.
  *
- * SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
 
 /*! *********************************************************************************
@@ -1257,6 +1257,40 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
     (void)g_ECP_KeyPair;
 #endif /* gSecLibUseBleDebugKeys_d */
 
+    return ret;
+}
+
+/************************************************************************************
+ * \brief Generates a public key from a scalar given as input
+ *
+ * This function performs the multiplication of the scalar by the EC P 256 G point.
+ * The resulting point is the public key corresponding to the private key constituted by the scalar.
+ * This calculation is also involved in the compute L stage in the SPAKE2+ where the W1 argument
+ * plays the role of the private key argument after modular reduction.
+ * S200 does not support scalar multiplication in hardware so this function uses software implementation.
+ *
+ * \return gSecEcp256Success_c or error
+ *
+ ************************************************************************************/
+secEcp256Status_t ECP256_GeneratePublicKey(uint8_t       *pOutPublicKey,
+                                           const uint8_t *pInPrivateKey,
+                                           void          *pMultiplicationBuffer)
+{
+    secEcp256Status_t ret;
+
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d == 1))
+    if (pMultiplicationBuffer == NULL)
+    {
+        ret = gSecEcp256BadParameters_c;
+    }
+    else
+    {
+        ret = ECP256_GeneratePublicKeySeg(pOutPublicKey, pInPrivateKey, pMultiplicationBuffer);
+    }
+#else
+    NOT_USED(pMultiplicationBuffer);
+    ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
+#endif
     return ret;
 }
 

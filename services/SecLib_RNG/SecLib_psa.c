@@ -1,6 +1,9 @@
 
+/*
+ * Copyright 2025-2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*! *********************************************************************************
- * Copyright 2025 NXP
  *
  * \file
  *
@@ -8,7 +11,6 @@
  *    Module SecLib provides an abstraction from the Hardware to the upper layer.
  *    In this file, a wrapper to PSA API component is implemented.
  *
- * SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
 
 /*! *********************************************************************************
@@ -88,7 +90,7 @@ secLibCallback_t pfSecLibMultCallback = NULL;
 
 static bool ECP256_LePointValid(const ecp256Point_t *P)
 {
-#if gSecLibUseDspExtension_d
+#if defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d != 0)
     ecp256Point_t tmp;
     ECP256_PointCopy_and_change_endianness(tmp.raw, P->raw);
     return ECP256_PointValid(&tmp);
@@ -724,6 +726,45 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
         /* Convert public key from big-endian to little-endian format and store in output */
         ECP256_PointLoad(pOutPublicKey, bufPub, true);
     } while (false);
+    return ret;
+}
+
+/************************************************************************************
+ * \brief Generates a public key from a scalar given as input
+ *
+ * This function performs the multiplication of the scalar by the EC P 256 G point.
+ * The resulting point is the public key corresponding to the private key constituted by the scalar.
+ * This calculation is also involved in the compute L stage in the SPAKE2+ where the W1 argument
+ * plays the role of the private key argument after modular reduction.
+ * PSA does not support scalar multiplication via ele200 in hardware so this function uses software
+ * implementation.
+ *
+ * \return gSecEcp256Success_c or error
+ *
+ ************************************************************************************/
+secEcp256Status_t ECP256_GeneratePublicKey(uint8_t       *pOutPublicKey,
+                                           const uint8_t *pInPrivateKey,
+                                           void          *pMultiplicationBuffer)
+{
+    secEcp256Status_t ret;
+
+#if !(defined gSecLibUseDspExtension_d && (gSecLibUseDspExtension_d != 0))
+    if (pMultiplicationBuffer == NULL)
+    {
+        ret = gSecEcp256BadParameters_c;
+    }
+    else
+    {
+        big_int256_t  privKey;
+        ecp256Point_t out;
+        FLib_MemCpyReverseOrder((uint8_t *)&privKey, pInPrivateKey, sizeof(big_int256_t));
+        ret = ECP256_GeneratePublicKeySeg(&out.raw[0], (uint8_t *)&privKey, pMultiplicationBuffer);
+        ECP256_PointCopy_and_change_endianness((uint8_t *)pOutPublicKey, &out.raw[0]);
+    }
+#else
+    NOT_USED(pMultiplicationBuffer);
+    ret = ECP256_GeneratePublicKeyUltraFast(pOutPublicKey, pInPrivateKey);
+#endif
     return ret;
 }
 
