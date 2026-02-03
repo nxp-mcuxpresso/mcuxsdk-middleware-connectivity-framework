@@ -7,10 +7,6 @@ choice MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port
     default MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa
 endchoice
 
-choice MCUX_COMPONENT_middleware.mbedtls.port.selection
-    default MCUX_COMPONENT_middleware.mbedtls.port.els_pkc
-endchoice
-
 config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
     select MCUX_COMPONENT_component.osa
 
