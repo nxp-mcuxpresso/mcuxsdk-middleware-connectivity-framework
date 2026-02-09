@@ -38,7 +38,7 @@ if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng)
     mcux_add_library(
         LIBS lib_crypto_m33.a
         CORES cm33
-        DSP "DSP"
+        DSP HAS_DSP
         FPU SP_FPU
     )
 
