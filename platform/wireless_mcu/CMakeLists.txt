@@ -168,3 +168,12 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.crypto)
                             CORE_IDS "cm33_core0" "cm33"
     )
 endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
+    mcux_add_source(SOURCES
+        fwk_platform_dbg.c
+        fwk_platform_dbg.h
+        DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY} ${KW43_FAMILY}
+        CORE_IDS "cm33_core0" "cm33"
+    )
+endif()

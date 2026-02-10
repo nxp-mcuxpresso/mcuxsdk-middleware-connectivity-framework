@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu)
@@ -14,17 +14,4 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu)
         configs
         DEVICE_IDS "KW43B43ZC7xxxA_NBU"
     )
-
-    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
-        mcux_add_source(SOURCES
-            fwk_platform_dbg.c
-            ../wireless_nbu/fwk_platform_dbg.h
-            DEVICE_IDS "KW43B43ZC7xxxA_NBU"
-        )
-        mcux_add_include(INCLUDES
-            .
-            ../wireless_nbu
-            DEVICE_IDS "KW43B43ZC7xxxA_NBU"
-        )
-    endif()
 endif()

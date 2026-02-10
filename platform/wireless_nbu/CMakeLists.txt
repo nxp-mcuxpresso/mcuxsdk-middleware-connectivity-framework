@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform)
@@ -108,4 +108,21 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rng)
         ../include/fwk_platform_rng.h
         DEVICE_IDS "KW45B41Z83xxxA_NBU" "KW43B43ZC7xxxA_NBU"
     )
+endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
+    mcux_add_source(SOURCES
+        fwk_platform_dbg.c
+        fwk_platform_dbg.h
+        DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
+        CORE_IDS "cm33_core1"
+    )
+    mcux_add_source(SOURCES
+        fwk_platform_dbg.c
+        fwk_platform_dbg.h
+        DEVICE_IDS "KW43B43ZC7xxxA_NBU"
+    )
+
+    # fsl_assert has debug console dependency, map it to DEBUGCONSOLE_DISABLE (2U)
+    mcux_add_macro(SDK_DEBUGCONSOLE=2U)
 endif()
