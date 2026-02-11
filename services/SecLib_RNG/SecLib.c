@@ -37,14 +37,6 @@
 #include "fsl_ltc.h"
 #endif
 
-#ifdef FSL_FEATURE_SOC_AES_HW
-#ifdef CPU_QN908X
-#include "aes_reg_access.h"
-#include "fsl_aes.h"
-#include "AesManager.h"
-#endif /* CPU_QN908X */
-#endif /* FSL_FEATURE_SOC_AES_HW */
-
 /*! *********************************************************************************
 *************************************************************************************
 * Private macros
@@ -312,12 +304,6 @@ void SecLib_Init(void)
         initialized = true;
 #if (defined(FSL_FEATURE_SOC_LTC_COUNT) && (FSL_FEATURE_SOC_LTC_COUNT > 0))
         LTC_Init(LTC0);
-#elif (defined FSL_FEATURE_SOC_AES_HW && (FSL_FEATURE_SOC_AES_HW > 0))
-#ifdef CPU_QN908X
-#if USE_TASK_FOR_HW_AES
-        AESM_Initialize();
-#endif /* CPU_QN908X */
-#endif /* FSL_FEATURE_SOC_AES_HW   */
 #endif /* FSL_FEATURE_SOC_LTC_COUNT */
 
 #if gSecLibUseMutex_c

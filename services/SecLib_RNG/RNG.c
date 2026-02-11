@@ -1,10 +1,14 @@
-/*! *********************************************************************************
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
+/*
+ * Copyright 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017, 2019, 2023-2026 NXP
- *
- * \file
- *
  * SPDX-License-Identifier: BSD-3-Clause
+ */
+/*! *********************************************************************************=
+ * \file
+ * This file is the source file for the RNG (Random Number Generator) Interface.
+ * Its supports various RNG implementations including hardware RNG, ELE S200,
+ * and software-based.
+ * An alternate PSA implementation exists.
  ********************************************************************************** */
 #include <stdalign.h>
 #include <stdint.h>
@@ -48,12 +52,7 @@
 #if ((defined(FSL_FEATURE_SOC_TRNG_COUNT)) && (FSL_FEATURE_SOC_TRNG_COUNT > 0U))
 #include "fsl_trng.h"
 #elif ((defined(FSL_FEATURE_SOC_RNG_COUNT)) && (FSL_FEATURE_SOC_RNG_COUNT > 0U))
-#if defined CPU_QN908X
-#include "fsl_rng.h"
-#include "fsl_power.h"
-#else
 #include "fsl_rnga.h"
-#endif
 #elif defined(gRngUseRngAdapter_c) && (gRngUseRngAdapter_c > 0)
 #include "fsl_adapter_rng.h"
 #endif
@@ -733,7 +732,6 @@ static void TRNG_ISR(void)
 #endif /* FSL_FEATURE_SOC_TRNG_COUNT  */
 
 #if ((defined(FSL_FEATURE_SOC_RNG_COUNT)) && (FSL_FEATURE_SOC_RNG_COUNT > 0U))
-#ifndef CPU_QN908X
 static int RNG_Specific_Init(uint32_t *pSeed)
 {
     int status = gRngInternalError_d;
@@ -761,41 +759,6 @@ static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
 
     return ret;
 }
-#else /* CPU_QN908X */
-static int RNG_Specific_Init(uint32_t *pSeed)
-{
-    int status = gRngInternalError_d;
-
-    POWER_EnableADC(true);
-    RNG_Drv_Init(RNG);
-    RNG_Enable(RNG, true);
-    /* Get seed for pseudo RNG */
-    if (RNG_GetRandomData(RNG, (uint8_t *)pSeed, (int32_t)mPRNG_NoOfBytes_c) != 0)
-    {
-        rng_ctx.mPrngIsSeeded = TRUE;
-        status                = gRngSuccess_d;
-    }
-    RNG_Enable(RNG, false);
-    POWER_EnableADC(false);
-
-    return status;
-}
-
-static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
-{
-    int ret = gRngInternalError_d;
-    POWER_EnableADC(true);
-    RNG_Enable(RNG, true);
-    if (RNG_GetRandomData(RNG, (uint8_t *)pOut, (size_t)outBytes) == 0)
-    {
-        ret = (int)outBytes;
-    }
-    RNG_Enable(RNG, false);
-    POWER_EnableADC(false);
-    return ret;
-}
-
-#endif
 #elif ((defined(FSL_FEATURE_SOC_TRNG_COUNT)) && (FSL_FEATURE_SOC_TRNG_COUNT > 0U))
 static int RNG_Specific_Init(uint32_t *pSeed)
 {
@@ -881,25 +844,6 @@ static int RNG_Specific_GetRandomData(uint32_t *pOut, uint16_t outBytes)
     }
     return ret;
 }
-#elif defined(FSL_FEATURE_SOC_SIM_COUNT) && (FSL_FEATURE_SOC_SIM_COUNT > 1)
-static int RNG_Specific_Init(uint32_t *pSeed)
-{
-    /* Lousy RNG seed based on MCU unique Id */
-    int status            = gRngSuccess_d;
-    rng_ctx.mPrngIsSeeded = TRUE;
-    *pSeed                = SIM->UIDL;
-    *returned_bytes       = sizeof(uint32_t);
-
-    return status;
-}
-
-static int RNG_Specific_GetRandomU32(uint32_t *pRandomNo, int16_t *returned_bytes)
-{
-    (void)pRandomNo;
-    (void)returned_bytes;
-    return gRngInternalError_d;
-}
-
 #elif defined gRngUseSecureSubSystem_d && (gRngUseSecureSubSystem_d != 0)
 
 static int RNG_Specific_GetRandomData(uint8_t *pOut, uint16_t outBytes)
