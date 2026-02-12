@@ -851,7 +851,6 @@ void PLATFORM_Delay(uint64_t delayUs)
 
 void PLATFORM_DisableControllerLowPower(void)
 {
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
     /* Increase active request number so it is always asserted while Controller
      * is not allowed to go to low power
      * This will avoid going through the wake up procedure each time
@@ -866,7 +865,6 @@ void PLATFORM_DisableControllerLowPower(void)
      * Note: If NBU is already in low power, this will apply to next Idle period
      */
     RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_BLE_WKUP_MASK;
-#endif
 }
 
 void PLATFORM_RemoteActiveReq(void)

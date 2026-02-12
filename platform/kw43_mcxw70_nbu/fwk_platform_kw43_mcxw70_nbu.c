@@ -17,6 +17,9 @@
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
+#if defined gNbuDisableLowpower_d && (gNbuDisableLowpower_d != 0)
+#warning "Beware KW43/MCXW70 NBUs should not define gNbuDisableLowpower_d for correct NVM operations"
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
@@ -91,10 +94,6 @@ static void PLATFORM_PrepareDeepSleep(void)
 
     CMC_0->PMCTRL[2] = CMC_PMCTRL_LPMODE(0x3); /* rf : PMCTRLPD2 */
 
-    /* Prevent loss of SWD on Deep Sleep entry */
-    CMC_0->DBGCTL |= CMC_DBGCTL_SOD_MASK; /* Prevent loss of debug on other core */
-    /* Prevent RF debug from gating the Deep Sleep entry */
-    RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
 #if defined PLAT_FWK_INTERCORE_DBG_LP && (PLAT_FWK_INTERCORE_DBG_LP > 0)
     cnt++; /* increment deep sleep counter*/
     if (p_Nbu_shared_ctx != NULL)
@@ -116,12 +115,12 @@ static void PLATFORM_ExitDeepSleep(void)
         p_Nbu_shared_ctx->rfmc_2p4g_stat[1] = RFMC->RF2P4GHZ_STAT;
     }
 #endif
-    CMC_0->PMPROT |= CMC_PMPROT_LOCK_MASK;
 }
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
 uint64_t PLATFORM_Get32KTimeStamp(void)
 {
     return PLATFORM_TSTMR_ReadTimeStamp(TSTMR_32KHZ_ID);
