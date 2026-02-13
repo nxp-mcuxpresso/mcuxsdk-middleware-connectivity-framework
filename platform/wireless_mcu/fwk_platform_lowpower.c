@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2025 NXP                          */
+/*                           Copyright 2021-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -166,6 +166,16 @@ void PLATFORM_LowPowerInit(void)
      * as some resources needed by it are in the host power domain
      * This needs to be done before starting the radio core to avoid any race condition */
     PLATFORM_FwkSrvRegisterLowPowerCallbacks(&fwkSrvLowPowerConstraintCallbacks);
+
+#if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
+    /* To be able to wake up from LPUART0, we need to keep the FRO6M running
+     * also, we need to keep the WAKE domain is SLEEP.
+     * We can't put the WAKE domain in DEEP SLEEP because the LPUART0 is not mapped
+     * to the WUU as wake up source */
+    (void)PM_SetConstraints(PM_LP_STATE_NO_CONSTRAINT, 1, PM_RESC_WAKE_PD_PERI_OPERATIONAL);
+    /* Keep the FRO6M enable when WAKE domain in sleep mode  */
+    SCG0->SIRCCSR |= SCG_SIRCCSR_SIRCSTEN_MASK;
+#endif
 }
 
 void PLATFORM_EnterLowPower(void)
