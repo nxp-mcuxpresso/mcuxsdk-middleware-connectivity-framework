@@ -7,6 +7,7 @@
 #include "fwk_platform_definitions.h"
 #include "fwk_platform_mcu_nbu_common.h"
 #include "fwk_hal_macros.h"
+#include "fsl_common.h"
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
@@ -176,7 +177,7 @@ uint64_t PLATFORM_TSTMR_ReadTimeStamp(uint8_t tstmrId)
         /* The actual implementation reading the full 56-bit timestamp */
         if (tstmrId < FWK_TSTMR_NB_INST)
         {
-            TSTMR_Type *base    = tstmrBases[tstmrId];
+            TSTMR_Type *base    = (TSTMR_Type *)tstmrBases[tstmrId];
             uint32_t    primask = DisableGlobalIRQ();
 
             /* Need to read LSB and MSB registers twice to ensure consistency,
