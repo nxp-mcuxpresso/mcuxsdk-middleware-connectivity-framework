@@ -547,24 +547,28 @@ void FLib_AddOffsetToPointer(void **pPtr, uint32_t offset)
  ********************************************************************************** */
 uint32_t FLib_StrLen(const char *str)
 {
+    register uint32_t len = 0U;
+
 #define MAX_STR_LEN (4096U)
 #if gUseToolchainMemFunc_d
-    return strnlen(str, MAX_STR_LEN);
+    len = strnlen(str, MAX_STR_LEN + 1);
 #else
-    register uint32_t len = 0U;
 
     while (str[len] != '\0')
     {
         len++;
         if (len > MAX_STR_LEN) /* Limit string length to prevent overflow */
         {
-            len = ~0UL;
             break;
         }
     }
+#endif
+    if (len > MAX_STR_LEN)
+    {
+        len = ~0UL;
+    }
 
     return len;
-#endif
 }
 
 /*! *********************************************************************************
