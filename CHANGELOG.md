@@ -1,5 +1,28 @@
 ## Connectivity framework CHANGELOG
 
+### 7.2.3 mcux SDK 26.03.00 RFP
+
+#### Major Changes
+
+- [SecLib] Refactored SecLib functions with improved error handling and naming conventions. Added return status codes for better testing, added `SecLib_` prefix for all functions with backward compatibility maintained via `#define` stubs. Added parameter checks on all functions and improved test coverage for all SecLib flavors.
+- [SecLib] Updated CryptoLibSW APIs by removing unused `pMultiplicationBuffer` argument from `Ecdh_ComputeDhKeyUltraFast()`, `ECP256_GeneratePublicKeyUltraFast()`, and `ECP256_GenerateKeyPairUltraFast()`. Renamed `ECP256_GeneratePublicKey()` to `ECP256_GeneratePublicKeySeg()` in legacy implementation. Added new `ECP256_GeneratePublicKey()` API for SPAKE2+ ComputeL procedure.
+
+#### Minor Changes
+
+- [FunctionLib] Enhanced `FLib_StrLen()` to return error value when string size exceeds maximum limit (4096 bytes), adopting strnlen behavior.
+- [Common] Cleaned deprecated mbedtls2x Kconfig configurations.
+- [wireless_mcu][lcl] Updated FEM API to send configuration to NBU for proper XCVR timing adaptation during Channel Sounding activity. XCVR register backup and restore uses current mechanism with config sent through `PLATFORM_NbuApiReq()`.
+- [Kconfig] Fixed KCONFIG dependency loop related to `MCUX_COMPONENT_component.wifi_bt_module.config` by switching `MCUX_COMPONENT_driver.conn_fwloader` from select to depends on.
+- [SecLib_RNG] Removed support for deprecated devices including FSL_FEATURE_SOC_SIM_COUNT RNG and QN908x platform.
+- [FactoryDataProvider] Removed deprecated FactoryDataProvider service as it is no longer used following mbedtls2.x deprecation.
+
+#### Bug Fixes
+
+- [wireless_mcu] Fixed FRO6M calibration failure in OEM closed lifecycle by replacing inaccessible DWT cycle counter with SysTick timer. The implementation saves/restores SysTick state to maintain FreeRTOS compatibility.
+- [wireless_mcu][ble] Removed redundant assert in `PLATFORM_SendHciVendorEvent()` as invalid parameters are already sanitized with error returned to caller.
+- [SecLib] Fixed CMakeLists.txt lib_crypto variant dependency.
+- [MISRA] Various MISRA compliance fixes in OTA, flash related files, FSCI, NVM, platform files, and ICS modules. Fixed potential flash blank check issue with unaligned pointers, split `OTA_PostWriteToFlash()` to match HIS_LEVEL constraint, prevented infinite loop in `FLib_StrLen()`, and ensured union has consistent non-zero size across compilers.
+
 ### 7.2.2 mcux SDK 26.03.00 pvw2
 
 #### Major Changes
