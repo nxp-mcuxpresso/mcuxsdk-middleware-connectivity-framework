@@ -119,7 +119,6 @@ void SecLib_Init(void)
 void SecLib_ReInit(void)
 {
     /* Initialize cryptographic hardware.*/
-    mbedtls_psa_crypto_free();
     (void)PLATFORM_ResetCrypto();
 }
 
@@ -131,7 +130,6 @@ void SecLib_ReInit(void)
 void SecLib_DeInit(void)
 {
     /* Deinitialize cryptographic hardware.*/
-    mbedtls_psa_crypto_free();
     (void)PLATFORM_TerminateCrypto();
 }
 
