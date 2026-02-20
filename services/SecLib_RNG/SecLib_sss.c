@@ -2104,8 +2104,13 @@ secResultType_t SecLib_DeriveBluetoothSKDSecure(const uint8_t *pInSKD,
  *
  * \param[out] pBlob     Pointer to the blob (shall be allocated, 40 or 16, depending on blobType)
  *
- * \param[in]  blobType  Blob type. 0x01 - ELKE die unique blob, 0x02 - EDGE to EDGE blob,
- *                       0x03 - NBU ESK blob, 0x04 - NBU EIRK blob.
+ * \param[in]  blobType  Blob type.
+ *                       1: kSSS_blobType_ELKE_blob     ELKE die unique blob,
+ *                       2: kSSS_blobType_E2E_blob      Edge 2 Edge blob
+ *                       3: kSSS_blobType_NBU_ESK_blob  NBU ESK blob
+ *                       4: kSSS_blobType_NBU_EIRK_blob NBU EIRK blob
+ *
+ * Note that blob types above kSSS_blobType_NBU_EIRK_blob are unsupported.
  *
  * \return gSecSuccess_c or error
  *
@@ -2123,12 +2128,13 @@ secResultType_t SecLib_ObfuscateKeySecure(const uint8_t *pKey, uint8_t *pBlob, c
     SECLIB_MUTEX_LOCK();
     do
     {
-        if ((pKey == NULL) || (pBlob == NULL) || (blobType > 2U))
+        if ((pKey == NULL) || (pBlob == NULL) || (blobType < kSSS_blobType_ELKE_blob) ||
+            (blobType > kSSS_blobType_NBU_EIRK_blob))
         {
             RAISE_ERROR(result, gSecBadArgument_c);
         }
 
-        blobByteLen = (blobType == 1U) ? 40U : 16U;
+        blobByteLen = (blobType == kSSS_blobType_ELKE_blob) ? 40U : 16U;
 
         if ((CRYPTO_InitHardware()) != kStatus_Success)
         {
