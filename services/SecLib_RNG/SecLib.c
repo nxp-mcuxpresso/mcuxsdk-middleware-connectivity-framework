@@ -74,11 +74,10 @@
 #define gSecLibUseMutex_c FALSE
 #endif
 
-extern osa_status_t SecLibMutexCreate(void);
-extern osa_status_t SecLibMutexLock(void);
-extern osa_status_t SecLibMutexUnlock(void);
+secResultType_t SecLibMutexCreate(void);
 
-#if gSecLibUseMutex_c
+#if (defined(gSecLibUseMutex_c) && (gSecLibUseMutex_c > 0))
+
 #define SECLIB_MUTEX_LOCK()   (void)SecLibMutexLock()
 #define SECLIB_MUTEX_UNLOCK() (void)SecLibMutexUnlock()
 #else
@@ -261,18 +260,19 @@ static bool ECP256_LePointValid(const ecp256Point_t *P)
 *************************************************************************************
 ********************************************************************************** */
 
-osa_status_t SecLibMutexCreate(void)
+secResultType_t SecLibMutexCreate(void)
 {
-    osa_status_t st = KOSA_StatusSuccess;
+    secResultType_t st = gSecSuccess_c;
 #if gSecLibUseMutex_c
     static bool seclib_mutex_created = false;
     if (!seclib_mutex_created)
     {
         /*! Initialize the SecLib Mutex here. If not already done by RNG module */
-        st = OSA_MutexCreate((osa_mutex_handle_t)mSecLibMutexId);
+        osa_status_t ret = OSA_MutexCreate((osa_mutex_handle_t)mSecLibMutexId);
 
-        if (KOSA_StatusSuccess != st)
+        if (KOSA_StatusSuccess != ret)
         {
+            st = gSecAllocError_c;
             assert(false);
         }
         else
@@ -284,21 +284,23 @@ osa_status_t SecLibMutexCreate(void)
     return st;
 }
 
-osa_status_t SecLibMutexLock(void)
+secResultType_t SecLibMutexLock(void)
 {
 #if gSecLibUseMutex_c
-    return OSA_MutexLock((osa_mutex_handle_t)mSecLibMutexId, osaWaitForever_c);
+    osa_status_t ret = OSA_MutexLock((osa_mutex_handle_t)mSecLibMutexId, osaWaitForever_c);
+    return (ret == KOSA_StatusSuccess) ? gSecSuccess_c : gSecError_c;
 #else
-    return KOSA_StatusSuccess;
+    return gSecSuccess_c;
 #endif
 }
 
-osa_status_t SecLibMutexUnlock(void)
+secResultType_t SecLibMutexUnlock(void)
 {
 #if gSecLibUseMutex_c
-    return OSA_MutexUnlock((osa_mutex_handle_t)mSecLibMutexId);
+    osa_status_t ret = OSA_MutexUnlock((osa_mutex_handle_t)mSecLibMutexId);
+    return (ret == KOSA_StatusSuccess) ? gSecSuccess_c : gSecError_c;
 #else
-    return KOSA_StatusSuccess;
+    return gSecSuccess_c;
 #endif
 }
 

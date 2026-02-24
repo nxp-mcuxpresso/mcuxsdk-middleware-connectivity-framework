@@ -83,19 +83,17 @@
     }
 #endif
 
-#if gRngUseSecLib_d
-/* Share mutex with SecLib if RNG involves crypto, or Secure subsystem */
-extern osa_status_t SecLibMutexCreate(void);
-extern osa_status_t SecLibMutexLock(void);
-extern osa_status_t SecLibMutexUnlock(void);
+#if (defined(gRngUseSecLib_d) && (gRngUseSecLib_d > 0))
+extern secResultType_t SecLibMutexCreate(void);
 
+/* Share mutex with SecLib if RNG involves crypto, or Secure subsystem */
 #define RNG_MUTEX_CREATE() SecLibMutexCreate()
 #define RNG_MUTEX_LOCK()   (void)SecLibMutexLock()
 #define RNG_MUTEX_UNLOCK() (void)SecLibMutexUnlock()
 
 #else /* gRngUseSecLib_d */
 
-#define RNG_MUTEX_CREATE() KOSA_StatusSuccess
+#define RNG_MUTEX_CREATE() gSecSuccess_c
 #define RNG_MUTEX_LOCK()
 #define RNG_MUTEX_UNLOCK()
 
@@ -199,11 +197,11 @@ int RNG_Init(void)
             break;
         }
 
-#if gRngUseSecLib_d
+#if defined(gRngUseSecLib_d) && (gRngUseSecLib_d > 0)
         /* Create mutex here in case it was not done already.
          * Does nothing without error otherwise.
          */
-        if (RNG_MUTEX_CREATE() != KOSA_StatusSuccess)
+        if (RNG_MUTEX_CREATE() != gSecSuccess_c)
         {
             break;
         }

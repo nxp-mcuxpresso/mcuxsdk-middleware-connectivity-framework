@@ -118,7 +118,29 @@ typedef enum
 * Public functions
 *************************************************************************************
 ************************************************************************************/
+/*! *********************************************************************************
+ * \brief  Acquires the SecLib mutex to protect access to cryptographic hardware.
+ *
+ * \details This function is NOT required when calling SecLib.h APIs, as they handle
+ *          mutex synchronization internally. Use this function only when directly
+ *          calling low-level APIs from sss_crypto.h, cau_api.h or fsl_ltc.h, to ensure
+ *          exclusive access to the Secure Subsystem hardware. Not required for PSA
+ *          Crypto API, as PSA handles its own synchronization.
+ *
+ ********************************************************************************** */
+secResultType_t SecLibMutexLock(void);
 
+/*! *********************************************************************************
+ * \brief  Releases the SecLib mutex after cryptographic hardware access.
+ *
+ * \details This function is NOT required when calling SecLib.h APIs, as they handle
+ *          mutex synchronization internally. Use this function only after completing
+ *          direct calls to low-level APIs from sss_crypto.h, cau_api.h or fsl_ltc.h,
+ *          to allow other threads to access the Secure Subsystem hardware. Not
+ *          required for PSA Crypto API, as PSA handles its own synchronization.
+ *
+ ********************************************************************************** */
+secResultType_t SecLibMutexUnlock(void);
 /*! *********************************************************************************
  * \brief  This function performs initialization of the cryptographic HW acceleration.
  *
