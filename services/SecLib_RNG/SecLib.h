@@ -152,7 +152,18 @@ void SecLib_DeInit(void);
  ********************************************************************************** */
 secResultType_t SecLib_AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput);
 
-#define AES_128_Encrypt (void)SecLib_AES_128_Encrypt
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_Encrypt that discards the return value.
+ *
+ * \param[in]  pInput Pointer to the location of the 16-byte plain text block.
+ * \param[in]  pKey Pointer to the location of the 128-bit key.
+ * \param[out]  pOutput Pointer to the location to store the 16-byte ciphered output.
+ *
+ ********************************************************************************** */
+static inline void AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
+{
+    (void)SecLib_AES_128_Encrypt(pInput, pKey, pOutput);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128 decryption on a 16-byte block.
@@ -168,7 +179,14 @@ secResultType_t SecLib_AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKe
  ********************************************************************************** */
 secResultType_t SecLib_AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput);
 
-#define AES_128_Decrypt (void)SecLib_AES_128_Decrypt
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_Decrypt that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKey, uint8_t *pOutput)
+{
+    (void)SecLib_AES_128_Decrypt(pInput, pKey, pOutput);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-ECB encryption on a message block.
@@ -189,7 +207,14 @@ secResultType_t SecLib_AES_128_ECB_Encrypt(const uint8_t *pInput,
                                            const uint8_t *pKey,
                                            uint8_t       *pOutput);
 
-#define AES_128_ECB_Encrypt (void)SecLib_AES_128_ECB_Encrypt
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_ECB_Encrypt that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void AES_128_ECB_Encrypt(const uint8_t *pInput, uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+{
+    (void)SecLib_AES_128_ECB_Encrypt(pInput, inputLen, pKey, pOutput);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-ECB decryption on a message block.
@@ -235,7 +260,15 @@ secResultType_t SecLib_AES_128_ECB_Decrypt(const uint8_t *pInput,
 secResultType_t SecLib_AES_128_CBC_Encrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput);
 
-#define AES_128_CBC_Encrypt (void)SecLib_AES_128_CBC_Encrypt
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_CBC_Encrypt that discards the return value.
+ *
+ ********************************************************************************** */
+static inline secResultType_t AES_128_CBC_Encrypt(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
+{
+    return SecLib_AES_128_CBC_Encrypt(pInput, inputLen, pInitVector, pKey, pOutput);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC decryption on a message block.
@@ -260,7 +293,15 @@ secResultType_t SecLib_AES_128_CBC_Encrypt(
 secResultType_t SecLib_AES_128_CBC_Decrypt(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput);
 
-#define AES_128_CBC_Decrypt SecLib_AES_128_CBC_Decrypt
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_CBC_Decrypt.
+ *
+ ********************************************************************************** */
+static inline secResultType_t AES_128_CBC_Decrypt(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pInitVector, const uint8_t *pKey, uint8_t *pOutput)
+{
+    return SecLib_AES_128_CBC_Decrypt(pInput, inputLen, pInitVector, pKey, pOutput);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CBC encryption on a message block after
@@ -330,7 +371,15 @@ uint32_t AES_128_CBC_Decrypt_And_Depad(
 secResultType_t SecLib_AES_128_CTR(
     const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput);
 
-#define AES_128_CTR (void)SecLib_AES_128_CTR
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_CTR that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void AES_128_CTR(
+    const uint8_t *pInput, uint32_t inputLen, uint8_t *pCounter, const uint8_t *pKey, uint8_t *pOutput)
+{
+    (void)SecLib_AES_128_CTR(pInput, inputLen, pCounter, pKey, pOutput);
+}
 #endif /* PSA */
 
 /*! *********************************************************************************
@@ -353,7 +402,14 @@ secResultType_t SecLib_AES_128_CMAC(const uint8_t *pInput,
                                     const uint8_t *pKey,
                                     uint8_t       *pOutput);
 
-#define AES_128_CMAC (void)SecLib_AES_128_CMAC
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_CMAC that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void AES_128_CMAC(const uint8_t *pInput, const uint32_t inputLen, const uint8_t *pKey, uint8_t *pOutput)
+{
+    (void)SecLib_AES_128_CMAC(pInput, inputLen, pKey, pOutput);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs AES-128-CMAC on a message block accepting input data
@@ -374,7 +430,17 @@ secResultType_t SecLib_AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
                                                   const uint8_t *pKey,
                                                   uint8_t       *pOutput);
 
-#define AES_128_CMAC_LsbFirstInput (void)SecLib_AES_128_CMAC_LsbFirstInput
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_CMAC_LsbFirstInput that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
+                                              uint32_t       inputLen,
+                                              const uint8_t *pKey,
+                                              uint8_t       *pOutput)
+{
+    (void)SecLib_AES_128_CMAC_LsbFirstInput(pInput, inputLen, pKey, pOutput);
+}
 
 #if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
@@ -398,7 +464,15 @@ secResultType_t SecLib_AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
 secResultType_t SecLib_AES_CMAC_PRF_128(
     const uint8_t *pInput, uint32_t inputLen, const uint8_t *pVarKey, uint32_t varKeyLen, uint8_t *pOutput);
 
-#define AES_CMAC_PRF_128 (void)SecLib_AES_CMAC_PRF_128
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_CMAC_PRF_128 that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void AES_CMAC_PRF_128(
+    const uint8_t *pInput, uint32_t inputLen, const uint8_t *pVarKey, uint32_t varKeyLen, uint8_t *pOutput)
+{
+    (void)SecLib_AES_CMAC_PRF_128(pInput, inputLen, pVarKey, varKeyLen, pOutput);
+}
 #endif
 
 /*! *********************************************************************************
@@ -443,7 +517,25 @@ secResultType_t SecLib_AES_128_CCM(const uint8_t *pInput,
                                    uint8_t        macSize,
                                    uint32_t       flags);
 
-#define AES_128_CCM (uint8_t) SecLib_AES_128_CCM
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_AES_128_CCM that casts the return value to uint8_t.
+ *
+ ********************************************************************************** */
+static inline uint8_t AES_128_CCM(const uint8_t *pInput,
+                                  uint16_t       inputLen,
+                                  const uint8_t *pAuthData,
+                                  uint16_t       authDataLen,
+                                  const uint8_t *pNonce,
+                                  uint8_t        nonceSize,
+                                  const uint8_t *pKey,
+                                  uint8_t       *pOutput,
+                                  uint8_t       *pCbcMac,
+                                  uint8_t        macSize,
+                                  uint32_t       flags)
+{
+    return (uint8_t)SecLib_AES_128_CCM(pInput, inputLen, pAuthData, authDataLen, pNonce, nonceSize, pKey, pOutput,
+                                       pCbcMac, macSize, flags);
+}
 
 #if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 
@@ -456,7 +548,14 @@ secResultType_t SecLib_AES_128_CCM(const uint8_t *pInput,
  ********************************************************************************** */
 void *SecLib_SHA256_AllocCtx(void);
 
-#define SHA256_AllocCtx SecLib_SHA256_AllocCtx
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_AllocCtx.
+ *
+ ********************************************************************************** */
+static inline void *SHA256_AllocCtx(void)
+{
+    return SecLib_SHA256_AllocCtx();
+}
 
 /*! *********************************************************************************
  * \brief  This function deallocates the memory buffer for the SHA256 context structure
@@ -466,7 +565,14 @@ void *SecLib_SHA256_AllocCtx(void);
  ********************************************************************************** */
 void SecLib_SHA256_FreeCtx(void *pContext);
 
-#define SHA256_FreeCtx SecLib_SHA256_FreeCtx
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_FreeCtx.
+ *
+ ********************************************************************************** */
+static inline void SHA256_FreeCtx(void *pContext)
+{
+    SecLib_SHA256_FreeCtx(pContext);
+}
 
 /*! *********************************************************************************
  * \brief  This function clones a SHA256 context.
@@ -478,7 +584,14 @@ void SecLib_SHA256_FreeCtx(void *pContext);
  ********************************************************************************** */
 void SecLib_SHA256_CloneCtx(void *pDestCtx, void *pSourceCtx);
 
-#define SHA256_CloneCtx SecLib_SHA256_CloneCtx
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_CloneCtx.
+ *
+ ********************************************************************************** */
+static inline void SHA256_CloneCtx(void *pDestCtx, void *pSourceCtx)
+{
+    SecLib_SHA256_CloneCtx(pDestCtx, pSourceCtx);
+}
 
 /*! *********************************************************************************
  * \brief  This function initializes the SHA256 context data
@@ -489,7 +602,14 @@ void SecLib_SHA256_CloneCtx(void *pDestCtx, void *pSourceCtx);
  ********************************************************************************** */
 secResultType_t SecLib_SHA256_Init(void *pContext);
 
-#define SHA256_Init (void)SecLib_SHA256_Init
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_Init that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void SHA256_Init(void *pContext)
+{
+    (void)SecLib_SHA256_Init(pContext);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs SHA256 on multiple bytes and updates the context data
@@ -502,7 +622,14 @@ secResultType_t SecLib_SHA256_Init(void *pContext);
  ********************************************************************************** */
 secResultType_t SecLib_SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes);
 
-#define SHA256_HashUpdate (void)SecLib_SHA256_HashUpdate
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_HashUpdate that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void SHA256_HashUpdate(void *pContext, const uint8_t *pData, uint32_t numBytes)
+{
+    (void)SecLib_SHA256_HashUpdate(pContext, pData, numBytes);
+}
 
 /*! *********************************************************************************
  * \brief  This function finalizes the SHA256 hash computation and clears the context data.
@@ -515,7 +642,14 @@ secResultType_t SecLib_SHA256_HashUpdate(void *pContext, const uint8_t *pData, u
  ********************************************************************************** */
 secResultType_t SecLib_SHA256_HashFinish(void *pContext, uint8_t *pOutput);
 
-#define SHA256_HashFinish (void)SecLib_SHA256_HashFinish
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_HashFinish that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void SHA256_HashFinish(void *pContext, uint8_t *pOutput)
+{
+    (void)SecLib_SHA256_HashFinish(pContext, pOutput);
+}
 
 #endif
 
@@ -531,7 +665,14 @@ secResultType_t SecLib_SHA256_HashFinish(void *pContext, uint8_t *pOutput);
  ********************************************************************************** */
 secResultType_t SecLib_SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
 
-#define SHA256_Hash (void)SecLib_SHA256_Hash
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_SHA256_Hash that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
+{
+    (void)SecLib_SHA256_Hash(pData, numBytes, pOutput);
+}
 
 #if !defined(gSecLibUsePsa_d) || (gSecLibUsePsa_d == 0)
 /*! *********************************************************************************
@@ -543,7 +684,14 @@ secResultType_t SecLib_SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint
  ********************************************************************************** */
 void *SecLib_HMAC_SHA256_AllocCtx(void);
 
-#define HMAC_SHA256_AllocCtx SecLib_HMAC_SHA256_AllocCtx
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_HMAC_SHA256_AllocCtx.
+ *
+ ********************************************************************************** */
+static inline void *HMAC_SHA256_AllocCtx(void)
+{
+    return SecLib_HMAC_SHA256_AllocCtx();
+}
 
 /*! *********************************************************************************
  * \brief  This function deallocates the memory buffer for the HMAC SHA256 context structure
@@ -553,7 +701,14 @@ void *SecLib_HMAC_SHA256_AllocCtx(void);
  ********************************************************************************** */
 void SecLib_HMAC_SHA256_FreeCtx(void *pContext);
 
-#define HMAC_SHA256_FreeCtx SecLib_HMAC_SHA256_FreeCtx
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_HMAC_SHA256_FreeCtx.
+ *
+ ********************************************************************************** */
+static inline void HMAC_SHA256_FreeCtx(void *pContext)
+{
+    SecLib_HMAC_SHA256_FreeCtx(pContext);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs the initialization of the HMAC SHA256 context data
@@ -566,7 +721,14 @@ void SecLib_HMAC_SHA256_FreeCtx(void *pContext);
  ********************************************************************************** */
 secResultType_t SecLib_HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen);
 
-#define HMAC_SHA256_Init (void)SecLib_HMAC_SHA256_Init
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_HMAC_SHA256_Init that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uint32_t keyLen)
+{
+    (void)SecLib_HMAC_SHA256_Init(pContext, pKey, keyLen);
+}
 
 /*! *********************************************************************************
  * \brief  This function performs HMAC update with the input data.
@@ -579,7 +741,14 @@ secResultType_t SecLib_HMAC_SHA256_Init(void *pContext, const uint8_t *pKey, uin
  ********************************************************************************** */
 secResultType_t SecLib_HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes);
 
-#define HMAC_SHA256_Update (void)SecLib_HMAC_SHA256_Update
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_HMAC_SHA256_Update that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void HMAC_SHA256_Update(void *pContext, const uint8_t *pData, uint32_t numBytes)
+{
+    (void)SecLib_HMAC_SHA256_Update(pContext, pData, numBytes);
+}
 
 /*! *********************************************************************************
  * \brief  This function finalizes the HMAC SHA256 computation and clears the context data.
@@ -592,7 +761,14 @@ secResultType_t SecLib_HMAC_SHA256_Update(void *pContext, const uint8_t *pData, 
  ********************************************************************************** */
 secResultType_t SecLib_HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput);
 
-#define HMAC_SHA256_Finish (void)SecLib_HMAC_SHA256_Finish
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_HMAC_SHA256_Finish that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput)
+{
+    (void)SecLib_HMAC_SHA256_Finish(pContext, pOutput);
+}
 
 #endif
 
@@ -611,8 +787,15 @@ secResultType_t SecLib_HMAC_SHA256_Finish(void *pContext, uint8_t *pOutput);
 secResultType_t SecLib_HMAC_SHA256(
     const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput);
 
-#define HMAC_SHA256 (void)SecLib_HMAC_SHA256
-
+/*! *********************************************************************************
+ * \brief  Wrapper for SecLib_HMAC_SHA256 that discards the return value.
+ *
+ ********************************************************************************** */
+static inline void HMAC_SHA256(
+    const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
+{
+    (void)SecLib_HMAC_SHA256(pKey, keyLen, pData, numBytes, pOutput);
+}
 /*! *********************************************************************************
  * \brief  This function calculates XOR of individual byte pairs in two uint8_t arrays.
  *         pDst[i] := pDst[i] ^ pSrc[i] for i=0 to n-1
