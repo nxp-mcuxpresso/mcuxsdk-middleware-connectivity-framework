@@ -190,6 +190,12 @@ int PLATFORM_TerminateCrypto(void)
     return 0;
 }
 
+int PLATFORM_ReinitCrypto(void)
+{
+    /* Not implemented */
+    return 0;
+}
+
 int PLATFORM_ResetCrypto(void)
 {
     trng_config_t config;

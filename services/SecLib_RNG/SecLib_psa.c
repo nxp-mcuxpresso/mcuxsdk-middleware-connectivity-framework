@@ -126,14 +126,14 @@ void SecLib_Init(void)
     {
         /* initialize psa crypto*/
         status = psa_crypto_init();
-        RAISE_ERROR(status, PSA_SUCCESS)
+        RAISE_ERROR(status, PSA_SUCCESS);
     } while (false);
 }
 
 void SecLib_ReInit(void)
 {
     /* Initialize cryptographic hardware.*/
-    (void)PLATFORM_ResetCrypto();
+    (void)PLATFORM_ReinitCrypto();
 }
 
 /*! *********************************************************************************

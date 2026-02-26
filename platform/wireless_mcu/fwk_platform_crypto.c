@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2024 NXP                               */
-/*                            All rights reserved.                            */
+/*                           Copyright 2024-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -43,5 +42,12 @@ int PLATFORM_ResetCrypto(void)
 {
     CRYPTO_ELEMU_reset();
     (void)CRYPTO_ReinitHardware();
+    return 0;
+}
+
+int PLATFORM_ReinitCrypto(void)
+{
+    CRYPTO_DeinitHardwareUnsafe();
+    CRYPTO_InitHardwareUnsafe();
     return 0;
 }
