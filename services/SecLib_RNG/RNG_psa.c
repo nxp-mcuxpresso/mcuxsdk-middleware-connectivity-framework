@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * \file
  *
@@ -100,19 +100,8 @@ int RNG_Init(void)
  ********************************************************************************** */
 int RNG_ReInit(void)
 {
-    int result = gRngSuccess_d;
-    /* Reset cryptographic hardware resource */
-    if (PLATFORM_ResetCrypto() != 0)
-    {
-        result = gRngInternalError_d;
-    }
-
-    /* Call RNG_Deinit to deinitialize the RNG module */
-    RNG_DeInit();
-
-    /* Do not re-initialize RNG here and let the caller decide if RNG_Init() should be called */
-
-    return result;
+    //call Seclib_Reinit from Seclib_psa.c instead
+    return gRngSuccess_d;
 }
 
 /*! *********************************************************************************

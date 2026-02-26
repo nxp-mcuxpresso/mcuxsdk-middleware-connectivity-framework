@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2024 NXP                               */
+/*                           Copyright 2024-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -56,6 +56,12 @@ int PLATFORM_TerminateCrypto(void);
  *
  */
 int PLATFORM_ResetCrypto(void);
+
+/*!
+ * \brief Reinit Security subsystem (if applicable)
+ *
+ */
+int PLATFORM_ReinitCrypto(void);
 
 #if defined(__cplusplus)
 }
