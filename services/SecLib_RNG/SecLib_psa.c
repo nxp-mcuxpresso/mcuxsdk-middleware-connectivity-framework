@@ -31,6 +31,10 @@
 #include "SecLib_ecp256.h"
 #include "CryptoLibSW.h"
 
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+#include "ele_s2xx.h"
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private macros
@@ -91,6 +95,18 @@ static bool ECP256_LePointValid(const ecp256Point_t *P)
     return EcP256_IsPointOnCurve((const uint32_t *)&P->components_32bit.x[0],
                                  (const uint32_t *)&P->components_32bit.y[0]);
 #endif
+}
+
+psa_key_location_t get_most_secure_key_location()
+{
+    /* default set to transparent location */
+    psa_key_location_t loc = PSA_KEY_LOCATION_LOCAL_STORAGE;
+
+#if defined(PSA_CRYPTO_DRIVER_ELE_S2XX)
+    loc = PSA_KEY_LOCATION_S200_KEY_STORAGE_NON_EL2GO;
+#endif /* PSA_CRYPTO_DRIVER_ELE_S2XX */
+
+    return loc;
 }
 
 /*! *********************************************************************************
@@ -211,6 +227,9 @@ secResultType_t SecLib_AES_128_Encrypt(const uint8_t *pInput, const uint8_t *pKe
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+    psa_set_key_bits(&attributes, AES_128_KEY_BITS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_LIFETIME_VOLATILE,
+                                                                                     get_most_secure_key_location()));
 
     do
     {
@@ -274,6 +293,9 @@ secResultType_t SecLib_AES_128_ECB_Encrypt(const uint8_t *pInput,
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
         psa_set_key_algorithm(&attributes, alg);
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+        psa_set_key_bits(&attributes, AES_128_KEY_BITS);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                              PSA_KEY_LIFETIME_VOLATILE, get_most_secure_key_location()));
 
         /* import pKey and get the address of the imported key */
         status = psa_import_key(&attributes, pKey, key_bits, &key);
@@ -316,6 +338,9 @@ secResultType_t SecLib_AES_128_Decrypt(const uint8_t *pInput, const uint8_t *pKe
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_algorithm(&attributes, alg);
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_bits(&attributes, AES_128_KEY_BITS);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_LIFETIME_VOLATILE,
+                                                                                     get_most_secure_key_location()));
 
     do
     {
@@ -378,6 +403,9 @@ secResultType_t SecLib_AES_128_ECB_Decrypt(const uint8_t *pInput,
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
         psa_set_key_algorithm(&attributes, alg);
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
+        psa_set_key_bits(&attributes, AES_128_KEY_BITS);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                              PSA_KEY_LIFETIME_VOLATILE, get_most_secure_key_location()));
 
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
@@ -525,6 +553,9 @@ secResultType_t SecLib_AES_128_CMAC(const uint8_t *pInput,
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
         psa_set_key_algorithm(&attributes, alg);
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+        psa_set_key_bits(&attributes, AES_128_KEY_BITS);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                              PSA_KEY_LIFETIME_VOLATILE, get_most_secure_key_location()));
 
         status = psa_import_key(&attributes, pKey, key_bits, &key);
 
@@ -628,6 +659,9 @@ secResultType_t SecLib_AES_128_CCM(const uint8_t *pInput,
 
         psa_set_key_algorithm(&attributes, alg);
         psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+        psa_set_key_bits(&attributes, AES_128_KEY_BITS);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                              PSA_KEY_LIFETIME_VOLATILE, get_most_secure_key_location()));
 
         status = psa_import_key(&attributes, pKey, key_bits, &key);
         RAISE_ERROR(status, PSA_SUCCESS);
@@ -803,7 +837,8 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
         psa_set_key_bits(&attributes, 256);
         psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
-        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                              PSA_KEY_LIFETIME_VOLATILE, get_most_secure_key_location()));
         psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
 
         /* Generate the ECC P-256 key pair */
