@@ -196,7 +196,7 @@ osa_status_t SecLibMutexUnlock(void)
 void SecLib_Init(void)
 {
     /* Initialize cryptographic hardware.*/
-    (void)PLATFORM_InitCrypto();
+    CLOCK_EnableClock(kCLOCK_Secsubsys);
 
     (void)SecLibMutexCreate();
 }
@@ -208,7 +208,8 @@ void SecLib_Init(void)
 void SecLib_ReInit(void)
 {
     IsSecLibEcdhContextInit = false;
-    (void)PLATFORM_ResetCrypto();
+    CRYPTO_ELEMU_reset();
+    (void)CRYPTO_ReinitHardware();
 }
 
 /*! *********************************************************************************
@@ -219,7 +220,7 @@ void SecLib_ReInit(void)
 void SecLib_DeInit(void)
 {
     IsSecLibEcdhContextInit = false;
-    (void)PLATFORM_TerminateCrypto();
+    CRYPTO_DeinitHardware();
 }
 
 /*! *********************************************************************************
