@@ -1,5 +1,5 @@
 /*!
- * Copyright 2021,2025 NXP
+ * Copyright 2021,2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -18,9 +18,14 @@
 #define LCL_RFGPO_3_0  1U /* use RF_GPO[3:0] */
 #define LCL_RFGPO_7_4  2U /* use RF_GPO[7:4] */
 
-#if !defined(NDEBUG) || defined(VALIDATIONBUILDOPTIONS)
-#define ENABLE_DTEST
+#if defined(VALIDATIONBUILDOPTIONS)
+#ifndef FWK_LCL_ENABLE_DTEST
+#define FWK_LCL_ENABLE_DTEST
 #endif
+#ifndef FWK_LCL_ENABLE_GPIO_DEBUG
+#define FWK_LCL_ENABLE_GPIO_DEBUG
+#endif
+#endif /* defined(VALIDATIONBUILDOPTIONS) */
 /*******************************************************************************
  * API
  ******************************************************************************/

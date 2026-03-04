@@ -262,7 +262,7 @@ static uint8_t       femActive  = 0U;               /* if FEM is active */
 /*******************************************************************************
  *  private functions
  ******************************************************************************/
-#ifdef ENABLE_DTEST
+#ifdef FWK_LCL_ENABLE_DTEST
 static void dtest_pins_init(uint32_t option)
 {
     if ((option & DTEST0) != 0U) /* PTC0 alt 8 */
@@ -405,7 +405,7 @@ void PLATFORM_InitLclDtest(void)
 #endif // BT51_TEST_MODE_AOA_AOD_DTEST
 #endif // BT51_TEST_MODE_AOA_AOD
 }
-#endif
+#endif /* FWK_LCL_ENABLE_DTEST */
 
 /*!
  * @brief Function to setup RF GPO pins for a combination of coexistence.
@@ -725,7 +725,7 @@ uint8_t PLATFORM_InitLclRfGpo(uint8_t rfgpo_id)
 
 void PLATFORM_InitLclGpioDebug(bool_t debug)
 {
-#if !defined(NDEBUG)
+#ifdef FWK_LCL_ENABLE_GPIO_DEBUG
     /* TRDC initialized during NBU initialization */
     if (debug)
     {
@@ -752,7 +752,7 @@ void PLATFORM_InitLclGpioDebug(bool_t debug)
 #endif
 #endif
     }
-#endif
+#endif /* FWK_LCL_ENABLE_GPIO_DEBUG */
 }
 
 uint8_t PLATFORM_InitLcl(void)
@@ -800,10 +800,9 @@ uint8_t PLATFORM_InitLcl(void)
 #endif
     uint8_t status = PLATFORM_InitLclRfGpo(rfgpo_id);
 
-#ifdef ENABLE_DTEST
-    /* Enable DTEST when building debug target */
+#ifdef FWK_LCL_ENABLE_DTEST
     PLATFORM_InitLclDtest();
-#endif
+#endif /* FWK_LCL_ENABLE_DTEST */
 
     lantActive = 1U;
     return status;
@@ -954,9 +953,9 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     {
         status = 0U;
 
-#ifdef ENABLE_DTEST
-        PLATFORM_Init_Dtest_TX_RX_EN(); /* Enable DTEST when building debug target */
-#endif
+#ifdef FWK_LCL_ENABLE_DTEST
+        PLATFORM_Init_Dtest_TX_RX_EN();
+#endif /* FWK_LCL_ENABLE_DTEST */
     }
 
     /* Release wake up to NBU */
@@ -1022,9 +1021,9 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
         /* configure RF_GPO pins for the output signals */
         status = PLATFORM_FEM_pin_init(rfgpo_sel, pa_fem_settings.ant_sel_pins_enable);
 
-#ifdef ENABLE_DTEST
-        PLATFORM_Init_Dtest_TX_RX_EN(); /* Enable DTEST when building debug target */
-#endif
+#ifdef FWK_LCL_ENABLE_DTEST
+        PLATFORM_Init_Dtest_TX_RX_EN();
+#endif /* FWK_LCL_ENABLE_DTEST */
     }
     else
     {
