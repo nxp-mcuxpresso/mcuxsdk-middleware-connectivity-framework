@@ -469,8 +469,8 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
     {
         bool     posted_ops;
         uint32_t queried_data_start;
-        /* Validate parameters */
-        if ((length == 0U) || (pData == NULL) || (pImageOffset == NULL))
+        /* Sanitize parameters of the function */
+        if ((length == 0U) || (pData == NULL) || (pImageOffset == NULL) || (*pImageOffset > mOtaHdl.MaxImageLength))
         {
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
