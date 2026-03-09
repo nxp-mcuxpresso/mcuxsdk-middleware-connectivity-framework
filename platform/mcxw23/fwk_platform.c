@@ -14,6 +14,7 @@
 #include "fwk_config.h"
 #include "fwk_platform.h"
 #include "fwk_platform_ics.h"
+#include "fwk_platform_crypto.h"
 
 #ifdef TIMER_PORT_TYPE_CTIMER
 #include "fsl_ctimer.h"
@@ -192,12 +193,6 @@ int PLATFORM_TerminateCrypto(void)
 
 int PLATFORM_ReinitCrypto(void)
 {
-    /* Not implemented */
-    return 0;
-}
-
-int PLATFORM_ResetCrypto(void)
-{
     trng_config_t config;
     TRNG_Type    *trngArr[] = TRNG_BASE_PTRS;
     int           ret       = 0;
@@ -210,4 +205,9 @@ int PLATFORM_ResetCrypto(void)
     }
 
     return ret;
+}
+
+int PLATFORM_ResetCrypto(void)
+{
+    return PLATFORM_ReinitCrypto();
 }
