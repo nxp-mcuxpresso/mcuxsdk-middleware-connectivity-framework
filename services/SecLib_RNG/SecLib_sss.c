@@ -25,7 +25,6 @@
 
 #include "FunctionLib.h"
 #include "fwk_platform.h"
-#include "fwk_platform_crypto.h"
 #include "SecLib.h"
 #include "RNG_Interface.h"
 #include "fsl_debug_console.h"
