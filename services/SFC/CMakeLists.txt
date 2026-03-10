@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 mcux_set_list(KW45_FAMILY "KW45B41Z52xxxA KW45B41Z53xxxA KW45B41Z82xxxA KW45B41Z83xxxA K32W1480xxxA")
@@ -18,7 +18,7 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.sfc)
         SOURCES
             fwk_sfc.h
             README.md
-        DEVICE_IDS ${KW45_FAMILY} ${KW47_FAMILY} ${MCXW71_FAMILY} ${MCXW72_FAMILY} ${KW43_FAMILY} #${MCXW70_FAMILY} to be added
+        DEVICE_IDS ${KW45_FAMILY} ${KW47_FAMILY} ${MCXW71_FAMILY} ${MCXW72_FAMILY} ${KW43_FAMILY} ${MCXW70_FAMILY}
         CORE_IDS "cm33_core0" "cm33"
     )
     # sources for the NBU core

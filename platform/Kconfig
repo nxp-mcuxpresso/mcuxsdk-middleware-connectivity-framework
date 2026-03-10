@@ -22,7 +22,8 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.platform
                 MCUX_HW_DEVICE_MIMXRT1173 || MCUX_HW_DEVICE_MIMXRT1175 ||\
                 MCUX_HW_DEVICE_MIMXRT1176 ||\
                 MCUX_HW_DEVICE_MIMXRT1061 || MCUX_HW_DEVICE_MIMXRT1062 ||\
-                MCUX_HW_DEVICE_KW43B43ZC7 || MCUX_HW_DEVICE_KW43B43ZC7_NBU
+                MCUX_HW_DEVICE_KW43B43ZC7 || MCUX_HW_DEVICE_KW43B43ZC7_NBU ||\
+                MCUX_HW_DEVICE_MCXW70AC
 
 if MCUX_COMPONENT_middleware.wireless.framework.platform
 
@@ -115,7 +116,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
     select MCUX_COMPONENT_component.rpmsg_adapter
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     select MCUX_COMPONENT_component.timer_manager
-    depends on MCUX_HW_DEVICE_KW43B43ZC7
+    depends on MCUX_HW_DEVICE_KW43B43ZC7 || MCUX_HW_DEVICE_MCXW70AC
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     bool "KW43x NBU family"
