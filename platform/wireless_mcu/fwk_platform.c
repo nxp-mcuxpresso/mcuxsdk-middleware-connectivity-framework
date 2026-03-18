@@ -20,10 +20,8 @@
 #include "fwk_platform_fpga.h"
 #endif
 
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
-#endif
 
 #include "fsl_os_abstraction.h"
 #include "fsl_adapter_rpmsg.h"
@@ -311,6 +309,7 @@ void PLATFORM_SetLowPowerFlag(bool PwrDownOngoing)
     {
         val = PLATFORM_HOST_USE_POWER_DOWN;
     }
+
     *p_lp_flag = val;
 }
 
@@ -462,7 +461,6 @@ void PLATFORM_GetMCUUid(uint8_t *aOutUid16B, uint8_t *pOutLen)
     Chip_GetUID(aOutUid16B, pOutLen);
 }
 
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 int PLATFORM_InitFro32K(void)
 {
     /* Enable the fro32k and select it as 32k clock source and disable osc32k
@@ -718,7 +716,6 @@ void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams)
 
     RFMC->XO_TEST = rfmc_xo;
 }
-#endif
 
 int PLATFORM_InitTimerManager(void)
 {
