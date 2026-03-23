@@ -1,5 +1,23 @@
 ## Connectivity framework CHANGELOG
 
+### 7.3.1 mcux SDK 26.06.00 pvw1
+
+#### Major Changes
+
+- [SecLib_RNG] Refactored SecLib mutex declaration and made Lock/Unlock functions public. Changed return type from `osa_status_t` to `secResultType_t` for SecLib mutex functions and moved mutex Lock/Unlock function declarations to SecLib.h.
+- [SecLib_RNG][PSA] Activated PSA opaque execution with s200 and its secure key storage. Switched from PSA transparent mode to opaque mode for all functions except `CMAC_LsbFirstInput()` which is currently not supported in opaque version. Optimized SecLib_psa_config to fully accelerate all PSA_WANT_KEY_TYPE_ECC_KEY_PAIR functions.
+
+#### Minor Changes
+
+- [RW61X] Added new API `PLATFORM_BlePriorityRemap()` with HCI vendor command HCI_CMD_NXP_REMAP_BLE_PRIORITY 0x2A1 to configure BLE ADV and Connection Priority relative to Wi-Fi/OT.
+- [DBG] Disabled DTEST signals and GPIO debug for debug target to prevent significant low power current consumption degradation.
+
+#### Bug Fixes
+
+- [OTA][Coverity] Sanitized pImageOffset parameter in OTA functions to avoid possible overflow.
+- [SecLib] Fixed multiplication buffer pointer initialization for segmented ECDH operations. Fixed EC P256 multistep operations using SW legacy library. Fixed `ECDH_P256_ComputeDhKeySeg()` and `ECDH_P256_GenerateKeysSeg()` argument checking across SecLib variants. Fixed `SecLib_AES_CMAC_PRF_128()` behavior for SecLib sss variant that tolerated VK length to be 0. Removed unreachable code from `SecLib_HMAC_SHA256_Finish()`.
+- [Platform] Fixed TSTMR timestamp 64 bit read compilation failure when `gPlatformTstmr32Bit_d` is undefined.
+
 ### 7.2.3 mcux SDK 26.03.00 RFP
 
 #### Major Changes
