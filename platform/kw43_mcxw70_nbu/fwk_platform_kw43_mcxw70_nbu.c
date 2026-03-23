@@ -86,14 +86,6 @@ static void PLATFORM_PrepareDeepSleep(void)
     CLOCK_DisableClock(kCLOCK_Data_stream_2p4);
 #endif
 
-    CMC_0->CKCTRL = CMC_CKSTAT_CKMODE(0xF);
-
-    /* Unlock PMCTRL */
-    CMC_0->PMPROT &= ~CMC_PMPROT_LOCK_MASK;
-    CMC_0->PMPROT = CMC_PMPROT_LPMODE(0x2);
-
-    CMC_0->PMCTRL[2] = CMC_PMCTRL_LPMODE(0x3); /* rf : PMCTRLPD2 */
-
 #if defined PLAT_FWK_INTERCORE_DBG_LP && (PLAT_FWK_INTERCORE_DBG_LP > 0)
     cnt++; /* increment deep sleep counter*/
     if (p_Nbu_shared_ctx != NULL)
@@ -120,7 +112,6 @@ static void PLATFORM_ExitDeepSleep(void)
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
-
 uint64_t PLATFORM_Get32KTimeStamp(void)
 {
     return PLATFORM_TSTMR_ReadTimeStamp(TSTMR_32KHZ_ID);

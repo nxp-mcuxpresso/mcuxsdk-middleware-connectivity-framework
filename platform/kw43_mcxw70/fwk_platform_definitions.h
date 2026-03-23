@@ -152,4 +152,7 @@ typedef enum _fwk_tstmr_clk_sel
     FwkTSTMR0_ClkSel_1MHz = 5U, /*!< TSTMR 1MHz configuration for gPlatformTstmr0HasClkControl_d */
 } fwk_tstmr_clk_sel_t;
 
+/* KW43 / MCXW70 require RF power domain configuration */
+#define gPlatformHasRFPowerDomain_d 1
+
 #endif /* _FWK_PLAT_DEFS_H_ */

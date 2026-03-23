@@ -25,6 +25,9 @@
 
 #include "fsl_os_abstraction.h"
 #include "fsl_adapter_rpmsg.h"
+#if (defined gPlatformHasRFPowerDomain_d && (gPlatformHasRFPowerDomain_d == 1))
+#include "fsl_cmc.h"
+#endif
 
 #include "rpmsg_platform.h"
 
@@ -186,7 +189,6 @@ static volatile uint32_t last_nbu_sw_state = 0U;
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
 /* -------------------------------------------------------------------------- */
-
 static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
 {
     int     ret = 0;
@@ -290,6 +292,48 @@ static void PLATFORM_ClearInterruptMask(uint32_t int_mask)
     __DSB();
     __ISB();
 }
+
+/*!
+ * \brief Allow keeping debugger on other core as one goes to sleep.
+ */
+static void PLATFORM_DebuggerLowPowerConfigure(void)
+{
+#if (defined(FWK_KW47_MCXW72_FAMILIES) && (FWK_KW47_MCXW72_FAMILIES == 1)) || \
+    (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+    /* Allow the debugger to wakeup the target */
+    RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
+    CMC0->DBGCTL &= ~CMC_DBGCTL_SOD_MASK;
+#endif
+}
+
+#if (defined(gPlatformHasRFPowerDomain_d) && (gPlatformHasRFPowerDomain_d == 1))
+/*!
+ * \brief Set Power Mode for RF / NBU power domain (sleep or deep sleep).
+ */
+static void PLATFORM_SetNbuPowerMode(void)
+{
+    uint32_t lpm_val     = kCMC_SleepMode; /* TODO replace by kCMC_DeepSleepMode when ready */
+    uint32_t cur_pm_prot = CMC_0->PMPROT;
+    if ((CMC_0->PMPROT & CMC_PMPROT_LOCK_MASK) == 0)
+    {
+        cur_pm_prot &= CMC_PMPROT_LPMODE_MASK;
+        cur_pm_prot >>= CMC_PMPROT_LPMODE_SHIFT;
+        if ((cur_pm_prot & lpm_val) != lpm_val)
+        {
+            CMC_SetPowerModeProtection(CMC_0, kCMC_AllowAllLowPowerModes);
+        }
+        CMC_0->PMCTRL[2] = CMC_PMCTRL_LPMODE(lpm_val); /* rf : PMCTRLPD2 */
+    }
+    else
+    {
+        if ((cur_pm_prot & lpm_val) != lpm_val)
+        {
+            assert(0);
+        }
+    }
+}
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -348,11 +392,9 @@ int PLATFORM_InitNbu(void)
         RFMC->RF2P4GHZ_CTRL = rfmc_ctrl;
         RFMC->RF2P4GHZ_TIMER |= RFMC_RF2P4GHZ_TIMER_TIM_EN(0x1U);
 
-#if (defined(FWK_KW47_MCXW72_FAMILIES) && (FWK_KW47_MCXW72_FAMILIES == 1)) || \
-    (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
-        /* Allow the debugger to wakeup the target */
-        RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
-        CMC0->DBGCTL &= ~CMC_DBGCTL_SOD_MASK;
+        PLATFORM_DebuggerLowPowerConfigure();
+#if (defined(gPlatformHasRFPowerDomain_d) && (gPlatformHasRFPowerDomain_d == 1))
+        PLATFORM_SetNbuPowerMode();
 #endif
         regPrimask = DisableGlobalIRQ();
         timestamp  = PLATFORM_GetTimeStamp();
