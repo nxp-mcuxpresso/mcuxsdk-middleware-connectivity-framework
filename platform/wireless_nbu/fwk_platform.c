@@ -1,10 +1,11 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 /*${header:start}*/
+#include "fwk_platform_definitions.h"
 #include "fwk_config.h"
 #include "fwk_platform.h"
 #include "fwk_debug.h"
@@ -87,7 +88,7 @@ typedef struct smu_dmem_config
  * Private memory declarations
  ************************************************************************************/
 
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if !(defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES != 0))
 /* This array contains the FRODIV values for each FRO range (from 16MHz to 64MHz)
  * The output clock is provided to flash APB and RC_CMC block, it can't exceed 24MHz
  * The current mapping is the following:
@@ -117,9 +118,11 @@ static uint8_t freq_constraint_from_controller = 0U;
 static volatile int timer_manager_initialized = 0;
 
 static void PLATFORM_UpdateFrequency(void);
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if !(defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES != 0))
 static void PLATFORM_SetClock(uint8_t range);
+#endif
 
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
 #endif
 
@@ -524,7 +527,7 @@ void PLATFORM_GetDMemConfig(uint32_t *mem_start, uint32_t *mem_sz)
 
 static void PLATFORM_UpdateFrequency(void)
 {
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if !(defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES != 0))
     /* Take the higher frequency between the constraint set by the controller and the one from the host and apply it */
     uint8_t frequency = (freq_constraint_from_host > freq_constraint_from_controller) ? freq_constraint_from_host :
                                                                                         freq_constraint_from_controller;
@@ -533,7 +536,7 @@ static void PLATFORM_UpdateFrequency(void)
     (void)freq_constraint_from_controller;
 #endif
 }
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if !(defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES != 0))
 static void PLATFORM_SetClock(uint8_t range)
 {
     uint32_t fro192M_clock_ctrl;
@@ -565,6 +568,7 @@ static void PLATFORM_SetClock(uint8_t range)
     {
     }
 }
+#endif
 
 #if 0
 /* Code is unused and duplcates PLATFORM_GetNbuFreq */
@@ -598,6 +602,7 @@ uint32_t PLATFORM_GetClockFreq(void)
 }
 #endif
 
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 static uint32_t PLATFORM_GetLowPowerFlag(void)
 {
     extern uint32_t    m_lowpower_flag_start[]; /* defined by linker */
