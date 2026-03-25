@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2021-2025 NXP                          */
+/*                           Copyright 2021-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -7,6 +7,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#include "fwk_platform_definitions.h"
 #include "fsl_common.h"
 #include "fwk_platform_sensors.h"
 
@@ -155,7 +156,12 @@ void PLATFORM_InitAdc(void)
     /* Initialize the filter shift based on the filter size */
     filterState.shift = HAL_GETPOWEROF2SHIFT(PLATFORM_TEMPERATURE_FILTER_SIZE);
 #endif
+
+#if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+    LPADC_EnableInterrupts(ADC0, (uint32_t)kLPADC_FIFO0WatermarkInterruptEnable);
+#else
     LPADC_EnableInterrupts(ADC0, (uint32_t)kLPADC_FIFO1WatermarkInterruptEnable);
+#endif
     NVIC_SetPriority(ADC0_IRQn, PLATFORM_ADC_IRQ_PRIO);
     (void)EnableIRQ(ADC0_IRQn);
 }
@@ -168,8 +174,11 @@ void PLATFORM_DeinitAdc(void)
 void PLATFORM_ReinitAdc(void)
 {
     BOARD_ReinitAdc();
-
+#if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+    LPADC_EnableInterrupts(ADC0, (uint32_t)kLPADC_FIFO0WatermarkInterruptEnable);
+#else
     LPADC_EnableInterrupts(ADC0, (uint32_t)kLPADC_FIFO1WatermarkInterruptEnable);
+#endif
     NVIC_SetPriority(ADC0_IRQn, PLATFORM_ADC_IRQ_PRIO);
     (void)EnableIRQ(ADC0_IRQn);
 }
