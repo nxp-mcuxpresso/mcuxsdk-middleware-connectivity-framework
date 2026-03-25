@@ -248,36 +248,6 @@ uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
     return delta;
 }
 
-void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
-{
-#ifndef LATENCY_TESTS
-    uint8_t ldo_ana_trim;
-
-    if (max_tx_power == 0)
-    {
-        ldo_ana_trim = 3U;
-    }
-    else if (max_tx_power == 7)
-    {
-        ldo_ana_trim = 9U;
-    }
-    else
-    {
-        if (max_tx_power != 10)
-        {
-            // set to 10dBm if setting is invalid
-            assert(false);
-            max_tx_power = 10;
-        }
-        ldo_ana_trim = 15U;
-    }
-    /* configure max tx power in controller */
-    (void)Controller_SetMaxTxPower(max_tx_power, ldo_ana_trim);
-#else
-    (void)max_tx_power;
-#endif
-}
-
 int PLATFORM_InitWakeUpDelay(void)
 {
     int ret = 0;
