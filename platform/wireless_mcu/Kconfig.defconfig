@@ -115,8 +115,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.ble_utils
     imply MCUX_COMPONENT_middleware.wireless.controller_api
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
-    #select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
-    #select MCUX_COMPONENT_device.utility
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
+    select MCUX_COMPONENT_device.utility
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
     select MCUX_COMPONENT_component.flash_adapter
@@ -135,7 +135,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.lcl
 config MCUX_COMPONENT_middleware.wireless.framework.platform.reset
     select MCUX_COMPONENT_component.reset_adapter
     select MCUX_COMPONENT_driver.wuu
-    # select MCUX_COMPONENT_driver.cmc
+    select MCUX_COMPONENT_driver.cmc
     select MCUX_COMPONENT_driver.lptmr
 
 endif
