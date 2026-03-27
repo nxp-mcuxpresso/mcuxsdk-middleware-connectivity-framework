@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                        Copyright 2021-2023, 2025 NXP                       */
+/*                     Copyright 2021-2023, 2025-2026 NXP                     */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "fwk_config.h"
+#include "fwk_platform_definitions.h"
 #include "fsl_common.h"
 #include "ll_types.h"
 #include "fwk_platform_lowpower.h"
@@ -259,7 +260,9 @@ static int PLATFORM_LowPowerModeAllowed(void)
         }
 #endif
     } while (false);
-#if defined gNbuDisableLowpower_d && (gNbuDisableLowpower_d == 1)
+    /* TODO: reallow deep sleep on KW43 when supported */
+#if (defined(gNbuDisableLowpower_d) && (gNbuDisableLowpower_d > 0)) || \
+    (defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES > 0))
     if (ret == 0)
     {
         ret = 1;
