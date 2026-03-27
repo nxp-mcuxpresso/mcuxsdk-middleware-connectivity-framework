@@ -165,8 +165,8 @@ void PLATFORM_TSTMR_Enable(uint8_t tstmrId, bool enablenDisable)
  */
 uint64_t PLATFORM_TSTMR_ReadTimeStamp(uint8_t tstmrId)
 {
-    FWK_TSTMR_Type *base = (FWK_TSTMR_Type *)PLATFORM_TSTMR_GetBase(tstmrId);
-    uint64_t        timeStamp;
+    FWK_TSTMR_Type *base      = (FWK_TSTMR_Type *)PLATFORM_TSTMR_GetBase(tstmrId);
+    uint64_t        timeStamp = 0U;
 
     if (base != NULL)
     {
