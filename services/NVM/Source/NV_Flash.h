@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017, 2023 NXP
+ * Copyright 2016-2017, 2023, 2026 NXP
  * All rights reserved.
  *
  * \file
@@ -130,6 +130,7 @@ extern "C" {
  * Description: NVM record meta information type definition
  */
 #pragma pack(1)
+
 typedef union NVM_RecordMetaInfo_tag
 {
     uint64_t rawValue;
@@ -140,7 +141,12 @@ typedef union NVM_RecordMetaInfo_tag
         uint16_t NvmElementIndex;
         uint16_t NvmRecordOffset;
         uint8_t  NvValidationEndByte;
+#if (defined gNvmMetaCheckSum_d && (gNvmMetaCheckSum_d != 0))
+        uint32_t NvmMetaChecksum;
+        uint8_t  Padding[PGM_SIZE_BYTE - sizeof(uint64_t) - sizeof(uint32_t)];
+#else
         uint8_t  Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
+#endif
     } fields;
 } NVM_RecordMetaInfo_t;
 #pragma pack()
@@ -204,18 +210,19 @@ typedef enum NVM_VirtualPageID_tag
  */
 typedef struct NVM_VirtualPageProperties_tag
 {
-    uint32_t NvRawSectorStartAddress;       /*< Virtual page start address in flash */
-    uint32_t NvRawSectorEndAddress;         /*< Virtual page end address in flash */
-    uint8_t  NvRawSectorsCount;             /*< Number of flash sectors contituting one virtual page  */
-    uint32_t NvTotalPageSize;               /*< Virtual page size in bytes - number of flash sector times sector size */
-    uint32_t NvLastMetaInfoAddress;         /*< Most recent record meta information written to flash */
+    uint32_t NvRawSectorStartAddress; /*< Virtual page start address in flash */
+    uint32_t NvRawSectorEndAddress;   /*< Virtual page end address in flash */
+    uint8_t  NvRawSectorsCount;       /*< Number of flash sectors constituting one virtual page  */
+    uint32_t NvTotalPageSize;         /*< Virtual page size in bytes - number of flash sector times sector size */
+    uint32_t NvLastMetaInfoAddress;   /*< Address of most recent record meta information written to flash */
 #if gUnmirroredFeatureSet_d
-    uint32_t NvLastMetaUnerasedInfoAddress; /*< Frontier above which page is still in blank state */
+    uint32_t
+        NvLastMetaUnerasedInfoAddress; /*< Address of most recent non erased recordsFrontier above which page is still in blank state */
 #endif
-    bool_t has_ecc_faults;                  /*< ECC fault were discovered in page at initialization :
-                                             *  can be true only when gNvSalvageFromEccFault_d is defined */
-    uint32_t CounterTop;                    /*< Virtual Page version number read at bottom of page */
-    uint32_t CounterBottom;                 /*< Virtual Page version number read at top of page */
+    bool_t has_ecc_faults;  /*< ECC fault were discovered in page at initialization :
+                             *  can be true only when gNvSalvageFromEccFault_d is defined */
+    uint32_t CounterTop;    /*< Virtual Page version number read at bottom of page */
+    uint32_t CounterBottom; /*< Virtual Page version number read at top of page */
 } NVM_VirtualPageProperties_t;
 
 typedef struct NVM_ErasePageCmdStatus_tag

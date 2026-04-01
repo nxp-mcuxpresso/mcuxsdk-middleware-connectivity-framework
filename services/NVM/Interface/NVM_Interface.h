@@ -81,6 +81,15 @@ extern "C" {
 #endif
 
 /*
+ * If defined, gNvmMetaCheckSum_d adds a 4 byte checksum value to the MIT structure.
+ * The actual size of the MIT contents becomes 12 bytes instead of 8 bytes previously.
+ * This is stolen on the padding rounding the structure to the phrase size (16 bytes).
+ */
+#ifndef gNvmMetaCheckSum_d
+#define gNvmMetaCheckSum_d 0
+#endif
+
+/*
  * Name: gNvDebugEnabled_d
  * Description: enable/disable debug mode for NVM
  */
@@ -272,12 +281,13 @@ extern "C" {
 #endif
 
 /*
- * Name: gNvAppVersion_c
+ * Name: gNvFlashTableVersion_c
  * Description: application version, used for table upgrade
  */
 #ifndef gNvFlashTableVersion_c
 #define gNvFlashTableVersion_c 1U
 #endif
+
 /*
  * Name: gNvEnableCriticalSection_c
  * Description: This macro is used to enable/disable protection of the critical
@@ -589,7 +599,11 @@ typedef enum NVM_Status_tag
     gNVM_EccFault_c,                 /*!< ECC Fault detect on read */
     gNVM_EccFaultWritingRecord_c,    /*!< ECC Fault detected on record read back after write */
     gNVM_EccFaultWritingMeta_c,      /*!< ECC Fault detected on meta info read back after write */
-    gNVM_NbStatusCodes_c             /*< Not an erro code : number of existing */
+    gNVM_MetaInfoInvalidError_c,     /*!< meta info invalid */
+    /*!< meta info is blank (all 0xFF) */
+    gNVM_MetaInfoBlank_c, /*!< meta info read past last position */
+
+    gNVM_NbStatusCodes_c  /*< Not an erro code : number of existing */
 
 } NVM_Status_t;
 
@@ -1162,6 +1176,14 @@ uint32_t NvGetTableSizeInFlash(void);
  * \param[in] version version number to set in flash table.
  ********************************************************************************* */
 void NvSetFlashTableVersion(uint16_t version);
+
+/*! *********************************************************************************
+ *  \brief Configures request to calculate checksum flash table version. Used in tests or debug.
+ * \param[in] enabled 1: enables the NVM MIT checksum calculation,
+ *                    0: disables it.
+ * Note: This feature is conditioned by the gNvmMetaCheckSum_d flag. Does nothing otherwise.
+ ********************************************************************************* */
+void NvSetChecksumEnable(int enabled);
 
 /*! *********************************************************************************
  *  \brief Register callback for NVM to notify application when ECC fault is detected.
