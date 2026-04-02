@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2024 NXP
+ * Copyright 2020-2024, 2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -34,6 +34,10 @@
 /* -------------------------------------------------------------------------- */
 /*                              Public prototypes                             */
 /* -------------------------------------------------------------------------- */
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*!
  * \brief Initialize platform specific resources for external flash
@@ -126,5 +130,9 @@ bool PLATFORM_IsExternalFlashSectorBlank(uint32_t address);
 /*!
  * @}  end of FWK_Platform_module addtogroup
  */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _FWK_PLATFORM_EXTFLASH_H_ */
