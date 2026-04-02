@@ -196,7 +196,7 @@ void PLATFORM_GetBatteryLevel(uint8_t *battery_level)
 void PLATFORM_StartTemperatureMonitor(void)
 {
     temperature_status = TEMPERATURE_REQ_ONGOING;
-    BOARD_AdcSwTrigger(LPADC_TEMPEATURE_SENSOR_CHANNEL);
+    BOARD_AdcSwTrigger(LPADC_TEMPERATURE_SENSOR_CHANNEL);
 }
 
 void PLATFORM_GetTemperatureValue(int32_t *temperature_value)
