@@ -268,10 +268,15 @@ static int PLATFORM_LowPowerModeAllowed(void)
         ret = 1;
     }
 #endif
-
+#if (defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES > 0))
+    /* Avoid reading TSTMR, as accessing this resource is known to cause issues */
+    (void)slp_nb_32k_ticks;
+    ret = -1;
+#else
     /* Has no effect on KW45 or KW47 : tell main core how much time there is to insert activities that would stall NBU
      */
     PLATFORM_SetNextNbuActivityDeadline(slp_nb_32k_ticks);
+#endif
     return ret;
 }
 
