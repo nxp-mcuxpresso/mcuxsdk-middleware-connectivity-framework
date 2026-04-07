@@ -7,11 +7,11 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu)
         configs/fwk_config.h
         configs/rpmsg_config.h
         fwk_platform_kw43_mcxw70_nbu.c
-        DEVICE_IDS "KW43B43ZC7xxxA_NBU"
+        DEVICE_IDS "KW43B43ZC7xxx_NBU"
     )
     mcux_add_include(INCLUDES
         .
         configs
-        DEVICE_IDS "KW43B43ZC7xxxA_NBU"
+        DEVICE_IDS "KW43B43ZC7xxx_NBU"
     )
 endif()
