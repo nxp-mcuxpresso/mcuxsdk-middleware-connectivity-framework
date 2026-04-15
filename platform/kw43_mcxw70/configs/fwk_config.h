@@ -17,6 +17,9 @@
  * ADC on a channel*/
 #define gSensorsAdcCalibrationDurationInMs_c 4U
 
+/* Platform does not require a power-domain wakeup sequence prior to access */
+#define gPlatformRequiresPowerDomainWakeup 0
+
 /*
  * KW43/MCXW70 CM33 core has the DSP extension (__DSP_PRESENT), which allows the use of the NXP UltraFast EC P256
  * library. The flags may be set to 0 if this library is not required. It mainly makes sense for Matter SPAKE2P

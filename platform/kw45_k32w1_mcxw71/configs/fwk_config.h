@@ -16,6 +16,9 @@
 /* This platform has an NBU domain */
 #define gPlatformHasNbu_d 1
 
+/* Platform requires a power-domain wakeup sequence prior to access */
+#define gPlatformRequiresPowerDomainWakeup 1
+
 /* Defines the calibration duration of the ADC, it will block the task during this time in milisec before trigger the
  * ADC on a channel*/
 #define gSensorsAdcCalibrationDurationInMs_c 4U

@@ -173,8 +173,10 @@ static uint8_t fwk_platform_FRO6MHz_ratio = 1u;
 static const xtal_temp_comp_lut_t *pXtal32MTempCompLut = NULL;
 
 /****************** LOWPOWER ***********************/
-/* Number of request for CM3 to remain active */
+#if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
+/* Number of request for radio domain to remain active */
 static int8_t active_request_nb = 0;
+#endif
 
 PLATFORM_ErrorCallback_t pfPlatformErrorCallback = (void *)0;
 
@@ -239,7 +241,7 @@ static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t tem
 
     return ret;
 }
-
+#if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
 /*!
  * \brief Set interrupt mask to block interrupts below a certain priority level.
  *
@@ -292,7 +294,7 @@ static void PLATFORM_ClearInterruptMask(uint32_t int_mask)
     __DSB();
     __ISB();
 }
-
+#endif
 /*!
  * \brief Allow keeping debugger on other core as one goes to sleep.
  */
@@ -911,6 +913,7 @@ void PLATFORM_DisableControllerLowPower(void)
 
 void PLATFORM_RemoteActiveReq(void)
 {
+#if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
     BOARD_DBGLPIOSET(1, 1);
     BOARD_DBGLPIOSET(0, 1);
 
@@ -1030,10 +1033,12 @@ void PLATFORM_RemoteActiveReq(void)
     PLATFORM_InitRadio();
 
     BOARD_DBGLPIOSET(0, 0);
+#endif
 }
 
 void PLATFORM_RemoteActiveRel(void)
 {
+#if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
     BOARD_DBGLPIOSET(0, 1);
 
     /* Determine the context we are being called */
@@ -1141,6 +1146,7 @@ void PLATFORM_RemoteActiveRel(void)
     PLATFORM_ClearInterruptMask(intMask);
 
     BOARD_DBGLPIOSET(0, 0);
+#endif
 }
 void PLATFORM_GetResetCause(PLATFORM_ResetStatus_t *reset_status)
 {
