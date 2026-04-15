@@ -926,6 +926,19 @@ NVM_STATIC uint32_t mNvPageCounter = 0U;
 NVM_STATIC NVM_VirtualPageProperties_t mNvVirtualPageProperty[gNvVirtualPagesCount_c];
 
 /*
+ * Name: mNvTotalPageSize
+ * Description: Size of NVM virtual page in bytes.
+ *              Limited to 64kB, and multiple of flash sector size.
+ * Note: The NVM partition is twice as big.
+ */
+NVM_STATIC uint32_t mNvTotalPageSize;
+/*
+ * Name: mNvSectorSize
+ * Description: Size of flash sector in bytes.
+ */
+NVM_STATIC uint32_t mNvSectorSize;
+
+/*
  * Name: mNvCopyOperationIsPending
  * Description: a flag that a indicates that a page copy operation is requested
  */
@@ -3273,19 +3286,19 @@ NVM_STATIC void InitNVMConfig(void)
         uint32_t start_addr          = (uint32_t)(NV_STORAGE_START_ADDRESS);
         uint8_t  nb_sectors_per_page = (uint8_t)(((uint32_t)NV_STORAGE_MAX_SECTORS) / 2u);
         uint32_t sector_sz           = (uint32_t)(NV_STORAGE_SECTOR_SIZE);
+        mNvTotalPageSize             = nb_sectors_per_page * sector_sz;
+
         for (uint8_t pageID = (uint8_t)gFirstVirtualPage_c; pageID < gVirtualPageNb_c; pageID++)
         {
             NVM_VirtualPageProperties_t *page_props = &mNvVirtualPageProperty[pageID];
             page_props->NvRawSectorStartAddress     = start_addr;
-            page_props->NvRawSectorsCount           = nb_sectors_per_page;
-            page_props->NvTotalPageSize             = nb_sectors_per_page * sector_sz;
-            start_addr += page_props->NvTotalPageSize;
+            start_addr += mNvTotalPageSize;
             page_props->NvRawSectorEndAddress = start_addr - 1U;
             page_props->has_ecc_faults        = FALSE;
 #if defined gNvSalvageFromEccFault_d && (gNvSalvageFromEccFault_d > 0)
             {
                 uint32_t fault_at = 0U;
-                fault_at = NV_SweepRangeForEccFaults(page_props->NvRawSectorStartAddress, page_props->NvTotalPageSize);
+                fault_at          = NV_SweepRangeForEccFaults(page_props->NvRawSectorStartAddress, mNvTotalPageSize);
                 if (fault_at != 0U)
                 {
                     page_props->has_ecc_faults = TRUE;
@@ -3364,8 +3377,7 @@ NVM_STATIC NVM_Status_t NvEraseVirtualPage(NVM_VirtualPageID_t pageID)
             /* If already blank avoid unrequired erase */
             /* erase virtual page */
             if (kStatus_HAL_Flash_Success !=
-                HAL_FlashEraseSector(mNvVirtualPageProperty[pageID].NvRawSectorStartAddress,
-                                     mNvVirtualPageProperty[pageID].NvTotalPageSize))
+                HAL_FlashEraseSector(mNvVirtualPageProperty[pageID].NvRawSectorStartAddress, mNvTotalPageSize))
             {
                 status = gNVM_SectorEraseFail_c;
             }
@@ -3437,7 +3449,7 @@ NVM_STATIC void NvPostFwUpdateMaintenance(void)
                 bool_t erase_req = FALSE;
                 if (!page_props->has_ecc_faults)
                 {
-                    if (HAL_FlashVerifyErase(page_props->NvRawSectorStartAddress, page_props->NvTotalPageSize,
+                    if (HAL_FlashVerifyErase(page_props->NvRawSectorStartAddress, mNvTotalPageSize,
                                              kHAL_Flash_MarginValueNormal) == kStatus_HAL_Flash_Success)
                     {
                         continue;
@@ -3471,14 +3483,14 @@ NVM_STATIC void NvPostFwUpdateMaintenance(void)
 
                 if (erase_req)
                 {
-                    (void)HAL_FlashEraseSector(page_props->NvRawSectorStartAddress, page_props->NvTotalPageSize);
+                    (void)HAL_FlashEraseSector(page_props->NvRawSectorStartAddress, mNvTotalPageSize);
                 }
             }
         }
         else
         {
             /* ECC Error detected erase whole page regardless of any other consideration */
-            (void)HAL_FlashEraseSector(page_props->NvRawSectorStartAddress, page_props->NvTotalPageSize);
+            (void)HAL_FlashEraseSector(page_props->NvRawSectorStartAddress, mNvTotalPageSize);
         }
     }
 }
@@ -3746,8 +3758,7 @@ NVM_STATIC NVM_Status_t NvVirtualPageBlankCheck(NVM_VirtualPageID_t pageID)
     {
         /* blank check */
         if (kStatus_HAL_Flash_Success != HAL_FlashVerifyErase(mNvVirtualPageProperty[pageID].NvRawSectorStartAddress,
-                                                              mNvVirtualPageProperty[pageID].NvTotalPageSize,
-                                                              kHAL_Flash_MarginValueNormal))
+                                                              mNvTotalPageSize, kHAL_Flash_MarginValueNormal))
         {
             status = gNVM_PageIsNotBlank_c;
         }
@@ -3914,7 +3925,7 @@ NVM_STATIC NVM_Status_t NvGetMetaInfo(NVM_VirtualPageID_t   pageId,
             status = gNVM_MetaInfoInvalidError_c;
             break;
         }
-        if (pMetaInfo->fields.NvmRecordOffset > mNvVirtualPageProperty[pageId].NvTotalPageSize)
+        if (pMetaInfo->fields.NvmRecordOffset > mNvTotalPageSize)
         {
             status = gNVM_MetaInfoInvalidError_c;
             break;
@@ -3963,7 +3974,7 @@ NVM_STATIC NVM_Status_t NvGetPageFreeSpace(uint32_t *ptrFreeSpace, bool_t blank_
 
         uint32_t last_meta_offset       = act_page->NvLastMetaInfoAddress - act_page->NvRawSectorStartAddress;
         uint32_t top_mit_offset         = 0U;
-        uint32_t bottom_rec_data_offset = act_page->NvTotalPageSize;
+        uint32_t bottom_rec_data_offset = mNvTotalPageSize;
 #if gUnmirroredFeatureSet_d
         NVM_RecordMetaInfo_t metaInfoUndeleted;
 #endif
@@ -5710,8 +5721,7 @@ NVM_STATIC NVM_Status_t UpgradeLegacyTableToFlash(uint32_t            read_addre
         /* copy the data */
 #if (defined(FTFx_PHRASE_SIZE) && (PGM_SIZE_BYTE == FTFx_PHRASE_SIZE))
         if (gNVM_OK_c != NV_FlashProgram(mNvVirtualPageProperty[dstPageId].NvRawSectorStartAddress + last_record_offset,
-                                         mNvVirtualPageProperty[mNvActivePageId].NvTotalPageSize - last_record_offset -
-                                             sizeof(legacy_page_counter) - 4,
+                                         mNvTotalPageSize - last_record_offset - sizeof(legacy_page_counter) - 4,
                                          (uint8_t *)mNvVirtualPageProperty[mNvActivePageId].NvRawSectorStartAddress +
                                              last_record_offset),
             TRUE)
@@ -5720,8 +5730,7 @@ NVM_STATIC NVM_Status_t UpgradeLegacyTableToFlash(uint32_t            read_addre
             NV_FlashProgram(
                 mNvVirtualPageProperty[dstPageId].NvRawSectorStartAddress + last_record_offset -
                     sizeof(legacy_page_counter),
-                mNvVirtualPageProperty[mNvActivePageId].NvTotalPageSize - last_record_offset -
-                    sizeof(legacy_page_counter),
+                mNvTotalPageSize - last_record_offset - sizeof(legacy_page_counter),
                 (uint8_t *)mNvVirtualPageProperty[mNvActivePageId].NvRawSectorStartAddress + last_record_offset, TRUE))
 #endif
         {
@@ -7682,7 +7691,7 @@ void NvGetPagesSize(uint32_t *pPageSize)
     if (NULL != pPageSize)
     {
 #if gNvStorageIncluded_d
-        *pPageSize = mNvVirtualPageProperty[mNvActivePageId].NvTotalPageSize;
+        *pPageSize = mNvTotalPageSize;
 #else
         *pPageSize = 0U;
 #endif
@@ -8345,7 +8354,7 @@ void NV_ShowFlashTable(bool_t active_only)
         vpage_prop = &mNvVirtualPageProperty[page_id];
         PRINTF("\r\n");
         int lg = 0;
-        for (address = 0U; address < vpage_prop->NvTotalPageSize; address++)
+        for (address = 0U; address < mNvTotalPageSize; address++)
         {
             if (address % 16U == 0U)
             {

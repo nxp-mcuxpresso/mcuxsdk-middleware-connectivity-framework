@@ -212,8 +212,6 @@ typedef struct NVM_VirtualPageProperties_tag
 {
     uint32_t NvRawSectorStartAddress; /*< Virtual page start address in flash */
     uint32_t NvRawSectorEndAddress;   /*< Virtual page end address in flash */
-    uint8_t  NvRawSectorsCount;       /*< Number of flash sectors constituting one virtual page  */
-    uint32_t NvTotalPageSize;         /*< Virtual page size in bytes - number of flash sector times sector size */
     uint32_t NvLastMetaInfoAddress;   /*< Address of most recent record meta information written to flash */
 #if gUnmirroredFeatureSet_d
     uint32_t
