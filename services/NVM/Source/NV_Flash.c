@@ -3280,7 +3280,10 @@ NVM_STATIC void InitNVMConfig(void)
         /* Initialize the active page ID */
         mNvActivePageId = gVirtualPageNone_c;
         Nv_GetPartitionAddressAndSize(&start_addr, &partition_size);
-
+        if (start_addr == 0U || partition_size == 0U)
+        {
+            return;
+        }
         mNvTotalPageSize = (uint32_t)(partition_size / 2U);
 
         for (uint8_t pageID = (uint8_t)gFirstVirtualPage_c; pageID < gVirtualPageNb_c; pageID++)
@@ -6089,7 +6092,6 @@ NVM_STATIC NVM_Status_t NvMetaAndRecordAddressRegulate(uint32_t  pageFreeSpace,
 
     NVM_RecordMetaInfo_t metaInfo = {0U};
     uint32_t             lastRecordAddress;
-    uint32_t             totalRecordSize;
     uint32_t             realRecordSize;
 
     /* compute the 'real record size' taking into consideration that the flash controller only writes in
@@ -6109,20 +6111,6 @@ NVM_STATIC NVM_Status_t NvMetaAndRecordAddressRegulate(uint32_t  pageFreeSpace,
 
         if (realRecordSize >= pageFreeSpace)
         {
-            status                    = gNVM_PageCopyPending_c;
-            mNvCopyOperationIsPending = TRUE;
-            break;
-        }
-        /* Cannot overflow because realRecordSize is smaller than pageFreeSpace that itself is less than UINT16_MAX*/
-        totalRecordSize = realRecordSize + sizeof(NVM_RecordMetaInfo_t);
-
-        /* check if the record fits the page's free space.
-         * one extra meta info space must be kept always free, to be able to perform the meta info search */
-        if (totalRecordSize + sizeof(NVM_RecordMetaInfo_t) >= pageFreeSpace)
-        {
-            /* there is no space to save the record, try to copy the current active page latest records
-             * to the other page
-             */
             status                    = gNVM_PageCopyPending_c;
             mNvCopyOperationIsPending = TRUE;
             break;
@@ -6180,9 +6168,24 @@ NVM_STATIC NVM_Status_t NvMetaAndRecordAddressRegulate(uint32_t  pageFreeSpace,
 
     if (status == gNVM_OK_c)
     {
+        uint32_t totalRecordSize;
+        /* Cannot overflow because realRecordSize is smaller than pageFreeSpace that itself is less than UINT16_MAX*/
+        totalRecordSize = realRecordSize + sizeof(NVM_RecordMetaInfo_t);
+
         /* make sure there is at least a free space for a meta between the last one and the data*/
-        while (totalRecordSize + sizeof(NVM_RecordMetaInfo_t) < pageFreeSpace)
+        while (true)
         {
+            /* check if the record fits the page's free space.
+             * one extra meta info space must be kept always free, to be able to perform the meta info search */
+            if (totalRecordSize + sizeof(NVM_RecordMetaInfo_t) >= pageFreeSpace)
+            {
+                /* there is no space to save the record, try to copy the current active page latest records
+                 * to the other page
+                 */
+                status = gNVM_PageCopyPending_c;
+                break;
+            }
+
             /* check if the space for the record is free */
             if ((FALSE == NvIsMemoryAreaAvailable(*newRecordAddress, realRecordSize) && (realRecordSize != 0U)))
             {
@@ -6212,7 +6215,7 @@ NVM_STATIC NVM_Status_t NvMetaAndRecordAddressRegulate(uint32_t  pageFreeSpace,
             else
             {
                 /* the memory space is blank */
-                status = gNVM_OK_c;
+                /* status is already gNVM_OK_c */
                 break;
             }
         }
@@ -8670,18 +8673,25 @@ void Nv_GetPartitionAddressAndSize(uint32_t *partition_address, uint32_t *partit
         uint64_t check_sz;
         uint32_t start_addr;
 
+        /* Read sector size from flash adapter */
         if (kStatus_HAL_Flash_Success != HAL_FlashGetProperty(kHAL_Flash_PropertyPflashSectorSize, &flash_sector_sz))
         {
             ret = -1;
             break;
         }
+        /* Valid values for all known flash sector sizes are between 512B and 8kB .
+         * Additionally the linker script must have defined NV_STORAGE_SECTOR_SIZE to match this value.
+         */
         if ((flash_sector_sz > 8192U) || (flash_sector_sz < 512U) ||
             (flash_sector_sz != (uint32_t)(NV_STORAGE_SECTOR_SIZE)))
         {
             ret = -2;
             break;
         }
-
+        /* The maximum possible number of sectors is limited by the 64kB addressable space
+         * within the NVM virtual page..
+         * The number of sectors is defined by the linker script, it must be an even number.
+         */
         max_nb_sectors = (2U * max_page_sz) / flash_sector_sz;
         nb_sectors     = (uint32_t)(NV_STORAGE_MAX_SECTORS);
         nb_sectors &= (uint32_t)UINT16_MAX;
@@ -8690,7 +8700,6 @@ void Nv_GetPartitionAddressAndSize(uint32_t *partition_address, uint32_t *partit
         {
             ret = -3;
             break;
-            ;
         }
 
         check_sz = (uint64_t)flash_sector_sz * (uint64_t)nb_sectors;
@@ -8710,7 +8719,7 @@ void Nv_GetPartitionAddressAndSize(uint32_t *partition_address, uint32_t *partit
         *partition_address = start_addr;
         *partition_size    = flash_sector_sz * nb_sectors;
     } while (false);
-
+    /* Catch configuration errors in debug build only */
     assert(ret == 0);
     NOT_USED(ret);
 }
