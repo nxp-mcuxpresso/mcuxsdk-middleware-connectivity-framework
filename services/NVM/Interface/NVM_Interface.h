@@ -1122,6 +1122,8 @@ uint32_t NvGetPageCapacityInBytes(void);
  ********************************************************************************* */
 void NvSetNvmDataTable(NVM_DataEntry_t *tb_array, uint16_t nb_entries);
 
+uint32_t NV_SweepRangeForEccFaults(uint32_t start_addr, uint32_t end_addr);
+
 #if gNvStorageIncluded_d && (defined gNvDebugEnabled_d && (gNvDebugEnabled_d > 0))
 /*
  * Functions below are required in some NVM tests scenarii for setup or debug reasons.

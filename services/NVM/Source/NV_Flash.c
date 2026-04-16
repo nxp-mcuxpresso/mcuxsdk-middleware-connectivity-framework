@@ -932,11 +932,6 @@ NVM_STATIC NVM_VirtualPageProperties_t mNvVirtualPageProperty[gNvVirtualPagesCou
  * Note: The NVM partition is twice as big.
  */
 NVM_STATIC uint32_t mNvTotalPageSize;
-/*
- * Name: mNvSectorSize
- * Description: Size of flash sector in bytes.
- */
-NVM_STATIC uint32_t mNvSectorSize;
 
 /*
  * Name: mNvCopyOperationIsPending
@@ -3272,47 +3267,21 @@ NVM_STATIC void InitNVMConfig(void)
 {
     if (FALSE == mNvFlashConfigInitialised)
     {
-        uint32_t       start_addr;
-        uint32_t       nb_sectors;
-        const uint32_t max_page_sz = (uint32_t)UINT16_MAX + 1U;
-        uint32_t       max_nb_sectors;
-        uint64_t       check_sz;
+        uint32_t start_addr;
+        uint32_t partition_size;
         /* Initialize flash HAL driver */
         if (kStatus_HAL_Flash_Success != HAL_FlashInit())
         {
             return;
         }
-
         /* no pending erase operations on system initialisation */
         mNvErasePgCmdStatus.NvErasePending = FALSE;
 
         /* Initialize the active page ID */
         mNvActivePageId = gVirtualPageNone_c;
-        start_addr      = (uint32_t)(NV_STORAGE_START_ADDRESS);
-        nb_sectors      = ((uint32_t)NV_STORAGE_MAX_SECTORS);
-        mNvSectorSize   = (uint32_t)(NV_STORAGE_SECTOR_SIZE);
-        max_nb_sectors  = (2U * max_page_sz) / mNvSectorSize;
-        if ((max_nb_sectors >= 64U) || ((nb_sectors % 2U) != 0U) || (nb_sectors > max_nb_sectors))
-        {
-            assert(FALSE);
-            return;
-        }
-        nb_sectors &= 0xffUL;
-        check_sz = (uint64_t)mNvSectorSize * (uint64_t)nb_sectors;
+        Nv_GetPartitionAddressAndSize(&start_addr, &partition_size);
 
-        if (check_sz > (uint64_t)max_page_sz * 2U)
-        {
-            assert(FALSE);
-            return;
-        }
-
-        if (start_addr >= ((uint32_t)UINT32_MAX - (uint32_t)check_sz))
-        {
-            assert(FALSE);
-            return;
-        }
-
-        mNvTotalPageSize = (uint32_t)(check_sz / 2U);
+        mNvTotalPageSize = (uint32_t)(partition_size / 2U);
 
         for (uint8_t pageID = (uint8_t)gFirstVirtualPage_c; pageID < gVirtualPageNb_c; pageID++)
         {
@@ -8685,13 +8654,63 @@ void Nv_GetPartitionAddressAndSize(uint32_t *partition_address, uint32_t *partit
     /* Need to assume that arguments are not NULL pointers */
     assert(partition_address != NULL);
     assert(partition_size != NULL);
-    *partition_address = (uint32_t)(NV_STORAGE_START_ADDRESS);
-    /* The number of sectors is multiplied by sector size to get total partition size */
-    /* This size must be smaller than 2*64kB because NVM offsets are coded on a uint16_t */
-    uint32_t sector_sz   = (uint32_t)(NV_STORAGE_SECTOR_SIZE) & (uint32_t)UINT16_MAX;
-    uint32_t max_sectors = (uint32_t)(NV_STORAGE_MAX_SECTORS) & (uint32_t)UINT16_MAX;
-    ;
 
-    *partition_size = sector_sz * max_sectors;
-    assert(*partition_size <= 2U * (uint32_t)UINT16_MAX);
+    /* By construction the MIT being coded on a uint16_t offset allows an addressing space of 64kB */
+    const uint32_t max_page_sz = (uint32_t)UINT16_MAX + 1U;
+    uint32_t       max_nb_sectors;
+    uint32_t       nb_sectors      = 0U;
+    uint32_t       flash_sector_sz = 0U;
+
+    *partition_size    = 0UL;
+    *partition_address = 0UL;
+
+    int ret = 0;
+    do
+    {
+        uint64_t check_sz;
+        uint32_t start_addr;
+
+        if (kStatus_HAL_Flash_Success != HAL_FlashGetProperty(kHAL_Flash_PropertyPflashSectorSize, &flash_sector_sz))
+        {
+            ret = -1;
+            break;
+        }
+        if ((flash_sector_sz > 8192U) || (flash_sector_sz < 512U) ||
+            (flash_sector_sz != (uint32_t)(NV_STORAGE_SECTOR_SIZE)))
+        {
+            ret = -2;
+            break;
+        }
+
+        max_nb_sectors = (2U * max_page_sz) / flash_sector_sz;
+        nb_sectors     = (uint32_t)(NV_STORAGE_MAX_SECTORS);
+        nb_sectors &= (uint32_t)UINT16_MAX;
+
+        if (((nb_sectors % 2U) != 0U) || (nb_sectors > max_nb_sectors))
+        {
+            ret = -3;
+            break;
+            ;
+        }
+
+        check_sz = (uint64_t)flash_sector_sz * (uint64_t)nb_sectors;
+
+        if (check_sz > (uint64_t)max_page_sz * 2U)
+        {
+            ret = -4;
+            break;
+        }
+        start_addr = (uint32_t)(NV_STORAGE_START_ADDRESS);
+        if (start_addr >= ((uint32_t)UINT32_MAX - (uint32_t)check_sz))
+        {
+            assert(FALSE);
+            break;
+        }
+
+        *partition_address = start_addr;
+        *partition_size    = flash_sector_sz * nb_sectors;
+    } while (false);
+
+    assert(ret == 0);
+    NOT_USED(ret);
 }
