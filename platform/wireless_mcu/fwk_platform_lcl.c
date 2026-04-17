@@ -335,7 +335,8 @@ static void set_dtest_page(uint32_t dtest_page)
 }
 
 /* DTEST setting to get TX & RX_EN signals on PTB3 & PTB4 respectively */
-void PLATFORM_Init_Dtest_TX_RX_EN(void)
+#if 0
+static void PLATFORM_Init_Dtest_TX_RX_EN(void)
 {
     set_dtest_page(DTEST_TSM);
 
@@ -349,6 +350,7 @@ void PLATFORM_Init_Dtest_TX_RX_EN(void)
 
     dtest_pins_init(DTEST10 | DTEST11); /* TX_EN on (PORTB, 3U, kPORT_MuxAlt8) | RX_EN on (PORTB, 4U, kPORT_MuxAlt8) */
 }
+#endif
 
 void PLATFORM_InitLclDtest(void)
 {
@@ -757,11 +759,17 @@ void PLATFORM_InitLclGpioDebug(bool_t debug)
 
 uint8_t PLATFORM_InitLcl(void)
 {
+#if !(defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
     uint8_t rfgpo_id;
+#endif
+    uint8_t status = 0U; /* default is Success */
 
     /* set debug pins first which could be overriden later */
     PLATFORM_InitLclGpioDebug(true);
 
+#if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+    /* Temporarily do not configure RF switch control */
+#else
 #if defined(KW45B41Z82_SERIES) || defined(KW45B41Z83_SERIES)
     rfgpo_id = LCL_RFGPO_3_0;
 
@@ -776,7 +784,6 @@ uint8_t PLATFORM_InitLcl(void)
 
     /* enable RF_GPO[6:4] */
     /* PLATFORM_InitLclGpioDebug() may set PORTD 2 & 3 as kPORT_MuxAsGpio */
-    //PORT_SetPinMux(PORTD, 1U, kPORT_MuxAlt4);
     PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt4);
     PORT_SetPinMux(PORTD, 3U, kPORT_MuxAlt4);
 
@@ -787,7 +794,6 @@ uint8_t PLATFORM_InitLcl(void)
     };
     GPIO_PinInit(GPIOD, 1U, &config);
     PORT_SetPinMux(PORTD, 1U, kPORT_MuxAsGpio);
-    //PORT_SetPinMux(PORTD, 2U, kPORT_MuxAlt4);
 #else
     rfgpo_id = LCL_RFGPO_3_0;
 
@@ -796,15 +802,18 @@ uint8_t PLATFORM_InitLcl(void)
     PORT_SetPinMux(PORTA, 18U, kPORT_MuxAlt6);
     PORT_SetPinMux(PORTA, 19U, kPORT_MuxAlt6);
     PORT_SetPinMux(PORTA, 20U, kPORT_MuxAlt6);
-#endif
-#endif
-    uint8_t status = PLATFORM_InitLclRfGpo(rfgpo_id);
+#endif /* defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0) */
+#endif /* defined(KW45B41Z82_SERIES) || defined(KW45B41Z83_SERIES) */
+
+    status = PLATFORM_InitLclRfGpo(rfgpo_id);
+
+    lantActive = 1U;
+#endif /* (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1)) */
 
 #ifdef FWK_LCL_ENABLE_DTEST
     PLATFORM_InitLclDtest();
 #endif /* FWK_LCL_ENABLE_DTEST */
 
-    lantActive = 1U;
     return status;
 }
 
@@ -953,9 +962,8 @@ uint8_t PLATFORM_InitCOEX(const uint8_t *p_config, uint8_t config_len)
     {
         status = 0U;
 
-#ifdef FWK_LCL_ENABLE_DTEST
-        PLATFORM_Init_Dtest_TX_RX_EN();
-#endif /* FWK_LCL_ENABLE_DTEST */
+        /* Only enable if really necessary due to high risk of pin/DTEST conflict */
+        //PLATFORM_Init_Dtest_TX_RX_EN();
     }
 
     /* Release wake up to NBU */
@@ -1021,9 +1029,8 @@ uint8_t PLATFORM_InitFEM(const uint8_t *p_config, uint8_t config_len)
         /* configure RF_GPO pins for the output signals */
         status = PLATFORM_FEM_pin_init(rfgpo_sel, pa_fem_settings.ant_sel_pins_enable);
 
-#ifdef FWK_LCL_ENABLE_DTEST
-        PLATFORM_Init_Dtest_TX_RX_EN();
-#endif /* FWK_LCL_ENABLE_DTEST */
+        /* Only enable if really necessary due to high risk of pin/DTEST conflict */
+        //PLATFORM_Init_Dtest_TX_RX_EN();
     }
     else
     {
