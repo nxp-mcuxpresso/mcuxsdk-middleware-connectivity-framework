@@ -183,7 +183,12 @@ void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
         EnableGlobalIRQ(regPrimask);
     }
 #else
-    PLATFORM_GenerateNewBDAddr(bleDeviceAddress);
+    static uint8_t bdAddr[PLATFORM_BLE_BD_ADDR_FULL_SIZE] = {0U};
+    if (FLib_MemCmpToVal((const void *)bdAddr, 0x0U, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == TRUE)
+    {
+        PLATFORM_GenerateNewBDAddr(bdAddr);
+    }
+    FLib_MemCpy((void *)bleDeviceAddress, (void *)bdAddr, PLATFORM_BLE_BD_ADDR_FULL_SIZE);
 #endif
 }
 
