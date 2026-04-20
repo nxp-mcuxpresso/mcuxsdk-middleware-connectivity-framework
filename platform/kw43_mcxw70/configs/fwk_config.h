@@ -78,8 +78,8 @@
  */
 #ifndef gHwParamsProdDataPlacement_c
 //#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlashMode_c
-#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
-//#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
+//#define gHwParamsProdDataPlacement_c gHwParamsProdDataMainFlash2IfrMode_c
+#define gHwParamsProdDataPlacement_c gHwParamsProdDataIfrMode_c
 #endif
 
 #if (gHwParamsProdDataPlacement_c == gHwParamsProdDataMainFlashMode_c)
