@@ -134,7 +134,6 @@ static uint32_t RNG_LCG(uint32_t prev_state);
 #endif
 
 #if ((defined(FSL_FEATURE_SOC_TRNG_COUNT)) && (FSL_FEATURE_SOC_TRNG_COUNT > 0U))
-static void TRNG_ISR(void);
 static void TRNG_GoToSleep(void);
 #endif
 
@@ -720,7 +719,7 @@ static void TRNG_GoToSleep(void)
     }
 }
 
-static void TRNG_ISR(void)
+void RNG_TrngIrqHandler(void)
 {
     /* Clear Interrupt flags */
     TRNG0->INT_CTRL &= ~(TRNG_INT_CTRL_ENT_VAL_MASK | TRNG_INT_CTRL_HW_ERR_MASK | TRNG_INT_CTRL_FRQ_CT_FAIL_MASK);
@@ -766,8 +765,6 @@ static int RNG_Specific_Init(uint32_t *pSeed)
     do
     {
         (void)TRNG_GetDefaultConfig(&config);
-
-        OSA_InstallIntHandler((uint32_t)TRNG0_IRQn, TRNG_ISR);
 
         if (TRNG_Init(TRNG0, (const trng_config_t *)&config) != 0)
         {

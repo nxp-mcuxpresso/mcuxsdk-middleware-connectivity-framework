@@ -160,4 +160,11 @@ typedef enum _fwk_tstmr_clk_sel
 /* KW43 / MCXW70 require RF power domain configuration */
 #define gPlatformHasRFPowerDomain_d 1
 
+/*********************************************************************
+ *        Service definitions
+ *********************************************************************/
+
+/* Map the RNG TRNG IRQ handler to the TRNG0 IRQ handler */
+#define RNG_TrngIrqHandler TRNG0_IRQHandler
+
 #endif /* _FWK_PLAT_DEFS_H_ */
