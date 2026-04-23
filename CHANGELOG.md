@@ -1,5 +1,35 @@
 ## Connectivity framework CHANGELOG
 
+### 7.3.2 mcux SDK 26.06.00 pvw2
+
+#### Major Changes
+
+- [NVM] Enhanced robustness of NVM MIT (Meta Information Tag) operations with improved validation and error handling. Added checksum validation feature controlled by `gNvmMetaCheckSum_d` compilation switch. Systematically validates MIT fields before use and triggers page switch if corruption detected. Fixed `mNvTableSizeInFlash` tracking when table entries are modified. Refactored `NvWriteRecord()` and added `NvModuleSwitchPage()` for better ECC fault handling. Added `NvSetChecksumEnable()` API to control feature at runtime. Feature disabled by default.
+
+#### Minor Changes
+
+- [wireless_mcu][ble] Refactored `PLATFORM_SetBleMaxTxPower()` API moved from platform file to fwk_platform_ble.c for Zephyr compatibility.
+- [wireless_mcu] Modified `PLATFORM_GetBDAddr()` to return consistent address across calls when `gPlatformUseHwParameter_d` is disabled.
+- [platform] Added FRDMKW43 to supported platform families.
+- [Common] Enhanced external flash API with C++ compatibility by adding extern "C" guards.
+- [kw43_mcxw70] Relocated `PLATFORM_TM_CLK_SELECT` macro to fwk_platform_definitions.h for platform-specific configuration.
+- [kw43_mcxw70][sensors] Adapted temperature measurement to use FIFO0 instead of FIFO1 as only single FIFO available on this platform.
+- [kw43_mcxw70] Updated framework component selections in configuration files.
+- [wireless_nbu] Replaced `FPGA_TARGET` guard with `FWK_KW43_MCXW70_NBU_FAMILIES` for CPU clock configuration to better reflect target family.
+- [kw43_mcxw70] Updated RF switch control and debug signal configurations for bringup support.
+- [kw43_mcxw70] Hardware parameters placement switched to IFR mode. Compilation macro `gHwParamsProdDataPlacement_c` changed from `gHwParamsProdDataMainFlash2IfrMode_c` to `gHwParamsProdDataIfrMode_c`.
+- [kw43_mcxw70_nbu] Enabled NBU Deep Sleep support. Removed `PLATFORM_RemoteActiveReq()` and `PLATFORM_RemoteActiveRel()` implementations as they are not required for this platform.
+- [kw43_mcxw70] Enabled TRNG support on kw43_mcxw70 platform. 
+- [SecLib_RNG] Renamed `TRNG_ISR` to `RNG_TrngIrqHandler()` and mapped IRQ handler for platforms using TRNG to this implementation.
+
+#### Bug Fixes
+
+- [NVM] Fixed initialization procedure in `InitNVMConfig()` to validate start address and partition_size.
+- [wireless_nbu] Fixed resource access issue by reverting TSTMR read restriction on NBU as underlying issue has been resolved.
+- [wireless_mcu][wireless_nbu] Fixed timestamp initialization to ensure defined value when tstmrId is out of range.
+- [SecLib_RNG] Corrected copyright header in seclib.c.
+- [MISRA] Various MISRA and CERT-C compliance fixes in NVM module.
+
 ### 7.3.1 mcux SDK 26.06.00 pvw1
 
 #### Major Changes
