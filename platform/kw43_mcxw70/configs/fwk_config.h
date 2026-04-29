@@ -37,7 +37,7 @@
  *********************************************************************/
 
 #if !defined(gPlatformUseHwParameter_d)
-#define gPlatformUseHwParameter_d 0
+#define gPlatformUseHwParameter_d 1
 #endif
 /*
  * gHwParamsProdDataMainFlashMode_c HWParameters PROD_DATA remain at top of main flash,
