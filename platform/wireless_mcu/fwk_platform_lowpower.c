@@ -38,6 +38,14 @@
 
 #define PLATFORM_LPWKUP_DELAY_10MHz (0xAAU)
 
+#if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
+
+#define PLATFORM_SCG_SIRCCSR_OFFSET        (0x200U)
+#define PLATFORM_SCG_SIRCCSR_ADDR          (volatile uint32_t *)(SCG0_BASE + PLATFORM_SCG_SIRCCSR_OFFSET)
+#define PLATFORM_SCG_SIRCCSR_SIRCSTEN_MASK (1U << 1) /* Slow IRC enabled during Sleep if set */
+
+#endif                                               /* gAppLpuart0WakeUpSourceEnable_d */
+
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -92,6 +100,10 @@ static int32_t PLATFORM_SetLowPowerConstraint(int32_t powerMode);
 static int32_t PLATFORM_ReleaseLowPowerConstraint(int32_t powerMode);
 
 void WUU0_IRQHandler(void);
+
+#if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
+static void PLATFORM_KeepUart0ClockedDuringSleep(void);
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                             Private variables                              */
@@ -168,13 +180,7 @@ void PLATFORM_LowPowerInit(void)
     PLATFORM_FwkSrvRegisterLowPowerCallbacks(&fwkSrvLowPowerConstraintCallbacks);
 
 #if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
-    /* To be able to wake up from LPUART0, we need to keep the FRO6M running
-     * also, we need to keep the WAKE domain is SLEEP.
-     * We can't put the WAKE domain in DEEP SLEEP because the LPUART0 is not mapped
-     * to the WUU as wake up source */
-    (void)PM_SetConstraints(PM_LP_STATE_NO_CONSTRAINT, 1, PM_RESC_WAKE_PD_PERI_OPERATIONAL);
-    /* Keep the FRO6M enable when WAKE domain in sleep mode  */
-    SCG0->SIRCCSR |= SCG_SIRCCSR_SIRCSTEN_MASK;
+    PLATFORM_KeepUart0ClockedDuringSleep();
 #endif
 }
 
@@ -673,3 +679,18 @@ static int32_t PLATFORM_ReleaseLowPowerConstraint(int32_t powerMode)
 
     return ret;
 }
+
+#if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
+static void PLATFORM_KeepUart0ClockedDuringSleep(void)
+{
+    /* To be able to wake up from LPUART0, we need to keep the FRO6M running
+     * also, we need to keep the WAKE domain is SLEEP.
+     * We can't put the WAKE domain in DEEP SLEEP because the LPUART0 is not mapped
+     * to the WUU as wake up source */
+    (void)PM_SetConstraints(PM_LP_STATE_NO_CONSTRAINT, 1, PM_RESC_WAKE_PD_PERI_OPERATIONAL);
+
+    /* Keep the FRO6M enable when WAKE domain in sleep mode  */
+    *PLATFORM_SCG_SIRCCSR_ADDR |= PLATFORM_SCG_SIRCCSR_SIRCSTEN_MASK;
+    /* equivalent to SCG0->SIRCCSR |= SCG_SIRCCSR_SIRCSTEN_MASK */
+}
+#endif
