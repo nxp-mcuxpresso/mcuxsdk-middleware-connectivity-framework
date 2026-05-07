@@ -17,6 +17,7 @@
 #include "fwk_platform_ota.h"
 #include "OtaPrivate.h"
 #include "fsl_os_abstraction.h"
+#include "fwk_config.h"
 
 /******************************************************************************
 *******************************************************************************
@@ -382,6 +383,15 @@ otaResult_t OTA_StartImage(uint32_t length)
             /* the transition is only valid if we are in the right state */
             RAISE_ERROR(status, gOtaInvalidOperation_c);
         }
+
+#if defined gOtaEraseWholePartitionOnInit_d && (gOtaEraseWholePartitionOnInit_d > 0)
+        status = OTA_EraseStorageMemory();
+        if (status != gOtaSuccess_c)
+        {
+            (void)OTA_UpdateImgState(OtaImgState_Idle);
+            break;
+        }
+#endif
         /* Save the total length of the OTA image */
         mOtaHdl.OtaImageTotalLength = length;
         /* Init the length of the OTA image currently written */
@@ -953,6 +963,10 @@ otaResult_t OTA_EraseStorageMemory(void)
         {
             RAISE_ERROR(status, gOtaFlashOperationError_c);
         }
+
+        /* Once the whole OTA partition is erased, reset the erased offset tracker to its full size */
+        mOtaHdl.ErasedUntilOffset = mOtaHdl.MaxImageLength;
+
         status = gOtaSuccess_c;
     } while (false);
     return status;
@@ -1959,11 +1973,7 @@ static ota_flash_status_t OTA_TreatFlashOpEraseSector(FLASH_TransactionOp_t *pMs
     OTA_DEBUG_TRACE("Erase block @%08x sz=%d\r\n", pMsg->flash_addr, pMsg->sz);
     do
     {
-        if (NULL == mOtaHdl.FlashOps)
-        {
-            RAISE_ERROR(st, gOtaInvalidOperation_c);
-        }
-        st = mOtaHdl.FlashOps->eraseArea(&pMsg->flash_addr, pMsg->sz, true);
+        st = mOtaHdl.FlashOps->eraseArea(&pMsg->flash_addr, &pMsg->sz, true);
         if (kStatus_OTA_Flash_Success != st)
         {
             OTA_WARNING_TRACE("Failed FlashOp %x @%08x sz=%d\r\n", pMsg->op_type, pMsg->flash_addr, pMsg->sz);

@@ -267,6 +267,10 @@
 #define gPlatformUseTimerManager_d 1
 #endif
 
+/* On KW43 better to perform the cleaning of the OTA storage at initialization in order to introduce
+ * less perturbation to the NBU Link Layer during OTA transfer */
+#define gOtaEraseWholePartitionOnInit_d 0 /* to be set to 1 if OTA storage cleaning is required */
+
 /*********************************************************************
  *        Configuration check
  *********************************************************************/
