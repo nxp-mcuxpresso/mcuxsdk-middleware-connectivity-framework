@@ -1148,8 +1148,102 @@ int OTA_TransactionResume(void)
 }
 
 /*****************************************************************************
- * \brief  This function is called in order to erase enough blocks to receive
- *         next OTA window.
+ *  Helper function to calculate the size to erase based on image length
+ *****************************************************************************/
+static uint32_t OTA_CalculateEraseSize(uint32_t requested_size)
+{
+    uint32_t sizeToErase = 0U;
+    uint32_t upper_erase_limit;
+
+    /* If OtaImageTotalLength is already known, use it to calculate remaining size to erase.
+     * and ErasedUntilOffset is capped by this limit, otherwise it is capped anyway by the maximum image length.
+     */
+    upper_erase_limit = (mOtaHdl.OtaImageTotalLength != 0U) ? mOtaHdl.OtaImageTotalLength : mOtaHdl.MaxImageLength;
+    if (mOtaHdl.ErasedUntilOffset >= upper_erase_limit)
+    {
+        /* Nothing to be erased */
+        sizeToErase = 0U;
+    }
+    else
+    {
+        sizeToErase = upper_erase_limit - mOtaHdl.ErasedUntilOffset;
+        if (sizeToErase > requested_size)
+        {
+            sizeToErase = requested_size;
+        }
+    }
+
+    return sizeToErase;
+}
+
+static otaResult_t OTA_PostedEraseOperation(uint32_t sizeToErase, ota_op_completion_cb_t cb, uint32_t param)
+{
+    otaResult_t            status = gOtaSuccess_c;
+    FLASH_TransactionOp_t *pMsg;
+
+    /*Allocate a transaction operation message*/
+    pMsg = OTA_FlashTransactionAlloc();
+    if (pMsg != NULL)
+    {
+        union ota_op_completion_cb callback;
+
+        callback.func = cb;
+        /* Set the erase size and callback information in the async message */
+        pMsg->flash_addr = mOtaHdl.ErasedUntilOffset;
+        pMsg->sz         = sizeToErase;
+        pMsg->op_type    = FLASH_OP_ERASE_NEXT_BLOCK;
+
+        FLib_MemCpyWord(&pMsg->buf[0], &callback.pf);
+        FLib_MemCpyWord(&pMsg->buf[4], &param);
+
+        /* Post the message to the operation queue */
+        OTA_MsgQueue(pMsg);
+
+        if (!mOtaHdl.config->PostedOpInIdleTask)
+        {
+            (void)OTA_TransactionResume();
+        }
+        /* Do not call the callback function synchronously */
+    }
+    else
+    {
+        status = gOtaError_c;
+    }
+
+    return status;
+}
+/*****************************************************************************
+ *  Helper function to handle synchronous erase operation
+ *****************************************************************************/
+static otaResult_t OTA_SyncEraseOperation(uint32_t sizeToErase, ota_op_completion_cb_t cb, uint32_t param)
+{
+    uint32_t   *p_erase_addr = &mOtaHdl.ErasedUntilOffset;
+    uint32_t    remain_sz;
+    otaResult_t status;
+    do
+    {
+        remain_sz = sizeToErase;
+        /* Execute the erase operation synchronously */
+        if (kStatus_OTA_Flash_Success != mOtaHdl.FlashOps->eraseArea(p_erase_addr, &remain_sz, false))
+        {
+            mOtaHdl.ErasedUntilOffset = 0U;
+            RAISE_ERROR(status, gOtaError_c);
+        }
+        /* If callback is not NULL: notify invoker of completion */
+        if (cb != NULL)
+        {
+            cb(param);
+        }
+        status = gOtaSuccess_c;
+    } while (false);
+
+    return status;
+}
+
+/*****************************************************************************
+ *   OTA_MakeHeadRoomForNextBlock
+ *
+ *  This function is called in order to erase enough blocks to receive next OTA window
  * \param [in] size  block size to prepare
  * \param [in] cb    callback function to call on completion of erase operation
  * \param [in] param callback parameter (not really used)
@@ -1160,14 +1254,11 @@ int OTA_TransactionResume(void)
  *****************************************************************************/
 otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t cb, uint32_t param)
 {
-    otaResult_t                status = gOtaSuccess_c;
-    FLASH_TransactionOp_t     *pMsg;
-    uint32_t                   sizeToErase;
-    union ota_op_completion_cb callback;
+    otaResult_t status = gOtaSuccess_c;
+    uint32_t    sizeToErase;
 
     do
     {
-        uint32_t upper_erase_limit;
         if (NULL == mOtaHdl.FlashOps)
         {
             /* bad procedure: no flash ops registered */
@@ -1185,76 +1276,21 @@ otaResult_t OTA_MakeHeadRoomForNextBlock(uint32_t size, ota_op_completion_cb_t c
             /* and the size cannot be greater than the OTA partition */
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
+        /* Validate that the requested size does not exceed the OTA partition size
+         * and cap it to maximum image size */
+        sizeToErase = OTA_CalculateEraseSize(size);
 
-        callback.func = cb;
-
-        /* If we already know the image length, then we only need to erase up to this
-         * length (rounded to the sector)
-         * If we don't know the image length, then we erase until we reach the end of
-         * the partition. The OtaImageTotalLength may not be a whole number of sectors, so we may
-         * have erased past the image size already */
-        upper_erase_limit = (mOtaHdl.OtaImageTotalLength != 0U) ? mOtaHdl.OtaImageTotalLength : mOtaHdl.MaxImageLength;
-        if (mOtaHdl.ErasedUntilOffset >= upper_erase_limit)
-        {
-            /* Nothing to be erased */
-            sizeToErase = 0U;
-        }
-        else
-        {
-            sizeToErase = upper_erase_limit - mOtaHdl.ErasedUntilOffset;
-            if (sizeToErase > size)
-            {
-                sizeToErase = size;
-            }
-        }
         if (OTA_UsePostedOperation())
         {
-            pMsg = OTA_FlashTransactionAlloc();
-            if (pMsg == NULL)
-            {
-                assert(pMsg == NULL);
-                RAISE_ERROR(status, gOtaError_c);
-            }
-            pMsg->flash_addr = mOtaHdl.ErasedUntilOffset;
-            /* Even if size is 0, produce a fake FLASH_OP_ERASE_NEXT_BLOCK so that
-             * callback gets called on completion in the IdleHook context */
-            pMsg->sz      = sizeToErase;
-            pMsg->op_type = FLASH_OP_ERASE_NEXT_BLOCK;
-
-            FLib_MemCpyWord(&pMsg->buf[0], &callback.pf);
-            FLib_MemCpyWord(&pMsg->buf[4], &param);
-
-            OTA_MsgQueue(pMsg);
-
-            if (!mOtaHdl.config->PostedOpInIdleTask)
-            {
-                /* Always take head of queue */
-                (void)OTA_TransactionResume();
-            }
+            /* Callback is to be called from the posted operation completion handler */
+            status = OTA_PostedEraseOperation(sizeToErase, cb, param);
         }
         else
         {
-            /* Make Headroom for the synchronous execution case */
-            ota_flash_status_t st;
-            uint32_t          *p_erase_addr = &mOtaHdl.ErasedUntilOffset;
-            uint32_t           remain_sz;
-
-            remain_sz = sizeToErase;
-            st        = mOtaHdl.FlashOps->eraseArea(p_erase_addr, &remain_sz, false);
-            if (kStatus_OTA_Flash_Success == st)
-            {
-                /* If callback is not NULL : notify invoker of completion */
-                if (callback.func != NULL)
-                {
-                    callback.func(param);
-                }
-            }
-            else
-            {
-                mOtaHdl.ErasedUntilOffset = 0U;
-                status                    = gOtaError_c;
-            }
+            /* Synchronous erase */
+            status = OTA_SyncEraseOperation(sizeToErase, cb, param);
         }
+
     } while (false);
 
     return status;

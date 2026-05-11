@@ -678,6 +678,7 @@ STATIC ota_flash_status_t InternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSi
     {
         uint32_t remain_sz  = *pSize;
         uint32_t erase_offs = *pOffs;
+
         if (!IS_SECTOR_ALIGNED(erase_offs))
         {
             /* Ensure erase offset is sector-aligned */
@@ -696,9 +697,11 @@ STATIC ota_flash_status_t InternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSi
              * complete till the end
              */
             remain_sz = 0U;
+
+            /* Update *pOffs and *pSize only if something was actually done */
+            *pOffs = NEXT_SECTOR_ADDR(erase_offs); /* Round up to next sector boundary */
+            *pSize = remain_sz;
         }
-        *pOffs = NEXT_SECTOR_ADDR(erase_offs); /* Round up to next sector boundary */
-        *pSize = remain_sz;
         status = kStatus_OTA_Flash_Success;
     } while (false);
 
@@ -717,6 +720,80 @@ STATIC ota_flash_status_t InternalVerifyFlashProgram(uint8_t *pData, uint32_t of
     return status;
 }
 #endif /* OtaDeprecatedFlashVerifyWrite_d */
+
+STATIC bool SanitizeOtaIntPartitionConfig(const OtaPartition_t *ota_partition)
+{
+    bool res = false;
+
+    do
+    {
+        if (ota_partition->sector_size != IntStorageSectorSize)
+        {
+            /* all known external flash have 4kB sectors */
+            break;
+        }
+#if defined FSL_FEATURE_FLASH_PFLASH_START_ADDRESS && (FSL_FEATURE_FLASH_PFLASH_START_ADDRESS > 0)
+        if (ota_internal_partition->start_offset < FSL_FEATURE_FLASH_PFLASH_START_ADDRESS)
+        {
+            break;
+        }
+#endif
+        if (/*(ota_internal_partition->size >= (FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE - IntStorageSectorSize)) ||*/
+            /* Likewise it could never be smaller than 2 flash sectors */
+            (ota_internal_partition->size < (2U * IntStorageSectorSize)) ||
+            (IntStorageSectorSize != ota_internal_partition->sector_size))
+        {
+            /* This might happen if target is not generated with gUseInternalStorageLink_d=1 */
+            break;
+        }
+
+        if ((ota_partition->size & (IntStorageSectorSize - 1UL)) != 0u)
+        {
+            /* partition size must be a multiple of sector size */
+            break;
+        }
+        if (ota_partition->start_offset + ota_partition->size < ota_partition->start_offset)
+        {
+            /* partition start offset too close to 2^32 */
+            break;
+        }
+        res = true;
+    } while (false);
+
+    return res;
+}
+
+STATIC uint32_t OtaPartitionBlankUntil(void)
+{
+    uint32_t           offs       = 0U;
+    uint16_t           blk_nb     = 0U;
+    uint32_t           end_offset = ota_internal_partition->size;
+    hal_flash_status_t verify_status;
+
+    /* Scan through the partition sector by sector */
+    while (offs < end_offset)
+    {
+        /* Verify if the current sector is erased (blank) */
+        verify_status = HAL_FlashVerifyErase(PHYS_ADDR(offs, partition_start_addr), IntStorageSectorSize,
+                                             kHAL_Flash_MarginValueNormal);
+
+        if (verify_status != kStatus_HAL_Flash_Success)
+        {
+            /* Found first non-blank sector, return its offset */
+            break;
+        }
+        if (SetEraseBitMap(blk_nb, true) < 0)
+        {
+            assert(0);
+            break;
+        }
+        /* This sector is blank, update blank_limit and continue */
+        offs += IntStorageSectorSize;
+        blk_nb++;
+    }
+
+    return offs; /* offs is the offset of the blank limit */
+}
 
 otaResult_t OTA_SelectInternalStoragePartition(void)
 {
@@ -746,37 +823,30 @@ otaResult_t OTA_SelectInternalStoragePartition(void)
             RAISE_ERROR(status, gOtaInvalidParam_c);
         }
 
-        hdl->FlashOps = &int_flash_ops;
-#if defined FSL_FEATURE_FLASH_PFLASH_START_ADDRESS && (FSL_FEATURE_FLASH_PFLASH_START_ADDRESS > 0)
-        if (ota_internal_partition->start_offset < FSL_FEATURE_FLASH_PFLASH_START_ADDRESS)
-        {
-            RAISE_ERROR(status, gOtaInvalidParam_c);
-        }
-#endif
-        if (/*(ota_internal_partition->size >= (FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE - IntStorageSectorSize)) ||*/
-            /* Likewise it could never be smaller than 2 flash sectors */
-            (ota_internal_partition->size < (2U * IntStorageSectorSize)) ||
-            (IntStorageSectorSize != ota_internal_partition->sector_size))
-        {
-            /* This might happen if target is not generated with gUseInternalStorageLink_d=1 */
-            RAISE_ERROR(status, gOtaInvalidParam_c);
-        }
-
+        hdl->FlashOps      = &int_flash_ops;
         hdl->ota_partition = ota_internal_partition;
 
         partition_start_addr = ota_internal_partition->start_offset;
 
-        hdl->ImageOffset       = PLATFORM_OtaGetImageOffset();
-        hdl->MaxImageLength    = hdl->ota_partition->size - hdl->ImageOffset;
-        hdl->ErasedUntilOffset = 0U;
-
-        status = gOtaSuccess_c;
-
+        if (!SanitizeOtaIntPartitionConfig(ota_internal_partition))
+        {
+            RAISE_ERROR(status, gOtaInternalFlashError_c);
+        }
         /* Try to initialize the OTA Storage */
         if (hdl->FlashOps->init() != kStatus_OTA_Flash_Success)
         {
             RAISE_ERROR(status, gOtaInternalFlashError_c);
         }
+
+        hdl->ImageOffset    = PLATFORM_OtaGetImageOffset();
+        hdl->MaxImageLength = hdl->ota_partition->size - hdl->ImageOffset;
+        /* On OTA partition selection, verify what is blank to avoid erasing sectors unnecessarily */
+        hdl->ErasedUntilOffset = OtaPartitionBlankUntil();
+        if (hdl->ErasedUntilOffset < hdl->ImageOffset)
+        {
+            hdl->ErasedUntilOffset = hdl->ImageOffset;
+        }
+        status = gOtaSuccess_c;
 
     } while (false);
 
