@@ -740,7 +740,7 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
                                        ecdhDhKey_t            *pOutDhKey,
                                        const bool_t            keepBlobDhKey)
 {
-    secResultType_t ret        = gSecSuccess_c;
+    secResultType_t ret        = gSecError_c;
     size_t          output_len = 0U;
     uint8_t         bufPub[sizeof(ecdhPublicKey_t) + 1]; /* +1 for point format byte*/
     uint8_t         bufSecret[sizeof(ecdhDhKey_t)];
@@ -773,6 +773,8 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
                                   sizeof(ecdhDhKey_t), &output_len);
         RAISE_ERROR(status, PSA_SUCCESS);
 
+        ret = gSecSuccess_c;
+
         /* Convert big-endian to little-endian format for output */
         ECP256_PointCopy_and_change_endianness(pOutDhKey->raw, bufSecret);
 
@@ -804,7 +806,7 @@ secResultType_t ECDH_P256_GenerateKeysSeg(computeDhKeyParam_t *pDhKeyData)
  ************************************************************************************/
 secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPrivateKey_t *pOutPrivateKey)
 {
-    secResultType_t      ret        = gSecSuccess_c;
+    secResultType_t      ret        = gSecError_c;
     psa_status_t         st         = PSA_SUCCESS;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t         key        = 0U;
@@ -854,6 +856,8 @@ secResultType_t ECDH_P256_GenerateKeys(ecdhPublicKey_t *pOutPublicKey, ecdhPriva
 
         /* Convert public key from big-endian to little-endian format and store in output */
         ECP256_PointLoad(pOutPublicKey, bufPub, true);
+
+        ret = gSecSuccess_c;
     } while (false);
     return ret;
 }
