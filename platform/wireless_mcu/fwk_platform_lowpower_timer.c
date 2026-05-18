@@ -52,9 +52,9 @@ uint64_t PLATFORM_GetLowPowerDurationUs(uint64_t enterLowPowerTimestamp, uint64_
 
     if (exitLowPowerTimestamp < enterLowPowerTimestamp)
     {
-        /* Handle counter wrapping */
+        /* Handle counter wrapping: add exitLowPowerTimestamp first to avoid underflow */
         lowPowerDurationUs =
-            COUNT_TO_USEC(0xFFFFFFFFU, PLATFORM_TM_CLK_FREQ) - enterLowPowerTimestamp + exitLowPowerTimestamp;
+            COUNT_TO_USEC(0xFFFFFFFFU, PLATFORM_TM_CLK_FREQ) + exitLowPowerTimestamp - enterLowPowerTimestamp;
     }
     else
     {
