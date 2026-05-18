@@ -47,11 +47,15 @@
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
 /* -------------------------------------------------------------------------- */
-extern uint8_t m_sqram_debug_start[];
-extern uint8_t dbg_ext_logging_start[];
-extern uint8_t dbg_ext_logging_end[];
+/* m_sqram_debug_start is a linker-generated symbol whose address is the base of
+ * the debug structure region.  Declaring it directly as nbu_debug_struct_t
+ * avoids a pointer-type cast and eliminates the MISRA C-2012 Rule 11.3
+ * violation */
+extern nbu_debug_struct_t m_sqram_debug_start;
+extern uint8_t            dbg_ext_logging_start[];
+extern uint8_t            dbg_ext_logging_end[];
 
-nbu_debug_struct_t *debug_struct = (nbu_debug_struct_t *)(m_sqram_debug_start);
+nbu_debug_struct_t *debug_struct = &m_sqram_debug_start;
 
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */

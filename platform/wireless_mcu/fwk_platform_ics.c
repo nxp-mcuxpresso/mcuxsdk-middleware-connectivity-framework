@@ -341,18 +341,25 @@ int PLATFORM_SendChipRevision(void)
     uint8_t chip_rev     = 0xFF;
     int     ret          = -3;
 
+#if defined(DEVICE_REVISION_A0)
     if (chip_rev_reg == DEVICE_REVISION_A0)
     {
         chip_rev = 0u;
     }
+#if (defined(DEVICE_REVISION_A1) && (DEVICE_REVISION_A1 != DEVICE_REVISION_A0))
     else if (chip_rev_reg == DEVICE_REVISION_A1)
     {
         chip_rev = 1u;
     }
+#if (defined(DEVICE_REVISION_A2) && \
+     ((DEVICE_REVISION_A2 != DEVICE_REVISION_A0) && (DEVICE_REVISION_A2 != DEVICE_REVISION_A1)))
     else if (chip_rev_reg == DEVICE_REVISION_A2)
     {
         chip_rev = 2u;
     }
+#endif
+#endif
+#endif
 #if defined(DEVICE_REVISION_A2_1)
     else if (chip_rev_reg == DEVICE_REVISION_A2_1)
     {
@@ -411,7 +418,7 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
 
         for (uint32_t i = 0U; fmt[i] != 0U; i++)
         {
-            if ((data_len + (uint16_t)fmt[i]) > NBU_API_MAX_PARAM_LENGTH)
+            if ((data_len + (uint16_t)fmt[i]) > (uint16_t)sizeof(data))
             {
                 /* too many arguments */
                 rpmsg_status = false;
