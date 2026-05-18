@@ -345,7 +345,7 @@ void FSCI_commInit(serial_handle_t *pSerCfg)
 
 #endif /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
 
-// clang-format off
+       // clang-format off
 /*! *********************************************************************************
  * \brief   The main task of the FSCI module, maily used to process a packet
  *          after it has been fully received
@@ -407,15 +407,39 @@ static void FSCI_Task(osa_task_param_t argument)
     }
 }
 #endif /* gFsciUseDedicatedTask_c */
-// clang-format on
+
+#if !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0)
+
+#if defined gFsciRxTimeout_c && (gFsciRxTimeout_c != 0)
+/*! *********************************************************************************
+ * \brief  Stops Rx restart timer and clear Rx ongoing flag
+ *
+ * \param[in]  pCommData fsciInterface
+ *
+ ********************************************************************************** */
+static void FsciStopRxTimout(fsciComm_t *pCommData)
+{
+#if !defined mFsciRxTimeoutUsePolling_c || (mFsciRxTimeoutUsePolling_c == 0)
+    if (pCommData->rxRestartTmr != NULL)
+    {
+        (void)TM_Stop(pCommData->rxRestartTmr);
+    }
+    else
+    {
+        assert(false);
+    }
+#endif /* !mFsciRxTimeoutUsePolling_c */
+    pCommData->rxOngoing = FALSE;
+}
+#endif /* gFsciRxTimeout_c */
 
 /*! *********************************************************************************
  * \brief  Receives data from the serial interface and checks to see if we have a valid packet.
  *
+ * \note unused if using gFsciOverRpmsg_c
  * \param[in]  param the fsciInterface on which the data has been received
  *
  ********************************************************************************** */
-#if !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0)
 void FSCI_receivePacket(void *param)
 {
     fsciComm_t         *pCommData = &mFsciCommData[(uint32_t)(uint32_t *)param];
@@ -452,7 +476,7 @@ void FSCI_receivePacket(void *param)
                     NvSetCriticalSection();
 #endif
 #if defined gFsciRxTimeout_c && (gFsciRxTimeout_c != 0)
-                    pCommData->rxOngoing = TRUE;
+                    FsciStopRxTimout(pCommData);
 #endif /* gFsciRxTimeout_c */
                 }
             }
@@ -481,10 +505,7 @@ void FSCI_receivePacket(void *param)
                         NvClearCriticalSection();
 #endif
 #if defined  gFsciRxTimeout_c && (gFsciRxTimeout_c != 0)
-#if !defined mFsciRxTimeoutUsePolling_c || (mFsciRxTimeoutUsePolling_c == 0)
-                        (void)TM_Stop(pCommData->rxRestartTmr);
-#endif /* !mFsciRxTimeoutUsePolling_c */
-                        pCommData->rxOngoing = FALSE;
+                        FsciStopRxTimout(pCommData);
 #endif /* gFsciRxTimeout_c */
                     }
                 }
@@ -495,10 +516,7 @@ void FSCI_receivePacket(void *param)
                     NvClearCriticalSection();
 #endif
 #if defined  gFsciRxTimeout_c && (gFsciRxTimeout_c != 0)
-#if !defined mFsciRxTimeoutUsePolling_c || (mFsciRxTimeoutUsePolling_c == 0)
-                    (void)TM_Stop(pCommData->rxRestartTmr);
-#endif
-                    pCommData->rxOngoing = FALSE;
+                    FsciStopRxTimout(pCommData);
 #endif /* gFsciRxTimeout_c */
 #if defined gFsciRxAck_c && (gFsciRxAck_c != 0)
                     /* Check for ACK packet */
@@ -624,10 +642,7 @@ void FSCI_receivePacket(void *param)
                         NvClearCriticalSection();
 #endif
 #if defined  gFsciRxTimeout_c && (gFsciRxTimeout_c != 0)
-#if !defined mFsciRxTimeoutUsePolling_c || (mFsciRxTimeoutUsePolling_c == 0)
-                        (void)TM_Stop(pCommData->rxRestartTmr);
-#endif /* !mFsciRxTimeoutUsePolling_c */
-                        pCommData->rxOngoing = FALSE;
+                    FsciStopRxTimout(pCommData);
 #endif /* gFsciRxTimeout_c */
                     }
 
@@ -653,8 +668,15 @@ void FSCI_receivePacket(void *param)
 #if defined mFsciRxTimeoutUsePolling_c && (mFsciRxTimeoutUsePolling_c != 0)
             pCommData->lastRxByteTs = TM_GetTimestamp();
 #else
-            (void)TM_InstallCallback(pCommData->rxRestartTmr, FSCI_RxRxTimeoutCb, param);
-            (void)TM_Start(pCommData->rxRestartTmr, kTimerModeSingleShot, mFsciRxRestartTimeoutMs_c);
+            if (pCommData->rxRestartTmr != NULL)
+            {
+                (void)TM_InstallCallback(pCommData->rxRestartTmr, FSCI_RxRxTimeoutCb, param);
+                (void)TM_Start(pCommData->rxRestartTmr, kTimerModeSingleShot, mFsciRxRestartTimeoutMs_c);
+            }
+            else
+            {
+                assert(false);
+            }
 #endif /* mFsciRxTimeoutUsePolling_c */
         }
 #endif /* gFsciRxTimeout_c */
@@ -663,7 +685,7 @@ void FSCI_receivePacket(void *param)
 #else /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
 void FSCI_receivePacket(void *param)
 {
-    mFsciSrcInterface = 0;
+    mFsciSrcInterface = 0U;
 
 #if defined(gFsciUseDedicatedTask_c) && (gFsciUseDedicatedTask_c == 1)
     /* store client packet information */
@@ -746,14 +768,25 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
     uint16_t          buffer_size, index;
     uint8_t           checksum;
     clientPacketHdr_t header;
-#if (gFsciMaxVirtualInterfaces_c > 0)
-    uint8_t checksum2;
-    uint8_t virtInterface = FSCI_GetVirtualInterface(fsciInterface);
-#endif
-
-    assert(msgLen <= gFsciMaxPayloadLen_c);
-    if (FALSE == gFsciTxDisable)
+    do
     {
+#if (gFsciMaxVirtualInterfaces_c > 0)
+        uint8_t checksum2;
+        uint8_t virtInterface = 0U;
+        if (fsciInterface < gFsciMaxInterfaces_c)
+        {
+            virtInterface = FSCI_GetVirtualInterface(fsciInterface);
+        }
+#endif
+        if (msgLen > gFsciMaxPayloadLen_c)
+        {
+            assert(msgLen <= gFsciMaxPayloadLen_c);
+            break;
+        }
+        if (TRUE == gFsciTxDisable)
+        {
+            break;
+        }
         /* Compute size */
         buffer_size = ((uint16_t)sizeof(clientPacketHdr_t)) + msgLen + ((uint16_t)gFsci_TailBytes_c);
 
@@ -763,64 +796,66 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
 
         /* Allocate buffer */
         buffer_ptr = MEM_BufferAlloc(buffer_size);
-        if (NULL != buffer_ptr)
+        if (NULL == buffer_ptr)
         {
-            /* Message header */
-            header.startMarker = gFSCI_StartMarker_c;
-            header.opGroup     = OG;
-            header.opCode      = OC;
-            header.len         = (uint8_t)msgLen;
+            break;
+        }
+        /* Message header */
+        header.startMarker = gFSCI_StartMarker_c;
+        header.opGroup     = OG;
+        header.opCode      = OC;
+        header.len         = (uint8_t)msgLen;
 
-            /* Compute CRC for TX packet, on opcode group, opcode, payload length, and payload fields */
-            checksum = FSCI_computeChecksum((uint8_t *)&header + 1, sizeof(header) - 1U);
-            checksum ^= FSCI_computeChecksum(pMsg, msgLen);
+        /* Compute CRC for TX packet, on opcode group, opcode, payload length, and payload fields */
+        checksum = FSCI_computeChecksum((uint8_t *)&header + 1, sizeof(header) - 1U);
+        checksum ^= FSCI_computeChecksum(pMsg, msgLen);
 #if (gFsciMaxVirtualInterfaces_c > 0)
-            if (virtInterface != 0U)
-            {
-                checksum2 = checksum ^ (checksum + virtInterface);
-                checksum += virtInterface;
-            }
+        if (virtInterface != 0U)
+        {
+            checksum2 = checksum ^ (checksum + virtInterface);
+            checksum += virtInterface;
+        }
 #endif
 
-            index = 0U;
+        index = 0U;
 #if defined(gFsciUseEscapeSeq_c) && (gFsciUseEscapeSeq_c != 0)
-            index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&header, sizeof(header), &buffer_ptr[index]);
-            index += (uint16_t)FSCI_encodeEscapeSeq(pMsg, msgLen, &buffer_ptr[index]);
-            /* Store the Checksum*/
-            index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&checksum, sizeof(checksum), &buffer_ptr[index]);
+        index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&header, sizeof(header), &buffer_ptr[index]);
+        index += (uint16_t)FSCI_encodeEscapeSeq(pMsg, msgLen, &buffer_ptr[index]);
+        /* Store the Checksum*/
+        index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&checksum, sizeof(checksum), &buffer_ptr[index]);
 #if (gFsciMaxVirtualInterfaces_c > 0)
-            if (virtInterface != 0U)
-            {
-                index +=
-                    (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&checksum2, sizeof(checksum2), &buffer_ptr[index]);
-            }
+        if (virtInterface != 0U)
+        {
+            index += (uint16_t)FSCI_encodeEscapeSeq((const uint8_t *)&checksum2, sizeof(checksum2), &buffer_ptr[index]);
+        }
 #endif /* gFsciMaxVirtualInterfaces_c */
-            buffer_ptr[index++] = gFSCI_EndMarker_c;
+        buffer_ptr[index++] = gFSCI_EndMarker_c;
 
 #else  /* defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0) */
-            FLib_MemCpy(&buffer_ptr[index], &header, sizeof(header));
-            index += (uint16_t)sizeof(header);
-            FLib_MemCpy(&buffer_ptr[index], pMsg, msgLen);
-            index += msgLen;
-            /* Store the Checksum */
-            buffer_ptr[index++] = checksum;
+        FLib_MemCpy(&buffer_ptr[index], &header, sizeof(header));
+        /* header is a clientPacketHdr_t structure : 4 bytes, index having started at 0 will become 4*/
+        index += (uint16_t)sizeof(header);
+        FLib_MemCpy(&buffer_ptr[index], pMsg, msgLen);
+        /* msgLen is bounded by gFsciMaxPayloadLen_c (245) si index is still smaller than 250 so fits in a uint16_t */
+        index += msgLen;
+        /* Store the Checksum */
+        buffer_ptr[index++] = checksum;
 #if (gFsciMaxVirtualInterfaces_c > 0)
-            if (virtInterface)
-            {
-                buffer_ptr[index++] = checksum2;
-            }
+        if (virtInterface)
+        {
+            buffer_ptr[index++] = checksum2;
+        }
 #endif /* gFsciMaxVirtualInterfaces_c */
 #endif /* defined gFsciUseEscapeSeq_c && (gFsciUseEscapeSeq_c != 0) */
 
 #if (defined gFsciOverRpmsgBridge_c) && (gFsciOverRpmsgBridge_c == 1)
-            (void)PLATFORM_SendHciMessage(buffer_ptr, index);
-            (void)MEM_BufferFree(buffer_ptr);
+        (void)PLATFORM_SendHciMessage(buffer_ptr, index);
+        (void)MEM_BufferFree(buffer_ptr);
 #else
-            /* send message to Serial Manager */
-            FSCI_SendPacketToSerialManager(fsciInterface, buffer_ptr, index);
+        /* send message to Serial Manager */
+        FSCI_SendPacketToSerialManager(fsciInterface, buffer_ptr, index);
 #endif
-        }
-    }
+    } while (false);
 }
 
 /*! *********************************************************************************
@@ -835,23 +870,42 @@ void FSCI_transmitPayload(uint8_t OG, uint8_t OC, const uint8_t *pMsg, uint16_t 
  ********************************************************************************** */
 uint8_t *FSCI_GetFormattedPacket(uint8_t OG, uint8_t OC, void *pMsg, uint16_t msgLen, uint16_t *pOutLen)
 {
-    uint8_t          *pBuff = NULL;
-    clientPacketHdr_t header;
-    uint16_t          index    = 0U;
-    uint8_t           checksum = 0U;
+    uint8_t *pBuff = NULL;
 
-    assert(pMsg != NULL);
-    assert(msgLen <= gFsciMaxPayloadLen_c);
-    assert(pOutLen != NULL);
-
-    pBuff = MEM_BufferAlloc(sizeof(header) + msgLen + sizeof(checksum));
-    if (pBuff != NULL)
+    do
     {
+        clientPacketHdr_t header;
+        uint16_t          index    = 0U;
+        uint8_t           checksum = 0U;
+
+        if (pMsg == NULL)
+        {
+            assert(pMsg != NULL);
+            break;
+        }
+        if (msgLen > gFsciMaxPayloadLen_c)
+        {
+            assert(msgLen <= gFsciMaxPayloadLen_c);
+            break;
+        }
+        if (pOutLen == NULL)
+        {
+            assert(pOutLen != NULL);
+            break;
+        }
+
+        pBuff = MEM_BufferAlloc(sizeof(header) + msgLen + sizeof(checksum));
+        if (pBuff == NULL)
+        {
+            break;
+        }
+
         /* Fill the message Header */
         header.startMarker = gFSCI_StartMarker_c;
         header.opGroup     = OG;
         header.opCode      = OC;
-        header.len         = (uint8_t)msgLen;
+        /* msgLen is smaller than or equal to gFsciMaxPayloadLen_c so fits in a uint8_t */
+        header.len = (uint8_t)msgLen;
 
         /* Copy message Header */
         FLib_MemCpy(pBuff, &header, sizeof(header));
@@ -863,8 +917,8 @@ uint8_t *FSCI_GetFormattedPacket(uint8_t OG, uint8_t OC, void *pMsg, uint16_t ms
         pBuff[index++] = checksum;
 
         *pOutLen = index;
-    }
 
+    } while (false);
     return pBuff;
 }
 
@@ -875,7 +929,7 @@ uint8_t *FSCI_GetFormattedPacket(uint8_t OG, uint8_t OC, void *pMsg, uint16_t ms
 ************************************************************************************/
 
 /*! *********************************************************************************
- * \brief  Returnd the virtual interface associated with the specified fsciInterface.
+ * \brief  Return the virtual interface associated with the specified fsciInterface.
  *
  * \param[in] fsciInterface the interface on which the packet should be sent
  *
@@ -887,7 +941,7 @@ uint8_t FSCI_GetVirtualInterface(uint32_t fsciInterface)
 #if (gFsciMaxVirtualInterfaces_c > 0)
     return gFsciVirtualInterfaces[fsciInterface];
 #else
-    return 0;
+    return 0U;
 #endif
 }
 

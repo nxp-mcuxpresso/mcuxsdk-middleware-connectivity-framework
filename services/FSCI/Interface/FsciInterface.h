@@ -89,7 +89,7 @@
 #endif
 
 #ifndef gFsciMaxVirtualInterfaces_c
-#define gFsciMaxVirtualInterfaces_c 0
+#define gFsciMaxVirtualInterfaces_c 0U
 #endif
 
 #ifndef gFsciMaxPayloadLen_c
