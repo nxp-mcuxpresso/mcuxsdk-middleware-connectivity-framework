@@ -738,14 +738,20 @@ static void PLATFORM_RxNbuMemFullIndicationService(uint8_t *data, uint32_t len)
 static void PLATFORM_RxNbuApiIndicationService(uint8_t *data, uint32_t len)
 {
     /* NBU API response received, most of the case 6 bytes */
-    assert(len >= 6U && len <= (uint32_t)(2U + NBU_API_MAX_RETURN_PARAM_LENGTH));
-    m_nbu_api_rpmsg_status = (data[1] == 0U) ? false : true;
+    if (len >= 6UL && len <= (2UL + (uint32_t)NBU_API_MAX_RETURN_PARAM_LENGTH))
+    {
+        m_nbu_api_rpmsg_status = (data[1] == 0U) ? false : true;
 
-    m_nbu_api_return_param_len = len - 2U;
-    FLib_MemCpy((void *)&m_nbu_api_return_param[0U], &data[2U], m_nbu_api_return_param_len);
+        m_nbu_api_return_param_len = len - 2UL;
+        FLib_MemCpy((void *)&m_nbu_api_return_param[0U], &data[2U], m_nbu_api_return_param_len);
 
-    /* Notify waiting task that NBU API indication has been received */
-    (void)OSA_EventSet(icsEvent, ICS_EVT_NBU_API_IND);
+        /* Notify waiting task that NBU API indication has been received */
+        (void)OSA_EventSet(icsEvent, ICS_EVT_NBU_API_IND);
+    }
+    else
+    {
+        assert(false);
+    }
 }
 
 static void PLATFORM_RxHostSetLowPowerConstraintService(uint8_t *data, uint32_t len)
