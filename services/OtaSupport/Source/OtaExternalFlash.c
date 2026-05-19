@@ -26,11 +26,15 @@
 *******************************************************************************
 ******************************************************************************/
 
+#define ExtStorageSectorSize ((uint32_t)PLATFORM_EXTFLASH_SECTOR_SIZE)
+#define gExtFlashNbSectors   ((uint16_t)((ota_ext_partition->size / ExtStorageSectorSize) & (uint32_t)UINT16_MAX))
+#define StorageNbMaxSectors  (PLATFORM_EXTFLASH_TOTAL_SIZE / PLATFORM_EXTFLASH_SECTOR_SIZE)
+
 #define OTA_WRITE_BUFFER_SIZE (1U * PLATFORM_EXTFLASH_PAGE_SIZE)
 
-#define IS_SECTOR_ALIGNED(addr)   (((addr) & (PLATFORM_EXTFLASH_SECTOR_SIZE - 1U)) == 0U)
-#define CURRENT_SECTOR_ADDR(addr) (((addr) & ~(PLATFORM_EXTFLASH_SECTOR_SIZE - 1U)))
-#define NEXT_SECTOR_ADDR(addr)    (CURRENT_SECTOR_ADDR(addr) + PLATFORM_EXTFLASH_SECTOR_SIZE)
+#define IS_SECTOR_ALIGNED(x)   (((x) & (ExtStorageSectorSize - 1U)) == 0U)
+#define CURRENT_SECTOR_ADDR(x) (((x) & ~(ExtStorageSectorSize - 1U)))
+#define NEXT_SECTOR_ADDR(x)    (CURRENT_SECTOR_ADDR(x) + ExtStorageSectorSize)
 
 #define RAISE_ERROR(x, val) \
     {                       \
@@ -44,7 +48,7 @@
  */
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
 /* The dimension of the Erase bitmap must be sufficient to provide one bit per flash sector. */
-#define ERASE_BITMAP_SIZE ((PLATFORM_OTA_EXTFLASH_TOTAL_SIZE / PLATFORM_EXTFLASH_SECTOR_SIZE) / 32U)
+#define ERASE_BITMAP_SIZE (StorageNbMaxSectors / 32U)
 #endif
 
 /*!< Macro to convert offset relative to start of external storage */
@@ -66,6 +70,11 @@ STATIC ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSi
 #if defined               OtaDeprecatedFlashVerifyWrite_d && (OtaDeprecatedFlashVerifyWrite_d > 0)
 STATIC ota_flash_status_t ExternalVerifyFlashProgram(uint8_t *pData, uint32_t offs, uint32_t length);
 #endif
+#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
+static int GetEraseBitMap(uint16_t blk_nb);
+static int SetEraseBitMap(uint16_t blk_nb, bool setNclr);
+#endif
+
 /******************************************************************************
 *******************************************************************************
 * Private type definitions
@@ -75,7 +84,7 @@ struct OtaExtFlashCtx_t
 {
     uint8_t mWriteBuffer[OTA_WRITE_BUFFER_SIZE];
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-    uint32_t eraseBitmap[ERASE_BITMAP_SIZE];
+    uint32_t mEraseBitmap[ERASE_BITMAP_SIZE];
 #endif
     uint32_t mWriteBufferOffs;
     uint32_t mWriteBufferIndex;
@@ -91,7 +100,7 @@ struct OtaExtFlashCtx_t
 static struct OtaExtFlashCtx_t ctx = {
 /*    .mWriteBuffer[0 ...(OTA_WRITE_BUFFER_SIZE - 1)] = 0xffU, non standard syntax */
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-/* .eraseBitmap[0 ... ERASE_BITMAP_SIZE - 1] = 0U, non standard syntax either  */
+/* .mEraseBitmap[0 ... ERASE_BITMAP_SIZE - 1] = 0U, non standard syntax either  */
 #endif
     .mWriteBufferOffs  = 0U,
     .mWriteBufferIndex = 0U,
@@ -123,16 +132,92 @@ static const OtaFlashOps_t ext_flash_ops = {
 ******************************************************************************/
 
 /*! *********************************************************************************
- * \brief  Initialize External storage for OTA.
+ * \brief  Check whether [offset, offset+range_sz) fits within the OTA partition.
  *
- * \return   true range belongs to OTA partition false otherwise.
+ * Uses subtraction-based comparison to avoid unsigned wrap-around in the addition
+ * (CERT INT30-C).
+ *
+ * \return   true if the range belongs to OTA partition, false otherwise.
  *
  ***********************************************************************************/
 STATIC bool OtaCheckRangeBelongsToPartition(uint32_t offset, uint32_t range_sz)
 {
-    return ((offset + range_sz) <= ota_ext_partition->size);
+    /* Avoid "offset + range_sz" wrap: check range_sz <= (size - offset) instead */
+    return (offset <= ota_ext_partition->size) && (range_sz <= (ota_ext_partition->size - offset));
 }
 
+#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
+/*! *********************************************************************************
+ * \brief Get mEraseBitmap bit field value indicating whether sector is blank.
+ *
+ * \param blk_nb index of sector
+ *
+ * \return -1 if blk_nb is too large,
+ *          0 if bit is cleared (sector not blank),
+ *          1 if bit is set (sector blank)
+ ***********************************************************************************/
+static int GetEraseBitMap(uint16_t blk_nb)
+{
+    int ret = -1;
+
+    if (blk_nb < (uint16_t)StorageNbMaxSectors)
+    {
+        /* Block number is less than StorageNbMaxSectors */
+        uint8_t map_index;
+        uint8_t map_shift;
+        ret = 0;
+        /* map_index is guaranteed to be smaller than (StorageNbMaxSectors / 32),
+         * which is the size of the mEraseBitmap array.
+         */
+        map_index = (uint8_t)(((uint32_t)blk_nb >> 5) & 0xffU);
+        map_shift = (uint8_t)(blk_nb & 0x1fU);
+        if ((mEraseBitmap[map_index] & ((uint32_t)1U << map_shift)) != 0U)
+        {
+            /* Sector blank */
+            ret = 1;
+        }
+    }
+    return ret;
+}
+
+/*! *********************************************************************************
+ * \brief Set or clear bit in mEraseBitmap bit field.
+ *
+ * \param blk_nb index of sector
+ * \param setNclr set bit if true, clear if false.
+ *
+ * \return -1 if blk_nb is too large, 0 otherwise
+ ***********************************************************************************/
+static int SetEraseBitMap(uint16_t blk_nb, bool setNclr)
+{
+    int ret = -1;
+
+    if (blk_nb < (uint16_t)StorageNbMaxSectors)
+    {
+        /* Block number is less than StorageNbMaxSectors */
+        uint8_t map_index;
+        uint8_t map_shift;
+
+        ret       = 0;
+        map_index = (uint8_t)(((uint32_t)blk_nb >> 5) & 0xffU);
+        /* map_index is guaranteed to be smaller than (StorageNbMaxSectors / 32),
+         * which is the size of the mEraseBitmap array.
+         */
+        map_shift = (uint8_t)(blk_nb & 0x1fU);
+        if (setNclr)
+        {
+            /* Write bit in bit field : sector is marked as blank */
+            mEraseBitmap[map_index] |= ((uint32_t)1U << map_shift);
+        }
+        else
+        {
+            /* Clear bit in bit field : sector is not blank / or do not know */
+            mEraseBitmap[map_index] &= ~((uint32_t)1U << map_shift);
+        }
+    }
+    return ret;
+}
+#endif
 /*! *********************************************************************************
  * \brief  Initialize External storage for OTA.
  *
@@ -155,7 +240,7 @@ STATIC ota_flash_status_t ExternalFlash_Init(void)
             st = PLATFORM_InitExternalFlash();
 
 #if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-            FLib_MemSet(ctx.eraseBitmap, 0x0U, ERASE_BITMAP_SIZE);
+            FLib_MemSet(ctx.mEraseBitmap, 0x0U, ERASE_BITMAP_SIZE);
 #endif
             if (kStatus_Success != st)
             {
@@ -201,6 +286,84 @@ STATIC ota_flash_status_t ExternalFlash_PartitionErase(void)
 }
 
 /*! *********************************************************************************
+ * \brief  Erase sector identified by its number in OTA partition.
+ *
+ * \return    kStatus_OTA_Flash_Success if operation successful,
+ *             kStatus_OTA_Flash_Error  otherwise.
+ ***********************************************************************************/
+STATIC ota_flash_status_t ExternalFlash_EraseBlockBySectorNumber(uint16_t blk_nb)
+{
+    ota_flash_status_t status = kStatus_OTA_Flash_Error;
+    do
+    {
+        assert(gExtFlashNbSectors <= StorageNbMaxSectors);
+
+        if (blk_nb >= gExtFlashNbSectors)
+        {
+            assert(0);
+            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
+        }
+
+        if (PLATFORM_EraseExternalFlash(PHYS_ADDR(blk_nb * ExtStorageSectorSize), ExtStorageSectorSize) !=
+            kStatus_Success)
+        {
+            status = kStatus_OTA_Flash_Fail;
+            break;
+        }
+#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
+        /* mark each erased sector as such in the erase bit map */
+        /* If blocks are 8kBytes large, one byte of bitmap is required per 64kByte tranche */
+        if (SetEraseBitMap(blk_nb, true) < 0)
+        {
+            assert(0);
+            RAISE_ERROR(status, kStatus_OTA_Flash_Error);
+        }
+#endif
+        status = kStatus_OTA_Flash_Success;
+
+    } while (false);
+    return status;
+}
+
+/*! *********************************************************************************
+ * \brief  Erase sector only if not known to be blank.
+ *
+ * \param[in] blk_nb sector number to be erased
+ *
+ * \return    kStatus_OTA_Flash_Success if operation successful,
+ *             kStatus_OTA_Flash_InvalidArgument if blk_nb is invalid
+ *             kStatus_OTA_Flash_Error  otherwise.
+ ***********************************************************************************/
+STATIC ota_flash_status_t EraseOneSectorIfNeeded(uint16_t blk_nb)
+{
+    ota_flash_status_t status;
+    do
+    {
+#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
+        int erased_status = GetEraseBitMap(blk_nb);
+        if (erased_status < 0)
+        {
+            /* Is a sign that blk_nb is too big */
+            assert(0);
+            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
+        }
+        if (erased_status == 1)
+        {
+            /* nothing to do : already blank */
+            status = kStatus_OTA_Flash_Success;
+        }
+        else
+#endif
+        {
+            /* Was not blank or state is unknown : request erase */
+            status = ExternalFlash_EraseBlockBySectorNumber(blk_nb);
+        }
+    } while (false);
+
+    return status;
+}
+
+/*! *********************************************************************************
  * \brief  Erase a sector size worth of data in External storage.
  *
  * \param[in] offs     offset address from which erase operation is required
@@ -212,63 +375,38 @@ STATIC ota_flash_status_t ExternalFlash_PartitionErase(void)
 STATIC ota_flash_status_t ExternalFlash_EraseBlock(uint32_t offs, uint32_t size)
 {
     ota_flash_status_t status;
-    uint32_t           end_offs = offs + size;
-    uint32_t           startBlock, endBlock;
-    uint32_t           index;
+    uint32_t           startBlk, endBlk;
 
-    if (!OtaCheckRangeBelongsToPartition(offs, size))
+    do
     {
-        status = kStatus_OTA_Flash_InvalidArgument;
-    }
-    else
-    {
+        if (!OtaCheckRangeBelongsToPartition(offs, size))
+        {
+            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
+        }
+        /* startBlk is the number of the first sector where range starts */
+        startBlk = (CURRENT_SECTOR_ADDR(offs) / ExtStorageSectorSize);
+        /* endBlk is the number of the first sector after the range,  at least one sector further
+         * since NoOfBytes was checked to be non 0*/
+        endBlk = startBlk + (size / ExtStorageSectorSize);
+        if (endBlk < (uint32_t)gExtFlashNbSectors)
+        {
+            endBlk++;
+        }
+        /* clamp to uint16_t width */
+        startBlk &= (uint32_t)UINT16_MAX;
+        endBlk &= (uint32_t)UINT16_MAX;
+
         status = kStatus_OTA_Flash_Success;
-        if ((end_offs & (ota_ext_partition->sector_size - 1U)) != 0U)
+
+        for (uint16_t i = (uint16_t)startBlk; i < (uint16_t)endBlk; i++)
         {
-            /* If the address is in the middle of a block, round up to the next block
-             * This gives the upper block limit, every blocks before this one will be erased but not this block
-             * as it is outside the erase range */
-            end_offs = ((end_offs / ota_ext_partition->sector_size) + 1U) * ota_ext_partition->sector_size;
-        }
-
-        startBlock = offs / ota_ext_partition->sector_size;
-        endBlock   = end_offs / ota_ext_partition->sector_size;
-        index      = startBlock;
-
-        while (index < endBlock)
-        {
-#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-            if (GET_BIT(ctx.eraseBitmap, index))
+            status = EraseOneSectorIfNeeded(i);
+            if (kStatus_OTA_Flash_Success != status)
             {
-                /* If the block is already erased, skip */
-                index++;
-            }
-            else
-#endif
-            {
-                uint32_t block_offs = index * ota_ext_partition->sector_size;
-                uint32_t blockCount = endBlock - index;
-                uint32_t eraseSize  = blockCount * ota_ext_partition->sector_size;
-
-                if (PLATFORM_EraseExternalFlash(PHYS_ADDR(block_offs), eraseSize) != kStatus_Success)
-                {
-                    status = kStatus_OTA_Flash_Fail;
-                    break;
-                }
-
-#if !defined(gOtaEraseBeforeImageBlockReq_c) || (gOtaEraseBeforeImageBlockReq_c == 0)
-                for (uint32_t i = 0U; i < blockCount; i++)
-                {
-                    /* Tag all the blocks as erased */
-                    SET_BIT(ctx.eraseBitmap, index + i);
-                }
-#endif
-
-                index += blockCount;
+                break; /* for */
             }
         }
-    }
-
+    } while (false);
     return status;
 }
 
@@ -489,17 +627,11 @@ STATIC ota_flash_status_t ExternalFlash_EraseArea(uint32_t *pOffs, uint32_t *pSi
     uint32_t           erase_offs = *pOffs;
     /* The erase operation in internal flash is necessarily blocking */
     NOT_USED(non_blocking);
-
     do
     {
         if (!IS_SECTOR_ALIGNED(erase_offs))
         { /* Ensure we deal only with sector aligned addresses */
             RAISE_ERROR(status, kStatus_OTA_Flash_AlignmentError);
-        }
-        if (!OtaCheckRangeBelongsToPartition(erase_offs, remain_sz))
-        {
-            /* Ensure erase range belongs to the partition */
-            RAISE_ERROR(status, kStatus_OTA_Flash_InvalidArgument);
         }
         if (remain_sz != 0U)
         {
