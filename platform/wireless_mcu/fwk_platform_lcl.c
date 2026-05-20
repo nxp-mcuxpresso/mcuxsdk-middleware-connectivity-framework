@@ -265,6 +265,16 @@ static uint8_t       femActive  = 0U;               /* if FEM is active */
 #ifdef FWK_LCL_ENABLE_DTEST
 static void dtest_pins_init(uint32_t option)
 {
+    /* Enable clocks if related DTEST is present in the list */
+    if (option & (DTEST0 | DTEST1 | DTEST2 | DTEST3 | DTEST4 | DTEST5 | DTEST6 | DTEST13))
+    {
+        CLOCK_EnableClock(kCLOCK_PortC);
+    }
+    if (option & (DTEST7 | DTEST8 | DTEST9 | DTEST3 | DTEST10 | DTEST11 | DTEST12))
+    {
+        CLOCK_EnableClock(kCLOCK_PortB);
+    }
+
     if ((option & DTEST0) != 0U) /* PTC0 alt 8 */
     {
         PORT_SetPinMux(PORTC, 0U, kPORT_MuxAlt8);
@@ -735,11 +745,14 @@ void PLATFORM_InitLclGpioDebug(bool_t debug)
             .pinDirection = kGPIO_DigitalOutput,
             .outputLogic  = 0,
         };
-
+#if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+        /* Temporarily do not configure debug GPIO */
+#else
         PORT_SetPinMux(PORTD, 2U, kPORT_MuxAsGpio);
         PORT_SetPinMux(PORTD, 3U, kPORT_MuxAsGpio);
         GPIO_PinInit(GPIOD, 3U, &config);
         GPIO_PinInit(GPIOD, 2U, &config);
+#endif /* !(defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1)) */
 
         /* Enable GPIO for application core debugging */
         PORT_SetPinMux(PORTC, 4U, kPORT_MuxAsGpio);
