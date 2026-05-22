@@ -86,12 +86,13 @@ static void workq_thread(void *workq)
 
     while (true)
     {
+        /* wait for event */
         status = OSA_EventWait(queue->notify, 1U, 1U, FWK_WORKQ_WAIT_TIME_MS, &flags);
 
         if (status == KOSA_StatusSuccess)
         {
             node = LIST_RemoveHead(&queue->pending);
-
+            /* Dequeue head of pending list */
             while (node != NULL)
             {
                 uint32_t intMask = fwk_workq_lock();
@@ -99,9 +100,10 @@ static void workq_thread(void *workq)
                 flag_set(&work->flags, FWK_WORK_RUNNING);
                 flag_clear(&work->flags, FWK_WORK_QUEUED);
                 fwk_workq_unlock(intMask);
-
-                work->handler(work);
-
+                if (work->handler != NULL)
+                {
+                    work->handler(work);
+                }
                 intMask = fwk_workq_lock();
                 flag_clear(&work->flags, FWK_WORK_RUNNING);
                 fwk_workq_unlock(intMask);
