@@ -13,6 +13,7 @@
 #include "fwk_platform_ota.h"
 #include <stdbool.h>
 #include "fwk_hal_macros.h"
+#include "fwk_platform_definitions.h"
 
 /******************************************************************************
 *******************************************************************************
