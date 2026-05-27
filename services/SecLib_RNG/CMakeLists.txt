@@ -75,5 +75,6 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
             RNG_psa.c
     )
 
+    mcux_add_macro(gRngUseSecureSubSystem_d=0)
     mcux_add_macro(gSecLibUsePsa_d=1)
 endif()
