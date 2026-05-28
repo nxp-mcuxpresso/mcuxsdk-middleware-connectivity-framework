@@ -4018,7 +4018,7 @@ NVM_STATIC NVM_Status_t NvGetPageFreeSpace(uint32_t *ptrFreeSpace, bool_t blank_
             bottom_rec_data_offset = metaInfo.fields.NvmRecordOffset;
         }
 #else
-        bottom_rec_data_offset += metaInfo.fields.NvmRecordOffset;
+        bottom_rec_data_offset = metaInfo.fields.NvmRecordOffset;
 #endif /* gUnmirroredFeatureSet_d */
         if (bottom_rec_data_offset > top_mit_offset)
         {
@@ -5980,6 +5980,10 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
 
         for (uint16_t idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
         {
+            uintptr_t tableEntryAddr;
+            uintptr_t endAddr;
+            uint16_t  elt_sz;
+            uint32_t  tb_sz;
             /* parse NVM Table of data entries */
             if ((pNVM_DataTable[idx].pData == NULL) || (pNVM_DataTable[idx].ElementSize == 0U) ||
                 (pNVM_DataTable[idx].ElementsCount == 0U))
@@ -5987,51 +5991,47 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
                 /* ensures among other things that elt_sz cannot be 0 */
                 continue; /* Skip invalid table entries */
             }
-            uintptr_t tableEntryAddr = (uintptr_t)(uint8_t *)pNVM_DataTable[idx].pData;
+            tableEntryAddr = (uintptr_t)(uint8_t *)pNVM_DataTable[idx].pData;
+#if gUnmirroredFeatureSet_d
+            if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[idx].DataEntryType)
+            {
+                elt_sz = (uint16_t)sizeof(void *);
+            }
+            else
+#endif
+            {
+                elt_sz = (uint16_t)pNVM_DataTable[idx].ElementSize;
+                /* elt_sz cannot be 0 due to earlier continue statement,
+                 * invalid entries already skipped */
+            }
+            /* Determining the end address of the table entry varies based on data entry type,
+             * whether mirrored in RAM or not */
+            tb_sz = (uint32_t)elt_sz * (uint32_t)pNVM_DataTable[idx].ElementsCount;
+            if (tb_sz > (uint32_t)UINT16_MAX)
+            {
+                status = gNVM_PointerOutOfRange_c;
+                break;
+            }
+            endAddr = tableEntryAddr + (uintptr_t)tb_sz;
 
             /* Use integer comparison instead of pointer comparison */
-            if (dataAddr >= tableEntryAddr)
+            if ((dataAddr >= tableEntryAddr) && (dataAddr < endAddr))
             {
-                uint32_t  elt_sz;
-                uint32_t  tb_sz;
-                uintptr_t endAddr;
-                uint32_t  offset;
-                /* Check that pData is within the table entry's address range, so greater than or equal to
-                 * tableEntryAddr */
-                /* Determining the end address of the table entry varies based on data entry type, whether mirrored in
-                 * RAM or not */
-                /* offset guaranteed to be positive due to previous comparison */
-                offset = (uint32_t)dataAddr - (uint32_t)tableEntryAddr;
-                if (offset > (uint32_t)UINT16_MAX)
-                {
-                    status = gNVM_PointerOutOfRange_c;
-                    break;
-                }
-#if gUnmirroredFeatureSet_d
-                if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[idx].DataEntryType)
-                {
-                    elt_sz = sizeof(void *);
-                }
-                else
-#endif
-                {
-                    elt_sz = (uint32_t)pNVM_DataTable[idx].ElementSize;
-                }
-                tb_sz   = elt_sz * pNVM_DataTable[idx].ElementsCount;
-                endAddr = tableEntryAddr + (uintptr_t)tb_sz;
-                if (dataAddr < endAddr)
-                {
-                    uint32_t index;
-                    /* Use integer arithmetic instead of pointer subtraction */
-                    /* elt_sz cannot be 0 due to earlier continue statement */
-                    index                = offset / elt_sz;
-                    pIndex->elementIndex = (uint16_t)index;
-                    pIndex->entryId      = pNVM_DataTable[idx].DataEntryID;
-                    status               = gNVM_OK_c;
-                    break; /* Exit loop after finding matching entry */
-                }
-                /* Continue loop if not found */
+                uint16_t offset;
+                uint16_t index;
+                /* Checked that pData is within the table entry's address range, so greater than or equal to
+                 * tableEntryAddr. offset guaranteed to be positive due to previous comparison.
+                 */
+                offset = (uint16_t)(((uint32_t)dataAddr - (uint32_t)tableEntryAddr) & 0xffffUL);
+                /* Use integer arithmetic instead of pointer subtraction */
+
+                index                = offset / elt_sz;
+                pIndex->elementIndex = index;
+                pIndex->entryId      = pNVM_DataTable[idx].DataEntryID;
+                status               = gNVM_OK_c;
+                break; /* Exit loop after finding matching entry */
             }
+            /* Continue loop if not found */
         } /* End of for loop idx incremented */
     }
     return status;
