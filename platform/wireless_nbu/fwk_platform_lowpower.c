@@ -25,6 +25,7 @@
 #if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
 #include "fwk_platform_dcdc.h"
 #endif
+#include "fsl_adapter_rpmsg.h"
 
 #if defined(PHY_15_4_LOW_POWER_ENABLED) && (PHY_15_4_LOW_POWER_ENABLED == 1)
 extern bool PHY_XCVR_AllowLowPower(void);
@@ -240,6 +241,13 @@ static int PLATFORM_LowPowerModeAllowed(void)
         if (PLATFORM_IsRemoteAllowingLowPower() == false)
         {
             /* Remote CPU can prevent low power */
+            ret = 1;
+            break;
+        }
+        if (HAL_RpmsgAllBufferConsumed() == 0UL)
+        {
+            /* Pending RPMSG transmissions detected (Tx queue not empty).
+             * Enter WFI to wait for buffer consumption before allowing lowpower. */
             ret = 1;
             break;
         }
