@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  ********************************************************************************** */
 
-#ifndef _NV_FLASH_H_
-#define _NV_FLASH_H_
+#ifndef NV_FLASH_H_
+#define NV_FLASH_H_
 
 #include "EmbeddedTypes.h"
 #include "NVM_Interface.h"
@@ -60,7 +60,16 @@ extern "C" {
  * Name: gEmptyPageMetaAddress_c
  * Description: the value of a page that has no records yet
  */
-#define gEmptyPageMetaAddress_c 0x3FFF0000UL
+/* gNvInvalidMetaOffset_c is the sentinel stored in NvLastMetaInfoOffset / NvLastMetaUnerasedInfoOffset
+ * when the virtual page contains no valid meta information (equivalent to the former gEmptyPageMetaAddress_c). */
+#define gNvInvalidMetaOffset_c 0xFFFFU
+
+/* NV_PAGE_ADDR - convert a page-relative byte offset to the absolute flash address.
+ * Use this macro only at the actual flash-driver call sites
+ * (NV_FlashRead, NV_FlashProgram, NV_FlashProgramUnaligned, NV_SweepRangeForEccFaults,
+ *  HAL_FlashEraseSector, HAL_FlashVerifyErase).
+ */
+#define NV_PAGE_ADDR(page_id, offset) (mNvVirtualPageProperty[(page_id)].NvRawSectorStartAddress + (uint32_t)(offset))
 
 /*
  * Name: gFifoOverwriteEnabled_c
@@ -131,23 +140,26 @@ extern "C" {
  */
 #pragma pack(1)
 
-typedef union NVM_RecordMetaInfo_tag
+typedef struct NVM_RecordMetaInfo_tag
 {
-    uint64_t rawValue;
-    struct
+    union
     {
-        uint8_t  NvValidationStartByte;
-        uint16_t NvmDataEntryID;
-        uint16_t NvmElementIndex;
-        uint16_t NvmRecordOffset;
-        uint8_t  NvValidationEndByte;
+        uint64_t rawValue;
+        struct
+        {
+            uint8_t  NvValidationStartByte;
+            uint16_t NvmDataEntryID;
+            uint16_t NvmElementIndex;
+            uint16_t NvmRecordOffset;
+            uint8_t  NvValidationEndByte;
+        } fields;
+    } u;
 #if (defined gNvmMetaCheckSum_d && (gNvmMetaCheckSum_d != 0))
-        uint32_t NvmMetaChecksum;
-        uint8_t  Padding[PGM_SIZE_BYTE - sizeof(uint64_t) - sizeof(uint32_t)];
+    uint32_t NvmMetaChecksum;
+    uint8_t  Padding[PGM_SIZE_BYTE - sizeof(uint64_t) - sizeof(uint32_t)];
 #else
-        uint8_t  Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
+    uint8_t Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
 #endif
-    } fields;
 } NVM_RecordMetaInfo_t;
 #pragma pack()
 
@@ -156,20 +168,24 @@ typedef union NVM_RecordMetaInfo_tag
  * Description: NVM flash table info type definition
  */
 #pragma pack(1)
-typedef union NVM_TableInfo_tag
+typedef struct NVM_TableInfo_tag
 {
-    uint64_t rawValue;
-    struct
+    union
     {
+        uint64_t rawValue;
+        struct
+        {
 #if gNvUseExtendedFeatureSet_d
-        uint32_t NvPageCounter;
-        uint16_t NvTableMarker;
-        uint16_t NvTableVersion;
+            uint32_t NvPageCounter;
+            uint16_t NvTableMarker;
+            uint16_t NvTableVersion;
 #else
-        uint64_t NvPageCounter;
+            uint64_t NvPageCounter;
 #endif
-        uint8_t Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
-    } fields;
+        } fields;
+    } u;
+    uint8_t Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
+
 } NVM_TableInfo_t;
 #pragma pack()
 
@@ -178,17 +194,21 @@ typedef union NVM_TableInfo_tag
  * Description: NVM flash table entry type definition
  */
 #pragma pack(1)
-typedef union NVM_EntryInfo_tag
+typedef struct NVM_EntryInfo_tag
 {
-    uint64_t rawValue;
-    struct
+    union
     {
-        uint16_t NvDataEntryID;
-        uint16_t NvDataEntryType;
-        uint16_t NvElementsCount;
-        uint16_t NvElementSize;
-        uint8_t  Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
-    } fields;
+        uint64_t rawValue;
+        struct
+        {
+            uint16_t NvDataEntryID;
+            uint16_t NvDataEntryType;
+            uint16_t NvElementsCount;
+            uint16_t NvElementSize;
+        } fields;
+    } u;
+    uint8_t Padding[PGM_SIZE_BYTE - sizeof(uint64_t)];
+
 } NVM_EntryInfo_t;
 #pragma pack()
 
@@ -212,22 +232,22 @@ typedef struct NVM_VirtualPageProperties_tag
 {
     uint32_t NvRawSectorStartAddress; /*< Virtual page start address in flash */
     uint32_t NvRawSectorEndAddress;   /*< Virtual page end address in flash */
-    uint32_t NvLastMetaInfoAddress;   /*< Address of most recent record meta information written to flash */
+    uint16_t
+        NvLastMetaInfoOffset; /*< Page-relative offset of the most recent record meta info; gNvInvalidMetaOffset_c when empty */
 #if gUnmirroredFeatureSet_d
-    uint32_t
-        NvLastMetaUnerasedInfoAddress; /*< Address of most recent non erased recordsFrontier above which page is still in blank state */
+    uint16_t NvLastMetaUnerasedInfoOffset; /*< Page-relative offset of the most recent non-erased record meta info */
 #endif
-    bool_t has_ecc_faults;  /*< ECC fault were discovered in page at initialization :
-                             *  can be true only when gNvSalvageFromEccFault_d is defined */
-    uint32_t CounterTop;    /*< Virtual Page version number read at bottom of page */
-    uint32_t CounterBottom; /*< Virtual Page version number read at top of page */
+    bool_t has_ecc_faults;                 /*< ECC fault were discovered in page at initialization :
+                                            *  can be true only when gNvSalvageFromEccFault_d is defined */
+    uint32_t CounterTop;                   /*< Virtual Page version number read at bottom of page */
+    uint32_t CounterBottom;                /*< Virtual Page version number read at top of page */
 } NVM_VirtualPageProperties_t;
 
 typedef struct NVM_ErasePageCmdStatus_tag
 {
     bool_t              NvErasePending;
     NVM_VirtualPageID_t NvPageToErase;
-    uint32_t            NvSectorAddress;
+    uint8_t             NvSectorIndex; /*< 0-based index of the flash sector currently being erased */
 } NVM_ErasePageCmdStatus_t;
 
 typedef enum
@@ -271,4 +291,4 @@ typedef struct NVM_SaveQueue_tag
 }
 #endif
 
-#endif /* _NV_FLASH_H_ */
+#endif /* NV_FLASH_H_ */
