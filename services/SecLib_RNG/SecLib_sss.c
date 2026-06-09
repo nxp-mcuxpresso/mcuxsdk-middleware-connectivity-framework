@@ -34,11 +34,20 @@
 
 #include "fwk_config.h"
 
+#include <assert.h>
+
 /*! *********************************************************************************
 *************************************************************************************
 * Private macros
 *************************************************************************************
 ********************************************************************************** */
+
+#if defined __IAR_SYSTEMS_ICC__
+#define STATIC_ASSERT static_assert
+#else
+#define STATIC_ASSERT _Static_assert
+#endif
+
 #if (defined(USE_RTOS) && (USE_RTOS > 0))
 /* On ELE Sentinel, the mutex is mandatory */
 #define gSecLibUseMutex_c TRUE
@@ -129,11 +138,11 @@ static const ecp256KeyPair_t mBleDebugKeyPair = {
 *************************************************************************************
 ********************************************************************************** */
 
-static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey,
-                                                    const uint8_t     *pDerivationDataMacKey,
-                                                    const uint8_t     *pDerivationDataLTK,
-                                                    uint8_t           *pMacKey,
-                                                    uint8_t           *pLTKBlob);
+static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(const uint8_t *pPubDhKeyObj,
+                                                    const uint8_t *pDerivationDataMacKey,
+                                                    const uint8_t *pDerivationDataLTK,
+                                                    uint8_t       *pMacKey,
+                                                    uint8_t       *pLTKBlob);
 
 static uint8_t SecLib_Padding(const uint8_t *lastb, uint8_t pad_block[AES_BLOCK_SIZE], uint8_t length);
 static uint8_t SecLib_DePadding(const uint8_t pad_block[AES_BLOCK_SIZE]);
@@ -1749,6 +1758,8 @@ secResultType_t ECDH_P256_ComputeDhKey(const ecdhPrivateKey_t *pInPrivateKey,
         /* Keep DHKey object for later use */
         if (ecdh_ctx.keepSharedSecret == true)
         {
+            /* We store the sss_sscp_object_t structure as the DH Key :
+             * this is assuming the structure is not larger than the DHKey (32 bytes) */
             FLib_MemCpy(pOutDhKey->raw, (void *)&ecdh_ctx.sharedSecret, sizeof(sss_sscp_object_t));
         }
     }
@@ -1790,11 +1801,12 @@ void ECDH_P256_FreeDhKeyDataSecure(computeDhKeyParam_t *pDhKeyData)
 
 /************************************************************************************
  * \brief Function used to create the mac key and LTK using Bluetooth F5 algorithm.
- *        Kigher security version all keys remain on security bus.
+ *        Higher security version all keys remain on security bus.
  *
  * \param  [out] pMacKey 128 bit MacKey output location (pointer)
  * \param  [out] pLtk    128 bit LTK output location (pointer)
- * \param  [in] pW       256 bit W (pointer) (DHKey)
+ * \param  [in] pW       256 bit W (pointer) (DHKey) in the non secure version, but a pointer to
+ *                       sss_sscp_object describing the DH Key in the secure version (28 bytes)
  * \param  [in] pN1      128 bit N1 (pointer) (Na)
  * \param  [in] pN2      128 bit N2 (pointer) (Nb)
  * \param  [in] a1at     8 bit A1 address type, 0 = Public, 1 = Random
@@ -1823,12 +1835,6 @@ secResultType_t SecLib_GenerateBluetoothF5KeysSecure(uint8_t       *pMacKey,
 
     uint8_t f5CmacBuffer_Counter1[1 + 4 + 16 + 16 + 7 + 7 + 2]; /* Counter[1] || keyId[4] || N1[16] || N2[16] ||
                                                                        A1[7] || A2[7] || Length[2] = 53 */
-    sss_status_t status = kStatus_SSS_Fail;
-    union
-    {
-        sss_sscp_object_t *pSSSObject;
-        const uint8_t     *pW;
-    } tempF5;
 
     /*! Check for NULL output pointers and return with proper status if this is the case. */
     do
@@ -1857,11 +1863,9 @@ secResultType_t SecLib_GenerateBluetoothF5KeysSecure(uint8_t       *pMacKey,
          *  It is identical to the most significant part with the exception of the counter. */
         FLib_MemCpy(f5CmacBuffer_Counter1, f5CmacBuffer, 53u);
         f5CmacBuffer_Counter1[0] = 1; /* Counter = 1 */
-
-        tempF5.pW = pW;
-
-        status = ELKE_BLE_SM_F5_DeriveKeysSecure(tempF5.pSSSObject, f5CmacBuffer, f5CmacBuffer_Counter1, pMacKey, pLtk);
-        if (status != kStatus_SSS_Success)
+        /* pW here is actually an sss_sscp_object */
+        if (kStatus_SSS_Success !=
+            ELKE_BLE_SM_F5_DeriveKeysSecure(pW, f5CmacBuffer, f5CmacBuffer_Counter1, pMacKey, pLtk))
         {
             RAISE_ERROR(result, gSecError_c);
         }
@@ -2942,7 +2946,7 @@ static bool ECP256_LePointValid(const ecp256Point_t *P)
  * \brief Function used to create the mac key and LTK using Bluetooth F5 algorithm
  *        Only ever called in the secure (Key blobs) variant of the F5,
  *
- * \param  [in] pDhKey                   pointer to DH Key object
+ * \param  [in] pPubDhKeyObj             pointer to DH Key object
  * \param  [in] pDerivationDataMacKey    derivation data for MacKey
  * \param  [in] pDerivationDataLTK       derivation data for LTK
  * \param  [out] pMacKey                 pointer to mac key
@@ -2950,14 +2954,16 @@ static bool ECP256_LePointValid(const ecp256Point_t *P)
  *
  * \return sss_status_t
  ************************************************************************************/
-static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey,
-                                                    const uint8_t     *pDerivationDataMacKey,
-                                                    const uint8_t     *pDerivationDataLTK,
-                                                    uint8_t           *pMacKey,
-                                                    uint8_t           *pLTKBlob)
+static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(const uint8_t *pPubDhKeyObj,
+                                                    const uint8_t *pDerivationDataMacKey,
+                                                    const uint8_t *pDerivationDataLTK,
+                                                    uint8_t       *pMacKey,
+                                                    uint8_t       *pLTKBlob)
 {
-    sss_sscp_object_t     keyObj__MacKey;
-    sss_sscp_object_t     keyObj__LTK;
+    sss_sscp_object_t keyObj__MacKey;
+    sss_sscp_object_t keyObj__LTK;
+    sss_sscp_object_t keyObj__DHKey;
+
     sss_sscp_derive_key_t ctx_deriveKey;
 
     bool bInitialized_MacKey = false;
@@ -2968,6 +2974,11 @@ static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey
     SECLIB_MUTEX_LOCK();
     do
     {
+        STATIC_ASSERT(sizeof(ec_p256_coordinate) == 32, "DH Key X coordinate is 32 bytes");
+        STATIC_ASSERT(sizeof(sss_sscp_object_t) <= sizeof(ec_p256_coordinate),
+                      "sss_sscp_object_t must fit in a ec_p256_coordinate (32 bytes)");
+        FLib_MemCpy((uint8_t *)&keyObj__DHKey, pPubDhKeyObj, sizeof(sss_sscp_object_t));
+
         if ((CRYPTO_InitHardware()) != kStatus_Success)
         {
             break;
@@ -3003,7 +3014,7 @@ static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey
         }
 
         /* derive keys for f5() */
-        if (sss_sscp_derive_key_context_init(&ctx_deriveKey, &g_sssSession, pPubDhKey, kAlgorithm_SSS_BLE_F5,
+        if (sss_sscp_derive_key_context_init(&ctx_deriveKey, &g_sssSession, &keyObj__DHKey, kAlgorithm_SSS_BLE_F5,
                                              kMode_SSS_SymmetricKDF) != kStatus_SSS_Success)
         {
             break;
@@ -3064,8 +3075,8 @@ static sss_status_t ELKE_BLE_SM_F5_DeriveKeysSecure(sss_sscp_object_t *pPubDhKey
         (void)sss_sscp_key_object_free(&keyObj__LTK, kSSS_keyObjFree_KeysStoreDefragment);
     }
 
-    /* DHkey object from pDhKeyData->outPoint can be deleted here */
-    (void)sss_sscp_key_object_free(pPubDhKey, kSSS_keyObjFree_KeysStoreDefragment);
+    /* DHkey object can be deleted here for SSS perspective  */
+    (void)sss_sscp_key_object_free(&keyObj__DHKey, kSSS_keyObjFree_KeysStoreDefragment);
 
     SECLIB_MUTEX_UNLOCK();
 
