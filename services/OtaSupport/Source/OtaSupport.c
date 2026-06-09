@@ -38,13 +38,11 @@
 * Private type definitions
 *******************************************************************************
 ******************************************************************************/
-
-union ota_op_completion_cb
+typedef struct
 {
-    /*! Prototype of ota_completion callback */
     ota_op_completion_cb_t func;
-    uint32_t               pf;
-};
+    uint32_t               arg;
+} ota_completion_t;
 
 /******************************************************************************
 *******************************************************************************
@@ -532,7 +530,7 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
                   and some may be pending in the staging queue even though they were received */
                 if (queried_data_end <= mOtaHdl.CurrentStorageAddress)
                 {
-                    /* Read form flash up to CurrentStorageAddress */
+                    /* Read from flash up to CurrentStorageAddress */
                     uint32_t lenInFlash = 0U;
                     uint8_t *read_ptr   = pData;
                     if (queried_data_start < mOtaHdl.StorageAddressWritten)
@@ -1185,16 +1183,16 @@ static otaResult_t OTA_PostedEraseOperation(uint32_t sizeToErase, ota_op_complet
     pMsg = OTA_FlashTransactionAlloc();
     if (pMsg != NULL)
     {
-        union ota_op_completion_cb callback;
+        ota_completion_t ota_completion_ctx;
+        ota_completion_ctx.func = cb;
+        ota_completion_ctx.arg  = param;
 
-        callback.func = cb;
         /* Set the erase size and callback information in the async message */
         pMsg->flash_addr = mOtaHdl.ErasedUntilOffset;
         pMsg->sz         = sizeToErase;
         pMsg->op_type    = FLASH_OP_ERASE_NEXT_BLOCK;
 
-        FLib_MemCpyWord(&pMsg->buf[0], &callback.pf);
-        FLib_MemCpyWord(&pMsg->buf[4], &param);
+        FLib_MemCpy(&pMsg->buf[0], &ota_completion_ctx, sizeof(ota_completion_t));
 
         /* Post the message to the operation queue */
         OTA_MsgQueue(pMsg);
@@ -1720,49 +1718,53 @@ static uint16_t OTA_TransactionQueueLookAhead(uint32_t faddr, uint16_t len, uint
         osa_status_t status = OSA_MutexLock(mOtaHdl.msgQueueMutex, osaWaitForever_c);
         assert(status == KOSA_StatusSuccess);
 
-        /* Grab head of queue without removing it from queue */
-        pMsg = MSG_QueueGetHead(&mOtaHdl.op_queue);
         /* Iterate through queue until expected length of data read or no more items in list */
-        while ((pMsg != NULL) && (rem_len > 0U))
+
+        for (pMsg = MSG_QueueGetHead(&mOtaHdl.op_queue); pMsg != NULL; pMsg = MSG_QueueGetNext(pMsg))
         {
-            FLASH_TransactionOp_t *next_msg;
-
-            if (pMsg->op_type == FLASH_OP_WRITE)
+            uint32_t offset = 0U;
+            if (rem_len == 0U)
             {
-                uint32_t offset = 0U;
-
-                saddr = pMsg->flash_addr;
-                sz    = pMsg->sz;
-
-                if ((faddr >= saddr) && (faddr < (saddr + sz)))
-                {
-                    /* faddr corresponds to data that are within area pointed by pMsg in queue */
-                    offset = faddr - saddr; /* offset where requested data start */
-                    sz -= offset;           /* offset is necessarily between 0 and (sz - 1)*/
-                    sz = MIN(sz, rem_len);  /* sz is clamped to rem_len depending on remaining space in read buffer */
-                    FLib_MemCpy(read_buf, &pMsg->buf[offset], sz);
-                    rem_len -= sz;
-                    read_buf += sz;
-                    gather_len += sz;
-                    faddr += sz;
-                }
-                else
-                {
-                    /* Try next */
-                }
-            }
-            else
-            {
-                ;
-            }
-            next_msg = MSG_QueueGetNext(pMsg);
-            if (next_msg == NULL)
-            {
+                /* Exit no more room */
                 break;
             }
-            pMsg = next_msg;
 
-        } /* while */
+            if (pMsg->op_type != FLASH_OP_WRITE)
+            {
+                /* Skip messages other than FLASH_OP_WRITE */
+                continue;
+            }
+
+            saddr = pMsg->flash_addr;
+            sz    = pMsg->sz;
+
+            if (faddr < saddr)
+            {
+                /* skip current : faddr must belong to the range [saddr..saddr+sz] */
+                /* Corresponds to an error case: continue causes to get next element in queue */
+                continue;
+            }
+            offset = faddr - saddr; /* offset where requested data start */
+            if (offset >= sz)
+            {
+                /* skip current : faddr must belong to the range [saddr..saddr+sz] */
+                continue;
+            }
+            /* [faddr .. faddr+len] has some intersection with data pointed by pMsg in queue */
+
+            sz -= offset; /* offset is necessarily between 0 and (sz - 1)*/
+            if (sz > rem_len)
+            {
+                sz = rem_len; /* sz is clamped to rem_len depending on remaining space in read buffer */
+            }
+            FLib_MemCpy(read_buf, &pMsg->buf[offset], sz);
+            rem_len -= sz;
+            read_buf += sz;
+            gather_len += sz;
+            faddr += sz;
+
+        } /* for */
+
         /* Eventually, if there is still room in the read buffer continue */
         if (rem_len > 0U)
         {
@@ -1986,19 +1988,21 @@ static ota_flash_status_t OTA_TreatFlashOpEraseNextBlock(FLASH_TransactionOp_t *
 
 static ota_flash_status_t OTA_TreatFlashOpEraseNextBlockComplete(FLASH_TransactionOp_t *pMsg)
 {
-    union ota_op_completion_cb cb;
-    cb.func        = NULL;
-    uint32_t param = 0U;
+    ota_completion_t erase_completion_ctx = {0};
 
-    FLib_MemCpyWord(&cb.pf, &(pMsg->buf[0]));
-
-    if (cb.func != NULL)
+    /* Deserialize callback pointer stored as u32 to avoid alignment issues */
+    FLib_MemCpy(&erase_completion_ctx, &pMsg->buf[0], sizeof(ota_completion_t));
+    /* If the callback pointer is not NULL execute the function */
+    if (erase_completion_ctx.func != NULL)
     {
-        FLib_MemCpyWord(&param, &(pMsg->buf[4]));
-        cb.func(param);
+        /* Get parameter argument from message too */
+        erase_completion_ctx.func(erase_completion_ctx.arg);
     }
+
+    /* Remove from queue once executed */
     OTA_MsgDequeue();
     OTA_FlashTransactionFree(pMsg);
+
     return kStatus_OTA_Flash_Success;
 }
 
