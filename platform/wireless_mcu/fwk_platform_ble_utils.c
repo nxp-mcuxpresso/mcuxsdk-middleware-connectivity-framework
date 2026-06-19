@@ -318,9 +318,17 @@ STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
 #elif defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d == 2)
     if (FLib_MemCmpToVal((const void *)(uint32_t *)IFR_BLE_BD_ADDR, 0xFFU, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == false)
     {
+        const uint8_t *ifr_bd_addr = (const uint8_t *)IFR_BLE_BD_ADDR;
         /* Copy BLE BD address from dedicated IFR0 section */
-        FLib_MemCpy((void *)bleDeviceAddress, (const void *)(uint32_t *)IFR_BLE_BD_ADDR,
-                    PLATFORM_BLE_BD_ADDR_FULL_SIZE);
+#if defined(PLATFORM_IFR_BD_ADDR_IS_MSB_FIRST) && (PLATFORM_IFR_BD_ADDR_IS_MSB_FIRST != 0)
+        FLib_MemCpy((void *)bleDeviceAddress, (const void *)ifr_bd_addr, PLATFORM_BLE_BD_ADDR_FULL_SIZE);
+#else
+        /* Equivalent of FLib_MemCpyReverseOrder but no guarantee that bleDeviceAddress is 32 bit aligned */
+        for (uint32_t i = 1U; i <= PLATFORM_BLE_BD_ADDR_FULL_SIZE; i++)
+        {
+            bleDeviceAddress[i - 1U] = ifr_bd_addr[PLATFORM_BLE_BD_ADDR_FULL_SIZE - i];
+        }
+#endif
     }
     else
 #endif
