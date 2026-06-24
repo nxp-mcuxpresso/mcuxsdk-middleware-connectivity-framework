@@ -9,6 +9,7 @@
 #include "fwk_debug_struct.h"
 #include "fwk_nbu_dbg.h"
 #include "fwk_platform_dbg.h"
+#include "mcmgr.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -59,4 +60,69 @@ int NBUDBG_RaiseWarningToHost(nbudbg_warning_t event_type)
     warn_index                                      = (warn_index + 1U) % NBUDBG_MAX_NB_WARNINGS;
 #endif
     return PLATFORM_Nbu2HostWarningIndication();
+}
+
+#if defined(MCMGR_REMOTE_APP_EVENT_COUNT) && (MCMGR_REMOTE_APP_EVENT_COUNT > 1U)
+/*!
+ * \brief MCMGR event callback invoked when the host requests a forced fault.
+ *
+ * This callback runs in the MCMGR event (IMU/MU) interrupt context on the NBU.
+ * It raises a fault so the fault handler can capture the debug context and
+ * stream a coredump to the host. This call does not return.
+ *
+ * \param[in] coreNum source core number (unused)
+ * \param[in] data    optional event data (unused)
+ * \param[in] context user context (unused)
+ */
+static void NBUDBG_ForceFaultEventHandler(mcmgr_core_t coreNum, uint16_t data, void *context)
+{
+    (void)coreNum;
+    (void)data;
+    (void)context;
+
+    PLATFORM_NbuRaiseFault();
+}
+
+/*!
+ * \brief Initialize the force-fault feature on the NBU.
+ *
+ * Registers an MCMGR remote application event callback so that the host can
+ * request the NBU to raise a fault on demand. When the event is received, the
+ * NBU triggers a fault (via PLATFORM_NbuRaiseFault) so the fault handler can
+ * capture the debug context and stream a coredump to the host.
+ *
+ * This is a debug-only feature that requires MCMGR_REMOTE_APP_EVENT_COUNT >= 2.
+ *
+ * \return 0 on success, negative value on error.
+ */
+static int NBUDBG_InitForceFault(void)
+{
+    int            ret = 0;
+    mcmgr_status_t status;
+
+    status = MCMGR_RegisterEvent(kMCMGR_RemoteApplicationEvent1, NBUDBG_ForceFaultEventHandler, NULL);
+    if (status != kStatus_MCMGR_Success)
+    {
+        ret = -1;
+    }
+
+    return ret;
+}
+#else
+static int NBUDBG_InitForceFault(void)
+{
+    /* Force-fault feature unavailable (MCMGR_REMOTE_APP_EVENT_COUNT < 2) */
+    return 0;
+}
+#endif /* MCMGR_REMOTE_APP_EVENT_COUNT > 1U */
+
+int NBUDBG_Init(void)
+{
+    int ret = 0;
+
+    /* Register the force-fault feature. Additional NBU debug initialization
+     * may be added here in the future. */
+    ret = NBUDBG_InitForceFault();
+
+    return ret;
 }

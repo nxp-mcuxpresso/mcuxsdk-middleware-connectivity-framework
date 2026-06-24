@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef __FWK_DEBUG_NBU_H__
-#define __FWK_DEBUG_NBU_H__
+#ifndef __FWK_NBUDEBUG_HOST_IF_H__
+#define __FWK_NBUDEBUG_HOST_IF_H__
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -120,4 +120,17 @@ void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask);
  */
 void NBUDBG_RegisterHciLogCallback(platform_hci_log_cb_t cb);
 
-#endif /*  __FWK_DEBUG_NBU_H__ */
+/*!
+ * \brief Force the NBU to raise a fault on demand to obtain a coredump (debug only).
+ *
+ * Thin wrapper over PLATFORM_TryForceNbuFault(). Useful to capture a coredump when
+ * the NBU is suspected to be stalled.
+ *
+ * \note Requires MCMGR_REMOTE_APP_EVENT_COUNT >= 2 and the NBU to still be able
+ *       to service the MCMGR (IMU/MU) interrupt.
+ *
+ * \return int 0 if success, negative value on error or if the feature is unavailable.
+ */
+int NBUDBG_TryForceFault(void);
+
+#endif /*  __FWK_NBUDEBUG_HOST_IF_H__ */

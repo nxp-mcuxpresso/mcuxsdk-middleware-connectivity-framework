@@ -9,6 +9,7 @@
 #include "fsl_device_registers.h"
 #include "fwk_platform_dbg.h"
 #include <stddef.h>
+#include "mcmgr.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -104,4 +105,27 @@ bool PLATFORM_IsNbuWarningSet(uint8_t *pCount)
     }
 
     return hasNewWarning;
+}
+
+int PLATFORM_TryForceNbuFault(void)
+{
+#if defined(MCMGR_REMOTE_APP_EVENT_COUNT) && (MCMGR_REMOTE_APP_EVENT_COUNT > 1U)
+    int ret = 0;
+
+    /* Trigger an MCMGR remote application event on the NBU (Core1). The NBU
+     * has registered a handler that raises a fault so the fault handler can
+     * capture the debug context and stream a coredump back to the host.
+     * Note: this relies on the NBU still being able to service the MCMGR
+     * (IMU/MU) interrupt. A fully hard-locked NBU with interrupts disabled
+     * cannot be broken into this way. */
+    if (MCMGR_TriggerEventForce(kMCMGR_Core1, kMCMGR_RemoteApplicationEvent1, 0U) != kStatus_MCMGR_Success)
+    {
+        ret = -1;
+    }
+
+    return ret;
+#else
+    /* Force-fault feature unavailable (MCMGR_REMOTE_APP_EVENT_COUNT < 2) */
+    return -1;
+#endif
 }

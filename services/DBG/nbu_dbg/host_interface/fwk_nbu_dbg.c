@@ -256,3 +256,8 @@ void NBUDBG_RegisterHciLogCallback(platform_hci_log_cb_t cb)
 {
     PLATFORM_RegisterHciLogCallback(cb);
 }
+
+int NBUDBG_TryForceFault(void)
+{
+    return PLATFORM_TryForceNbuFault();
+}

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef __FWK_DEBUG_NBU_H__
-#define __FWK_DEBUG_NBU_H__
+#ifndef __FWK_NBUDEBUG_NBU_IF_H__
+#define __FWK_NBUDEBUG_NBU_IF_H__
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -31,4 +31,11 @@ typedef enum
 
 int NBUDBG_RaiseWarningToHost(nbudbg_warning_t event_type);
 
-#endif /*  __FWK_DEBUG_NBU_H__ */
+/*!
+ * \brief Initialize the NBU debug features.
+ *
+ * \return 0 on success, negative value on error.
+ */
+int NBUDBG_Init(void);
+
+#endif /* __FWK_NBUDEBUG_NBU_IF_H__ */

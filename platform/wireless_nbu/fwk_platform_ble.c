@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                        Copyright 2021-2022, 2025 NXP                       */
+/*                      Copyright 2021-2022, 2025-2026 NXP                    */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -9,9 +9,9 @@
 
 #include "fsl_common.h"
 #include "fsl_adapter_rpmsg.h"
-
 #include "fwk_platform.h"
 #include "fwk_platform_ble.h"
+#include "fwk_nbu_dbg.h"
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
@@ -54,11 +54,18 @@ static void (*hci_rx_callback)(uint8_t packetType, uint8_t *data, uint16_t len);
 
 void PLATFORM_InitBle(void)
 {
+    int status;
+
     /* Initializes the RPMSG adapter module for dual core communication */
     (void)HAL_RpmsgMcmgrInit();
 
     /* Init hci link*/
     PLATFORM_InitHciLink();
+
+    /* Initialize NBU debug features */
+    status = NBUDBG_Init();
+    assert(status == 0);
+    (void)status;
 
 #if (defined(gPlatformUseLptmr_d)) && (gPlatformUseLptmr_d == 1U)
     /* Init lptmr2*/
