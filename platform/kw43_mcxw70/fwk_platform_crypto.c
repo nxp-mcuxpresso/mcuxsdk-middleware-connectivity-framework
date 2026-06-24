@@ -1,6 +1,5 @@
 /* -------------------------------------------------------------------------- */
 /*                           Copyright 2026 NXP                               */
-/*                            All rights reserved.                            */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -43,5 +42,14 @@ int PLATFORM_TerminateCrypto(void)
 int PLATFORM_ResetCrypto(void)
 {
     PLATFORM_InitCrypto();
+    return 0;
+}
+
+int PLATFORM_ReinitCrypto(void)
+{
+#if defined(gSecLibUsePsa_d) && (gSecLibUsePsa_d > 0)
+    (void)CRYPTO_DeinitHardwareUnsafe();
+    (void)CRYPTO_InitHardwareUnsafe();
+#endif
     return 0;
 }
