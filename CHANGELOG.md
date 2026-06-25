@@ -1,5 +1,24 @@
 ## Connectivity framework CHANGELOG
 
+### 7.4.1 mcux SDK 26.09.00 pvw1
+
+#### Major Changes
+
+- [SecLib_RNG] Enabled PSA by default on KW43/MCXW70 platforms.
+- [OTA] Introduced `gOtaEraseWholePartitionOnInit_d` option (KW43 only, disabled by default) to erase the whole OTA partition at start of image transfer.
+- [wireless_mcu] Replaced the critical section in `PLATFORM_RemoteActiveReq()` and `PLATFORM_RemoteActiveRel()` with a shared mutex to reduce critical section duration. **These APIs must not be called from ISR anymore.**
+- [wireless_nbu] Updated the low power callback to check for pending RPMSG buffers so the NBU enters WFI only when a Tx message is pending, reducing main core latency.
+
+#### Minor Changes
+
+- [SecLib_RNG] Added to `RNG_psa.c` seed support including WorkQueue-based automatic reseeding `gRngEnableAutoReseed_d`, NBU seed forwarding via `PLATFORM_SendRngSeed()`, reseed counter logic `gRngMaxRequests_d`, and new APIs `RNG_NotifyReseedNeeded()` and `RNG_IsReseedNeeded()`.
+- [OTA] Added a blank check of the OTA partition to avoid unnecessary erase operations and refactored `OTA_MakeHeadRoom()`.
+
+#### Bug Fixes
+
+- [zephyr][lib][crc] Fixed build conflict with EdgeFast OPN CRC by guarding CRC sources with the Zephyr common framework component check to avoid symbol redefinition.
+- [NVM] Fixed offset validation in `NvGetEntryFromDataPtr()` and corrected the bottom record address calculation in `NvGetPageFreeSpace()` when `gUnmirroredFeatureSet_d` is undefined.
+
 ### 7.3.3 mcux SDK 26.06.00
 
 New supported platform : kw43, mcxw70 (EAR: Engineering drop only) 
