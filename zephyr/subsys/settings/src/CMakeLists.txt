@@ -8,6 +8,14 @@ mcux_add_source(
             settings_store.c
 )
 
+# Pa134: suppress "pointless integer comparison" triggered by SETTINGS_NAME_END == '\0'
+# comparisons in upstream Zephyr code (settings_port.h redefines SETTINGS_NAME_END to '\0').
+# Code from upstream, avoiding local patches
+mcux_add_iar_configuration(
+    CC "--diag_suppress=Pa134"
+    CX "--diag_suppress=Pa134"
+)
+
 if(CONFIG_SETTINGS_NVS)
     mcux_add_source(
         SOURCES ../include/settings/settings_nvs.h

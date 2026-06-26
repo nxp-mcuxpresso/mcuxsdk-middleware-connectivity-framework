@@ -22,6 +22,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* ssize_t is not provided by all toolchains. Define it here so that
+ * settings.h can use it before any other port header is included. */
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+#ifdef __IAR_SYSTEMS_ICC__
+typedef int32_t ssize_t;
+#else
+typedef _ssize_t ssize_t;
+#endif
+#endif
+
 #include <zephyr/sys/list_gen.h>
 #include <zephyr/sys/slist.h>
 #include "fsl_os_abstraction.h"
