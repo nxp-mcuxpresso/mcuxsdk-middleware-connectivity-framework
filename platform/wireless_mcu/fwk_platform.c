@@ -1359,17 +1359,35 @@ int PLATFORM_ClearIoIsolationFromLowPower(void)
 #endif
     return ret;
 }
-int PLATFORM_StartFro6MCalibration(void)
+
+/*
+ * Helper to set MRCC TSTMR0 clock configuration when going to FRO6M calibration
+ */
+static void PLATFORM_TstmrSetClockControl(clock_ip_control_t cc)
 {
-    Platform_Fro6MCalCtx_t *ctx = &fro6M_calibration_ctx;
+    uint32_t reg;
+    uint32_t regPrimask;
 
-    *FWK_MRCC_TSTMR0_REG = FWK_MRCC_TSTMR0_CC(FWK_MRCC_TSTMR0_CLK_EN_LP_STALL_IDLE);
+    /* Protect again concurrent modifications of FWK_MRCC_TSTMR0_REG */
+    regPrimask = DisableGlobalIRQ();
+    reg        = *FWK_MRCC_TSTMR0_REG;
+    reg &= ~(MRCC_CC_MASK);                 /* only touch CC field */
+    reg |= ((uint32_t)cc) | MRCC_RSTB_MASK; /* Must be released from reset if not doen priorly */
+    *FWK_MRCC_TSTMR0_REG = reg;             /* RSTB and MUX are preserved from the read */
+    EnableGlobalIRQ(regPrimask);
+}
 
-    /* Save current SysTick state */
-    ctx->saved_systick_ctrl = SysTick->CTRL;
-    ctx->saved_systick_load = SysTick->LOAD; /* Save original LOAD value */
+/*
+ * Helper to reconfigure the SysTick for FRO6M calibration.
+ */
+static void PLATFORM_FRO6MCalReconfigSystick(void)
+{
+    uint32_t ctrl; /* cache SysTick->CTRL to reduce unique operand count (HIS_VOCF) */
 
-    if (ctx->saved_systick_ctrl == 0x0U)
+    /* Read current SysTick control */
+    ctrl = SysTick->CTRL;
+
+    if (ctrl == 0x0U)
     {
         /* SysTick not in use - we own it, configure freely */
 
@@ -1385,12 +1403,48 @@ int PLATFORM_StartFro6MCalibration(void)
         /* SysTick in use - don't touch LOAD or VAL, just ensure it's running */
 
         /* If disabled (tickless idle), temporarily enable it */
-        if ((ctx->saved_systick_ctrl & SysTick_CTRL_ENABLE_Msk) == 0U)
+        if ((ctrl & SysTick_CTRL_ENABLE_Msk) == 0U)
         {
-            SysTick->CTRL = ctx->saved_systick_ctrl | SysTick_CTRL_ENABLE_Msk;
+            SysTick->CTRL = ctrl | SysTick_CTRL_ENABLE_Msk;
         }
         /* VAL and LOAD remain untouched */
     }
+}
+
+/*
+ * Helper to restore the Systick configuration from context
+ */
+static void PLATFORM_FRO6MCalRestoreSystickConfig(Platform_Fro6MCalCtx_t *ctx)
+{
+    uint32_t savedCtrl = ctx->saved_systick_ctrl; /* cache to reduce unique operand count (HIS_VOCF) */
+
+    /* Restore SysTick state */
+    if (savedCtrl == 0x0U)
+    {
+        /* We owned SysTick - restore it to original unused state */
+        SysTick->CTRL = 0U;                      /* Disable first */
+        SysTick->LOAD = ctx->saved_systick_load; /* Restore original LOAD */
+        SysTick->VAL  = 0U;                      /* Clear VAL */
+    }
+    else
+    {
+        /* SysTick was in use - just restore CTRL (may re-disable if in tickless) */
+        SysTick->CTRL = savedCtrl;
+        /* LOAD and VAL remain as they are */
+    }
+}
+
+int PLATFORM_StartFro6MCalibration(void)
+{
+    Platform_Fro6MCalCtx_t *ctx = &fro6M_calibration_ctx;
+
+    /* kCLOCK_IpClkControl_fun2 is MRCC_CC(CLK_EN_LP_STALL_IDLE) already pre-shifted */
+    PLATFORM_TstmrSetClockControl(kCLOCK_IpClkControl_fun2);
+
+    /* Stash SYSTICK configuration to be able to restore on FRO6M Calibration completion  */
+    ctx->saved_systick_ctrl = SysTick->CTRL;
+    ctx->saved_systick_load = SysTick->LOAD; /* Save original LOAD value */
+    PLATFORM_FRO6MCalReconfigSystick();
 
     /* Capture timing references as close together as possible for better accuracy */
     ctx->initial_ts            = PLATFORM_GetTimeStamp();
@@ -1468,20 +1522,7 @@ int PLATFORM_EndFro6MCalibration(void)
 
         fwk_platform_FRO6MHz_ratio = ctx->ratio;
 
-        /* Restore SysTick state */
-        if (ctx->saved_systick_ctrl == 0x0U)
-        {
-            /* We owned SysTick - restore it to original unused state */
-            SysTick->CTRL = 0U;                      /* Disable first */
-            SysTick->LOAD = ctx->saved_systick_load; /* Restore original LOAD */
-            SysTick->VAL  = 0U;                      /* Clear VAL */
-        }
-        else
-        {
-            /* SysTick was in use - just restore CTRL (may re-disable if in tickless) */
-            SysTick->CTRL = ctx->saved_systick_ctrl;
-            /* LOAD and VAL remain as they are */
-        }
+        PLATFORM_FRO6MCalRestoreSystickConfig(ctx);
 
         ctx->started = false;
     }

@@ -19,9 +19,4 @@
 #define FWK_TSRMR1_BASE   (0x4019B000U)
 #define FWK_TSTMR_NB_INST 2U
 
-typedef enum _fwk_tstmr_clk_sel
-{
-    FwkTSTMR0_ClkSel_1MHz = 5U, /*!< TSTMR 1MHz configuration for gPlatformTstmr0HasClkControl_d */
-} fwk_tstmr_clk_sel_t;
-
 #endif /* _FWK_PLAT_DEFS_H_ */
