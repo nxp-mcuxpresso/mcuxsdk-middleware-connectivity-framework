@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -13,6 +13,18 @@
 #include "fwk_fault_handlers_common.h"
 #if defined(SDK_OS_FREE_RTOS) || defined(FSL_RTOS_THREADX)
 #include "fwk_fault_handlers_rtos_port.h"
+#endif
+
+#if defined(CONFIG_DEBUG_COREDUMP)
+#include "zephyr_headers/arch/arm/thread.h"
+/*
+ * fault_capture() lives in the coredump component (error_stack_frame.c) and has
+ * no public header. It builds the Cortex-M exception stack frame from the
+ * provided MSP/PSP/EXC_RETURN, sets z_arm_coredump_fault_sp, decodes the fault
+ * reason and finally calls coredump(). This is the same entry point the
+ * standalone coredump_fault example reaches through its assembly trampoline.
+ */
+extern void fault_capture(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_t *callee_regs);
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -65,6 +77,14 @@ void HardFaultHandler(unsigned long *hardfault_args)
     volatile unsigned int EXEC_RETURN;
     unsigned int          stack_frame_size;
 
+    /* Capture EXC_RETURN. On exception entry the hardware loads LR with the
+     * EXC_RETURN value; HardFault_Handler (fwk_fault_handlers_common.c) reaches
+     * this function with a tail branch ("bx", not "bl"), so LR is NOT clobbered
+     * by the hand-off and still holds the fault-time EXC_RETURN here. This read
+     * is the first C statement in the handler (before any bl/function call), so
+     * EXEC_RETURN is the fault-time value, not a live post-fault LR. EXC_RETURN[2]
+     * (the "& 0x4" tests below) therefore reliably tells Thread vs Handler mode,
+     * and the same value is forwarded to fault_capture() for the coredump. */
     __asm volatile(" mov %0, lr" : "=r"(EXEC_RETURN));
 
     stacked_r0  = ((unsigned int)hardfault_args[0]);
@@ -187,6 +207,47 @@ void HardFaultHandler(unsigned long *hardfault_args)
             "Command for parsing a stack:\r\n>arm-none-eabi-addr2line.exe -e <your_project>.elf "
             "<paste_stack_line_above>\r\nadd option -f to show the function and line\r\n");
     }
+
+#if defined(CONFIG_DEBUG_COREDUMP)
+    /* Capture the fault as a Zephyr coredump. fault_capture() rebuilds the
+     * exception stack frame from the fault-time stack pointer, sets
+     * z_arm_coredump_fault_sp, decodes the fault reason and calls coredump(),
+     * which streams the dump through the selected backend (over the application
+     * console for the board_debug backend). Done after the human-readable
+     * register dump so the two outputs do not interleave.
+     *
+     * hardfault_args already points at the fault-time stack frame (the asm
+     * trampoline selected MSP or PSP based on EXC_RETURN[2]). Pass it as the
+     * stack get_esf() will dereference for the active mode; the other pointer is
+     * not used to locate the frame.
+     *
+     * Signature (error_stack_frame.c):
+     *   void fault_capture(uint32_t msp, uint32_t psp, uint32_t exc_return,
+     *                      _callee_saved_t *callee_regs);
+     * Argument 1 is always the MSP, argument 2 is always the PSP; fault_capture()
+     * picks the frame belonging to the active mode from EXC_RETURN[2], so the
+     * fault-time frame pointer (hardfault_args) must go into the slot matching
+     * the mode we are in.
+     *
+     * callee_regs is passed NULL on purpose: the callee-saved registers are not
+     * captured here. This is safe -- fault_capture() never dereferences the
+     * pointer. With CONFIG_EXTRA_EXCEPTION_INFO it is ARG_UNUSED; otherwise it is
+     * only stored (esf.extra_info.callee = callee_regs), so NULL cannot trigger a
+     * secondary fault during the dump.
+     */
+    if ((EXEC_RETURN & 0x4U) != 0U)
+    {
+        /* Thread mode: fault frame is on the process stack, so hardfault_args is
+         * the PSP-based frame and goes into the psp (2nd) argument. */
+        fault_capture(__get_MSP(), (uint32_t)hardfault_args, EXEC_RETURN, NULL);
+    }
+    else
+    {
+        /* Handler mode: fault frame is on the main stack, so hardfault_args is
+         * the MSP-based frame and goes into the msp (1st) argument. */
+        fault_capture((uint32_t)hardfault_args, __get_PSP(), EXEC_RETURN, NULL);
+    }
+#endif
 
     while (true)
     {
