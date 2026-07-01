@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -32,7 +32,9 @@ static uint8_t TaskStatusList[SYS_DEBUG_MAX_TASKS_NB * sizeof(TaskStatus_t)];
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
+#if defined(INCLUDE_xTaskGetHandle) && (INCLUDE_xTaskGetHandle > 0)
 static void sys_dump_callstack_ext(unsigned int stack_pointer, unsigned int *task_hdl);
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -166,6 +168,7 @@ int sys_get_current_task_info(dbg_thread_info *thread_info)
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
+#if defined(INCLUDE_xTaskGetHandle) && (INCLUDE_xTaskGetHandle > 0)
 static void sys_dump_callstack_ext(unsigned int stack_pointer, unsigned int *task_hdl)
 {
     /* During task creation, the stack is allocated before the task context in FreeRTOS,
@@ -186,3 +189,4 @@ static void sys_dump_callstack_ext(unsigned int stack_pointer, unsigned int *tas
     sys_dump_callstack(stack_pointer, topOfStack);
     PRINTF("\r\n");
 }
+#endif
