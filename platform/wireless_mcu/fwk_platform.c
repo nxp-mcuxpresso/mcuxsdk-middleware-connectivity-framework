@@ -51,6 +51,13 @@
 #include "mcmgr_imu_internal.h"
 #include "fwk_platform_mcu_nbu_common.h"
 
+#if defined(CONFIG_FLASH_K4_ASYNC_MODE) && (CONFIG_FLASH_K4_ASYNC_MODE == 1)
+#include "fsl_k4_flash.h"
+#if defined(CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND) && (CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND == 1)
+#include "controller_api.h"
+#endif
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
@@ -204,9 +211,55 @@ static Platform_Fro6MCalCtx_t fro6M_calibration_ctx = {
 
 static volatile uint32_t last_nbu_sw_state = 0U;
 
+#if defined(CONFIG_FLASH_K4_ASYNC_MODE) && (CONFIG_FLASH_K4_ASYNC_MODE == 1)
+/* Mutex serializing access to the flash driver in async mode */
+static OSA_MUTEX_HANDLE_DEFINE(s_flashAsyncMutex);
+#endif /* CONFIG_FLASH_K4_ASYNC_MODE */
+
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
 /* -------------------------------------------------------------------------- */
+
+#if defined(CONFIG_FLASH_K4_ASYNC_MODE) && (CONFIG_FLASH_K4_ASYNC_MODE == 1)
+
+STATIC void PLATFORM_AsyncFlashLockCb(void *ud)
+{
+    OSA_MutexLock((osa_mutex_handle_t)ud, osaWaitForever_c);
+}
+
+STATIC void PLATFORM_AsyncFlashUnlockCb(void *ud)
+{
+    OSA_MutexUnlock((osa_mutex_handle_t)ud);
+}
+
+STATIC bool PLATFORM_AsyncFlashTryLockCb(void *ud)
+{
+    return (OSA_MutexLock((osa_mutex_handle_t)ud, 0U) == KOSA_StatusSuccess);
+}
+
+#if defined(CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND) && (CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND == 1)
+static uint32_t PLATFORM_GetRadioIdleDurationUs(void)
+{
+    int idle32K = PLATFORM_GetRadioIdleDuration32K();
+
+    if (idle32K <= 0)
+    {
+        /* Radio active or switching to idle - no idle window available */
+        return 0U;
+    }
+    /* Convert 32768 Hz ticks to microseconds */
+    return (uint32_t)COUNT_TO_USEC((uint32_t)idle32K, 32768U);
+}
+
+static uint32_t PLATFORM_ImminentFlashStallCb(uint32_t suspend)
+{
+    /* Suspend or resume the BLE controller LL so that it does not schedule
+     * any activity during the upcoming flash write/erase stall. */
+    return (uint32_t)Controller_SuspendResume(suspend);
+}
+#endif /* CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND */
+#endif /* CONFIG_FLASH_K4_ASYNC_MODE */
+
 static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
 {
     int     ret = 0;
@@ -637,6 +690,26 @@ int PLATFORM_InitNbu(void)
             else
             {
                 DBG_NBU_GPIOD_ACCESS();
+
+#if defined(CONFIG_FLASH_K4_ASYNC_MODE) && (CONFIG_FLASH_K4_ASYNC_MODE == 1)
+                /* Initialize K4 flash async-mode platform layer.
+                 * Done here because the LL suspend feature (PLATFORM_ImminentFlashStallCb)
+                 * is tightly coupled to the NBU system initialized above. */
+                osa_status_t osaStatus = OSA_MutexCreate((osa_mutex_handle_t)s_flashAsyncMutex);
+                if (osaStatus != KOSA_StatusSuccess)
+                {
+                    /* Fatal: flash async-mode cannot operate without the mutex */
+                    assert(false);
+                    return -1;
+                }
+                (void)FLASH_RegisterLockCallbacks(PLATFORM_AsyncFlashLockCb, PLATFORM_AsyncFlashUnlockCb,
+                                                  s_flashAsyncMutex);
+                (void)FLASH_RegisterTryLockCallback(PLATFORM_AsyncFlashTryLockCb, s_flashAsyncMutex);
+#if defined(CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND) && (CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND == 1)
+                (void)FLASH_RegisterIdleDurationCB(PLATFORM_GetRadioIdleDurationUs);
+                (void)FLASH_RegisterNotifyImminentFlashStall(PLATFORM_ImminentFlashStallCb);
+#endif /* CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND */
+#endif /* CONFIG_FLASH_K4_ASYNC_MODE */
 
                 /* nbu initialization completed */
                 nbu_init = 1;

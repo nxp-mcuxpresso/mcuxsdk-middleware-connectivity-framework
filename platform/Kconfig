@@ -397,6 +397,12 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.dbg
     help
       DBG platform APIs.
 
+config PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND
+    bool "Enable register callback for flash stall"
+    depends on FLASH_K4_ASYNC_MODE
+    default y
+    help
+      Enable registration of callback for flash controller stall events
 ###  Compile Flags KConfig definitions  ###
 
 config gPlatformMonolithicApp_d
