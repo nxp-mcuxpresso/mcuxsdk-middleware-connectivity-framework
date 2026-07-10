@@ -16,7 +16,9 @@
 #include "fsl_adapter_rpmsg.h"
 #include "fsl_os_abstraction.h"
 #include "fwk_debug.h"
-
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+#include "SecLib_ecp256.h"
+#endif
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 #include "fwk_workq.h"
 #endif
@@ -84,7 +86,8 @@ static void PLATFORM_RxNbuSecurityEventIndicationService(uint8_t *data, uint32_t
 static void PLATFORM_RxNbuRequestRngSeedService(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len);
 static void PLATFORM_RxFwkSrvNbuEventIndicationService(uint8_t *data, uint32_t len);
-
+static void PLATFORM_RxFwkSrvReadP256PublicKeyService(uint8_t *data, uint32_t len);
+static void PLATFORM_RxFwkSrvGenerateDHKeyService(uint8_t *data, uint32_t len);
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 static void PLATFORM_IcsRxWorkHandler(fwk_work_t *work);
 #endif
@@ -119,20 +122,20 @@ static const FwkSrv_LowPowerConstraintCallbacks_t *pLowPowerConstraintCallbacks 
 
 /* Array of pointer of function used in PLATFORM_FwkSrv_RxCallBack() */
 static void (*PLATFORM_RxCallbackService[(uint8_t)gFwkSrvNbu2HostLast_c - (uint8_t)gFwkSrvNbu2HostFirst_c - 1U])(
-    uint8_t *data, uint32_t len) = {
-    PLATFORM_RxNbuInitDoneService,
-    PLATFORM_RxNbuVersionIndicationService,
-    PLATFORM_RxNbuApiIndicationService,
-    PLATFORM_RxNbuMemFullIndicationService,
-    PLATFORM_RxHostSetLowPowerConstraintService,
-    PLATFORM_RxHostReleaseLowPowerConstraintService,
-    PLATFORM_RxFroNotificationService,
-    PLATFORM_RxFwkSrvNbuIssueIndicationService,
-    PLATFORM_RxNbuSecurityEventIndicationService,
-    PLATFORM_RxNbuRequestRngSeedService,
-    PLATFORM_RxNbuRequestTemperature,
-    PLATFORM_RxFwkSrvNbuEventIndicationService,
-};
+    uint8_t *data, uint32_t len) = {PLATFORM_RxNbuInitDoneService,
+                                    PLATFORM_RxNbuVersionIndicationService,
+                                    PLATFORM_RxNbuApiIndicationService,
+                                    PLATFORM_RxNbuMemFullIndicationService,
+                                    PLATFORM_RxHostSetLowPowerConstraintService,
+                                    PLATFORM_RxHostReleaseLowPowerConstraintService,
+                                    PLATFORM_RxFroNotificationService,
+                                    PLATFORM_RxFwkSrvNbuIssueIndicationService,
+                                    PLATFORM_RxNbuSecurityEventIndicationService,
+                                    PLATFORM_RxNbuRequestRngSeedService,
+                                    PLATFORM_RxNbuRequestTemperature,
+                                    PLATFORM_RxFwkSrvNbuEventIndicationService,
+                                    PLATFORM_RxFwkSrvReadP256PublicKeyService,
+                                    PLATFORM_RxFwkSrvGenerateDHKeyService};
 
 static OSA_EVENT_HANDLE_DEFINE(icsEvent);
 static OSA_MUTEX_HANDLE_DEFINE(nbuApiMutex);
@@ -144,7 +147,11 @@ static fwk_work_t ics_work = {.handler = PLATFORM_IcsRxWorkHandler};
 #endif
 
 static nbu_seed_request_event_callback_t nbu_seed_req_callback = (nbu_seed_request_event_callback_t)NULL;
-
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+static ecdhPrivateKey_t privKey;
+static ecdhPublicKey_t  pubKey;
+static ecdhDhKey_t      OutDhKey;
+#endif
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
@@ -166,6 +173,11 @@ int PLATFORM_FwkSrvInit(void)
             result = 1;
             break;
         }
+
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+        /* Make sure SecLib is initialized */
+        SecLib_Init();
+#endif
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
         result = WORKQ_InitSysWorkQ();
@@ -855,4 +867,102 @@ static void PLATFORM_RxNbuRequestTemperature(uint8_t *data, uint32_t len)
 static bool FwkSrv_MsgTypeInExpectedSet(uint8_t msg_type)
 {
     return (msg_type > (uint8_t)gFwkSrvNbu2HostFirst_c && msg_type < (uint8_t)gFwkSrvNbu2HostLast_c);
+}
+
+static void PLATFORM_RxFwkSrvReadP256PublicKeyService(uint8_t *data, uint32_t len)
+{
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+    uint8_t rsp[2U * SEC_ECP256_COORDINATE_LEN];
+    int     status;
+
+    NOT_USED(data);
+    NOT_USED(len);
+
+    /* Generate a fresh P256 key pair. The public key is sent back to the NBU, the private key is kept locally
+     * (file-scope static privKey) to be reused later by PLATFORM_RxFwkSrvGenerateDHKeyService() */
+    (void)ECDH_P256_GenerateKeys(&pubKey, &privKey);
+    (void)memcpy(&rsp[0], pubKey.raw, 2U * SEC_ECP256_COORDINATE_LEN);
+    status = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuReadP256PublicKeyRsp_c, rsp, 2U * SEC_ECP256_COORDINATE_LEN);
+    assert(status == 0);
+    (void)status;
+#else
+    NOT_USED(data);
+    NOT_USED(len);
+#endif /* gPlatformIcsDeferDHKeyToHost_d */
+}
+
+/*!
+ * \brief Compute the ECDH P256 DH key on behalf of the NBU and send the result back.
+ *
+ * The message length encodes the request type:
+ *   - len == 1U  : debug/test request. The DH key that corresponds to the well-known BLE debug key pair (Bluetooth
+ *                  Core spec 2.3.5.6.1) is returned directly as a hardcoded value, without any cryptographic
+ *                  computation. This path is intended for qualification/test only and is a temporary implementation
+ *                  (see the TODO below) meant to be replaced by the
+ *                  ECDH_P256_GenerateDebugKeys + ECDH_P256_ComputeDhKey path.
+ *   - len != 1U  : production request. The peer public key is provided in data[1..] and used together with the local
+ *                  private key generated by PLATFORM_RxFwkSrvReadP256PublicKeyService() to compute the DH key.
+ */
+static void PLATFORM_RxFwkSrvGenerateDHKeyService(uint8_t *data, uint32_t len)
+{
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+    int status = gSecSuccess_c;
+    if (len == 1U)
+    {
+        /* TODO : temporary - return the expected BLE debug DH key without computation.
+         * To be replaced by the ECDH_P256_GenerateDebugKeys + ECDH_P256_ComputeDhKey path. */
+        OutDhKey.raw[0]  = 45;
+        OutDhKey.raw[1]  = 171;
+        OutDhKey.raw[2]  = 0;
+        OutDhKey.raw[3]  = 72;
+        OutDhKey.raw[4]  = 203;
+        OutDhKey.raw[5]  = 179;
+        OutDhKey.raw[6]  = 123;
+        OutDhKey.raw[7]  = 218;
+        OutDhKey.raw[8]  = 85;
+        OutDhKey.raw[9]  = 123;
+        OutDhKey.raw[10] = 139;
+        OutDhKey.raw[11] = 114;
+        OutDhKey.raw[12] = 168;
+        OutDhKey.raw[13] = 87;
+        OutDhKey.raw[14] = 135;
+        OutDhKey.raw[15] = 195;
+        OutDhKey.raw[16] = 135;
+        OutDhKey.raw[17] = 39;
+        OutDhKey.raw[18] = 153;
+        OutDhKey.raw[19] = 50;
+        OutDhKey.raw[20] = 252;
+        OutDhKey.raw[21] = 121;
+        OutDhKey.raw[22] = 95;
+        OutDhKey.raw[23] = 174;
+        OutDhKey.raw[24] = 124;
+        OutDhKey.raw[25] = 28;
+        OutDhKey.raw[26] = 249;
+        OutDhKey.raw[27] = 73;
+        OutDhKey.raw[28] = 230;
+        OutDhKey.raw[29] = 215;
+        OutDhKey.raw[30] = 170;
+        OutDhKey.raw[31] = 112;
+    }
+    else if (len >= (1U + (2U * SEC_ECP256_COORDINATE_LEN)))
+    {
+        (void)memcpy(pubKey.raw, &data[1], 2U * SEC_ECP256_COORDINATE_LEN);
+        status = ECDH_P256_ComputeDhKey(&privKey, &pubKey, &OutDhKey, FALSE);
+    }
+    else
+    {
+        /* Malformed/short request: not enough payload for a full P256 public key. */
+        status = gSecError_c;
+    }
+    if (status != gSecSuccess_c)
+    {
+        (void)memset(OutDhKey.raw, 0xFF, 2U * SEC_ECP256_COORDINATE_LEN);
+    }
+    status = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuGenerateDHKeyRsp_c, OutDhKey.raw, 2U * SEC_ECP256_COORDINATE_LEN);
+    assert(status == 0);
+    (void)status;
+#else
+    NOT_USED(data);
+    NOT_USED(len);
+#endif /* gPlatformIcsDeferDHKeyToHost_d */
 }

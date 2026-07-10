@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2024-2025-2026 NXP
+ * Copyright 2021, 2024-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -140,7 +140,9 @@ typedef enum
     gFwkSrvNbuRequestRngSeed_c                  = 0xAU,
     gFwkSrvNbuRequestNewTemperature_c           = 0xBU,
     gFwkSrvNbuEventIndication_c                 = 0xCU, /*!< Info - Warning - Error indications to Host */
-    gFwkSrvNbu2HostLast_c                       = 0xDU,
+    gFwkSrvNbuReadP256PublicKey_c               = 0xDU,
+    gFwkSrvNbuGenerateDHKey_c                   = 0xEU,
+    gFwkSrvNbu2HostLast_c                       = 0xFU,
     gFwkSrvHost2NbuFirst_c                      = 0x80U,
     gFwkSrvNbuVersionRequest_c                  = 0x81U,
     gFwkSrvXtal32MTrimIndication_c              = 0x82U,
@@ -154,7 +156,9 @@ typedef enum
     gFwkSrvFroEnableNotification_c              = 0x8AU,
     gFwkSrvRngReseed_c                          = 0x8BU,
     gFwkSrvHostSetNbuSharedCtxAddr_c            = 0x8CU,
-    gFwkSrvHost2NbuLast_c                       = 0x8DU,
+    gFwkSrvNbuReadP256PublicKeyRsp_c            = 0x8DU,
+    gFwkSrvNbuGenerateDHKeyRsp_c                = 0x8EU,
+    gFwkSrvHost2NbuLast_c                       = 0x8FU,
 } eFwkSrvMsgType;
 
 typedef int (*seed_ready_event_callback_t)(uint8_t *external_seed);
@@ -286,5 +290,27 @@ int PLATFORM_FwkSrvRequestNewTemperature(uint32_t periodic_interval_ms);
  *
  */
 void PLATFORM_RegisterSetNewSeed(seed_ready_event_callback_t cb);
+
+/*!
+ * \brief Request the host to generate and read back the local ECDH P256 public key.
+ *
+ * The P256 public key generation is deferred to the host core (see gPlatformIcsDeferDHKeyToHost_d).
+ * When the feature is disabled, this function does nothing and returns 0.
+ *
+ * \return int 0 if success, -1 if no memory available, -2 if sending error.
+ */
+int PLATFORM_ReadLocalP256PublicKey(void);
+
+/*!
+ * \brief Request the host to compute the ECDH P256 DH key.
+ *
+ * The DH key computation is deferred to the host core (see gPlatformIcsDeferDHKeyToHost_d).
+ * When the feature is disabled, this function does nothing and returns 0.
+ *
+ * \param[in] pubKey     Pointer to the 64-byte remote P256 public key (X||Y). Ignored when isDebugKey is TRUE.
+ * \param[in] isDebugKey TRUE to request the DH key computation using the BLE debug keys, FALSE otherwise.
+ * \return int 0 if success, -1 if no memory available, -2 if sending error.
+ */
+int PLATFORM_GenerateDHKey(uint8_t *pubKey, bool_t isDebugKey);
 
 #endif /* __FWK_PLATFORM_ICS_H__ */

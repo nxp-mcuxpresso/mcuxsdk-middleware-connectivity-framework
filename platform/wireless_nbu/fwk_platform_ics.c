@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2024-2025 NXP
+ * Copyright 2021, 2024-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -32,6 +32,15 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
+/* Weak function. */
+#if defined(__GNUC__)
+#define __WEAK_FUNC __attribute__((weak))
+#elif defined(__ICCARM__)
+#define __WEAK_FUNC __weak
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
+#define __WEAK_FUNC __attribute__((weak))
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                                Private types                               */
 /* -------------------------------------------------------------------------- */
@@ -58,6 +67,23 @@ typedef struct
 /* declared here to avoid including ble_controller header file */
 extern uint32_t Controller_HandleNbuApiReq(uint8_t *api_return, uint8_t *data, uint32_t data_len);
 extern bool     Controller_EnableSecurityFeature(void);
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+/* Provided by the BT controller (hcic) libraries when the deferred DH key feature is enabled.
+ * Defined here as weak with an empty implementation to mitigate NBU firmwares where the feature
+ * is not enabled in the controller libraries, so the link does not fail on the missing symbol. */
+__WEAK_FUNC void hcic_handleReadP256PublicKeyRsp(uint8_t *data, uint32_t len);
+__WEAK_FUNC void hcic_handleGenerateDHKeyRsp(uint8_t *data, uint32_t len);
+__WEAK_FUNC void hcic_handleReadP256PublicKeyRsp(uint8_t *data, uint32_t len)
+{
+    NOT_USED(data);
+    NOT_USED(len);
+}
+__WEAK_FUNC void hcic_handleGenerateDHKeyRsp(uint8_t *data, uint32_t len)
+{
+    NOT_USED(data);
+    NOT_USED(len);
+}
+#endif
 
 #if defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0)
 extern void PLATFORM_RxNbuSharedCtxAddress(uint8_t *data, uint32_t len);
@@ -84,6 +110,8 @@ static void PLATFORM_RxNbuFrequencyConstraint(uint8_t *data, uint32_t len);
 static void PLATFORM_RxNbuSfcConfig(uint8_t *data, uint32_t len);
 static void PLATFORM_RxEnableFroNotification(uint8_t *data, uint32_t len);
 static void PLATFORM_RxRngReseed(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuReadP256PublicKeyRsp(uint8_t *data, uint32_t len);
+static void PLATFORM_RxNbuGenerateDHKeyRsp(uint8_t *data, uint32_t len);
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 static void PLATFORM_RxWorkHandler(fwk_work_t *work);
@@ -104,24 +132,24 @@ static const hal_rpmsg_config_t fwkRpmsgConfig = {
 };
 
 static void (*PLATFORM_RxCallbackService[(uint8_t)gFwkSrvHost2NbuLast_c - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U])(
-    uint8_t *data, uint32_t len) = {
-    PLATFORM_RxNbuVersionRequest,
-    PLATFORM_RxXtal32MTrimIndication,
-    PLATFORM_RxNbuApiRequest,
-    PLATFORM_RxTemperatureIndication,
-    PLATFORM_RxHostChipRevision,
-    PLATFORM_RxNbuSecureModeRequest,
-    PLATFORM_RxNbuWakeUpDelayLpoCycle,
-    PLATFORM_RxNbuFrequencyConstraint,
-    PLATFORM_RxNbuSfcConfig,
-    PLATFORM_RxEnableFroNotification,
-    PLATFORM_RxRngReseed,
+    uint8_t *data, uint32_t len) = {PLATFORM_RxNbuVersionRequest,
+                                    PLATFORM_RxXtal32MTrimIndication,
+                                    PLATFORM_RxNbuApiRequest,
+                                    PLATFORM_RxTemperatureIndication,
+                                    PLATFORM_RxHostChipRevision,
+                                    PLATFORM_RxNbuSecureModeRequest,
+                                    PLATFORM_RxNbuWakeUpDelayLpoCycle,
+                                    PLATFORM_RxNbuFrequencyConstraint,
+                                    PLATFORM_RxNbuSfcConfig,
+                                    PLATFORM_RxEnableFroNotification,
+                                    PLATFORM_RxRngReseed,
 #if defined gPlatformHasIntercoreCommonTimestamp_d && (gPlatformHasIntercoreCommonTimestamp_d > 0)
-    PLATFORM_RxNbuSharedCtxAddress,
+                                    PLATFORM_RxNbuSharedCtxAddress,
 #else
-    PLATFORM_RxNbuSharedCtxAddressDummy,
+                                    PLATFORM_RxNbuSharedCtxAddressDummy,
 #endif
-};
+                                    PLATFORM_RxNbuReadP256PublicKeyRsp,
+                                    PLATFORM_RxNbuGenerateDHKeyRsp};
 
 #if defined(gPlatformIcsUseWorkqueueRxProcessing_d) && (gPlatformIcsUseWorkqueueRxProcessing_d > 0)
 static rx_work_t rx_work = {
@@ -506,3 +534,50 @@ static void PLATFORM_RxNbuSharedCtxAddressDummy(uint8_t *data, uint32_t len)
     /* Do nothing */
 }
 #endif
+static void PLATFORM_RxNbuReadP256PublicKeyRsp(uint8_t *data, uint32_t len)
+{
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+    hcic_handleReadP256PublicKeyRsp(data, len);
+#else
+    NOT_USED(data);
+    NOT_USED(len);
+#endif
+}
+
+static void PLATFORM_RxNbuGenerateDHKeyRsp(uint8_t *data, uint32_t len)
+{
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+    hcic_handleGenerateDHKeyRsp(data, len);
+#else
+    NOT_USED(data);
+    NOT_USED(len);
+#endif
+}
+
+int PLATFORM_ReadLocalP256PublicKey(void)
+{
+    int ret = 0;
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+    ret = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuReadP256PublicKey_c, (void *)NULL, 0U);
+#endif
+    return ret;
+}
+
+int PLATFORM_GenerateDHKey(uint8_t *pubKey, bool_t isDebugKey)
+{
+    int ret = 0;
+#if defined(gPlatformIcsDeferDHKeyToHost_d) && (gPlatformIcsDeferDHKeyToHost_d > 0)
+    if (isDebugKey)
+    {
+        ret = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuGenerateDHKey_c, (void *)NULL, 0U);
+    }
+    else
+    {
+        ret = PLATFORM_FwkSrvSendPacket(gFwkSrvNbuGenerateDHKey_c, (void *)pubKey, 64U);
+    }
+#else
+    NOT_USED(pubKey);
+    NOT_USED(isDebugKey);
+#endif
+    return ret;
+}
