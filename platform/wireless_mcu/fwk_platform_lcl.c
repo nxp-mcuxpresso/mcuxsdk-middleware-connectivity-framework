@@ -22,6 +22,9 @@
 #include "fsl_port.h"
 #include "fsl_gpio.h"
 #include "nxp_xcvr_ext_ctrl.h"
+#if defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1)
+#include "nxp_xcvr_trim.h"
+#endif /* defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1) */
 
 /*******************************************************************************
  * Private macros
@@ -847,6 +850,23 @@ uint8_t PLATFORM_InitLcl(void)
 #ifdef FWK_LCL_ENABLE_DTEST
     PLATFORM_InitLclDtest();
 #endif /* FWK_LCL_ENABLE_DTEST */
+
+#if defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1)
+    if (status == 0U)
+    {
+        rf_ifr_rtt_trim_t rtt_trim_values;
+
+        /* read IFR from Flash for RTT Trim */
+        status = XCVR_TRIM_ReadRttIfr(&rtt_trim_values) ? 0U : 1U;
+        /* send data to NBU */
+        if (status == 0U)
+        {
+            osa_status_t osa_status =
+                Controller_SetRTTTrim((const uint8_t *)&rtt_trim_values, (uint8_t)sizeof(rtt_trim_values));
+            status = (osa_status == KOSA_StatusSuccess) ? 0U : 1U;
+        }
+    }
+#endif /* defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1) */
 
     return status;
 }
