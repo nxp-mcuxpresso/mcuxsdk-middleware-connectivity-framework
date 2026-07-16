@@ -1,5 +1,5 @@
 /*!
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * \file fwk_platform_zb.c
@@ -20,9 +20,11 @@
 #include "fwk_platform_coex.h"
 #include "fsl_adapter_imu.h"
 #include "fsl_os_abstraction.h"
+#ifndef __ZEPHYR__
 #include "RNG_Interface.h"
 #include "PDM.h"
 #include "FunctionLib.h"
+#endif /* __ZEPHYR__ */
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -233,6 +235,7 @@ int PLATFORM_SendZbPhyMessage(uint8_t *msg, uint32_t len)
 
 void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address)
 {
+#ifndef __ZEPHYR__
     uint16_t len = 0U;
 
     memset((void *)eui64_address, 0xFF, EUI_64_SZ);
@@ -254,6 +257,7 @@ void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address)
             (void)PDM_eSaveRecordData(PDM_ID_ZPSMAC_EXTADDR, eui64_address, EUI_64_SZ);
         }
     }
+#endif /* __ZEPHYR__ */
 }
 
 /* -------------------------------------------------------------------------- */
@@ -356,6 +360,7 @@ static bool PLATFORM_IsZbLinkReady(void)
 
 static void PLATFORM_GenerateEui64Addr(uint8_t *eui64_address)
 {
+#ifndef __ZEPHYR__
     uint8_t macAddr[EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE] = {0U};
     int16_t num;
 
@@ -369,4 +374,5 @@ static void PLATFORM_GenerateEui64Addr(uint8_t *eui64_address)
     /* Set 3 MSB from OUI */
     memcpy((void *)&eui64_address[EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE], (const void *)gIeee802_15_4_ADDR_OUI_c,
            MAC_ADDR_OUI_PART_SIZE);
+#endif /* __ZEPHYR__ */
 }
