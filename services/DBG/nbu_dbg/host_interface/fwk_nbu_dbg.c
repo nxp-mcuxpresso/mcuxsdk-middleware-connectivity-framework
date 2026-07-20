@@ -165,14 +165,12 @@ void NBUDBG_StateCheck(void)
     /* Check for NBU stall */
     if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US) && !nbu_halted_notified)
     {
-        /* Stall detected - notify once */
+        /*
+         * Stall detected - notify once. The HCI vendor event can be emitted later
+         * from the notification callback context
+         */
         nbu_event.nbu_is_halted = 1U;
         nbu_halted_notified     = true;
-        if ((nbu_dbg_hci_vendor_event_config & NBUDBG_HCI_EVENT_STALL_EVENT) != 0U)
-        {
-            /* Send stall information as HCI vendor event */
-            (void)NBUDBG_SendHciEvent(NBUDBG_BUFFER_ID_STALL_EVENT, (uint8_t *)&nbu_halted_notified, 1U);
-        }
     }
 
     /* Check if any new debug condition is detected and notify via callback */
@@ -233,6 +231,20 @@ int NBUDBG_StructDump(nbu_debug_struct_t *debug_info)
     PLATFORM_RemoteActiveRel();
 
     return status;
+}
+
+int NBUDBG_SendStallEvent(void)
+{
+    int     ret    = 0;
+    uint8_t halted = 1U;
+
+    if ((nbu_dbg_hci_vendor_event_config & NBUDBG_HCI_EVENT_STALL_EVENT) != 0U)
+    {
+        /* Send stall information as HCI vendor event */
+        ret = NBUDBG_SendHciEvent(NBUDBG_BUFFER_ID_STALL_EVENT, &halted, 1U);
+    }
+
+    return ret;
 }
 
 void NBUDBG_ConfigureHciVendorEvent(uint32_t config_mask)

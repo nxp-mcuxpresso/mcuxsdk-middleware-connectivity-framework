@@ -84,6 +84,16 @@ void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb);
 int NBUDBG_StructDump(nbu_debug_struct_t *debug_info);
 
 /*!
+ * \brief Send the NBU stall notification as an HCI vendor event
+ *
+ * \details Emits the stall event only if NBUDBG_HCI_EVENT_STALL_EVENT was
+ *          enabled via NBUDBG_ConfigureHciVendorEvent().
+ *
+ * \return int 0 if success, negative value if error
+ */
+int NBUDBG_SendStallEvent(void);
+
+/*!
  * \brief Configure HCI vendor event transmission for debug information
  *
  * \details This function configures which debug information should be transmitted
