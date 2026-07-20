@@ -177,13 +177,11 @@
 /*********************************************************************
  *        NBU debuggability
  *********************************************************************/
-/* Enable NBU access to GPIO PORT D - This allows easier debugging when an issue is reported with a specific main core
+/* Allocate the GPIOD to the NBU - This allows easier debugging when an issue is reported with a specific main core
  * binary.
+ * On kw45/mcxw71, kw47/mcxw72 use TRDC to authorize access. On kw43/mcxw70 enable pin control non secure.
  * \warning: Disabling this compile macro can impair the debug capability of the NBU for a specific main core binary.
- * \warning: This part of code can generate bus fault when trustzone is enabled (code executed in non secure mode).
- *      Reason is that TRDC_IDAU_CR can not be read. In this case, user shall disable this compile macro when running
- *      in non secure mode.
- * */
+ */
 #if !defined(gPlatformNbuDebugGpioDAccessEnabled_d)
 #define gPlatformNbuDebugGpioDAccessEnabled_d 0
 #endif

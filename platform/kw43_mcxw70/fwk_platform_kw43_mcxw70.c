@@ -13,6 +13,10 @@
 #include "fsl_os_abstraction.h"
 #include "fwk_platform_mcu_nbu_common.h"
 
+#if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
+#include "fsl_gpio.h"
+#endif
+
 #if defined PLAT_FWK_INTERCORE_DBG_LP && (PLAT_FWK_INTERCORE_DBG_LP > 0)
 #include "fsl_debug_console.h"
 #endif
@@ -150,6 +154,15 @@ bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs)
 {
     (void)nbuWatchdogDurationInUs;
     return false;
+}
+
+int PLATFORM_InitNbuSpecific(void)
+{
+#if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
+    /* Allocate all pins from GPIOD to the NBU */
+    GPIO_EnablePinControlNonSecure(GPIOD, ~0U);
+#endif
+    return 0;
 }
 
 #if defined     PLAT_FWK_INTERCORE_DBG_LP && (PLAT_FWK_INTERCORE_DBG_LP > 0)

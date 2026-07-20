@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2025 NXP                          */
+/*                           Copyright 2025-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -9,6 +9,10 @@
 
 #include "fwk_platform.h"
 #include "fwk_platform_ics.h"
+
+#if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d > 0)
+#include "fsl_trdc.h"
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -72,4 +76,17 @@ uint64_t PLATFORM_Get32KTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp
 int PLATFORM_SetNbuSharedCtxAddress(void)
 {
     return -1;
+}
+
+int PLATFORM_InitNbuSpecific(void)
+{
+#if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
+    /* Init TRDC for NBU - Allow NBU to access GPIOD*/
+    trdc_non_processor_domain_assignment_t domainAssignment;
+    TRDC_SetDacGlobalValid(TRDC);
+    TRDC_GetDefaultNonProcessorDomainAssignment(&domainAssignment);
+    domainAssignment.privilegeAttr = (uint8_t)kTRDC_ForcePrivilege;
+    TRDC_SetNonProcessorDomainAssignment(TRDC, (uint8_t)kTRDC_MasterRadioNBU, &domainAssignment);
+#endif
+    return 0;
 }
