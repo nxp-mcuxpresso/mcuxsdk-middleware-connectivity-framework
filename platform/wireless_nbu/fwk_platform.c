@@ -516,6 +516,15 @@ void PLATFORM_GetDMemConfig(uint32_t *mem_start, uint32_t *mem_sz)
             break;
         }
     }
+#elif (defined(FWK_KW43_MCXW70_NBU_FAMILIES)) && (FWK_KW43_MCXW70_NBU_FAMILIES == 1)
+    /* On KW43/MCXW70 the NBU memory layout is fixed by the linker.
+     * The region used by the NBU spans from the start of the core1 shared RAM
+     *  up to the end of the core1 dedicated RAM bank. */
+    extern uint32_t m_nbu_mem_start[];
+    extern uint32_t m_nbu_mem_end[];
+
+    *mem_start = (uint32_t)&m_nbu_mem_start;
+    *mem_sz    = (uint32_t)&m_nbu_mem_end - (uint32_t)&m_nbu_mem_start + 1U;
 #else
     *mem_start = ~0UL;
 #endif

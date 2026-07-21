@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -48,5 +48,8 @@
 #ifndef gPlatformIcsUseWorkqueueRxProcessing_d
 #define gPlatformIcsUseWorkqueueRxProcessing_d 1
 #endif
+
+/* Enable coredump debug feature */
+#define gFaultHandlerCoredumpEnabled_d 1
 
 #endif /* _FWK_CONFIG_H_ */
