@@ -16,6 +16,14 @@
 /* This platform has an NBU domain */
 #define gPlatformHasNbu_d 1
 
+/* Defer the ECDH P256 public key generation and DH key computation from the NBU (controller) to the host (MCU) core.
+ * When enabled, the host handles the P256 public key generation and DH key computation on behalf of the NBU, and the
+ * corresponding ICS messages and handlers are compiled in.
+ * When disabled, the related APIs remain available but are empty so callers can keep the calls unconditionally. */
+#ifndef gPlatformIcsDeferDHKeyToHost_d
+#define gPlatformIcsDeferDHKeyToHost_d 1
+#endif
+
 /* Defines the calibration duration of the ADC, it will block the task during this time in milisec before trigger the
  * ADC on a channel*/
 #define gSensorsAdcCalibrationDurationInMs_c 4U

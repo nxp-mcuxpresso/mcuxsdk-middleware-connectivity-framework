@@ -52,4 +52,12 @@
 /* Enable coredump debug feature */
 #define gFaultHandlerCoredumpEnabled_d 1
 
+/* Defer the ECDH P256 public key generation and DH key computation from the NBU (controller) to the host (MCU) core.
+ * When enabled, the NBU forwards the P256 public key / DH key requests to the host and the related ICS messages and
+ * handlers are compiled in. When disabled, the related APIs remain available but are empty so callers can keep the
+ * calls unconditionally. */
+#ifndef gPlatformIcsDeferDHKeyToHost_d
+#define gPlatformIcsDeferDHKeyToHost_d 1
+#endif
+
 #endif /* _FWK_CONFIG_H_ */
