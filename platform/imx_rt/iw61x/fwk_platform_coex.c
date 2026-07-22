@@ -22,6 +22,9 @@
 #elif defined(IW610)
 /* import Nighthawk firmware */
 #include "sduart_iw610_se.h"
+#elif defined(SD8978)
+/* import IW416 firmware */
+#include "sduartIW416_wlan_bt.h"
 #endif
 
 /* -------------------------------------------------------------------------- */
