@@ -67,12 +67,12 @@ Detailed data types and APIs are described in ConnFWK API documentation.
 /* Configure the number of interfaces and virtual interfaces used */
 #define gFsciMaxInterfaces_c 4
 #define gFsciMaxVirtualInterfaces_c 2
-….
+/* ... */
 /* Define the interfaces used */
 static const gFsciSerialConfig_t myFsciSerials[] = { 
     /* Baudrate, interface type, channel No, virtual interface */ {gUARTBaudRate115200_c, gSerialMgrUart_c, 1, 0}, {gUARTBaudRate115200_c, gSerialMgrUart_c, 1, 1}, {0 , gSerialMgrIICSlave_c, 1, 0}, {0 , gSerialMgrUSB_c, 0, 0},
 }; 
-….
+/* ... */
 /* Call init function to open all interfaces */
 FSCI_Init( (void*)mFsciSerials );
 ```
@@ -83,7 +83,7 @@ FSCI_Init( (void*)mFsciSerials );
 myOpGroup = 0x12; // Operation Group used
 myParam = NULL; // pointer to a parameter to be passed to the handler function (myHandlerFunc)
 myInterface = 1; // index of entry from myFsciSerials
-…
+/* ... */
 FSCI_RegisterOpGroup( myOpGroup, gFsciMonitorMode_c, myHandlerFunc, myParam, myInterface );
 ```
 
@@ -99,7 +99,7 @@ void fsciMcpsReqHandler(void *pData, void* param, uint32_t interfaceId)
         { 
             /* Reuse packet received over the serial interface The OpCode remains the same. The length of the response must be <= that the length of the received packet */
             pClientPacket->structured.header.opGroup = myResponseOpGroup;/* Process packet */
-            …
+            /* ... */
             pClientPacket->structured.header. len = myNewLen;
             FSCI_transmitFormatedPacket(pClientPacket, interfaceId);
             return;
@@ -110,7 +110,7 @@ void fsciMcpsReqHandler(void *pData, void* param, uint32_t interfaceId)
             clientPacket_t *pResponsePkt = MEM_BufferAlloc( sizeof(clientPacketHdr_t) + myPayloadSize_d + sizeof(uint8_t) // CRC);
             if(pResponsePkt)
             {
-                /* Process received data and fill the response packet */ …
+                /* Process received data and fill the response packet */
                 pResponsePkt->structured.header. len = myPayloadSize_d;
                 FSCI_transmitFormatedPacket(pClientPacket, interfaceId);
             }
