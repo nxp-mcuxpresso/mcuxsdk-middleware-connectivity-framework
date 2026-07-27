@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -74,7 +74,10 @@ static int intflash_read(const struct device *dev, off_t offset, void *data, siz
         dst                = data;
         read_address.value = FLASH_DEV_OFF_2_PHYS_ADDR(offset);
 
-        memcpy(dst, read_address.pointer, len);
+        if (HAL_FlashRead((uint32_t)read_address.pointer, len, dst) != kStatus_HAL_Flash_Success)
+        {
+            break;
+        }
         // TODO understand why When reading an erased area some surprises may happen with cache.
         // Also why phrase alignment has to be forced
         // flash_cache_disable();
