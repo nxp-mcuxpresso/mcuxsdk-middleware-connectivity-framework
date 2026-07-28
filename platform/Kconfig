@@ -395,7 +395,8 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.dbg
 
 config PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND
     bool "Enable register callback for flash stall"
-    depends on FLASH_K4_ASYNC_MODE
+    depends on FLASH_K4_ASYNC_MODE && \
+               MCUX_COMPONENT_middleware.wireless.framework.platform.ble
     default y
     help
       Enable registration of callback for flash controller stall events
