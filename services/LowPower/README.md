@@ -1,6 +1,5 @@
 # Low Power
 ## Low power reference user guide
----------------------------------
 
 This Readme file describes the connectivity software architecture and provides the general low power enablement user guide.
 
