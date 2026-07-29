@@ -103,7 +103,7 @@ OtaStateCtx_t mOtaHdl = {
     .PostedQ_storage       = NULL,
     .PostedQ_capacity      = 0U,
     .Initialized           = false,
-    .VerifyWrites          = true,
+    .VerifyWrites          = (gOtaVerifyWrite_d > 0),
     .config                = &configuration,
 };
 

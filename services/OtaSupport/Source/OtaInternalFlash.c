@@ -432,32 +432,80 @@ STATIC ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t of
     else
     {
 #if (gEepromParams_WriteAlignment_c > 1)
-        /* Part of the data may have to be read from flash */
+        /* Two data-source layers, checked in priority order per byte:
+         *   Layer 1 - RAM staging buffer (mWriteBuff): bytes written by the
+         *             caller but not yet handed to the flash driver; range
+         *             [mWriteBuffOffs, mWriteBuffOffs + mWriteBuffLevel).
+         *   Layer 2 - Flash via HAL_FlashRead: everything already given to the
+         *             driver. On K4 async mode HAL_FlashRead merges pending ops;
+         *             never read the mapped address directly.
+         * Consecutive Layer-2 bytes are coalesced into one HAL_FlashRead call
+         * to avoid rescanning the pending-ops queue on every byte. */
         uint32_t end_offs          = offs + NoOfBytes;
         uint32_t end_offs_inRam    = mWriteBuffOffs + mWriteBuffLevel;
         uint32_t index_in_read_buf = 0U;
+        /* flash_run_* track the current run of consecutive flash (Layer-2) bytes */
+        uint32_t flash_run_offs   = offs; /* partition offset where the run starts */
+        uint32_t flash_run_len    = 0U;   /* number of bytes accumulated in the run */
+        uint32_t flash_run_dst    = 0U;   /* inbuf index where the run must land */
+        uint32_t internal_ram_idx = 0U;
         while (offs < end_offs)
         {
             if ((offs >= mWriteBuffOffs) && (offs < end_offs_inRam))
             {
-                uint32_t internal_ram_idx = offs - mWriteBuffOffs;
-                inbuf[index_in_read_buf]  = mWriteBuff[internal_ram_idx];
+                /* Layer 1: byte is in the RAM staging buffer.
+                 * Flush any pending flash run first to keep inbuf in order. */
+                if (flash_run_len > 0U)
+                {
+                    /* SanitizeOtaIntPartitionConfig ensures start_offset + size does not
+                     * overflow, and OtaCheckRangeBelongsToPartition ensures offs < size,
+                     * so PHYS_ADDR(flash_run_offs, partition_start_addr) cannot wrap. */
+                    if (HAL_FlashRead(PHYS_ADDR(flash_run_offs, partition_start_addr), flash_run_len,
+                                      &inbuf[flash_run_dst]) != kStatus_HAL_Flash_Success)
+                    {
+                        status = kStatus_OTA_Flash_Fail;
+                        break;
+                    }
+                    flash_run_len = 0U;
+                }
+                internal_ram_idx         = offs - mWriteBuffOffs;
+                inbuf[index_in_read_buf] = mWriteBuff[internal_ram_idx]; /* copy from RAM staging buffer */
             }
             else
             {
-                inbuf[index_in_read_buf] = *(uint8_t *)PHYS_ADDR(offs, partition_start_addr);
+                /* Layer 2: extend (or start) the current contiguous flash run; deferred read */
+                if (flash_run_len == 0U)
+                {
+                    flash_run_offs = offs;
+                    flash_run_dst  = index_in_read_buf;
+                }
+                flash_run_len++;
             }
             /* index_in_read_buf iterates over the [offs, offs+NoOfBytes) range, so it is
              * bounded by NoOfBytes (a uint16_t), and cannot wrap the uint32_t (CERT INT30-C). */
             index_in_read_buf++;
             offs++;
         }
+        /* Flush the trailing flash run, if the range ended on flash bytes */
+        if ((status == kStatus_OTA_Flash_Success) && (flash_run_len > 0U))
+        {
+            if (HAL_FlashRead(PHYS_ADDR(flash_run_offs, partition_start_addr), flash_run_len, &inbuf[flash_run_dst]) !=
+                kStatus_HAL_Flash_Success)
+            {
+                status = kStatus_OTA_Flash_Fail;
+            }
+        }
 #else
         /* Read data from flash, there is no staging buffer */
+        /* Use HAL_FlashRead so that pending async operations (queued erase /
+         * program not yet committed to flash) can be reflected in the result. */
         union physical_address read_address;
 
         read_address.value = PHYS_ADDR(offs, partition_start_addr);
-        FLib_MemCpy(inbuf, read_address.pointer, NoOfBytes);
+        if (HAL_FlashRead(read_address.value, NoOfBytes, inbuf) != kStatus_HAL_Flash_Success)
+        {
+            status = kStatus_OTA_Flash_Fail;
+        }
 #endif
     }
 

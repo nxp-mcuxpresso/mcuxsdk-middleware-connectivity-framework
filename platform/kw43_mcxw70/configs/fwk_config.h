@@ -164,6 +164,23 @@
 #endif
 
 /*********************************************************************
+ *   Flash verify writes after OTA programming.
+ *
+ * Disabled (0) for the whole KW43/MCXW70 family because the K4 flash
+ * driver operates in asynchronous mode: HAL_FlashProgram only enqueues
+ * the write and returns before data is physically committed to flash.
+ * An immediate read-back would return stale (pre-write) data and wrongly
+ * report a verify failure.
+ *
+ * This setting covers both internal-flash and external-flash OTA paths.
+ * Verify writes can be re-enabled for external-flash OTA build by defining
+ * gOtaVerifyWrite_d to 1 before this header is included
+ *********************************************************************/
+#ifndef gOtaVerifyWrite_d
+#define gOtaVerifyWrite_d 0
+#endif
+
+/*********************************************************************
  *   NVS Sector size is necessarily a multiple of physical flash sector size.
  *
  *  Defaults to 1 because 8kB is already pretty large. cannot exceed 8 sectors.
