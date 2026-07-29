@@ -1,5 +1,4 @@
 # Wireless Connectivity Framework
----
 
 Connectivity Framework repository provides both connectivity platform enablement with hardware abstraction layer and a set of Services for NXP connectivity stacks : BLE, Zigbee, OpenThread, Matter.
 
