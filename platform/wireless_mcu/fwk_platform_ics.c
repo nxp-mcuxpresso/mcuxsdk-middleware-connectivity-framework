@@ -886,6 +886,10 @@ static void PLATFORM_RxFwkSrvReadP256PublicKeyService(uint8_t *data, uint32_t le
     assert(status == 0);
     (void)status;
 #else
+    /* The NBU requested the host to generate the P256 public key, but the deferred DH-key-to-host
+     * feature is disabled on this host build. This indicates a build misconfiguration: the NBU was
+     * built with the feature enabled while the host was not. Catch it in debug builds. */
+    assert(false);
     NOT_USED(data);
     NOT_USED(len);
 #endif /* gPlatformIcsDeferDHKeyToHost_d */
@@ -962,6 +966,10 @@ static void PLATFORM_RxFwkSrvGenerateDHKeyService(uint8_t *data, uint32_t len)
     assert(status == 0);
     (void)status;
 #else
+    /* The NBU requested the host to compute the DH key, but the deferred DH-key-to-host feature
+     * is disabled on this host build. This indicates a build misconfiguration: the NBU was built
+     * with the feature enabled while the host was not. Catch it in debug builds. */
+    assert(false);
     NOT_USED(data);
     NOT_USED(len);
 #endif /* gPlatformIcsDeferDHKeyToHost_d */

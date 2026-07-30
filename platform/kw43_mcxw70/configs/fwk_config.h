@@ -19,9 +19,11 @@
 /* Defer the ECDH P256 public key generation and DH key computation from the NBU (controller) to the host (MCU) core.
  * When enabled, the host handles the P256 public key generation and DH key computation on behalf of the NBU, and the
  * corresponding ICS messages and handlers are compiled in.
- * When disabled, the related APIs remain available but are empty so callers can keep the calls unconditionally. */
+ * When disabled, the related APIs remain available but are empty so callers can keep the calls unconditionally.
+ * This feature is disabled by default and should be enabled only for applications that require it (e.g. hci_bb for
+ * controller qualification). Enable it by adding -DgPlatformIcsDeferDHKeyToHost_d=1 to the application build. */
 #ifndef gPlatformIcsDeferDHKeyToHost_d
-#define gPlatformIcsDeferDHKeyToHost_d 1
+#define gPlatformIcsDeferDHKeyToHost_d 0
 #endif
 
 /* Defines the calibration duration of the ADC, it will block the task during this time in milisec before trigger the
