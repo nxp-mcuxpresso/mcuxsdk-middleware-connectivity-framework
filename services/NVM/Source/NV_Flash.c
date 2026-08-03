@@ -1731,7 +1731,8 @@ NVM_STATIC uint32_t NvGetEntryInfoNeedToAddInNVM(void)
     uint16_t                NV_AllNVMEntryId[gNvTableEntriesCountMax_c];
     uint16_t                AllNVMEntryCnt = 0U;
 
-    /* compute the size of the Entry stored in Flash memory */
+    FLib_MemSet(&tableAndEntryInfo, 0U, sizeof(NVM_TableAndEntryInfo_t));
+
     FLib_MemSet(&NV_AllNVMEntryId[0], 0xffU, sizeof(uint16_t) * gNvTableEntriesCountMax_c);
 
     mNvNeedAddEntryCnt = 0U;
@@ -1745,22 +1746,25 @@ NVM_STATIC uint32_t NvGetEntryInfoNeedToAddInNVM(void)
         }
         end_offs = (uint32_t)mNvTableSizeInFlash + sizeof(NVM_TableInfo_t);
 
-        status =
-            NV_PartitionReadAtOffset(mNvActivePageId, offs, (uint8_t *)&tableAndEntryInfo, sizeof(NVM_TableInfo_t));
+        /* tableAndEntryInfo is either a table info or entry info, both structure having the same size  */
+        status = NV_PartitionReadAtOffset(mNvActivePageId, offs, (uint8_t *)&tableAndEntryInfo,
+                                          sizeof(NVM_TableAndEntryInfo_t));
         if (gNVM_OK_c != status)
         {
             break;
         }
         if ((gNvTableMarker_c != tableAndEntryInfo.tableInfo.u.fields.NvTableMarker))
         {
+            /* The first phrase must contain the table marker */
             break;
         }
         /* Get all Entry ID from NVM*/
-        for (offs = (uint32_t)sizeof(NVM_TableInfo_t); offs < end_offs; offs += (uint32_t)sizeof(NVM_TableInfo_t))
+        for (offs = (uint32_t)sizeof(NVM_TableInfo_t); offs < end_offs;
+             offs += (uint32_t)sizeof(NVM_TableAndEntryInfo_t))
         {
             /* Assume ecc error in NVM table*/
-            status =
-                NV_PartitionReadAtOffset(mNvActivePageId, offs, (uint8_t *)&tableAndEntryInfo, sizeof(NVM_TableInfo_t));
+            status = NV_PartitionReadAtOffset(mNvActivePageId, offs, (uint8_t *)&tableAndEntryInfo,
+                                              sizeof(NVM_TableAndEntryInfo_t));
             if (gNVM_OK_c != status)
             {
                 /* If it could not be read, what's to be done ? Skip fault and continue ?*/
@@ -1768,10 +1772,10 @@ NVM_STATIC uint32_t NvGetEntryInfoNeedToAddInNVM(void)
             }
             if (gNvTableMarker_c == tableAndEntryInfo.tableInfo.u.fields.NvTableMarker)
             {
-                /* We found the end of the table */
+                /* We found the end of the table when finding the second table marker */
                 break;
             }
-            /* Recollect all existing table entries within NV_AllNVMEntryId array */
+            /* Recollect all existing table entries within NV_AllNVMEntryId array, only entryInfo */
             if (tableAndEntryInfo.entryInfo.u.fields.NvDataEntryID != gNvInvalidTableEntryIndex_c)
             {
                 if (AllNVMEntryCnt < (gNvTableEntriesCountMax_c - 1U))
