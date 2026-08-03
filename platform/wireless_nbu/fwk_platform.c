@@ -612,14 +612,6 @@ uint32_t PLATFORM_GetClockFreq(void)
 #endif
 
 #if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
-static uint32_t PLATFORM_GetLowPowerFlag(void)
-{
-    extern uint32_t    m_lowpower_flag_start[]; /* defined by linker */
-    volatile uint32_t *p_lp_flag = (volatile uint32_t *)(uint32_t)m_lowpower_flag_start;
-
-    return *p_lp_flag;
-}
-
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay)
 {
     uint32_t intMask = PLATFORM_SetInterruptMask();

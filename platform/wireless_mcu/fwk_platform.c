@@ -583,21 +583,6 @@ int PLATFORM_IsNbuStarted(void)
     return nbu_started;
 }
 
-void PLATFORM_SetLowPowerFlag(bool PwrDownOngoing)
-{
-    uint32_t           val = 0UL;
-    extern uint32_t    m_lowpower_flag_start[]; /* defined by linker */
-    volatile uint32_t *p_lp_flag = (volatile uint32_t *)(uint32_t)m_lowpower_flag_start;
-
-    /* if called with */
-    if (PwrDownOngoing)
-    {
-        val = PLATFORM_HOST_USE_POWER_DOWN;
-    }
-
-    *p_lp_flag = val;
-}
-
 int PLATFORM_InitNbu(void)
 {
     int status = 0;

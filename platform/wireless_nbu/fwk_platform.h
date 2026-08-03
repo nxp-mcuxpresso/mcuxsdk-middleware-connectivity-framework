@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -361,6 +361,19 @@ void PLATFORM_GetDMemConfig(uint32_t *mem_start, uint32_t *mem_sz);
  * \return frequency value in Hz.
  */
 uint32_t PLATFORM_GetNbuFreq(void);
+
+/*!
+ * \brief Get the low power flag shared word written by the host core.
+ *
+ * The host core writes this shared word to indicate whether it is in power
+ * down. The NBU reads it to decide if an additional wake-up delay is needed
+ * when requesting the SOC to be active.
+ *
+ * \return uint32_t the low power flag value. Returns PLATFORM_HOST_USE_POWER_DOWN
+ *                  when the host is in power down. On SOCs that do not use the
+ *                  shared word (KW43/MCXW70) this always returns 0.
+ */
+uint32_t PLATFORM_GetLowPowerFlag(void);
 
 #if defined(__cplusplus)
 }

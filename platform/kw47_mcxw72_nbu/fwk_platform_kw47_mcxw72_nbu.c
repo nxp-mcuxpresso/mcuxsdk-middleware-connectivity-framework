@@ -1,6 +1,6 @@
 
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2025 NXP                          */
+/*                           Copyright 2025-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -144,6 +144,23 @@ uint32_t PLATFORM_GetNbuFreq(void)
 {
     return CLOCK_GetRfFro192MFreq();
 }
+
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+/* Linker-defined symbol for the low power flag shared word (MISRA C-2012 Rule 8.6:
+ * external linkage declaration at file scope). */
+extern uint32_t m_lowpower_flag_start[]; /* defined by linker */
+
+/*!
+ * \brief Get the low power flag shared word written by the host core.
+ *
+ * \return uint32_t the low power flag value shared by the host core.
+ */
+uint32_t PLATFORM_GetLowPowerFlag(void)
+{
+    volatile uint32_t *p_lp_flag = (volatile uint32_t *)(uint32_t)m_lowpower_flag_start;
+    return *p_lp_flag;
+}
+#endif
 
 /*!
  * \brief Handles Entry/Exit WFI to save minimal amount of power for short period of time

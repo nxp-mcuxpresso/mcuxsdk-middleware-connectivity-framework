@@ -228,6 +228,23 @@ uint32_t PLATFORM_GetNbuFreq(void)
     return CLOCK_GetFreq(kCLOCK_PlatClk); /* check CLOCK_GetPlatClkFreq */
 }
 
+#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+/*!
+ * \brief Get the low power flag shared word written by the host core.
+ *
+ * On KW43/MCXW70 the low power flag shared word is not used, so this is an
+ * empty stub. Keeping it empty ensures m_lowpower_flag_start is not referenced
+ * on these SOCs.
+ *
+ * \return uint32_t always 0 on this SOC.
+ */
+uint32_t PLATFORM_GetLowPowerFlag(void)
+{
+    /* Low power flag shared word is not used on KW43/MCXW70 */
+    return 0UL;
+}
+#endif
+
 void PLATFORM_PreDeepSleepSaveCfg(void)
 {
     (void)XCVR_LIF_RBME_Backup();

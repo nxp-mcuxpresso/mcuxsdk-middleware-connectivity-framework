@@ -165,6 +165,21 @@ int PLATFORM_InitNbuSpecific(void)
     return 0;
 }
 
+/*!
+ * \brief Set the low power flag shared word.
+ *
+ * On KW43/MCXW70 the low power flag shared word is not used, so this is an
+ * empty stub. Keeping it empty ensures m_lowpower_flag_start is not referenced
+ * on these SOCs.
+ *
+ * \param[in] PwrDownOngoing unused on this SOC.
+ */
+void PLATFORM_SetLowPowerFlag(bool PwrDownOngoing)
+{
+    /* Low power flag shared word is not used on KW43/MCXW70 */
+    (void)PwrDownOngoing;
+}
+
 #if defined     PLAT_FWK_INTERCORE_DBG_LP && (PLAT_FWK_INTERCORE_DBG_LP > 0)
 static uint32_t prev_ts        = 0U;
 static uint32_t prev_cnt       = 0U;
