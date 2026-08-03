@@ -123,6 +123,7 @@
 #define MBEDTLS_PSA_ACCEL_ALG_CCM                        1
 #define MBEDTLS_PSA_ACCEL_ALG_GCM                        1
 #define MBEDTLS_PSA_ACCEL_ALG_CMAC                       1
+#define MBEDTLS_PSA_ACCEL_ALG_HMAC                       1
 #define MBEDTLS_PSA_ACCEL_ALG_ECDH                       1
 #define MBEDTLS_PSA_ACCEL_KEY_TYPE_AES                   1
 #define MBEDTLS_PSA_ACCEL_KEY_TYPE_ECC_KEY_PAIR_GENERATE 1
@@ -136,6 +137,7 @@
 #define PSA_WANT_ALG_GCM            1
 #define PSA_WANT_ALG_CMAC           1
 #define PSA_WANT_ALG_ECDH           1
+#define PSA_WANT_ALG_HMAC           1
 
 #define PSA_WANT_KEY_TYPE_AES                   1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE 1

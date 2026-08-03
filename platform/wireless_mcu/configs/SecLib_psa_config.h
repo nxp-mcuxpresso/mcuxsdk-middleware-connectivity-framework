@@ -1,5 +1,5 @@
 /*!
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  *
  * \file SecLib_psa_config.h
@@ -133,6 +133,7 @@
 #define MBEDTLS_PSA_ACCEL_KEY_TYPE_ECC_KEY_PAIR_IMPORT   1
 #define MBEDTLS_PSA_ACCEL_ECC_MONTGOMERY_255             1
 #define MBEDTLS_PSA_ACCEL_ECC_SECP_R1_256                1
+#define MBEDTLS_PSA_ACCEL_ALG_HMAC                       1
 
 #define PSA_WANT_ALG_SHA_256        1
 #define PSA_WANT_ALG_SHA_512        1
@@ -141,6 +142,7 @@
 #define PSA_WANT_ALG_GCM            1
 #define PSA_WANT_ALG_CMAC           1
 #define PSA_WANT_ALG_ECDH           1
+#define PSA_WANT_ALG_HMAC           1
 
 #define PSA_WANT_KEY_TYPE_AES                   1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE 1

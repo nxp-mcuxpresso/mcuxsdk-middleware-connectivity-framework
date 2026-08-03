@@ -180,6 +180,57 @@ secResultType_t SecLib_SHA256_Hash(const uint8_t *pData, uint32_t numBytes, uint
 }
 
 /*! *********************************************************************************
+ * \brief  This function performs all HMAC SHA256 steps on multiple bytes: initialize,
+ *         update, finish, and update context data.
+ *         The final HMAC value is stored at the provided output location.
+ *
+ * \param [in]       pKey        Pointer to the HMAC key
+ * \param [in]       keyLen      Length of the HMAC key in bytes
+ * \param [in]       pData       Pointer to the input data
+ * \param [in]       numBytes    Number of bytes to perform HMAC on
+ * \param [out]   pOutput     Pointer to the output location
+ *
+ ********************************************************************************** */
+secResultType_t SecLib_HMAC_SHA256(
+    const uint8_t *pKey, uint32_t keyLen, const uint8_t *pData, uint32_t numBytes, uint8_t *pOutput)
+{
+    secResultType_t       res        = gSecError_c;
+    const psa_algorithm_t alg        = PSA_ALG_HMAC(PSA_ALG_SHA_256);
+    psa_key_attributes_t  attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t          key        = 0U;
+    size_t                output_len = 0U;
+    psa_status_t          status;
+
+    do
+    {
+        if ((pKey == NULL) || (pData == NULL) || (pOutput == NULL) || (keyLen == 0U))
+        {
+            res = gSecBadArgument_c;
+            break;
+        }
+
+        /* key initialisation before import */
+        psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+        psa_set_key_algorithm(&attributes, alg);
+        psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+        psa_set_key_bits(&attributes, keyLen * 8U);
+        psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                                              PSA_KEY_LIFETIME_VOLATILE, get_most_secure_key_location()));
+
+        status = psa_import_key(&attributes, pKey, keyLen, &key);
+        RAISE_ERROR(status, PSA_SUCCESS);
+
+        /* compute HMAC-SHA256 over pData */
+        status = psa_mac_compute(key, alg, pData, numBytes, pOutput, SHA256_HASH_SIZE, &output_len);
+        (void)psa_destroy_key(key); /* destroy key after use */
+        RAISE_ERROR(status, PSA_SUCCESS);
+
+        res = gSecSuccess_c;
+    } while (false);
+    return res;
+}
+
+/*! *********************************************************************************
  * \brief  This function calculates XOR of individual byte pairs in two uint8_t arrays.
  *         pDst[i] := pDst[i] ^ pSrc[i] for i=0 to n-1
  *
