@@ -276,9 +276,10 @@ static hal_imumc_config_t hci_imumc_config = {
     .param       = NULL,
 };
 
-static bool              initialized    = false;
-static bool              hciInitialized = false;
-static volatile ble_ps_t blePowerState  = ble_awake_state;
+static volatile bool     initialized      = false;
+static volatile bool     hciInitialized   = false;
+static volatile bool     mutexInitialized = false;
+static volatile ble_ps_t blePowerState    = ble_awake_state;
 
 static OSA_EVENT_HANDLE_DEFINE(wakeUpEventGroup);
 static OSA_MUTEX_HANDLE_DEFINE(bleMutexHandle);
@@ -376,24 +377,56 @@ int PLATFORM_InitBle(void)
 {
     int          ret = 0;
     osa_status_t status;
+    uint32_t     regPrimask;
+    bool         mutex_locked = false;
 
-    /* PLATFORM_InitBle can be called from OT or Ethermind context in multi mode applications
-     * The 'initialized' variable will be set to true only when the initialization is complete
-     * We have to protect the initialization flow with a mutex to make sure the first task completes the initialization
-     * before the second reads 'initialized' */
-    status = OSA_MutexCreate((osa_mutex_handle_t)bleMutexHandle);
-    assert(status == KOSA_StatusSuccess);
-    status = OSA_MutexLock((osa_mutex_handle_t)bleMutexHandle, osaWaitForever_c);
-    assert(status == KOSA_StatusSuccess);
+    /* PLATFORM_InitBle can be called from OT or Ethermind/Edgefast_Open context in multi mode applications.
+     * The 'initialized' variable will be set to true only when the initialization is complete.
+     * The mutex is created once using interrupt masking (primask) to avoid a TOCTOU race on
+     * the mutex handle itself. The 'mutexInitialized' flag is declared volatile so its update
+     * is observed by subsequent (out-of-critical-section) reads without an explicit barrier.
+     * Once created, the mutex serializes the initialization flow so
+     * that the first caller completes initialization before any subsequent caller proceeds. */
+    regPrimask = DisableGlobalIRQ();
+    if (!mutexInitialized)
+    {
+        status = OSA_MutexCreate((osa_mutex_handle_t)bleMutexHandle);
+        if (status == KOSA_StatusSuccess)
+        {
+            mutexInitialized = true;
+        }
+    }
+    EnableGlobalIRQ(regPrimask);
 
     do
     {
+        /* Failed to create mutex, break out */
+        if (!mutexInitialized)
+        {
+            ret = -3;
+            break;
+        }
+
+        status = OSA_MutexLock((osa_mutex_handle_t)bleMutexHandle, osaWaitForever_c);
+        /* Failed to lock mutex, break out */
+        if (status != KOSA_StatusSuccess)
+        {
+            ret = -4;
+            break;
+        }
+        mutex_locked = true;
+
         if (initialized == true)
         {
             break;
         }
+
         status = OSA_EventCreate((osa_event_handle_t)wakeUpEventGroup, 0);
-        assert(status == KOSA_StatusSuccess);
+        if (status != KOSA_StatusSuccess)
+        {
+            ret = -5;
+            break;
+        }
 
         /* Initialize BLE controller */
         ret = PLATFORM_InitControllers(connBle_c);
@@ -419,9 +452,17 @@ int PLATFORM_InitBle(void)
         blePowerState = ble_awake_state;
     } while (false);
 
-    status = OSA_MutexUnlock((osa_mutex_handle_t)bleMutexHandle);
-    assert(status == KOSA_StatusSuccess);
-    (void)status;
+    /* Only unlock if the mutex was successfully locked */
+    if (mutex_locked)
+    {
+        status = OSA_MutexUnlock((osa_mutex_handle_t)bleMutexHandle);
+        /* Only report the unlock failure if no earlier error was recorded, so
+         * that the original failure reason (e.g. -1, -2, -4, -5) is preserved. */
+        if ((status != KOSA_StatusSuccess) && (ret == 0))
+        {
+            ret = -6;
+        }
+    }
 
     return ret;
 }
@@ -490,7 +531,8 @@ int PLATFORM_TerminateBle(void)
             break;
         }
 
-        initialized = false;
+        mutexInitialized = false;
+        initialized      = false;
         /* after re-init cpu2, Reset hciInitialized to false. */
         hciInitialized = false;
     } while (false);
