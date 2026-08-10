@@ -67,7 +67,6 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
     select MCUX_COMPONENT_component.rpmsg_adapter
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     select MCUX_COMPONENT_component.timer_manager
-    imply MCUX_COMPONENT_middleware.wireless.framework.platform.platform_library
     imply MCUX_COMPONENT_middleware.wireless.framework.platform.preprocessed_linker_scripts
     imply MCUX_COMPONENT_driver.trdc
     depends on  MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_KW47B42ZB6 ||\
@@ -168,10 +167,6 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.imx_rt
              MCUX_COMPONENT_middleware.wireless.framework.platform.rt1060
   help
     Common platform implementations for i.MX RT platforms.
-
-config MCUX_COMPONENT_middleware.wireless.framework.platform.platform_library
-    bool "Platform specific library"
-    depends on MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.preprocessed_linker_scripts
     bool "Configure platform's preprocessed linker scripts"
@@ -291,6 +286,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.lowpower_timer
     depends on MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x || \
                MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72 || \
+               MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70 || \
                MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     help
       Low Power Timer platform APIs.

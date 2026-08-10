@@ -44,3 +44,8 @@ void PLATFORM_NbuRaiseFault(void)
 {
     /* Not implemented */
 }
+
+void PLATFORM_FeedHostWatchdog(void)
+{
+    /* Not implemented */
+}

@@ -161,7 +161,6 @@ void NBUDBG_StateCheck(void)
         nbu_fault_notified        = true;
     }
 
-    extern bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs);
     /* Check for NBU stall */
     if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US) && !nbu_halted_notified)
     {

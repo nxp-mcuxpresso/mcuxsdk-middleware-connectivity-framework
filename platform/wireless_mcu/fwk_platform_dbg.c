@@ -8,6 +8,7 @@
 /* -------------------------------------------------------------------------- */
 #include "fsl_device_registers.h"
 #include "fwk_platform_dbg.h"
+#include "fwk_platform_lowpower_timer.h"
 #include <stddef.h>
 #include "mcmgr.h"
 
@@ -22,6 +23,13 @@
 /* Macro to extract warning count from register value */
 #define NBU2HOST_WARNING_GET(x) (((x)&NBU2HOST_WARNING_MASK) >> NBU2HOST_WARNING_SHIFT)
 
+/* Handcheck (SW watchdog) bit definitions */
+#define NBU2HOST_HANDCHECK_BIT_SHIFT      (1U)
+#define NBU2HOST_HANDCHECK_BIT_INDICATION (1U << NBU2HOST_HANDCHECK_BIT_SHIFT) /* Bit 1: Handcheck NBU/HOST */
+
+#define HOST2NBU_HANDCHECK_BIT_SHIFT      (0U)
+#define HOST2NBU_HANDCHECK_BIT_INDICATION (1U << HOST2NBU_HANDCHECK_BIT_SHIFT) /* Bit 0: Handcheck HOST/NBU */
+
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
 /* -------------------------------------------------------------------------- */
@@ -31,8 +39,22 @@
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------------------------------------------------------- */
-/*                              Private functions                             */
+/*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
+
+/*!
+ * \brief  Get the NBU handcheck value.
+ *
+ * \return uint32_t 0 or 1.
+ */
+static uint32_t PLATFORM_Nbu2HostGetNbuHandcheckValue(void);
+
+/*!
+ * \brief  Inform the NBU of the HOST/NBU handcheck value.
+ *
+ * \param[in] host2nbuHandcheckValue value read by the host to be echoed to the NBU.
+ */
+static void PLATFORM_Host2NbuSetHostHandcheckValue(uint32_t host2nbuHandcheckValue);
 
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
@@ -41,6 +63,49 @@
 bool PLATFORM_IsNbuFaultSet(void)
 {
     return (RFMC->RF2P4GHZ_RADIO2HOST & NBU2HOST_ERROR_INDICATION) != 0U;
+}
+
+bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs)
+{
+    bool isNbuStuck = false;
+
+    /* Initialize the handcheck with an impossible value */
+    static uint32_t previousNbuHandcheckVal = 0xFFFFFFFFU;
+    uint32_t        nbuHandcheckVal         = 0U;
+
+    static uint64_t previousTimestamp = 0ULL;
+    uint64_t        timestampDiff, currentTimestamp;
+
+    /* If the NBU is in low power it means it is not stuck, no need to execute more */
+    if ((RFMC->RF2P4GHZ_MAN2 & RFMC_RF2P4GHZ_MAN2_WKUP_TIME_MASK) == 0U)
+    {
+        currentTimestamp = PLATFORM_GetLowPowerTimestampUs();
+
+        timestampDiff = PLATFORM_GetLowPowerDurationUs(previousTimestamp, currentTimestamp);
+
+        /* Check if the watchdog has expired */
+        if (timestampDiff > nbuWatchdogDurationInUs)
+        {
+            /* Read the intercore register to check the value of the handcheck set by the NBU */
+            nbuHandcheckVal = PLATFORM_Nbu2HostGetNbuHandcheckValue();
+
+            /* Communicate to the NBU the value read by the host for it to update it in its next idle execution */
+            PLATFORM_Host2NbuSetHostHandcheckValue(nbuHandcheckVal);
+
+            /* If the handcheck value hasn't changed, the NBU did not update its value in time */
+            if (nbuHandcheckVal == previousNbuHandcheckVal)
+            {
+                isNbuStuck = true;
+            }
+
+            previousNbuHandcheckVal = nbuHandcheckVal;
+
+            /* Update timestamp for the next call in idle */
+            previousTimestamp = currentTimestamp;
+        }
+    }
+
+    return isNbuStuck;
 }
 
 /*!
@@ -128,4 +193,21 @@ int PLATFORM_TryForceNbuFault(void)
     /* Force-fault feature unavailable (MCMGR_REMOTE_APP_EVENT_COUNT < 2) */
     return -1;
 #endif
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Private functions                             */
+/* -------------------------------------------------------------------------- */
+
+static uint32_t PLATFORM_Nbu2HostGetNbuHandcheckValue(void)
+{
+    return ((RFMC->RF2P4GHZ_RADIO2HOST & NBU2HOST_HANDCHECK_BIT_INDICATION) >> NBU2HOST_HANDCHECK_BIT_SHIFT);
+}
+
+static void PLATFORM_Host2NbuSetHostHandcheckValue(uint32_t host2nbuHandcheckValue)
+{
+    uint32_t host2radio = RFMC->RF2P4GHZ_HOST2RADIO;
+    host2radio &= (~HOST2NBU_HANDCHECK_BIT_INDICATION);
+    host2radio |= ((host2nbuHandcheckValue << HOST2NBU_HANDCHECK_BIT_SHIFT) & HOST2NBU_HANDCHECK_BIT_INDICATION);
+    RFMC->RF2P4GHZ_HOST2RADIO = host2radio;
 }

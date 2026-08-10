@@ -21,6 +21,13 @@
 #define NBU2HOST_WARNING_MAX      (NBU2HOST_WARNING_MASK >> NBU2HOST_WARNING_SHIFT)
 #define NBU2HOST_WARNING(x)       (((uint32_t)(((uint32_t)(x)) << NBU2HOST_WARNING_SHIFT)) & NBU2HOST_WARNING_MASK)
 
+/* Handcheck (SW watchdog) bit definitions */
+#define NBU2HOST_HANDCHECK_BIT_SHIFT      (1U)
+#define NBU2HOST_HANDCHECK_BIT_INDICATION (1U << NBU2HOST_HANDCHECK_BIT_SHIFT) /* Bit 1: Handcheck NBU/HOST */
+
+#define HOST2NBU_HANDCHECK_BIT_SHIFT      (0U)
+#define HOST2NBU_HANDCHECK_BIT_INDICATION (1U << HOST2NBU_HANDCHECK_BIT_SHIFT) /* Bit 0: Handcheck HOST/NBU */
+
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
@@ -29,6 +36,24 @@ static uint8_t warning_count = 0U;
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
 /* -------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------- */
+/*                             Private prototypes                             */
+/* -------------------------------------------------------------------------- */
+
+/*!
+ * \brief  Get the HOST/NBU handcheck value last set by the host.
+ *
+ * \return int 0 or 1.
+ */
+static int PLATFORM_Host2NbuGetHostHandcheckValue(void);
+
+/*!
+ * \brief  Inform the host of the NBU/HOST handcheck value.
+ *
+ * \param[in] nbu2hostHandcheckValue value to report to the host.
+ */
+static void PLATFORM_Nbu2HostSetNbuHandcheckValue(int nbu2hostHandcheckValue);
 
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
@@ -74,9 +99,33 @@ void PLATFORM_NbuRaiseFault(void)
     *((volatile uint32_t *)0xFFA55E27) = 0xFFA55E27; // Invalid memory access
 }
 
+void PLATFORM_FeedHostWatchdog(void)
+{
+    int lastValueReadByHost = PLATFORM_Host2NbuGetHostHandcheckValue();
+    /* Toggle the value read by the host to ensure the NBU handcheck value has been modified */
+    PLATFORM_Nbu2HostSetNbuHandcheckValue(!lastValueReadByHost);
+}
+
 int fsl_assert_hook(const char *failedExpr, const char *file, int line)
 {
     NBUDBG_SetAssertContext(failedExpr, file, line);
     PLATFORM_NbuRaiseFault();
     return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Private functions                             */
+/* -------------------------------------------------------------------------- */
+
+static int PLATFORM_Host2NbuGetHostHandcheckValue(void)
+{
+    return ((XCVR_MISC->HOST2RADIO & HOST2NBU_HANDCHECK_BIT_INDICATION) >> HOST2NBU_HANDCHECK_BIT_SHIFT);
+}
+
+static void PLATFORM_Nbu2HostSetNbuHandcheckValue(int nbu2hostHandcheckValue)
+{
+    uint32_t radio2host = XCVR_MISC->RADIO2HOST;
+    radio2host &= (~NBU2HOST_HANDCHECK_BIT_INDICATION);
+    radio2host |= ((nbu2hostHandcheckValue << NBU2HOST_HANDCHECK_BIT_SHIFT) & NBU2HOST_HANDCHECK_BIT_INDICATION);
+    XCVR_MISC->RADIO2HOST = radio2host;
 }

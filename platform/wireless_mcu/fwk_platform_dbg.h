@@ -11,6 +11,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,22 @@ extern "C" {
  * \return true if NBU faults, false otherwise.
  */
 bool PLATFORM_IsNbuFaultSet(void);
+
+/*!
+ * \brief  Verify whether the NBU is stuck. Acts as a software watchdog based on an
+ *         intercore handcheck: if the NBU does not answer the handcheck within the
+ *         expected timing, it is considered stuck.
+ *
+ * \details Must be called periodically (e.g. from the IDLE task). The check is skipped
+ *          while the NBU is in low power (not stuck). The handcheck value is only
+ *          evaluated once the watchdog duration has elapsed since the previous check.
+ *
+ * \param[in] nbuWatchdogDurationInUs watchdog duration, in microseconds, after which the
+ *                                    NBU handcheck value is evaluated.
+ *
+ * \return true if the NBU core is stuck, false otherwise.
+ */
+bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs);
 
 /**
  * \brief Check if NBU warning is set and get the warning count

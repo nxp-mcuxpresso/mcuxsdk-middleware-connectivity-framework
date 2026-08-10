@@ -39,6 +39,16 @@ int PLATFORM_Nbu2HostWarningIndication(void);
  */
 void PLATFORM_NbuRaiseFault(void);
 
+/*!
+ * \brief  Feed the NBU software watchdog.
+ *
+ * \details Handles the NBU/HOST handcheck mechanism used as a NBU software watchdog:
+ *          reads the last handcheck value written by the host and reports back its opposite,
+ *          proving to the host that the NBU is still alive. Must be called periodically from
+ *          the NBU (e.g. on BLE interrupt handling and on wake up from low power).
+ */
+void PLATFORM_FeedHostWatchdog(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -18,8 +18,9 @@
 #if defined(gUseSfcRf_d) && (gUseSfcRf_d == 1)
 #include "fwk_rf_sfc.h"
 #endif
-#include "controller_api_ll.h"
+#include "fwk_platform_dbg.h"
 #include "fwk_debug.h"
+#include "controller_api_ll.h"
 #include "fwk_workq.h"
 #include "fwk_platform_ics.h"
 #if defined(gPlatformEnableDcdcOnNbu_d) && (gPlatformEnableDcdcOnNbu_d == 1)
@@ -395,7 +396,7 @@ static void PLATFORM_RemoteLowPowerIndication(bool enter)
     else
     {
         /* Notify LL of the NBU wake up */
-        LL_API_NotifyWakeUp();
+        PLATFORM_FeedHostWatchdog();
         /* Ensure API call completes before updating register and notifying application core*/
         __ISB();
         /* Indicate to CM33 the radio is awake, so the CM33 can avoid

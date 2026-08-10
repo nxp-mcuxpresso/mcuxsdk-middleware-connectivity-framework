@@ -150,12 +150,6 @@ int PLATFORM_SetNbuSharedCtxAddress(void)
     return ret;
 }
 
-bool PLATFORM_IsNbuStuck(uint32_t nbuWatchdogDurationInUs)
-{
-    (void)nbuWatchdogDurationInUs;
-    return false;
-}
-
 int PLATFORM_InitNbuSpecific(void)
 {
 #if defined(gPlatformNbuDebugGpioDAccessEnabled_d) && (gPlatformNbuDebugGpioDAccessEnabled_d == 1)
