@@ -1676,19 +1676,24 @@ secResultType_t SecLib_SHA256_HashFinish(void *pContext, uint8_t *pOutput)
      * be smaller than 2^29 */
     do
     {
-        uint32_t numBytes = context->bytes;
+        uint32_t numBytes;
 
         if ((context == NULL) || (pOutput == NULL))
         {
             RAISE_ERROR(st, gSecBadArgument_c);
         }
-        assert(numBytes < SHA256_BLOCK_SIZE);
-        assert(MAX_SHA256_TOTAL_BYTES - context->totalBytes >= numBytes);
+
+        numBytes = context->bytes;
+        if ((numBytes >= SHA256_BLOCK_SIZE) || (MAX_SHA256_TOTAL_BYTES - context->totalBytes < numBytes))
+        {
+            assert(false);
+            RAISE_ERROR(st, gSecError_c);
+        }
 
         /* Add 1 bit (a 0x80 byte) after the message to begin padding */
         context->buffer[numBytes++] = 0x80u;
         /* Check for space to fit an 8 byte length field plus the 0x80 */
-        if (context->bytes >= (SHA256_BLOCK_SIZE - 8u))
+        if (numBytes >= (SHA256_BLOCK_SIZE - 7u))
         {
             /* Fill the rest of the chunk with zeros */
             FLib_MemSet(&context->buffer[numBytes], 0u, SHA256_BLOCK_SIZE - numBytes);
@@ -1697,12 +1702,15 @@ secResultType_t SecLib_SHA256_HashFinish(void *pContext, uint8_t *pOutput)
         }
         /* Fill the rest of the chunk with zeros */
         FLib_MemSet(&context->buffer[numBytes], 0, SHA256_BLOCK_SIZE - numBytes);
-        /* Append the total length of the message(Big Endian), in bits (bytes << 3) */
-        /* Conversion can be done safely on a 32 bit variable because we have ascertained that totalBytes remain
-         * smaller than 2^29 */
+        /* Append the total length of the message (Big Endian), in bits (bytes << 3).
+         * SHA-256 spec requires a 64-bit (8-byte) message length at the end of the
+         * last block. The high 32 bits are already zeroed by FLib_MemSet above.
+         * Conversion can be done safely on a 32-bit variable because we have
+         * ascertained that totalBytes remain smaller than 2^29. */
         context->totalBytes <<= 3u;
-        FLib_MemCpyReverseOrder(&context->buffer[SHA256_BLOCK_SIZE - (uint8_t)sizeof(uint32_t)], &context->totalBytes,
-                                sizeof(uint32_t));
+        /* Write the low 32 bits of the 64-bit length field at bytes [60..63] */
+        FLib_MemCpyReverseOrder(&context->buffer[SHA256_BLOCK_SIZE - sizeof(uint64_t) + sizeof(uint32_t)],
+                                &context->totalBytes, sizeof(uint32_t));
         SHA256_hash_n(context->buffer, 1u, context->hash);
         /* Convert to Big Endian */
         for (uint32_t i = 0u; i < SHA256_HASH_SIZE / sizeof(uint32_t); i++)
