@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                        Copyright 2020-2023, 2025 NXP                       */
+/*                   Copyright 2020-2023, 2025-2026 NXP                       */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -304,12 +304,16 @@ void SFC_Process(void)
         SFC_Enable(true);
         if (sfcHandle.measureAvailable == true)
         {
+            int32_t  ppm      = sfcHandle.ppm;
+            uint32_t lastFreq = sfcHandle.lastFreq;
+            uint32_t lastPpm  = sfcHandle.lastPpm;
+            /* CERT INT31-C: fro_trim only ever holds a CCM32K_FRO32K_TRIM_FREQ_TRIM_MASK
+             * width trim field, so it always fits in uint16_t. Safe to narrow. */
+            uint16_t froTrim = (uint16_t)sfcHandle.fro_trim;
+            /* CERT INT31-C: ppm is a filtered clock error kept within the +/-360ppm
+             * target window, well inside int16_t range. Safe to narrow. */
             if (sfcNotificationEnabled != 0)
             {
-                int32_t  ppm      = sfcHandle.ppm;
-                uint32_t lastFreq = sfcHandle.lastFreq;
-                uint32_t lastPpm  = sfcHandle.lastPpm;
-                uint16_t froTrim  = (uint16_t)sfcHandle.fro_trim;
                 PLATFORM_FwkSrvFroInfo(lastFreq, (int16_t)ppm, lastPpm, froTrim);
             }
             SFC_DBG_LOG("SFC MeasAvail: lastFreq=%d sfcHandle.ppm=%d sfcHandle.lastPpm=%d", lastFreq, ppm, lastPpm);
@@ -493,16 +497,10 @@ bool SFC_IsMeasureAvailable(void)
 
 static int32_t SFC_CalculateFreqPpm(uint32_t measuredFreq)
 {
-#if 1
-    int64_t tmp64;
-    tmp64 = ((int64_t)32768 - (int64_t)measuredFreq) * 1000000;
-    return (int32_t)(tmp64 / 32768);
-#else
     /* No use going to 64 bit arithmetics since the measured frequency is 32768 +/- a few Hz */
     int32_t tmp32;
     if (measuredFreq < INT32_MAX)
     {
-        tmp32 = ((int32_t)32768 - (int32_t)measuredFreq) * 15625;
         /* Multiplying by 15625 instead of 1000000 avoids 64-bit arithmetic, no overflow */
         tmp32 = ((int32_t)32768 - (int32_t)measuredFreq) * 15625; /* 10^6 is 5^6 * 2^ 6, so 10^6 / 64 = 15625 */
         tmp32 /= 512;                                             /* 2^9 = 512, which is 32768 / 64 */
@@ -512,13 +510,16 @@ static int32_t SFC_CalculateFreqPpm(uint32_t measuredFreq)
         tmp32 = INT32_MIN;
     }
     return tmp32;
-#endif
 }
 
 static void SFC_HandleHostLowPowerConstraint(bool setConstraint)
 {
     if (setConstraint == true)
     {
+        /* CERT INT32-C: hostLpConstraintCount tracks a small number of nested low-power
+         * constraints (bounded by the number of concurrent SFC clients), so this increment cannot overflow int32_t. */
+        /* The constraint is set only on the first call (when count transitions from 0 to 1), it is assumed
+         * that no concurrent access to this API may occur */
         sfcHandle.hostLpConstraintCount++;
 
         if (sfcHandle.hostLpConstraintCount == 1)
@@ -528,11 +529,21 @@ static void SFC_HandleHostLowPowerConstraint(bool setConstraint)
     }
     else
     {
-        sfcHandle.hostLpConstraintCount--;
-
-        if (sfcHandle.hostLpConstraintCount == 0)
+        /* Guard against unbalanced release calls: only decrement when a constraint is actually set.
+         * This also prevents hostLpConstraintCount from going negative. */
+        if (sfcHandle.hostLpConstraintCount > 0)
         {
-            (void)PLATFORM_FwkSrvReleaseLowPowerConstraint(HOST_LOWPOWER_CONSTRAINT);
+            sfcHandle.hostLpConstraintCount--;
+
+            if (sfcHandle.hostLpConstraintCount == 0)
+            {
+                (void)PLATFORM_FwkSrvReleaseLowPowerConstraint(HOST_LOWPOWER_CONSTRAINT);
+            }
+        }
+        else
+        {
+            /* Unbalanced release call — should never happen. Assert in debug builds. */
+            assert(false);
         }
     }
 }
@@ -636,7 +647,7 @@ static void SFC_Calibrate(void)
 
         if (CCM32K_GetClockSource(CCM32K) == kCCM32K_ClockSource32kFro)
         {
-            /* Check ppm direction and change trimming value accordingly */
+            /* Check ppm direction and change trimming value accordingly. */
             if (sfcHandle.ppm > 0)
             {
                 sfcHandle.fro_trim--;
@@ -710,11 +721,18 @@ static void SFC_MeasureCallback(status_t status)
         sfcHandle.ppm  = SFC_ComputeMMA(ppm);
         sfcHandle.freq = freq;
 
-        sfcLog->averagePpm       = (int16_t)sfcHandle.ppm;
+        /* CERT INT31-C: sfcHandle.ppm is the filtered clock error, kept within the
+         * +/-360ppm target window, so it always fits in int16_t. Safe to narrow. */
+        sfcLog->averagePpm = (int16_t)sfcHandle.ppm;
+        /* CERT INT31-C: freq is a measured 32k clock frequency close to 32768Hz, which
+         * fits in uint16_t. Safe to narrow for both assignments below. */
         sfcLog->lastFreqMeasured = (uint16_t)freq;
 
         sfcHandle.lastFreq = (uint16_t)freq;
-        sfcHandle.lastPpm  = (int16_t)ppm;
+
+        /* CERT INT31-C: ppm is the per-measurement clock error, kept within the
+         * +/-360ppm range, so it always fits in int16_t. Safe to narrow. */
+        sfcHandle.lastPpm = (int16_t)ppm;
 
         /* Set the measureAvailable flag so the result can be processed in SFC_Process function */
         sfcHandle.measureAvailable = true;
@@ -741,11 +759,17 @@ static int32_t SFC_ComputeMMA(int32_t sample)
 
     if (filterState_sample_number == 0U)
     {
+        /* CERT INT32-C: sample is a ppm error bounded by the +/-360ppm target and factor is
+         * the filter size (<= RF_SFC_MAXIMAL_FILTER_SIZE, 256), so sample * factor cannot overflow int32_t. */
         filterState_sum = sample * factor;
     }
     else
     {
+        /* CERT INT32-C: filterState_sum is the running MMA accumulator bounded by
+         * (max ppm error * filter size), so subtracting filterState_sum / factor cannot overflow int32_t. */
         filterState_sum -= filterState_sum / factor;
+        /* CERT INT32-C: adding a single bounded ppm sample to the bounded MMA accumulator
+         * stays well within int32_t range. */
         filterState_sum += sample;
     }
 
@@ -769,17 +793,17 @@ static uint32_t SFC_GetTimestamp(void)
 {
     uint32_t hslot;
     uint16_t qus;
-    uint32_t timestampInQuarterUs;
+    uint64_t timestampInQuarterUs;
 
     /* The timing returned by this API can be wrong if called just after a lowpower wakeup as the native clock of the LL
      * needs some time to update */
     LL_API_GetBleTiming(&hslot, &qus);
 
     /* Return value is in quarter of us to ease the way  of handling the wrapping of the LL timer
-     * hslot_max_value = 0xFFFF_FFFF ; qus_max_value = 1249 => timestampInQuarterUs_max_value = 0xFFFF_FFFF
+     * hslot_max_value = 0xFFFF_FFFF ; qus_max_value = 1249.
      */
-    timestampInQuarterUs = (hslot * 1250U + (uint32_t)qus);
-
-    return timestampInQuarterUs;
+    timestampInQuarterUs = ((uint64_t)hslot * 1250ULL + (uint64_t)qus);
+    /* Lose the MSB 32 bits and let LSB wrap around naturally */
+    return (uint32_t)(timestampInQuarterUs & 0xFFFFFFFFULL);
 }
 #endif
