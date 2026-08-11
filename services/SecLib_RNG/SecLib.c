@@ -60,10 +60,10 @@
 #define AES256_ROUNDS 14U
 
 /* Limit the size of the hashed stream so that the number of bits does not exceed 32 bit in size.
- * This limitation is arbitrary
+ * (UINT32_MAX / 8uL) enforces that the number of bits fits in a 32-bit unsigned integer.
+ * This limitation is arbitrary but 2^29 is more than enough.
  */
 #define MAX_SHA256_TOTAL_BYTES (UINT32_MAX / 8uL)
-#define MAX_SHA1_TOTAL_BYTES   (UINT32_MAX / 8uL)
 
 #if ((defined(USE_RTOS) && (USE_RTOS > 0)) &&                                       \
      ((defined FSL_FEATURE_SOC_LTC_COUNT && (FSL_FEATURE_SOC_LTC_COUNT > 0)) ||     \
@@ -107,9 +107,11 @@ secResultType_t SecLibMutexCreate(void);
 
 #define AES_BLOCK_ALIGN_MASK (0x0000000fUL)
 /* Compute number of whole AES block bytes */
-#define AES_WHOLE_BLOCK_BYTES(_LEN_) ((uint32_t)(_LEN_) & ~AES_BLOCK_ALIGN_MASK)
+#define AES_WHOLE_BLOCK_BYTES(_LEN_) (((uint32_t)(_LEN_)) & ~AES_BLOCK_ALIGN_MASK)
 /* Compute number of residual bytes constituting a partial AES block */
-#define AES_PARTIAL_BLOCK_BYTES(_LEN_) ((uint32_t)(_LEN_)&AES_BLOCK_ALIGN_MASK)
+#define AES_PARTIAL_BLOCK_BYTES(_LEN_) (((uint32_t)(_LEN_)) & AES_BLOCK_ALIGN_MASK)
+
+#define AES_TOTAL_BLOCK_NB(_LEN_) ((((uint32_t)(_LEN_)) + ((AES_BLOCK_SIZE)-1U)) / AES_BLOCK_SIZE)
 
 /*! *********************************************************************************
 *************************************************************************************
@@ -599,7 +601,7 @@ secResultType_t SecLib_AES_128_ECB_Encrypt(const uint8_t *pInput,
                                            const uint8_t *pKey,
                                            uint8_t       *pOutput)
 {
-    secResultType_t status;
+    secResultType_t status = gSecError_c; /* CERT EXP33-C (CID 22660163): initialize to avoid uninitialized read */
     do
     {
         if (pInput == NULL || pKey == NULL || pOutput == NULL || inputLen == 0)
@@ -643,6 +645,7 @@ secResultType_t SecLib_AES_128_ECB_Encrypt(const uint8_t *pInput,
 
             pInput += AES_BLOCK_SIZE;
             pOutput += AES_BLOCK_SIZE;
+            /* CERT INT30-C (CID 24723444): inputLen > AES_BLOCK_SIZE is guaranteed by loop condition */
             inputLen -= AES_BLOCK_SIZE;
         }
         /* If remaining data is smaller then one AES block size */
@@ -676,7 +679,7 @@ secResultType_t SecLib_AES_128_ECB_Decrypt(const uint8_t *pInput,
                                            const uint8_t *pKey,
                                            uint8_t       *pOutput)
 {
-    secResultType_t status;
+    secResultType_t status = gSecError_c; /* CERT EXP33-C (CID 51791927): initialize to avoid uninitialized read */
     do
     {
         if (pInput == NULL || pKey == NULL || pOutput == NULL || inputLen == 0)
@@ -720,6 +723,7 @@ secResultType_t SecLib_AES_128_ECB_Decrypt(const uint8_t *pInput,
 
             pInput += AES_BLOCK_SIZE;
             pOutput += AES_BLOCK_SIZE;
+            /* CERT INT30-C (CID 51791928): inputLen > AES_BLOCK_SIZE is guaranteed by loop condition */
             inputLen -= AES_BLOCK_SIZE;
         }
         /* If remaining data is smaller then one AES block size */
@@ -795,6 +799,8 @@ secResultType_t SecLib_AES_128_CBC_Encrypt(
             FLib_MemCpy(tempBuffIn, pOutput, AES_BLOCK_SIZE);
             pInput += AES_BLOCK_SIZE;
             pOutput += AES_BLOCK_SIZE;
+            /* CERT INT30-C (CID 51791930): inputLen is a multiple of AES_BLOCK_SIZE (validated at entry),
+             * so subtraction cannot wrap */
             inputLen -= AES_BLOCK_SIZE;
         }
         FLib_MemCpy(pInitVector, tempBuffIn, AES_BLOCK_SIZE);
@@ -867,6 +873,8 @@ secResultType_t SecLib_AES_128_CBC_Decrypt(
 
             pInput += AES_BLOCK_SIZE;
             pOutput += AES_BLOCK_SIZE;
+            /* CERT INT30-C (CID 51791933): inputLen is a multiple of AES_BLOCK_SIZE (validated at entry),
+             * so subtraction cannot wrap */
             inputLen -= AES_BLOCK_SIZE;
         }
 #endif
@@ -910,11 +918,11 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
 
     do
     {
-        uint8_t last_blk_msg_sz;
-        uint8_t last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
+        uint32_t last_blk_msg_sz;
+        uint8_t  last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
         /* compute new length */
         roundedLen      = AES_WHOLE_BLOCK_BYTES(inputLen);
-        last_blk_msg_sz = (uint8_t)(inputLen - roundedLen);
+        last_blk_msg_sz = AES_PARTIAL_BLOCK_BYTES(inputLen);
         /* Perform AES-CBC operation on whole AES blocks */
         if (SecLib_AES_128_CBC_Encrypt(pInput, roundedLen, pInitVector, pKey, pOutput) != gSecSuccess_c)
         {
@@ -1169,15 +1177,15 @@ secResultType_t SecLib_AES_128_CMAC(const uint8_t *pInput,
         uint8_t K1[16] = {0};
         uint8_t K2[16] = {0};
 
-        uint16_t n;
+        uint32_t n;
         uint32_t i;
         uint8_t  flag;
-        uint8_t  residual_len;
+        uint32_t residual_len;
 
         AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-        n            = (uint16_t)((inputLen + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
-        residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
+        n            = AES_TOTAL_BLOCK_NB(inputLen); /* n is number of rounds */
+        residual_len = AES_PARTIAL_BLOCK_BYTES(inputLen);
 
         if (n == 0u)
         {
@@ -1212,7 +1220,7 @@ secResultType_t SecLib_AES_128_CMAC(const uint8_t *pInput,
             X[i] = 0u;
         }
 
-        for (i = 0u; i < (uint32_t)n - 1u; i++)
+        for (i = 0u; i < (n - 1u); i++)
         {
             SecLib_Xor128(X, &pInput[AES_BLOCK_SIZE * i], Y); /* Y := Mi (+) X  */
             AES_128_Encrypt(Y, pKey, X);                      /* X := AES-128(KEY, Y) */
@@ -1269,15 +1277,15 @@ secResultType_t SecLib_AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
         uint8_t K1[16] = {0};
         uint8_t K2[16] = {0};
 
-        uint16_t n;
+        uint32_t n;
         uint32_t i;
         uint8_t  flag;
-        uint8_t  residual_len;
+        uint32_t residual_len;
 
         AES_128_CMAC_Generate_Subkey(pKey, K1, K2);
 
-        n            = (uint16_t)(((inputLen + (AES_BLOCK_SIZE - 1u))) / AES_BLOCK_SIZE); /* n is number of rounds */
-        residual_len = (uint8_t)AES_PARTIAL_BLOCK_BYTES(inputLen);
+        n = AES_TOTAL_BLOCK_NB(inputLen); /* n is number of rounds i.e. number of 16 byte chunks rounded up */
+        residual_len = AES_PARTIAL_BLOCK_BYTES(inputLen);
 
         if (n == 0u)
         {
@@ -1314,7 +1322,7 @@ secResultType_t SecLib_AES_128_CMAC_LsbFirstInput(const uint8_t *pInput,
             X[i] = 0u;
         }
 
-        for (i = 0u; i < (uint32_t)n - 1u; i++)
+        for (i = 0u; i < (n - 1u); i++)
         {
             FLib_MemCpyReverseOrder(reversedBlock, &pInput[inputLen - AES_BLOCK_SIZE * (i + 1u)], AES_BLOCK_SIZE);
             SecLib_Xor128(X, reversedBlock, Y); /* Y := Mi (+) X  */
@@ -1591,8 +1599,8 @@ secResultType_t SecLib_SHA256_HashUpdate(void *pContext, const uint8_t *pData, u
      * be smaller than 2^29 */
     do
     {
-        uint8_t copyBytes;
-
+        uint8_t  copyBytes;
+        uint32_t whole_sha256_blk_sz;
         if ((context == NULL) || (pData == NULL))
         {
             RAISE_ERROR(st, gSecBadArgument_c);
@@ -1626,11 +1634,18 @@ secResultType_t SecLib_SHA256_HashUpdate(void *pContext, const uint8_t *pData, u
                 context->bytes = 0u;
             }
             /* Hash 64 bytes blocks */
+            /* blocks is the number of 64-byte whole blocks.
+             * Since numBytes is enforced to be smaller than MAX_SHA256_TOTAL_BYTES (2^29),
+             * blocks is smaller than 2^24 */
             blocks = (numBytes / SHA256_BLOCK_SIZE);
+            /* CERT INT30-C whole_sha256_blk_sz calculation cannot overflow */
+            whole_sha256_blk_sz = blocks * SHA256_BLOCK_SIZE;
+
             SHA256_hash_n(pData, blocks, context->hash);
-            numBytes -= blocks * SHA256_BLOCK_SIZE;
-            pData += blocks * SHA256_BLOCK_SIZE; /* Check if we have at least 1 SHA256 block */
-                                                 /* Check for remaining bytes */
+            /* CERT INT30-C numBytes calculation cannot wrap */
+            numBytes -= whole_sha256_blk_sz;
+            pData += whole_sha256_blk_sz; /* Check if we have at least 1 SHA256 block */
+                                          /* Check for remaining bytes */
             if (numBytes > 0u)
             {
                 context->bytes = (uint8_t)(numBytes & (uint32_t)(SHA256_BLOCK_SIZE - 1));
@@ -2841,16 +2856,16 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
     uint8_t K1[16] = {0};
     uint8_t K2[16] = {0};
 
-    uint8_t  n;
+    uint32_t n;
     uint32_t i;
     uint8_t  flag;
-    uint8_t  n;
-    uint8_t  residual_len;
+    /* CERT ARR30-C (CID 53857250): removed duplicate 'uint8_t n;' declaration */
+    uint32_t residual_len;
 
     AES_128_CMAC_Generate_Subkey(CMAC_p->Key, K1, K2);
 
-    n            = (uint8_t)((CMAC_p->Len + (AES_BLOCK_SIZE - 1u)) / AES_BLOCK_SIZE); /* n is number of rounds */
-    residual_len = (uint8_t)(AES_PARTIAL_BLOCK_BYTES(CMAC_p->Len));
+    n            = AES_TOTAL_BLOCK_NB(CMAC_p->Len); /* n is number of rounds */
+    residual_len = AES_PARTIAL_BLOCK_BYTES(CMAC_p->Len);
 
     if (n == 0u)
     {
@@ -2870,6 +2885,7 @@ static void AES_128_CMAC_HW(AES_param_t *CMAC_p)
     }
 
     /* Process the last block  - the last part the MSB first input data */
+    /* CERT ARR30-C (CID 53857250): n >= 1u is guaranteed by the if(n==0u) block above */
     if (flag > 0u)
     { /* last block is complete block */
         SecLib_Xor128(&CMAC_p->pPlain[16u * (n - 1u)], K1, M_last);
@@ -3017,7 +3033,10 @@ static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out)
  *
  * \param [in,out]     ctr         Counter.
  *
- * \remarks used for AES CTR
+ * \remarks used for AES CTR.
+ *          The counter is treated as a 128-bit big-endian integer: ctr[0] is the
+ *           MSB byte. Internally it is stored little-endian in a
+ *           uuint128_t union for the carry computation.
  *
  ********************************************************************************** */
 static void AES_128_IncrementCounter(uint8_t *ctr)
@@ -3038,7 +3057,7 @@ static void AES_128_IncrementCounter(uint8_t *ctr)
     {
         tempCtr.u64[1]++;
     }
-
+    /* Byte reversal is required due to endianness conversion for AES CTR where counter is MSB first */
     for (i = 0u; i < AES_BLOCK_SIZE; i++)
     {
         ctr[i] = tempCtr.u8[AES_BLOCK_SIZE - i - 1u];
@@ -3062,7 +3081,7 @@ static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_
 {
     uint8_t  const_Rb[16] = {0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
                              0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x87u};
-    uint8_t  L[16];
+    uint8_t  L[16]        = {0};
     uint8_t  Z[16];
     uint8_t  tmp[16] = {0};
     uint32_t i;
@@ -3072,7 +3091,7 @@ static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_
         Z[i] = 0u;
     }
 
-    AES_128_Encrypt(Z, key, L);
+    AES_128_Encrypt(Z, key, L); /* Initializes L array */
 
     if ((L[0] & 0x80u) == 0u)
     {
