@@ -445,7 +445,11 @@ STATIC ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
                 }
 
                 /* Coverity [overflow:FALSE] */ /* pageEndOffs cannot overflow */
-                uint32_t pageEndOffs          = pageOffs + OTA_WRITE_BUFFER_SIZE - 1U;
+                uint32_t pageEndOffs = pageOffs + OTA_WRITE_BUFFER_SIZE - 1U;
+                /* offs lies within [pageOffs, pageEndOffs] since pageOffs is offs rounded
+                 * down to the write-buffer boundary, so (pageEndOffs - offs) cannot wrap
+                 * and adding 1U stays within the buffer size (CERT INT30-C). */
+                /* Coverity [cert_int30_c_violation:FALSE] */
                 uint32_t remainingBytesInPage = pageEndOffs - offs + 1U;
                 uint32_t offset               = offs - pageOffs;
                 bool     isWriteBufferFull    = false;
@@ -465,6 +469,10 @@ STATIC ota_flash_status_t ExternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
                 /* Copy the data to write in the buffer */
                 /* Coverity [overflow_sink:FALSE] */ /* offset is guaranteed to be less than OTA_WRITE_BUFFER_SIZE */
                 FLib_MemCpy(&ctx.mWriteBuffer[offset], Outbuf, sizeToCopy);
+                /* sizeToCopy is clamped to remainingBytesInPage (<= OTA_WRITE_BUFFER_SIZE) and
+                 * mWriteBufferIndex is reset each time the buffer is flushed, so this
+                 * accumulator stays within OTA_WRITE_BUFFER_SIZE and cannot wrap (CERT INT30-C). */
+                /* Coverity [cert_int30_c_violation:FALSE] */
                 ctx.mWriteBufferIndex += sizeToCopy;
 
                 if (isWriteBufferFull == true)
@@ -512,6 +520,9 @@ STATIC ota_flash_status_t ExternalFlash_FlushWriteBuffer(void)
 #endif
 
         /* Write the current write buffer to flash */
+        /* mWriteBufferOffs is a validated in-partition offset and SanitizeOtaExtPartitionConfig
+         * guarantees start_offset + size does not overflow, so PHYS_ADDR cannot wrap (CERT INT30-C). */
+        /* Coverity [cert_int30_c_violation:FALSE] */
         st = PLATFORM_WriteExternalFlash(ctx.mWriteBuffer, OTA_WRITE_BUFFER_SIZE, PHYS_ADDR(ctx.mWriteBufferOffs));
         if (st != kStatus_Success)
         {
@@ -560,6 +571,10 @@ STATIC ota_flash_status_t ExternalFlash_ReadData(uint16_t NoOfBytes, uint32_t of
     }
     else
     {
+        /* OtaCheckRangeBelongsToPartition validated offs is within the partition and
+         * SanitizeOtaExtPartitionConfig guarantees start_offset + size does not overflow,
+         * so PHYS_ADDR(offs) cannot wrap (CERT INT30-C). */
+        /* Coverity [cert_int30_c_violation:FALSE] */
         st = PLATFORM_ReadExternalFlash(inbuf, NoOfBytes, PHYS_ADDR(offs), true);
         if (st == kStatus_Success)
         {

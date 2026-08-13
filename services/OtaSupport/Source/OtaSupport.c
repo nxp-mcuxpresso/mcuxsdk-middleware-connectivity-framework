@@ -536,7 +536,10 @@ otaResult_t OTA_PullImageChunk(uint8_t *pData, uint16_t length, uint32_t *pImage
                     if (queried_data_start < mOtaHdl.StorageAddressWritten)
                     {
                         lenInFlash = mOtaHdl.StorageAddressWritten - queried_data_start;
-                        st         = mOtaHdl.FlashOps->readData(lenInFlash, queried_data_start, read_ptr);
+                        /* lenInFlash cannot exceed chunk_len (<= UINT16_MAX), so the narrowing
+                         * cast to the uint16_t readData() parameter cannot lose data (CERT INT31-C). */
+                        st = mOtaHdl.FlashOps->readData((uint16_t)(lenInFlash & (uint32_t)UINT16_MAX),
+                                                        queried_data_start, read_ptr);
                         if (st != kStatus_OTA_Flash_Success)
                         {
                             RAISE_ERROR(status, gOtaFlashOperationError_c);
@@ -927,11 +930,13 @@ uint16_t OTA_CrcCompute(uint8_t *pData, uint16_t lenData, uint16_t crcValueOld)
         {
             if (0U != (crcValueOld & 0x8000U))
             {
-                crcValueOld = (crcValueOld << 1) ^ 0x1021U;
+                /* Explicitly mask back to 16 bits: the int-promoted shift/xor result is
+                 * intentionally truncated to the CRC16 width, no data is lost (CERT INT31-C). */
+                crcValueOld = (uint16_t)((((uint32_t)crcValueOld << 1) ^ 0x1021U) & 0xFFFFU);
             }
             else
             {
-                crcValueOld = crcValueOld << 1;
+                crcValueOld = (uint16_t)(((uint32_t)crcValueOld << 1) & 0xFFFFU);
             }
         }
     }
@@ -1779,7 +1784,9 @@ static uint16_t OTA_TransactionQueueLookAhead(uint32_t faddr, uint16_t len, uint
                     gather_len = 0U;
                 }
                 FLib_MemCpy(read_buf, pMsg->buf, sz);
-                /* remaining length is now 0 */
+                /* remaining length is now 0. sz is clamped to rem_len (<= len <= UINT16_MAX)
+                 * and gather_len is at most the initial len, so this addition on the uint32_t
+                 * accumulator cannot wrap (CERT INT30-C). */
                 gather_len += sz;
             }
         }
@@ -1811,6 +1818,8 @@ static int OTA_TransactionQueuePurge(void)
         }
         OTA_MsgDequeue();
         OTA_FlashTransactionFree(pMsg);
+        /* nb_purged counts queued transactions, which is bounded by PostedQ_capacity
+         * (a uint8_t count), so the signed increment cannot overflow (CERT INT32-C). */
         nb_purged++;
     }
 
@@ -1937,13 +1946,17 @@ static ota_flash_status_t OTA_TreatFlashOpWrite(FLASH_TransactionOp_t *pMsg)
 static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg)
 {
     ota_flash_status_t st;
-    int32_t            remain_sz  = (int32_t)pMsg->sz;
-    uint32_t           erase_addr = pMsg->flash_addr;
+    /* remain_sz matches the uint32_t FLASH_TransactionOp_t::sz field and the
+     * eraseArea() uint32_t* signature. Using a signed int32_t here caused the
+     * INT31-C/INT32-C coercion findings and could misinterpret sizes with bit
+     * 31 set as negative. Mirrors OTA_TreatFlashOpEraseNextBlock. */
+    uint32_t remain_sz  = pMsg->sz;
+    uint32_t erase_addr = pMsg->flash_addr;
 
     st = mOtaHdl.FlashOps->eraseArea(&erase_addr, &remain_sz, true);
     if (kStatus_OTA_Flash_Success == st)
     {
-        if (remain_sz <= 0)
+        if (remain_sz == 0U)
         {
             OTA_MsgDequeue();
             OTA_FlashTransactionFree(pMsg);
@@ -1952,7 +1965,7 @@ static ota_flash_status_t OTA_TreatFlashOpEraseArea(FLASH_TransactionOp_t *pMsg)
         {
             /* Leave head request in queue */
             pMsg->flash_addr = erase_addr;
-            pMsg->sz         = (int32_t)remain_sz;
+            pMsg->sz         = remain_sz;
         }
     }
     else

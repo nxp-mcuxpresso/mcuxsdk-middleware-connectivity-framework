@@ -352,6 +352,8 @@ STATIC ota_flash_status_t InternalFlash_WriteData(uint32_t NoOfBytes, uint32_t o
         }
         /* Store unaligned bytes for later processing */
         mWriteBuffLevel = NoOfBytes % gEepromParams_WriteAlignment_c;
+        /* mWriteBuffLevel is NoOfBytes modulo the write alignment, so it is always
+         * less than or equal to NoOfBytes; this subtraction cannot wrap (CERT INT30-C). */
         NoOfBytes -= mWriteBuffLevel;
         /* offs + NoOfBytes cannot wrap: OtaCheckRangeBelongsToPartition() already verified
          * that (offs + original_NoOfBytes) <= partition size (a uint32_t value). */
@@ -445,6 +447,8 @@ STATIC ota_flash_status_t InternalFlash_ReadData(uint16_t NoOfBytes, uint32_t of
             {
                 inbuf[index_in_read_buf] = *(uint8_t *)PHYS_ADDR(offs, partition_start_addr);
             }
+            /* index_in_read_buf iterates over the [offs, offs+NoOfBytes) range, so it is
+             * bounded by NoOfBytes (a uint16_t), and cannot wrap the uint32_t (CERT INT30-C). */
             index_in_read_buf++;
             offs++;
         }
