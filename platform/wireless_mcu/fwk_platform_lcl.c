@@ -772,16 +772,37 @@ void PLATFORM_InitLclGpioDebug(bool_t debug)
 
 uint8_t PLATFORM_InitLcl(void)
 {
-#if !(defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
     uint8_t rfgpo_id;
-#endif
     uint8_t status = 0U; /* default is Success */
 
     /* set debug pins first which could be overriden later */
     PLATFORM_InitLclGpioDebug(true);
 
 #if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
-    /* Temporarily do not configure RF switch control */
+#if defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0)
+    rfgpo_id = LCL_RFGPO_3_0;
+
+    /* PTA21 = RF_GPO_3 = VDD as GPIO */
+    const gpio_pin_config_t config = {
+        .pinDirection = kGPIO_DigitalOutput,
+        .outputLogic  = 1U,
+    };
+
+    CLOCK_EnableClock(kCLOCK_PortA);
+
+    /* PTA20 = RF_GPO_2 = VCTL as GPO */
+    PORT_SetPinMux(PORTA, 20U, kPORT_MuxAlt6);
+
+    /* PTA21 = RF_GPO_3 = VDD as GPIO */
+    PORT_SetPinMux(PORTA, 21U, kPORT_MuxAsGpio);
+    GPIO_PinInit(GPIOA, 21U, &config);
+
+    status     = PLATFORM_InitLclRfGpo(rfgpo_id);
+    lantActive = 1U;
+#else
+    /* Do not configure RF switch control */
+    (void)rfgpo_id;
+#endif /* defined(BOARD_LOCALIZATION_REVISION_SUPPORT) && (BOARD_LOCALIZATION_REVISION_SUPPORT > 0) */
 #else
 #if defined(KW45B41Z82_SERIES) || defined(KW45B41Z83_SERIES)
     rfgpo_id = LCL_RFGPO_3_0;
