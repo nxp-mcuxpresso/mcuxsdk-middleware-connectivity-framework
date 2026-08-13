@@ -219,8 +219,10 @@ int PLATFORM_NotifyNbuInitDone(void)
 int PLATFORM_NotifyNbuMemFull(unsigned short poolId, uint16_t bufferSize)
 {
     NbuDbgMemInfo_t memInfo = {0}; /* useless but rids of Coverity UNINIT - reserved field remained uninitialized */
-    memInfo.poolId          = (uint8_t)poolId;
-    memInfo.bufferSize      = bufferSize;
+    /* coverity[cert_int31_c_violation:FALSE] poolId is a small pool identifier that always fits in a uint8_t;
+     * the truncation to the NbuDbgMemInfo_t.poolId field is intentional and its value range is bounded by design */
+    memInfo.poolId     = (uint8_t)poolId;
+    memInfo.bufferSize = bufferSize;
 
     return PLATFORM_FwkSrvSendPacket(gFwkSrvNbuMemFullIndication_c, (void *)&memInfo, (uint16_t)sizeof(memInfo));
 }
@@ -312,8 +314,23 @@ static void PLATFORM_RxWorkHandler(fwk_work_t *work)
     while (node != NULL)
     {
         rx_data = CONTAINER_OF(node, rx_data_t, node);
-        PLATFORM_RxCallbackService[rx_data->data[0] - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U](rx_data->data,
+
+        /* Re-validate the message type in the work handler scope before using it as an index. The value was
+         * already validated at enqueue time in PLATFORM_FwkSrv_RxCallBack(), but re-checking here keeps this
+         * handler self-contained and robust against any corruption of the queued buffer. */
+        if ((rx_data->data != NULL) && (rx_data->len > 0U))
+        {
+            uint8_t msg_type = rx_data->data[0];
+            if (FwkSrv_MsgTypeInExpectedSet(msg_type))
+            {
+                /* msg_type is strictly greater than gFwkSrvHost2NbuFirst_c (guaranteed by FwkSrv_MsgTypeInExpectedSet()
+                 * above), so the "- gFwkSrvHost2NbuFirst_c - 1U" subtraction cannot wrap and the resulting index stays
+                 * within PLATFORM_RxCallbackService bounds */
+                PLATFORM_RxCallbackService[msg_type - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U](rx_data->data,
                                                                                             rx_data->len);
+            }
+        }
+
         (void)MEM_BufferFree(rx_data);
         node = LIST_RemoveHead(&rx_work.pending);
     }
@@ -373,6 +390,8 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
         bool process_now = false;
         do
         {
+            /* coverity[cert_int30_c_violation:FALSE] len is the rpmsg payload length, bounded by the shared-memory
+             * rpmsg buffer size (a few hundred bytes at most), so "sizeof(rx_data_t) + len" cannot wrap a uint32_t */
             rx_data_t *rx_data = MEM_BufferAlloc(sizeof(rx_data_t) + len);
 
             if (rx_data == NULL)
@@ -397,6 +416,9 @@ static hal_rpmsg_return_status_t PLATFORM_FwkSrv_RxCallBack(void *param, uint8_t
         if (process_now == true)
 #endif
         {
+            /* coverity[cert_int30_c_violation:FALSE] msg_type was validated by FwkSrv_MsgTypeInExpectedSet() above,
+             * so it is strictly greater than gFwkSrvHost2NbuFirst_c; the "- ... - 1U" subtraction cannot wrap and
+             * the resulting index stays within PLATFORM_RxCallbackService bounds */
             PLATFORM_RxCallbackService[msg_type - (uint8_t)gFwkSrvHost2NbuFirst_c - 1U](data, len);
         }
     }

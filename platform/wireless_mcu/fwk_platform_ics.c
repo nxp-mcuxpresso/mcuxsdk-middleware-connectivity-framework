@@ -443,7 +443,7 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
                     case 1U:
                         param = tab[j];
                         j++;
-                        if ((((int32_t)param < INT8_MIN) || ((int32_t)param > INT8_MAX)) && (param > 0xFFU))
+                        if (param != (param & (uint32_t)UINT8_MAX))
                         {
                             rpmsg_status = false;
                         }
@@ -456,7 +456,7 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
                     case 2U:
                         param = tab[j];
                         j++;
-                        if ((((int32_t)param < INT16_MIN) || ((int32_t)param > INT16_MAX)) && (param > 0xFFFFU))
+                        if (param != (param & (uint32_t)UINT16_MAX))
                         {
                             rpmsg_status = false;
                         }
@@ -469,6 +469,8 @@ bool_t PLATFORM_NbuApiReq(uint8_t *api_return, uint16_t api_id, const uint8_t *f
 
                     case 4U:
                         param = tab[j];
+                        /* coverity[cert_int30_c_violation:FALSE] j counts processed parameters; it is bounded by the
+                         * fmt string length and by the data buffer size check above, so it cannot wrap */
                         j++;
                         data[data_len++] = (uint8_t)(param & 0xFFU);
                         data[data_len++] = (uint8_t)((param >> 8U) & 0xFFU);
@@ -641,11 +643,16 @@ static void PLATFORM_IcsRxWorkHandler(fwk_work_t *work)
 
     while (status == KOSA_StatusSuccess)
     {
-        if ((ics_rx_data.data != NULL) && (ics_rx_data.len > 0U) && FwkSrv_MsgTypeInExpectedSet(ics_rx_data.data[0]))
+        if ((ics_rx_data.data != NULL) && (ics_rx_data.len > 0U))
         {
             uint8_t msg_type = ics_rx_data.data[0];
-            PLATFORM_RxCallbackService[msg_type - 1U](ics_rx_data.data, ics_rx_data.len);
-
+            if (FwkSrv_MsgTypeInExpectedSet(msg_type))
+            {
+                /* coverity[cert_int30_c_violation:FALSE] msg_type was validated by FwkSrv_MsgTypeInExpectedSet() above,
+                 * so it is strictly greater than gFwkSrvNbu2HostFirst_c (>= 1U); the "- 1U" subtraction cannot wrap and
+                 * the resulting index stays within PLATFORM_RxCallbackService bounds */
+                PLATFORM_RxCallbackService[msg_type - 1U](ics_rx_data.data, ics_rx_data.len);
+            }
             /* Release the buffer from shared memory */
             (void)HAL_RpmsgFreeRxBuffer(fwkRpmsgHandle, ics_rx_data.data);
         }
