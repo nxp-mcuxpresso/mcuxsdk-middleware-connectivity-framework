@@ -298,7 +298,8 @@ void FSCI_Error(uint8_t errorCode, uint32_t fsciInterface)
         mFsciErrorMsg.status      = errorCode;
         /* sizeof(gFsciErrorMsg_t) is 7 or 8 depending on length field size : checksum_comp_sz is 4 or 5
          * and checksum is computed from offset 1  */
-        // coverity[overrun-buffer-arg:FALSE] Out-of-bounds access (OVERRUN) is false positive
+        /* coverity[overrun-buffer-arg:FALSE] (ARR30-C) and (STR31-C): checksum_comp_sz is 4 or 5 and
+         * spans opGroup..checksum inside mFsciErrorMsg, access is in bounds */
         mFsciErrorMsg.checksum = FSCI_computeChecksum(&mFsciErrorMsg.header.opGroup, checksum_comp_sz);
 
         if (virtInterface != 0U)
@@ -422,6 +423,8 @@ bool_t FSCI_MsgModeSelectReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
 
     for (i = 0U; i < dataLen; i++)
     {
+        /* coverity[cert_int31_c_violation:FALSE]: fsciInterface is bounded to the configured FSCI interfaces (<
+         * gFsciMaxInterfaces_c), cast to uint8_t cannot lose data */
         p = FSCI_GetReqOpGroup(mFsciModeSelectSAPs[i], (uint8_t)fsciInterface);
         if (NULL != p)
         {
@@ -454,6 +457,8 @@ bool_t FSCI_MsgGetModeReqFunc(clientPacket_t *pData, uint32_t fsciInterface)
 
     for (i = 0U; i < NumberOfElements(mFsciModeSelectSAPs); i++)
     {
+        /* coverity[cert_int31_c_violation:FALSE]: fsciInterface is bounded to the configured FSCI interfaces (<
+         * gFsciMaxInterfaces_c), cast to uint8_t cannot lose data */
         p = FSCI_GetReqOpGroup(mFsciModeSelectSAPs[i], (uint8_t)fsciInterface);
         if (NULL != p)
         {
@@ -503,6 +508,8 @@ bool_t FSCI_WriteMemoryBlock(clientPacket_t *pData, uint32_t fsciInterface)
     }
 
     pData->structured.header.len = (uint8_t)sizeof(len);
+    /* coverity[cert_int31_c_violation:FALSE]: len is the copied byte count bounded by the RAM boundary
+     * check above and fits in uint8_t */
     pData->structured.payload[0] = (uint8_t)len;
 #else  /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */
     FSCI_Error((uint8_t)gFsciError_c, fsciInterface);
@@ -559,7 +566,7 @@ bool_t FSCI_ReadMemoryBlock(clientPacket_t *pData, uint32_t fsciInterface)
         /* Check if the received buffer was reused. */
         if (pPkt != pData)
         {
-            /* A new buffer was allocated. Fill with aditional information */
+            /* A new buffer was allocated. Fill with additional information */
             pPkt->structured.header.opGroup = gFSCI_CnfOpcodeGroup_c;
             pPkt->structured.header.opCode  = mFsciLowLevelMemoryReadBlock_c;
             FSCI_transmitFormatedPacket(pPkt, fsciInterface);
@@ -852,7 +859,7 @@ bool_t FSCI_MsgAllowDeviceToSleepReqFunc(clientPacket_t *pData, uint32_t fsciInt
     pData->structured.header.opGroup = gFSCI_CnfOpcodeGroup_c;
     pData->structured.header.len     = sizeof(clientPacketStatus_t);
 
-    // Perform a Sync Tx
+    /* Perform a Sync Tx */
     gFsciTxBlocking = TRUE;
     FSCI_transmitFormatedPacket(pData, fsciInterface);
     gFsciTxBlocking = FALSE;
@@ -1029,7 +1036,9 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
     clientPacket_t *pPkt;
     moduleInfo_t   *pInfo                    = gVERSION_TAGS_startAddr_d;
     uint8_t         noOfEntriesSecondaryCore = 0U;
-    uint16_t        size                     = (uint16_t)(sizeof(clientPacketHdr_t) + gFsci_TailBytes_c +
+    /* coverity[cert_int31_c_violation:FALSE] CID 39280519: the computed buffer size is bounded
+     * by the fixed VERSION_TAGS table size and fits in uint16_t */
+    uint16_t size = (uint16_t)(sizeof(clientPacketHdr_t) + gFsci_TailBytes_c +
                                gVERSION_TAGS_entries_d * gVERSION_TAGS_entrySizeNoPadding_d +
                                noOfEntriesSecondaryCore * gVERSION_TAGS_entrySizeNoPadding_d);
 
@@ -1051,6 +1060,8 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
     }
     else
     {
+        /* coverity[cert_int31_c_violation:FALSE]: number of VERSION_TAGS entries is a small fixed count
+         * that fits in uint8_t */
         pPkt->structured.payload[0] = (uint8_t)(gVERSION_TAGS_entries_d + noOfEntriesSecondaryCore);
         size                        = (uint16_t)sizeof(uint8_t);
 
@@ -1058,10 +1069,14 @@ bool_t FSCI_ReadModVer(clientPacket_t *pData, uint32_t fsciInterface)
         {
             FLib_MemCpy(&pPkt->structured.payload[size], &pInfo->moduleId,
                         gVERSION_TAGS_entrySizeNoPaddingNoModuleString_d);
+            /* coverity[cert_int30_c_violation:FALSE]: size accumulates over the fixed VERSION_TAGS table
+             * and cannot wrap the uint16_t range */
             size += gVERSION_TAGS_entrySizeNoPaddingNoModuleString_d;
             pInfo++;
         }
 
+        /* coverity[cert_int31_c_violation:FALSE]: size is bounded by the fixed VERSION_TAGS table size
+         * and fits in the uint8_t length field */
         pPkt->structured.header.len = (uint8_t)size;
 
         /* Check if the received buffer was reused. */

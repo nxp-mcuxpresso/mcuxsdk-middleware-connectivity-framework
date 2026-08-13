@@ -1,7 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2020 NXP
- * All rights reserved.
+ * Copyright 2016-2020, 2026 NXP
  *
  * \file
  *
@@ -174,6 +173,9 @@ gFsciStatus_t FSCI_CallRegisteredFunc(opGroup_t opGroup, void *pData, uint32_t f
     mFsciErrorReported = 0u;
 
     /* Search for the OpGroup */
+    /* coverity[cert_int31_c_violation:FALSE]: fsciInterface is bounded to the configured FSCI interfaces
+     * (< gFsciMaxInterfaces_c), cast to uint8_t cannot lose data
+     */
     pOGtable = FSCI_GetReqOpGroup(opGroup, (uint8_t)fsciInterface);
 
     if (NULL == pOGtable) /* The OpGroup was not found */
@@ -187,6 +189,8 @@ gFsciStatus_t FSCI_CallRegisteredFunc(opGroup_t opGroup, void *pData, uint32_t f
     else
     {
         /* Execute request */
+        /* coverity[cert_int31_c_violation:FALSE]: fsciInterface is bounded to the configured FSCI interfaces
+         *(< gFsciMaxInterfaces_c), cast to uint8_t cannot lose data */
         mFsciSrcInterface = (uint8_t)fsciInterface;
         if (pOGtable->pfOpGroupHandler != NULL)
         {
@@ -215,6 +219,8 @@ gFsciStatus_t FSCI_RegisterOpGroup(
 {
     gFsciStatus_t status = gFsciSuccess_c;
 #if gFsciIncluded_c
+    /* coverity[cert_int31_c_violation:FALSE] CID 22820660: fsciInterface is validated below (< gFsciMaxInterfaces_c),
+     * cast to uint8_t cannot lose data */
     if ((FSCI_GetReqOpGroup(opGroup, (uint8_t)fsciInterface) != NULL) || (gNumberOfOG >= gFsciMaxOpGroups_c) ||
         (fsciInterface >= (uint32_t)gFsciMaxInterfaces_c))
     {
@@ -222,12 +228,14 @@ gFsciStatus_t FSCI_RegisterOpGroup(
     }
     else
     {
-        // Fill the Operation Group table
+        /* Fill the Operation Group table */
         gReqOpGroupTable[gNumberOfOG].opGroup          = opGroup;
         gReqOpGroupTable[gNumberOfOG].mode             = mode;
         gReqOpGroupTable[gNumberOfOG].pfOpGroupHandler = pfHandler;
         gReqOpGroupTable[gNumberOfOG].param            = param;
-        gReqOpGroupTable[gNumberOfOG].fsciInterfaceId  = (uint8_t)fsciInterface;
+        /* coverity[cert_int31_c_violation:FALSE]: fsciInterface is validated above
+         * (< gFsciMaxInterfaces_c), cast to uint8_t cannot lose data */
+        gReqOpGroupTable[gNumberOfOG].fsciInterfaceId = (uint8_t)fsciInterface;
         gNumberOfOG++;
     }
 #endif /* gFsciIncluded_c */
@@ -257,7 +265,7 @@ gFsciOpGroup_t *FSCI_GetReqOpGroup(opGroup_t OG, uint8_t fsciInterface)
 
     for (index = 0; index < gNumberOfOG; index++)
     {
-        // Search Group table entry by Group ID and InterfaceId
+        /* Search Group table entry by Group ID and InterfaceId */
         if ((gReqOpGroupTable[index].opGroup == OG) && (gReqOpGroupTable[index].fsciInterfaceId == fsciInterface))
         {
             p = (gFsciOpGroup_t *)&gReqOpGroupTable[index];

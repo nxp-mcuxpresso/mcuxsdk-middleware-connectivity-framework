@@ -733,6 +733,8 @@ void FSCI_transmitFormatedPacket(clientPacket_t *pPkt, uint32_t fsciInterface)
     size = (uint32_t)sizeof(clientPacketHdr_t) + pPkt->structured.header.len + 1U /* CRC */;
 
     /* Compute Checksum */
+    /* coverity[cert_int31_c_violation:FALSE]: size is the framed packet length bounded by
+     * gFsciMaxPayloadLen_c and fits in uint16_t */
     checksum = FSCI_computeChecksum(pPkt->raw + 1, (uint16_t)(size - 2U));
 
     pPkt->structured.payload[pPkt->structured.header.len] = checksum;
@@ -749,6 +751,8 @@ void FSCI_transmitFormatedPacket(clientPacket_t *pPkt, uint32_t fsciInterface)
     }
 
     /* send message to Serial Manager */
+    /* coverity[cert_int31_c_violation:FALSE]: size is the framed packet length bounded by gFsciMaxPayloadLen_c
+     * and fits in uint16_t */
     FSCI_SendPacketToSerialManager(fsciInterface, pPkt->raw, (uint16_t)size);
 }
 
@@ -992,6 +996,8 @@ fsci_packetStatus_t FSCI_checkPacket(clientPacket_t *pData, uint16_t bytes, uint
             else /* If the length looks right, make sure that the checksum is correct. */
             {
                 checksum = FSCI_computeChecksum(pData->raw + 1U, (uint16_t)(len + sizeof(clientPacketHdr_t) - 1U));
+                /* coverity[cert_int31_c_violation:FALSE]: len is bounds-checked (<= gFsciMaxPayloadLen_c)
+                 * and the subtraction result is stored back into a uint8_t field by design */
                 *pVIntf  = pData->structured.payload[len] - checksum;
 
                 if (bytes == (uint16_t)(len + sizeof(clientPacketHdr_t) + (uint16_t)sizeof(checksum)))
@@ -1211,6 +1217,8 @@ static void FSCI_CheckRxTimeoutPolling(void *param)
         currentTs = TM_GetTimestamp();
 
         /* Check for timeout */
+        /* coverity[cert_int30_c_violation:FALSE]: unsigned timestamp delta arithmetic is intentional and
+         * wraps correctly across timer rollover */
         if (((currentTs - pCommData->lastRxByteTs) / 1000U) > mFsciRxRestartTimeoutMs_c)
         {
             /* call the RX timeout callback to do the cleanup */
