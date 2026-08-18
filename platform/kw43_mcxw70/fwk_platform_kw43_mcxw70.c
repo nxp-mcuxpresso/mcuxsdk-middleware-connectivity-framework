@@ -7,6 +7,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#include "fwk_config.h"
 #include "fwk_platform.h"
 #include "fwk_debug.h"
 #include "fwk_platform_ics.h"
