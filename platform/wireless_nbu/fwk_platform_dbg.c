@@ -108,7 +108,16 @@ void PLATFORM_FeedHostWatchdog(void)
 
 int fsl_assert_hook(const char *failedExpr, const char *file, int line)
 {
-    NBUDBG_SetAssertContext(failedExpr, file, line);
+    /* Record only the FIRST fault/assert. exception_id is 0 until the first
+     * fault or assert is captured; once set (by a fault or a previous assert),
+     * a nested assert - e.g. assert(mHcitInit) hit while the first record's
+     * coredump is being sent over HCI before the transport is ready - must not
+     * overwrite the original record in the debug struct. This covers both the
+     * assert-after-assert and the fault-after-then-assert orderings. */
+    if (!NBUDBG_RECORD_CLAIMED())
+    {
+        NBUDBG_SetAssertContext(failedExpr, file, line);
+    }
     PLATFORM_NbuRaiseFault();
     return 0;
 }

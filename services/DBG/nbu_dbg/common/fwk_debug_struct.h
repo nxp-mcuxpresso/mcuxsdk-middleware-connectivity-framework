@@ -39,6 +39,11 @@
 #define NBUDBG_ASSERT_FILE_NAME_SIZE 74U
 /* Check whether NBU asserted or not */
 #define NBUDBG_IS_NBU_ASSERT() ((debug_struct)->nbu_dbg_info.exception_id == NBUDBG_EXCEPTION_ID_FOR_ASSERT_MAGIC)
+/* Whether a fault/assert record has already been claimed this boot.
+ * exception_id is 0 after startup (.debugbuf is zero-initialized) and becomes
+ * non-zero once the FIRST fault (IPSR id) or assert (assert magic) is recorded.
+ * Used to keep first-record-wins regardless of fault/assert nesting order. */
+#define NBUDBG_RECORD_CLAIMED() ((debug_struct)->nbu_dbg_info.exception_id != 0U)
 /* Magic pattern to identify handler mode faults */
 #define NBUDBG_HANDLER_MODE_MAGIC 0xCAFE0000U
 /* Mask to extract magic pattern from handler_irq */

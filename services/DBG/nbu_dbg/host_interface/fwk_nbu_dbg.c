@@ -150,36 +150,48 @@ void NBUDBG_StateCheck(void)
     static bool       nbu_fault_notified  = false;
     static bool       nbu_halted_notified = false;
 
-    /* Retrieve new NBU warning count */
-    (void)PLATFORM_IsNbuWarningSet(&nbu_event.nbu_warning_count);
-
-    /* Check for NBU fault - this is a fatal condition, NBU won't recover */
-    if (PLATFORM_IsNbuFaultSet() && !nbu_fault_notified)
+    do
     {
-        /* New fatal fault detected - notify once */
-        nbu_event.nbu_error_count = 1U;
-        nbu_fault_notified        = true;
-    }
+        /* No consumer registered yet: do not read or consume any NBU debug
+         * state. PLATFORM_IsNbuWarningSet() advances an internal warning delta
+         * and the fault/stall notify-once latches below would otherwise be set
+         * here, so polling before a callback is registered would silently
+         * swallow a pre-init fault or warning. Bail out until a consumer exists;
+         * the sticky fault bit and warning count persist in hardware and are
+         * picked up on the first poll after registration. */
+        if (nbu_dbg_system_cb == NULL)
+        {
+            break;
+        }
 
-    /* Check for NBU stall */
-    if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US) && !nbu_halted_notified)
-    {
-        /*
-         * Stall detected - notify once. The HCI vendor event can be emitted later
-         * from the notification callback context
-         */
-        nbu_event.nbu_is_halted = 1U;
-        nbu_halted_notified     = true;
-    }
+        /* Retrieve new NBU warning count */
+        (void)PLATFORM_IsNbuWarningSet(&nbu_event.nbu_warning_count);
 
-    /* Check if any new debug condition is detected and notify via callback */
-    if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U) || (nbu_event.nbu_is_halted > 0U))
-    {
-        if (nbu_dbg_system_cb != NULL)
+        /* Check for NBU fault - this is a fatal condition, NBU won't recover */
+        if (PLATFORM_IsNbuFaultSet() && !nbu_fault_notified)
+        {
+            /* New fatal fault detected - notify once */
+            nbu_event.nbu_error_count = 1U;
+            nbu_fault_notified        = true;
+        }
+
+        /* Check for NBU stall */
+        if (PLATFORM_IsNbuStuck(IS_NBU_STUCK_MAX_TIMER_US) && !nbu_halted_notified)
+        {
+            /*
+             * Stall detected - notify once. The HCI vendor event can be emitted later
+             * from the notification callback context
+             */
+            nbu_event.nbu_is_halted = 1U;
+            nbu_halted_notified     = true;
+        }
+
+        /* Check if any new debug condition is detected and notify via callback */
+        if ((nbu_event.nbu_error_count > 0U) || (nbu_event.nbu_warning_count > 0U) || (nbu_event.nbu_is_halted > 0U))
         {
             nbu_dbg_system_cb(&nbu_event);
         }
-    }
+    } while (false);
 }
 
 void NBUDBG_RegisterNbuDebugNotificationCb(nbu_dbg_system_cb_t cb)
