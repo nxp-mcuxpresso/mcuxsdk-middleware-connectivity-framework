@@ -86,20 +86,27 @@ int PLATFORM_InitBle(void)
 
 int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
 {
-    return PLATFORM_SendHciMessageAlt(msg[0], &msg[1], len - 1U);
+    int ret = -1;
+    if ((msg != NULL) && (len > 0U) && (len < (uint32_t)UINT16_MAX))
+    {
+        ret = PLATFORM_SendHciMessageAlt(msg[0], &msg[1], len - 1U);
+    }
+    return ret;
 }
 
 int PLATFORM_SendHciMessageAlt(uint8_t packetType, uint8_t *msg, uint32_t len)
 {
-    int ret = 0;
+    int ret = -1;
 
 #ifdef SERIAL_BTSNOOP
     sbtsnoop_write_hci_pkt(packetType, 0U, msg, len);
 #endif
-
-    if (BLEController_ProcessHciPacket((blec_hciPacketType_t)packetType, msg, len) != kBLEC_Success)
+    if (len < ((uint32_t)UINT16_MAX))
     {
-        ret = -1;
+        if (BLEController_ProcessHciPacket((blec_hciPacketType_t)packetType, msg, len) == kBLEC_Success)
+        {
+            ret = 0;
+        }
     }
 
     return ret;

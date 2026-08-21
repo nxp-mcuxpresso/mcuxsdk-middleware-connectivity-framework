@@ -116,9 +116,9 @@ static void PLATFORM_InitHciLink(void)
 
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
 {
-    if ((hci_rx_callback != NULL) && (len >= 2U))
+    if ((hci_rx_callback != NULL) && (len >= 3U) && (len <= (uint32_t)UINT8_MAX))
     {
-        hci_rx_callback(data[0], &data[1], len - 1U);
+        hci_rx_callback(data[0], &data[1], (uint16_t)(len - 1U));
     }
 
     (void)param;

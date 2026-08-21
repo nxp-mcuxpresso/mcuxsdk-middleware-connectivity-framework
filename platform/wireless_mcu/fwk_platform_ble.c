@@ -236,7 +236,7 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
         /* Wake up controller before sending the message */
         PLATFORM_RemoteActiveReq();
 
-        /* Send HCI Packet through RPMSG channel */
+        /* Send HCI Packet through RPMSG channel : HCI Event have a minimum size of 3 bytes */
         status = (int)HAL_RpmsgSendTimeout(hciRpmsgHandle, msg, len, PLATFORM_BLE_HCI_TIMEOUT_MS);
         if (status != 0)
         {
@@ -253,7 +253,7 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
         }
 #endif
         /* Log HCI TX packet if callback registered */
-        if ((platform_hci_log_cb != NULL) && (len > 1U))
+        if ((platform_hci_log_cb != NULL) && (len > 1U) && (len <= (uint32_t)UINT8_MAX))
         {
             platform_hci_log_cb(msg[0], &msg[1], (uint16_t)(len - 1U), false);
         }

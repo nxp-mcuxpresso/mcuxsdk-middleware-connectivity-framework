@@ -862,38 +862,51 @@ static bool PLATFORM_IsBleAwake(void)
 
 static hal_imumc_return_status_t PLATFORM_HciImumcRxCallback(void *param, uint8_t *data, uint32_t len)
 {
-    bool    handled    = false;
-    uint8_t packetType = data[0];
+    bool    handled = false;
+    uint8_t packetType;
 
     (void)param;
 
-    (void)PLATFORM_HandleControllerPowerState();
-
-    /* If the macro BLE_VENDOR_EVENT_HANDLE is set to true, PLATFORM module will check if it can handle Vendor Specific
-     * Events without going through Ethermind's HCI tasks If the packet is not handled, then it is sent to upper layers
-     * This is likely used to handle Controller low power state, so this is
-     * completely transparent to the application. If the macro BLE_VENDOR_EVENT_HANDLE is set false, the Ethermind's HCI
-     * tasks will handle vendor event */
-    if (packetType == HCI_EVENT_PACKET)
+    /* The smallest possible HCI packet is an HCI Event of 3 bytes,
+     * while most event contain a 4th sub-event byte, the largest possible
+     * HCI packet is 256 bytes */
+    if ((len >= 3U) && (len <= (uint32_t)UINT8_MAX))
     {
-        uint8_t eventType = data[1];
+        packetType = data[0];
 
-        if (eventType == HCI_VENDOR_SPECIFIC_DEBUG_EVENT)
+        (void)PLATFORM_HandleControllerPowerState();
+
+        /* If the macro BLE_VENDOR_EVENT_HANDLE is set to true, PLATFORM module will check if it can handle Vendor
+         * Specific
+         * Events without going through Ethermind's HCI tasks If the packet is not handled, then it is sent to upper layers
+         * This is likely used to handle Controller low power state, so this is
+         * completely transparent to the application. If the macro BLE_VENDOR_EVENT_HANDLE is set false, the Ethermind's HCI
+         * tasks will handle vendor event */
+        if (packetType == HCI_EVENT_PACKET)
         {
-            /* Received packet is a Vendor Specific event, check if PLATFORM
-             * can process it, if not, it will be sent to Ethermind */
-            handled = PLATFORM_HandleHciVendorEvent(&data[3], data[2]);
-        }
-    }
+            uint8_t eventType = data[1];
 
-    if ((handled == false) && (hci_rx_callback != NULL))
-    {
-        hci_rx_callback(packetType, &data[1], (uint16_t)(len - 1U));
-    }
+            if (eventType == HCI_VENDOR_SPECIFIC_DEBUG_EVENT) /* sub-event */
+            {
+                /* Received packet is a Vendor Specific event, check if PLATFORM
+                 * can process it, if not, it will be sent to Ethermind */
+                if (len >= 4U)
+                {
+                    handled = PLATFORM_HandleHciVendorEvent(&data[3], data[2]);
+                }
+            }
+        }
+
+        if ((handled == false) && (hci_rx_callback != NULL))
+        {
+            /* len is guaranteed to be greater than 3 and smaller than 256 */
+            hci_rx_callback(packetType, &data[1], (uint16_t)(len - 1U));
+        }
 
 #ifdef SERIAL_BTSNOOP
-    sbtsnoop_write_hci_pkt(data[0U], 1U, &data[1], (uint16_t)(len - 1U));
+        sbtsnoop_write_hci_pkt(data[0U], 1U, &data[1], (uint16_t)(len - 1U));
 #endif
+    }
 
     return kStatus_HAL_RL_RELEASE;
 }

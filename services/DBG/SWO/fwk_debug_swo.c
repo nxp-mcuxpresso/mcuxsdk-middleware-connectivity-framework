@@ -6,6 +6,8 @@
 
 #include "fsl_device_registers.h"
 #include <stdint.h>
+#include <assert.h>
+#include <stdbool.h>
 #include "fwk_debug_swo.h"
 
 /* -------------------------------------------------------------------------- */
@@ -44,7 +46,7 @@ void DBG_InitSWOFunnelMuxing(int funnel)
 /* Function has to be called from Main Core and from NBU Core due to KW4x debug architecture     */
 void DBG_SwInit_SWO(trace_swo_config_t *swoConfig)
 {
-    /* This computed prescaler value is used to derive SWO actual budrate from CPU core frequency */
+    /* This computed prescaler value is used to derive SWO actual baudrate from CPU core frequency */
     uint32_t prescaler = 0;
 
     /* Global enable for all DWT and ITM features */
@@ -74,27 +76,35 @@ void DBG_SwInit_SWO(trace_swo_config_t *swoConfig)
     /* Define which physical protocol we want to use on the SWO line */
     TPIU->SPPR = (uint32_t)swoConfig->protocol; // Selected Pin Protocol Register
     /* Define SWO baudrate by setting clock prescaler */
-    prescaler  = swoConfig->clockRate / swoConfig->baudRate - 1U;
-    TPIU->ACPR = prescaler & 0xFFFFU;     // Asynchronous Clock Prescaler Register
-    TPIU->FFCR &= ~TPIU_FFCR_EnFCont_Msk; // 0 = Continuous formatting disabled
+    if ((swoConfig->baudRate == 0U) || (swoConfig->clockRate < swoConfig->baudRate))
+    {
+        assert(false);
+    }
+    else
+    {
+        /* The 2 asserts above ensure that prescaler is computed correctly */
+        prescaler  = (swoConfig->clockRate / swoConfig->baudRate) - 1U;
+        TPIU->ACPR = prescaler & 0xFFFFU;     // Asynchronous Clock Prescaler Register
+        TPIU->FFCR &= ~TPIU_FFCR_EnFCont_Msk; // 0 = Continuous formatting disabled
 
-    /* --------------*/
-    /* ENABLE ITM    */
-    /* --------------*/
-    /* Allow unprivileged code access for all stimulus ports */
-    ITM->TPR = 0U; // Trace Privilege Register
-    /* ITM Trace Control Register Enable ITM and SWO */
-    ITM->TCR = ITM_TCR_ITMENA_Msk | ITM_TCR_SWOENA_Msk | (swoConfig->traceId << ITM_TCR_traceBusId_Position);
+        /* --------------*/
+        /* ENABLE ITM    */
+        /* --------------*/
+        /* Allow unprivileged code access for all stimulus ports */
+        ITM->TPR = 0U; // Trace Privilege Register
+        /* ITM Trace Control Register Enable ITM and SWO */
+        ITM->TCR = ITM_TCR_ITMENA_Msk | ITM_TCR_SWOENA_Msk | (swoConfig->traceId << ITM_TCR_traceBusId_Position);
 
-    /* Enable the chosen stimulus port bit */
-    ITM->TER = 1UL << swoConfig->itmPort; // Trace Enable Register
+        /* Enable the chosen stimulus port bit */
+        ITM->TER = 1UL << swoConfig->itmPort; // Trace Enable Register
 
-    /* ------------- */
-    /* ENABLE DWT    */
-    /* ------------- */
-    /* DWT->CTRL = 0x400011FF; //0x400013FF; Periodic PC sample packets enabling */
-    /* DWT->CTRL |= DWT_CTRL_EXCTRCENA_Msk;  Interrupt trace enabling */
-    /* ITM->TCR |= ITM_TCR_DWTENA_Msk;       Allow DWT traces forwarding */
+        /* ------------- */
+        /* ENABLE DWT    */
+        /* ------------- */
+        /* DWT->CTRL = 0x400011FF; //0x400013FF; Periodic PC sample packets enabling */
+        /* DWT->CTRL |= DWT_CTRL_EXCTRCENA_Msk;  Interrupt trace enabling */
+        /* ITM->TCR |= ITM_TCR_DWTENA_Msk;       Allow DWT traces forwarding */
+    }
 }
 
 /* Sends a char over SWO via the provided ITM port stimulus */
