@@ -336,7 +336,7 @@ static void PLATFORM_SetNbuPowerMode(void)
         {
             CMC_SetPowerModeProtection(CMC_0, kCMC_AllowAllLowPowerModes);
         }
-        CMC_0->PMCTRL[2] = CMC_PMCTRL_LPMODE(lpm_val); /* rf : PMCTRLPD2 */
+
     }
     else
     {
