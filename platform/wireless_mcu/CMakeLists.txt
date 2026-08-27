@@ -177,3 +177,14 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.dbg)
         CORE_IDS "cm33_core0" "cm33"
     )
 endif()
+
+if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr)
+    # Shared UID-derived MAC composition (OUI tables, CRC-32 config and the
+    # PLATFORM_DEVMGR_Get*AddrFromUID helpers) for the wireless_mcu platform
+    # family. MCXW23 has its own FFR-based UID implementation and is excluded.
+    mcux_add_source(SOURCES
+        fwk_platform_uid_mac.c
+        DEVICE_IDS ${KW45_FAMILY} ${KW47_FAMILY} ${MCXW71_FAMILY} ${MCXW72_FAMILY} ${KW43_FAMILY} ${MCXW70_FAMILY}
+        CORE_IDS "cm33_core0" "cm33"
+    )
+endif()

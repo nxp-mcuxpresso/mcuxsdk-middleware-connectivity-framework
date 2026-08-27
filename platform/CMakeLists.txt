@@ -9,6 +9,12 @@ mcux_set_list(MCXW23_FAMILY "MCXW236 MCXW235")
 mcux_set_list(KW43_FAMILY "KW43B43ZC7xxx")
 mcux_set_list(MCXW70_FAMILY "MCXW70ACxxx")
 
+if (CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr)
+    mcux_add_source(
+        SOURCES include/fwk_platform_devmgr.h
+    )
+endif()
+
 if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71)
     mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/mcu_nbu_common)
     mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/kw45_k32w1_mcxw71)

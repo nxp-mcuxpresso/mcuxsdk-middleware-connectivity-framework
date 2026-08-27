@@ -1,0 +1,70 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: BSD-3-Clause
+
+# DevMgr (Manufacturing Data abstraction) configuration options
+
+
+menuconfig MCUX_COMPONENT_middleware.wireless.framework.devmgr
+    bool "Dev Manager / Manufacturing Data abstraction"
+    # RW61x carries none of the DEVMGR_* backing stores (no HWParameter, no
+    # per-platform BD/154 store), so DevMgr is not offered on that platform.
+    depends on !MCUX_HW_DEVICE_RW612 && !MCUX_HW_DEVICE_RW610
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
+    help
+      Manufacturing Data abstraction module providing a single stable public
+      DEVMGR_* API for accessing device manufacturing data (BD address,
+      IEEE 802.15.4 address, crystal trim values). The active storage backend
+      is selected via the "DevMgr storage backend" choice below.
+      No application behavior is changed by enabling this.
+
+choice MCUX_COMPONENT_middleware.wireless.framework.devmgr_backend
+    prompt "DevMgr storage backend"
+    depends on MCUX_COMPONENT_middleware.wireless.framework.devmgr
+    default MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
+    help
+      Selects the DevMgr storage backend. Exactly one backend is active
+      whenever DevMgr is enabled. HWParameter is the current interim default.
+      CFPA is the intended eventual default; its ioctl driver / source
+      (fwk_devmgr_platf.c) is still a stub / to be delivered, so the working
+      default remains HWParameter for now. Override the default per platform
+      in the platform's Kconfig.defconfig.
+
+# Backend: Hardware Parameter flash storage (KW45, KW47)
+config MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
+    bool "HWParameter backend"
+    select MCUX_COMPONENT_middleware.wireless.framework.hw_parameter
+    help
+      DevMgr backend using the Hardware Parameter flash storage (HWParameter
+      service). This is the default backend for KW45x/K32W1x/MCXW71x and
+      KW47x/MCXW72x families.
+
+# Backend: CFPA ioctl access (MCXW23, KW43, MCXW70) -- stub, TBD
+config MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat
+    bool "platform specific backend"
+    help
+      DevMgr backend using CFPA ioctl access. Intended for MCXW23,
+      KW43x, and MCXW70 families. The service-level DEVMGR_* functions are
+      thin wrappers delegating to the per-platform PLATFORM_DEVMGR_*
+      implementation in fwk_platform_devmgr.c.
+
+endchoice
+
+# Optional MAC-address generation service (HWParameter backend only)
+config MCUX_COMPONENT_middleware.wireless.framework.devmgr_mac_gen
+    bool "MAC-address generation service (HWParameter backend only)"
+    default n
+    depends on MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
+    select MCUX_COMPONENT_middleware.wireless.framework.function_lib
+    # fwk_devmgr_mac_gen.c pulls its random bytes from the SecLib_RNG service
+    # (RNG_Interface.h / RNG_Init / RNG_GetPseudoRandomData), so that component
+    # must be present whenever generation is built.
+    select MCUX_COMPONENT_middleware.wireless.framework.seclib_rng
+    help
+      When enabled, builds fwk_devmgr_mac_gen.c and lets the HWParameter
+      backend compose a device address (BD or IEEE 802.15.4) from a fixed OUI
+      plus RNG / UID-derived bytes as a last-resort fallback when no
+      provisioned address (HWParameter or NMPA) exists. Default n. This option
+      is only meaningful with the HWParameter backend; the platform/CFPA
+      backend never invokes generation.
+
+

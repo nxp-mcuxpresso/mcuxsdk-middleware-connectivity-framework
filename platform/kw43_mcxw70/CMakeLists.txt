@@ -27,6 +27,13 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70)
         DEVICE_IDS ${KW43_FAMILY} ${MCXW70_FAMILY}
     )
 
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr)
+        mcux_add_source(SOURCES
+            fwk_platform_devmgr.c
+            DEVICE_IDS ${KW43_FAMILY} ${MCXW70_FAMILY}
+        )
+    endif()
+
     mcux_add_macro(CONFIG_PSA_NO_EXTERNAL_RNG_IN_DRIVER=1)
 
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)

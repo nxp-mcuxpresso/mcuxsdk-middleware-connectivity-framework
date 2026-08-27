@@ -165,6 +165,8 @@ void PLATFORM_RegisterHciLogCallback(platform_hci_log_cb_t cb);
  *
  * \param[out] bleDeviceAddress pointer to BLE device address bytes
  *
+ * \note This API is to be deprecated and replaced by DEVMGR_GetBdAddress
+ *       for all platforms
  */
 void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress);
 

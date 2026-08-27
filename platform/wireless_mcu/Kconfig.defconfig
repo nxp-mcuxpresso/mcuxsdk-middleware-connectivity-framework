@@ -84,6 +84,12 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.lcl
 config MCUX_COMPONENT_middleware.wireless.framework.platform.zb
     select MCUX_COMPONENT_component.rpmsg_adapter
 
+# DevMgr on KW45/KW47 composes a UID-derived address using the CRC HAL adapter
+# (fsl_adapter_crc.h / HAL_CrcCompute). Pull in the CRC adapter component so its
+# header and include path are available to the platform devmgr implementation.
+config MCUX_COMPONENT_middleware.wireless.framework.devmgr
+    select MCUX_COMPONENT_component.crc_adapter
+
 endif
 
 ## KW43
@@ -149,5 +155,11 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.reset
     select MCUX_COMPONENT_driver.wuu
     select MCUX_COMPONENT_driver.cmc
     select MCUX_COMPONENT_driver.lptmr
+
+# DevMgr on KW43/MCXW70 composes a UID-derived address using the CRC HAL adapter
+# (fsl_adapter_crc.h / HAL_CrcCompute). Pull in the CRC adapter component so its
+# header and include path are available to the platform devmgr implementation.
+config MCUX_COMPONENT_middleware.wireless.framework.devmgr
+    select MCUX_COMPONENT_component.crc_adapter
 
 endif

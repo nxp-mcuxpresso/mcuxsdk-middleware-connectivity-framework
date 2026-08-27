@@ -34,6 +34,14 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw7
         CORE_IDS "cm33_core0" "cm33"
     )
 
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr)
+        mcux_add_source(SOURCES
+            fwk_platform_devmgr.c
+            DEVICE_IDS ${KW45_FAMILY} ${MCXW71_FAMILY}
+            CORE_IDS "cm33_core0" "cm33"
+        )
+    endif()
+
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.seclib_rng_port.psa)
         mcux_add_source(SOURCES
             ../wireless_mcu/configs/SecLib_psa_config.h

@@ -74,6 +74,15 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23)
         )
     endif()
 
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr)
+        mcux_add_source(
+            SOURCES
+            fwk_platform_devmgr.c
+            DEVICE_IDS ${MCXW23_FAMILY}
+            CORE_IDS "cm33_core0"
+        )
+    endif()
+
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.reset)
         mcux_add_source(
             SOURCES

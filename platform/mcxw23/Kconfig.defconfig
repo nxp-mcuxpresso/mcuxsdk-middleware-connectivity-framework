@@ -4,6 +4,19 @@
 
 if MCUX_COMPONENT_middleware.wireless.framework.platform.mcxw23
 
+# MCXW23 never provisions its manufacturing data in the HWParameter flash
+# region; its BD address lives in the CFPA/NMPA/UID stores accessed by the
+# per-platform fwk_platform_devmgr.c. Force the DevMgr platform/CFPA backend so
+# the HWParameter backend (and the HWParameter service it selects) is never
+# compiled on this device.
+if MCUX_COMPONENT_middleware.wireless.framework.devmgr
+
+choice MCUX_COMPONENT_middleware.wireless.framework.devmgr_backend
+    default MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat
+endchoice
+
+endif
+
 config MCUX_COMPONENT_middleware.wireless.framework.platform.external_flash
     select MCUX_COMPONENT_component.flash_nor_spifi
     select MCUX_PRJSEG_module.board.wireless.board.extflash

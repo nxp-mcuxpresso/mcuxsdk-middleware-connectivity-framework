@@ -4,6 +4,7 @@
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/Common OPTIONAL)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/DBG OPTIONAL)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/FunctionLib OPTIONAL)
+mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/DevMgr OPTIONAL)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/HWParameter OPTIONAL)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/ModuleInfo OPTIONAL)
 mcux_add_cmakelists(${CMAKE_CURRENT_LIST_DIR}/services/MWSCoexistence OPTIONAL)

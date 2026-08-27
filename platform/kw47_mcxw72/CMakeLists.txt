@@ -34,6 +34,14 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72)
         CORE_IDS "cm33_core0" "cm33"
     )
 
+    if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr)
+        mcux_add_source(SOURCES
+            fwk_platform_devmgr.c
+            DEVICE_IDS ${KW47_FAMILY} ${MCXW72_FAMILY}
+            CORE_IDS "cm33_core0" "cm33"
+        )
+    endif()
+
     if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.preprocessed_linker_scripts)
         # workaround to be able to use preprocessed linker scripts on packages
         # could be moved to project segment once package generation is fully deprecated

@@ -184,7 +184,7 @@ void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
     }
 #else
     static uint8_t bdAddr[PLATFORM_BLE_BD_ADDR_FULL_SIZE] = {0U};
-    if (FLib_MemCmpToVal((const void *)bdAddr, 0x0U, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == TRUE)
+    if (FLib_MemCmpToVal((const void *)bdAddr, 0x0U, PLATFORM_BLE_BD_ADDR_FULL_SIZE) != FALSE)
     {
         PLATFORM_GenerateNewBDAddr(bdAddr);
     }

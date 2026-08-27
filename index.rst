@@ -14,6 +14,7 @@ Wireless Framework
 
    FSCI <services/FSCI/README.md>
    FunctionLib <services/FunctionLib/README.md>
+   DevMgr <services/DevMgr/README.md>
    HWParameter <services/HWParameter/README.md>
    LowPower <services/LowPower/README.md>
    ModuleInfo <services/ModuleInfo/README.md>
@@ -22,4 +23,4 @@ Wireless Framework
    SecLib_RNG <services/SecLib_RNG/README.md>
    Sensors <services/Sensors/README.md>
    SFC <services/SFC/README.md>
-   
+
