@@ -62,6 +62,9 @@
 #endif
 #endif
 
+#define HCI_MIN_LEN (3U)
+#define HCI_MAX_LEN (((uint32_t)UINT16_MAX)) /* In pure BLE the limit is 258 but in ACL it can reach 65535 */
+
 /* -------------------------------------------------------------------------- */
 /*                          Private type definitions                          */
 /* -------------------------------------------------------------------------- */
@@ -253,7 +256,7 @@ int PLATFORM_SendHciMessage(uint8_t *msg, uint32_t len)
         }
 #endif
         /* Log HCI TX packet if callback registered */
-        if ((platform_hci_log_cb != NULL) && (len > 1U) && (len <= (uint32_t)UINT8_MAX))
+        if ((platform_hci_log_cb != NULL) && (len >= HCI_MIN_LEN) && (len <= HCI_MAX_LEN))
         {
             platform_hci_log_cb(msg[0], &msg[1], (uint16_t)(len - 1U), false);
         }
@@ -284,7 +287,7 @@ int PLATFORM_SendHciVendorEvent(uint8_t *data, uint32_t len)
 
     do
     {
-        if ((data == NULL) || (len == 0U) || (len > (uint16_t)UINT16_MAX))
+        if ((data == NULL) || (len == 0U) || (len > HCI_MAX_LEN))
         {
             /* len shall be strictly positive as message shall not be empty */
             ret = -1;
@@ -478,7 +481,7 @@ static void PLATFORM_HciRxWorkHandler(fwk_work_t *work)
     while (status == KOSA_StatusSuccess)
     {
         /* The message length must be greater than 2, otherwise it's invalid */
-        if ((hci_rx_data.data != NULL) && (hci_rx_data.len >= 2U) && (hci_rx_data.len <= (uint32_t)UINT16_MAX))
+        if ((hci_rx_data.data != NULL) && (hci_rx_data.len >= 2U) && (hci_rx_data.len <= HCI_MAX_LEN))
         {
             hci_rx_callback(hci_rx_data.data[0], &hci_rx_data.data[1], (uint16_t)(hci_rx_data.len - 1U));
 

@@ -66,6 +66,9 @@
 
 #define HCI_EVT_PS_SLEEP_OCF 0x20U
 
+#define HCI_MIN_LEN (3U)
+#define HCI_MAX_LEN (((uint32_t)UINT16_MAX)) /* In pure BLE the limit is 258 but in ACL it can reach 65535 */
+
 #define get_opcode(ocg, ocf) (((uint16_t)(ocg) & (uint16_t)0x3FU) << 10) | (uint16_t)((ocf)&0x3FFU)
 
 /* The wake up done interrupt doesn't make any call to FreeRTOS API so it should
@@ -870,7 +873,7 @@ static hal_imumc_return_status_t PLATFORM_HciImumcRxCallback(void *param, uint8_
     /* The smallest possible HCI packet is an HCI Event of 3 bytes,
      * while most event contain a 4th sub-event byte, the largest possible
      * HCI packet is 256 bytes */
-    if ((len >= 3U) && (len <= (uint32_t)UINT8_MAX))
+    if ((len >= HCI_MIN_LEN) && (len <= HCI_MAX_LEN))
     {
         packetType = data[0];
 
