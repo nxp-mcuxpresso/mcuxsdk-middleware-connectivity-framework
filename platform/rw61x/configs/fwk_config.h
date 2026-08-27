@@ -21,6 +21,10 @@
 #define gPlatformUseHwParameter_d 0
 #endif
 
+#if !defined(gPlatformUseDevMgr_d)
+#define gPlatformUseDevMgr_d 0
+#endif
+
 #ifndef gPlatformDisableBleLowPower_d
 #define gPlatformDisableBleLowPower_d 0
 #endif

@@ -247,12 +247,23 @@ uint8_t PLATFORM_GetXtal32MhzTrim(bool_t regRead);
 void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams);
 
 /*!
- * \brief Update 32MHz trim value with the one stored in HW parameters.
+ * \brief Update 32MHz trim value with the one stored in HW parameters or CFPA region.
  *
- * \ note Does nothing if gPlatformUseHwParameter_d is not enabled.
+ * \note Does nothing if  DEVMGR_Get32MHzTrim returns any status other than success.
  *
  */
-void PLATFORM_LoadHwParams(void);
+void PLATFORM_Xtal32MHzInit(void);
+
+/*!
+ * \brief PLATFORM_LoadHwParams deprecated replaced by PLATFORM_Xtal32MHzInit.
+ *
+ * \note kept for backward compatibility.
+ *
+ */
+static inline void PLATFORM_LoadHwParams(void)
+{
+    PLATFORM_Xtal32MHzInit();
+}
 
 /*!
  * \brief  Initialize Timer Manager

@@ -8,7 +8,13 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.devmgr
     bool "Dev Manager / Manufacturing Data abstraction"
     # RW61x carries none of the DEVMGR_* backing stores (no HWParameter, no
     # per-platform BD/154 store), so DevMgr is not offered on that platform.
+    # NBU/cm33_core1 apps (KW45/KW47/KW43 NBU families) have no access to
+    # HWParameter or DevMgr; this is defense-in-depth alongside the
+    # conditional selects in bluetooth/Kconfig.
     depends on !MCUX_HW_DEVICE_RW612 && !MCUX_HW_DEVICE_RW610
+    depends on !MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu
+    depends on !MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu
+    depends on !MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     help
       Manufacturing Data abstraction module providing a single stable public

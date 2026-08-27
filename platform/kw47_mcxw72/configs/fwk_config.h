@@ -51,6 +51,11 @@
 #if !defined(gPlatformUseHwParameter_d)
 #define gPlatformUseHwParameter_d 1
 #endif
+
+#if !defined(gPlatformUseDevMgr_d)
+#define gPlatformUseDevMgr_d 1
+#endif
+
 /*
  * gHwParamsProdDataMainFlashMode_c HWParameters PROD_DATA remain at top of main flash,
  * where the linker script defines PROD_DATA_BASE_ADDR.
@@ -271,18 +276,6 @@
 /* Enable LDO force mode on the platform */
 #ifndef gPlatformEnableLdoForce
 #define gPlatformEnableLdoForce 1
-#endif
-
-/*!
- * \brief use the device unique Id for BD address
- *
- * \details 0 : Use the NXP OUI for the three first bytes and generate randomly the last three ones
- *          1 : Use the NXP OUI for the three first bytes and the UID_LSB from RADIO_CTRL to define the last three ones
- *          2 : Read full BD adress from IFR and fallback to 0 if not available
- *
- */
-#ifndef gPlatformUseUniqueDeviceIdForBdAddr_d
-#define gPlatformUseUniqueDeviceIdForBdAddr_d 2
 #endif
 
 /* Automatically set BLE Max TX power when calling PLATFORM_InitBle()

@@ -21,6 +21,9 @@
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
 
+/*
+ * PLATFORM_GetBDAddr is deprecated and should be replaced by DEVMGR_GetBdAddress
+ */
 void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
 {
     flash_config_t flashInstance;

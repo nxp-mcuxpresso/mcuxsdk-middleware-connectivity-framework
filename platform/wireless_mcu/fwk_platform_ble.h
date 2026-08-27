@@ -38,18 +38,6 @@
 #define gAppMaxTxPowerDbm_c 10
 #endif /* gAppMaxTxPowerDbm_c */
 
-#if !defined(gPlatformUseUniqueDeviceIdForBdAddr_d)
-/*!
- * \brief use the device unique Id for BD address
- *
- * \details 0 : Use the NXP OUI for the three first bytes and generate randomly the last three ones
- *          1 : Use the NXP OUI for the three first bytes and the UID_LSB from RADIO_CTRL to define the last three ones
- *          2 : Read full BD adress from IFR will fallback on RNG method if there is nothing in IFR
- *
- */
-#define gPlatformUseUniqueDeviceIdForBdAddr_d 0
-#endif
-
 /* -------------------------------------------------------------------------- */
 /*                           Public type definitions                          */
 /* -------------------------------------------------------------------------- */

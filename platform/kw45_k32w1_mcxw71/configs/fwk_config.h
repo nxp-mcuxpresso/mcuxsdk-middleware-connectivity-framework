@@ -51,6 +51,11 @@
 #if !defined(gPlatformUseHwParameter_d)
 #define gPlatformUseHwParameter_d 1
 #endif
+
+#if !defined(gPlatformUseDevMgr_d)
+#define gPlatformUseDevMgr_d 1
+#endif
+
 /*
  * gHwParamsProdDataMainFlashMode_c HWParameters PROD_DATA remain at top of main flash,
  * where the linker script defines PROD_DATA_BASE_ADDR.

@@ -42,4 +42,8 @@
 #define gPlatformUseTimerManager_d 1
 #endif
 
+#if !defined(gPlatformUseDevMgr_d)
+#define gPlatformUseDevMgr_d 1
+#endif
+
 #endif /* _FWK_CONFIG_H_ */

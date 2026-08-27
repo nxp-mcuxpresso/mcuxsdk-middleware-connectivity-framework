@@ -7,6 +7,8 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 
+#include <assert.h>
+#include <stdbool.h>
 /* Get BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT if defined in board.h for 32MHz settings
  * BOARD_FRO32K_PPM_TARGET and BOARD_FRO32K_FILTER_SIZE for fro32k calibration settings */
 #include "board_platform.h"
@@ -15,19 +17,8 @@
 #include "fwk_config.h"
 #include "fwk_platform_ble.h"
 #include "fwk_platform_ics.h"
-#include "FunctionLib.h"
-#include "RNG_Interface.h"
 #include "fwk_debug.h"
 #include "controller_api.h"
-
-#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
-#include "HWParameter.h"
-#endif
-
-#if defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d > 0)
-#include "fwk_platform_definitions.h"
-#include "fwk_platform.h"
-#endif
 
 #if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
     defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
@@ -37,15 +28,6 @@
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
-#define PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE 3U
-#define PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE  3U
-#define PLATFORM_BLE_BD_ADDR_FULL_SIZE      6U
-
-#define mBoardUidSize_c 16
-
-#ifndef BD_ADDR_OUI
-#define BD_ADDR_OUI 0x37U, 0x60U, 0x00U
-#endif
 
 /* 30 bit max value : timestamp is originally a 32bit integer counting quarter microseconds,
  * thence the loss of 2 bits when converted to microseconds.
@@ -67,14 +49,6 @@
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
-
-/*!
- * \brief Generate new BD address
- *
- * \param[in] Provide pointer to buffer location when the BD address should be stored
- *
- */
-STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress);
 
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
 /*!
@@ -109,7 +83,6 @@ STATIC uint32_t PLATFORM_ComputeTimeDiffNbu2HostTstmr(uint64_t tstmr0);
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
-STATIC const uint8_t gBD_ADDR_OUI_c[PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
 
 #if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
     defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
@@ -141,56 +114,6 @@ static const sfc_config_t sfcConfig = {
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
-
-/*!
- * \brief retrieve BLE device address
- *
- * \param[out] bleDeviceAddress pointer to BLE device address bytes
- *
- */
-void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
-{
-#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
-    hardwareParameters_t *pHWParams = NULL;
-    uint32_t              status;
-
-    status = NV_ReadHWParameters(&pHWParams);
-
-    /* FLib_MemCmpToVal mandatory to make sure BLE mac address is valid
-     * because return status of NV_ReadHWParameters is 1 only at 1st read attempt */
-    if ((status == gHWParameterSuccess_c) &&
-        (FLib_MemCmpToVal((const void *)pHWParams->bluetooth_address, 0xFFU, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == FALSE))
-    {
-        uint32_t regPrimask;
-
-        regPrimask = DisableGlobalIRQ();
-        FLib_MemCpy((void *)bleDeviceAddress, (const void *)pHWParams->bluetooth_address,
-                    PLATFORM_BLE_BD_ADDR_FULL_SIZE);
-        EnableGlobalIRQ(regPrimask);
-    }
-    else
-    {
-        uint32_t regPrimask;
-
-        /* User can decide to use the device unique address or a random generated address with
-         * gPlatformUseUniqueDeviceIdForBdAddr_d */
-        PLATFORM_GenerateNewBDAddr(bleDeviceAddress);
-
-        regPrimask = DisableGlobalIRQ();
-        FLib_MemCpy((void *)pHWParams->bluetooth_address, (void *)bleDeviceAddress, PLATFORM_BLE_BD_ADDR_FULL_SIZE);
-
-        (void)NV_WriteHWParameters();
-        EnableGlobalIRQ(regPrimask);
-    }
-#else
-    static uint8_t bdAddr[PLATFORM_BLE_BD_ADDR_FULL_SIZE] = {0U};
-    if (FLib_MemCmpToVal((const void *)bdAddr, 0x0U, PLATFORM_BLE_BD_ADDR_FULL_SIZE) != FALSE)
-    {
-        PLATFORM_GenerateNewBDAddr(bdAddr);
-    }
-    FLib_MemCpy((void *)bleDeviceAddress, (void *)bdAddr, PLATFORM_BLE_BD_ADDR_FULL_SIZE);
-#endif
-}
 
 int32_t PLATFORM_EnableBleSecureKeyManagement(void)
 {
@@ -256,8 +179,11 @@ uint64_t PLATFORM_GetDeltaTimeStamp(uint32_t controllerTimestamp)
 int PLATFORM_InitWakeUpDelay(void)
 {
     int ret = 0;
-
+    /* BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT defines by how many half slot ahead of the
+     * LL interrupt the NBU must be woken up to have the 32MHz xtal ready on time
+     */
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
+    /* Only applies if BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT is defined */
     ret = PLATFORM_SendWakeupDelay(BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT);
 #endif
 
@@ -268,6 +194,7 @@ int PLATFORM_InitSfc(void)
 {
 #if defined(BOARD_FRO32K_PPM_TARGET) || defined(BOARD_FRO32K_FILTER_SIZE) || \
     defined(BOARD_FRO32K_MAX_CALIBRATION_INTERVAL_MS) || defined(BOARD_FRO32K_TRIG_SAMPLE_NUMBER)
+    /* Only applies if the any of the 'BOARD_FRO32K_' macros are supplied */
     PLATFORM_FwkSrvSetRfSfcConfig((void *)&sfcConfig, (uint16_t)sizeof(sfc_config_t));
 #endif
     return 0;
@@ -287,71 +214,6 @@ bool PLATFORM_CheckNextBleConnectivityActivity(void)
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */
 /* -------------------------------------------------------------------------- */
-
-STATIC void PLATFORM_GenerateNewBDAddr(uint8_t *bleDeviceAddress)
-{
-    uint8_t macAddr[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE] = {0U};
-
-#if defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d == 1)
-    /* First need to activate the radio clock */
-    PLATFORM_RemoteActiveReq();
-    uint32_t uid_lsb = RADIO_CTRL->UID_LSB;
-    PLATFORM_RemoteActiveRel();
-
-    /* The UID is read out as 0 if clock is uninitalized.
-     * Even when initialized UID may have been left as 0xffffffff */
-    if ((uid_lsb != 0U) && (uid_lsb != UINT32_MAX))
-    {
-        for (int i = 0; i < PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE; i++)
-        {
-            macAddr[i] = (uint8_t)uid_lsb & 0xffU;
-            uid_lsb >>= 8;
-        }
-        /* Set 3 LSB from mac address */
-        FLib_MemCpy((void *)bleDeviceAddress, (const void *)macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
-
-        /* Set 3 MSB from OUI */
-        FLib_MemCpy((void *)&bleDeviceAddress[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE], (const void *)gBD_ADDR_OUI_c,
-                    PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
-    }
-    else
-#elif defined(gPlatformUseUniqueDeviceIdForBdAddr_d) && (gPlatformUseUniqueDeviceIdForBdAddr_d == 2)
-    if (FLib_MemCmpToVal((const void *)(uint32_t *)IFR_BLE_BD_ADDR, 0xFFU, PLATFORM_BLE_BD_ADDR_FULL_SIZE) == false)
-    {
-        const uint8_t *ifr_bd_addr = (const uint8_t *)IFR_BLE_BD_ADDR;
-        /* Copy BLE BD address from dedicated IFR0 section */
-        /* Equivalent of FLib_MemCpyReverseOrder but no guarantee that bleDeviceAddress is 32 bit aligned */
-        for (uint32_t i = 0U; i < PLATFORM_BLE_BD_ADDR_FULL_SIZE; i++)
-        {
-            bleDeviceAddress[i] = ifr_bd_addr[PLATFORM_BLE_BD_ADDR_FULL_SIZE - 1U - i];
-        }
-    }
-    else
-#endif
-    {
-        int ret;
-
-        ret = RNG_Init();
-        assert(ret == 0);
-        (void)ret;
-
-#ifndef FWK_RNG_DEPRECATED_API
-        ret = RNG_GetPseudoRandomData(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
-#else
-        RNG_SetPseudoRandomNoSeed(NULL);
-        ret = RNG_GetPseudoRandomNo(macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE, NULL);
-#endif
-        assert(ret == (int32_t)PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
-        (void)ret;
-
-        /* Set 3 LSB from mac address */
-        FLib_MemCpy((void *)bleDeviceAddress, (const void *)macAddr, PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE);
-
-        /* Set 3 MSB from OUI */
-        FLib_MemCpy((void *)&bleDeviceAddress[PLATFORM_BLE_BD_ADDR_RAND_PART_SIZE], (const void *)gBD_ADDR_OUI_c,
-                    PLATFORM_BLE_BD_ADDR_OUI_PART_SIZE);
-    }
-}
 
 #ifdef BOARD_LL_32MHz_WAKEUP_ADVANCE_HSLOT
 STATIC int PLATFORM_SendWakeupDelay(uint8_t wakeupDelayToBeSendToNbu)

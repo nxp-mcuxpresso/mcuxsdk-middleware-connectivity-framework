@@ -18,6 +18,9 @@
 #include "fwk_platform_ble.h"
 #include "fwk_platform_ics.h"
 #include "fwk_debug.h"
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+#include "fwk_devmgr.h"
+#endif
 
 #if defined(gPlatformHciUseWorkqueueRxProcessing_d) && (gPlatformHciUseWorkqueueRxProcessing_d > 0)
 #include "fwk_workq.h"
@@ -199,10 +202,8 @@ int PLATFORM_InitBle(void)
         CHECK_AND_RAISE_ERROR(status, -9);
 #endif
 
-#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
-        /* Update 32MHz trim value with the one stored in HW parameters */
-        PLATFORM_LoadHwParams();
-#endif
+        /* Update 32MHz trim value with the one stored in HW parameters or CFPA */
+        PLATFORM_Xtal32MHzInit();
 
 #if defined(gPlatformSetBleMaxTxPowerAtInit_d) && (gPlatformSetBleMaxTxPowerAtInit_d > 0)
         PLATFORM_SetBleMaxTxPower((int8_t)gAppMaxTxPowerDbm_c);
@@ -355,6 +356,19 @@ void PLATFORM_SetBleMaxTxPower(int8_t max_tx_power)
     (void)max_tx_power;
 #endif
 }
+
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+/*!
+ * \brief PLATFORM_GetBDAddr deprecated replaced by DEVMGR_GetBdAddress.
+ *
+ * \note kept for backward compatibility.
+ *
+ */
+void PLATFORM_GetBDAddr(uint8_t *bleDeviceAddress)
+{
+    (void)DEVMGR_GetBdAddress(bleDeviceAddress, NULL);
+}
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                             */

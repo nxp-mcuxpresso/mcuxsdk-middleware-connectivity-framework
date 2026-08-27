@@ -36,6 +36,11 @@
 #define gPlatformUseHwParameter_d 0
 #endif
 
+/* Neither is the DevMgr service */
+#if !defined(gPlatformUseDevMgr_d)
+#define gPlatformUseDevMgr_d 0
+#endif
+
 /* On Zephyr the NBU GPIO PORT D debug access is not enabled by the framework */
 #ifndef gPlatformNbuDebugGpioDAccessEnabled_d
 #define gPlatformNbuDebugGpioDAccessEnabled_d 0

@@ -15,6 +15,7 @@
 #include "fwk_platform_devmgr.h"
 #include "FunctionLib.h"
 #include "fsl_rom_api.h"
+#include "fsl_debug_console.h"
 
 /**********************************************************************************
  *************************************************************************************
@@ -80,7 +81,8 @@ static int s_PLATFORM_DEVMGR_GetBdAddrFromLocation(uint8_t *pOutAddr, ffr_bd_add
         flashStatus = FFR_GetBdAddress(&s_flashInstance, pOutAddr, &searchLocation);
         if (flashStatus != kStatus_Success)
         {
-            /* No address available at this location. */
+            /* No address available at this location.
+               FFR_GetBdAddress may legitimately return non-Success when address is absent */
             status = DEVMGR_Blank_c;
             break;
         }
@@ -91,6 +93,9 @@ static int s_PLATFORM_DEVMGR_GetBdAddrFromLocation(uint8_t *pOutAddr, ffr_bd_add
             status = DEVMGR_Blank_c;
             break;
         }
+        PRINTF("Using bdAddr from %s\r\n", location == kFFR_BdAddrLocationCmpa ? "CMPA" :
+                                           location == kFFR_BdAddrLocationNmpa ? "NMPA" :
+                                                                                 "UUID");
 
         status = DEVMGR_Success_c;
     } while (false);

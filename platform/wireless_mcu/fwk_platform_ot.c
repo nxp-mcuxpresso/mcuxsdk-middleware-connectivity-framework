@@ -4,13 +4,19 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+/**********************************************************************************
+ *************************************************************************************
+ * Include
+ *************************************************************************************
+ ********************************************************************************** */
+#include <assert.h>
+#include <stdbool.h>
 #ifndef __ZEPHYR__
 #include "board_platform.h"
 #include "pin_mux.h"
-#include "SecLib.h"
-#include "RNG_Interface.h"
-#include "HWParameter.h"
-#endif
+#include "fwk_devmgr.h"
+#include "fwk_platform_devmgr.h"
+#endif /* __ZEPHYR__ */
 
 #include "fsl_common.h"
 #include "fsl_adapter_rpmsg.h"
@@ -20,15 +26,11 @@
 #include "fwk_platform_ot.h"
 #include "FunctionLib.h"
 
-/* Default IEE EIU64 OUI */
-#ifndef IEEE802_15_4_ADDR_OUI
-#define IEEE802_15_4_ADDR_OUI 0x37U, 0x60U, 0x00U
-#endif
-
-#ifndef __ZEPHYR__
-static const uint8_t gIeee802_15_4_ADDR_OUI_c[MAC_ADDR_OUI_PART_SIZE] = {IEEE802_15_4_ADDR_OUI};
-#endif
-
+/**********************************************************************************
+*************************************************************************************
+* Public macros
+*************************************************************************************
+********************************************************************************** */
 /* Check if __st is negative,  if true, apply 4 bits shit and add new __error_code,
     assert in debug and break
    Shall be called in a do while(0) bracket */
@@ -46,6 +48,10 @@ static const uint8_t gIeee802_15_4_ADDR_OUI_c[MAC_ADDR_OUI_PART_SIZE] = {IEEE802
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
  * the returned status will be negative */
 #define RAISE_ERROR(__st, __error_code) -(int)((uint32_t)(((uint32_t)(__st) << 4) | (uint32_t)(__error_code)));
+
+/* -------------------------------------------------------------------------- */
+/*                             Public functions                               */
+/* -------------------------------------------------------------------------- */
 
 int PLATFORM_InitOT(void)
 {
@@ -80,7 +86,7 @@ int PLATFORM_InitOT(void)
 #endif
 
         /* Update 32MHz trim value with the one stored in HW parameters */
-        PLATFORM_LoadHwParams();
+        PLATFORM_Xtal32MHzInit();
 
 #if !defined(gBoardUseFro32k_d) || (gBoardUseFro32k_d == 0)
         /* Make sure OSC32k is ready and select it as clock source */
@@ -92,93 +98,13 @@ int PLATFORM_InitOT(void)
     return status;
 }
 
-static void PLATFORM_GenerateNewEui64Addr(uint8_t *eui64_address)
-{
-#ifndef __ZEPHYR__
-    uint8_t macAddr[EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE] = {0U};
-#if (gPlatformUseUniqueDeviceIdFor15_4Addr_d != 0)
-    uint32_t uid_lsb = RADIO_CTRL->UID_LSB;
-    if (uid_lsb != 0U)
-    {
-        for (int i = 0; i < sizeof(uint32_t); i++)
-        {
-            macAddr[i] = (uint8_t)uid_lsb & 0xFFU;
-            uid_lsb >>= 8;
-        }
-        macAddr[4] = (uint8_t)(RADIO_CTRL->UID_MSB) & 0xFFU;
-    }
-    else
-#endif
-    {
-        uint8_t ret;
-        int16_t num;
-
-        ret = RNG_Init();
-        assert(ret == 0);
-        (void)ret;
-#ifndef FWK_RNG_DEPRECATED_API
-        num = RNG_GetPseudoRandomData(macAddr, EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE, NULL);
-#else
-        RNG_SetPseudoRandomNoSeed(NULL);
-        num = RNG_GetPseudoRandomNo(macAddr, EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE, NULL);
-#endif
-        assert(num == (EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE));
-        (void)num;
-    }
-    /* Set 3 LSB from mac address */
-    FLib_MemCpy((void *)eui64_address, (const void *)macAddr, EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE);
-
-    /* Set 3 MSB from OUI */
-#if (defined(FWK_KW47_MCXW72_FAMILIES) && (FWK_KW47_MCXW72_FAMILIES == 1))
-    /* If the IFR is not blank, copy its first three bytes to the OUI field of the extended address.
-       Otherwise, use the static OUI as a fallback. */
-    if (FLib_MemCmpToVal((const void *)IFR_BLE_BD_ADDR, 0xFFU, MAC_ADDR_OUI_PART_SIZE) == FALSE)
-    {
-        FLib_MemCpy((void *)&eui64_address[EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE], (const void *)IFR_BLE_BD_ADDR,
-                    MAC_ADDR_OUI_PART_SIZE);
-    }
-    else
-#endif
-    {
-        FLib_MemCpy((void *)&eui64_address[EUI_64_SZ - MAC_ADDR_OUI_PART_SIZE], (const void *)gIeee802_15_4_ADDR_OUI_c,
-                    MAC_ADDR_OUI_PART_SIZE);
-    }
-#endif
-}
-
+/*!
+ * \brief PLATFORM_GetIeee802_15_4Addr deprecated replaced by DEVMGR_Get154Address.
+ *
+ * \note kept for backward compatibility.
+ *
+ */
 void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address)
 {
-#ifndef __ZEPHYR__
-    hardwareParameters_t *pHWParams = NULL;
-    uint32_t              status;
-
-    status = NV_ReadHWParameters(&pHWParams);
-
-    /* FLib_MemCmpToVal mandatory to make sure IEEE 802.15.4 MAC address is valid
-     * because return status of NV_ReadHWParameters is 1 only at 1st read attempt */
-    if ((status == 0U) && (FLib_MemCmpToVal((const void *)pHWParams->ieee_802_15_4_address, 0xFFU, EUI_64_SZ) == FALSE))
-    {
-        uint32_t regPrimask;
-
-        regPrimask = DisableGlobalIRQ();
-        FLib_MemCpy((void *)eui64_address, (const void *)pHWParams->ieee_802_15_4_address, EUI_64_SZ);
-        EnableGlobalIRQ(regPrimask);
-    }
-    else
-    {
-        uint32_t regPrimask;
-
-        /* User can decide to use the device unique address or a random generated address with
-         * gPlatformUseUniqueDeviceIdForBdAddr_d */
-        PLATFORM_GenerateNewEui64Addr(eui64_address);
-
-        regPrimask = DisableGlobalIRQ();
-        FLib_MemCpy((void *)pHWParams->ieee_802_15_4_address, (void *)eui64_address, EUI_64_SZ);
-
-        (void)NV_WriteHWParameters();
-        EnableGlobalIRQ(regPrimask);
-    }
-#else
-    PLATFORM_GenerateNewEui64Addr(eui64_address);
-#endif
+    (void)DEVMGR_Get154Address(eui64_address, NULL);
 }

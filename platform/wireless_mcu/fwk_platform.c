@@ -19,6 +19,9 @@
 #if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 #include "fwk_platform_fpga.h"
 #endif
+#if (defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0))
+#include "fwk_devmgr.h"
+#endif
 
 #include "fsl_ccm32k.h"
 #include "fsl_spc.h"
@@ -29,10 +32,6 @@
 
 #if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
 #include "fsl_component_timer_manager.h"
-#endif
-
-#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
-#include "HWParameter.h"
 #endif
 
 #if defined(gMWS_Enabled_d) && (gMWS_Enabled_d > 0)
@@ -47,8 +46,8 @@
 #include "fsl_k4_flash.h"
 #if defined(CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND) && (CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND == 1)
 #include "controller_api.h"
-#endif
-#endif
+#endif /* CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND */
+#endif /* CONFIG_FLASH_K4_ASYNC_MODE */
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -209,6 +208,12 @@ static OSA_MUTEX_HANDLE_DEFINE(s_flashAsyncMutex);
 #endif /* CONFIG_FLASH_K4_ASYNC_MODE */
 
 /* -------------------------------------------------------------------------- */
+/*                             Private prototypes                             */
+/* -------------------------------------------------------------------------- */
+STATIC void PLATFORM_Apply32MHzXOTrim(uint8_t trimValue);
+STATIC void PLATFORM_ApplyCCM32K_OscConfig(uint8_t xtalCap32K);
+
+/* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
 /* -------------------------------------------------------------------------- */
 
@@ -252,7 +257,35 @@ static uint32_t PLATFORM_ImminentFlashStallCb(uint32_t suspend)
 #endif /* CONFIG_PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND */
 #endif /* CONFIG_FLASH_K4_ASYNC_MODE */
 
-static int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
+STATIC void PLATFORM_Apply32MHzXOTrim(uint8_t trimValue)
+{
+    uint32_t rfmc_xo;
+
+    /* Apply a trim value to the crystal oscillator */
+    rfmc_xo = RFMC->XO_TEST;
+
+    rfmc_xo &= ~(RFMC_XO_TEST_CDAC_MASK);
+    rfmc_xo |= RFMC_XO_TEST_CDAC(trimValue);
+
+    RFMC->XO_TEST = rfmc_xo;
+}
+
+STATIC void PLATFORM_ApplyCCM32K_OscConfig(uint8_t xtalCap32K)
+{
+    ccm32k_osc_config_t osc32k_config;
+
+    osc32k_config.enableInternalCapBank = true;
+    /* coarseAdjustment is a board parameter see board_platform.h */
+    osc32k_config.coarseAdjustment = (ccm32k_osc_coarse_adjustment_value_t)BOARD_32KHZ_XTAL_COARSE_ADJ_DEFAULT;
+
+    /* Capacitance value comes from the function argument */
+    osc32k_config.extalCap = (ccm32k_osc_extal_cap_t)xtalCap32K;
+    osc32k_config.xtalCap  = (ccm32k_osc_xtal_cap_t)xtalCap32K;
+    /* Apply to 32kHz crystal */
+    CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &osc32k_config);
+}
+
+STATIC int PLATFORM_SetXtalTempComp(const xtal_temp_comp_lut_t *lut, int16_t temperature)
 {
     int     ret = 0;
     uint8_t cdac_trim_val;
@@ -694,24 +727,20 @@ int PLATFORM_InitMulticore(void)
     return status;
 }
 
-void PLATFORM_LoadHwParams(void)
+void PLATFORM_Xtal32MHzInit(void)
 {
-#if defined(gPlatformUseHwParameter_d) && (gPlatformUseHwParameter_d > 0)
-    uint8_t               xtal_32m_trim;
-    hardwareParameters_t *pHWParams = NULL;
-    uint32_t              status;
-
-    /* Load the HW parameters from Flash to RAM */
-    status = NV_ReadHWParameters(&pHWParams);
-
-    if ((status == gHWParameterSuccess_c) && (pHWParams->xtalTrim != 0xFFU))
-    {
-        /* There is an existing trim value */
-        xtal_32m_trim = pHWParams->xtalTrim;
-        /* Set value to RFMC */
-        PLATFORM_SetXtal32MhzTrim(xtal_32m_trim, FALSE);
-    }
+    /* Read XO trimming value from platform configuration */
+    uint8_t xtal_32m_trim = 0xffU;
+    int     ret;
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+    ret = DEVMGR_Get32MHzTrim(&xtal_32m_trim);
+    if ((ret != DEVMGR_Success_c) || (xtal_32m_trim == 0xFFU))
 #endif
+    {
+        xtal_32m_trim = BOARD_32MHZ_XTAL_CDAC_VALUE;
+    }
+    /* Apply configuration */
+    PLATFORM_Apply32MHzXOTrim(xtal_32m_trim);
 }
 
 /* get 4 words of information that uniquely identifies the MCU */
@@ -801,89 +830,44 @@ int PLATFORM_GetOscCap32KValue(uint8_t *xtalCap32K)
     }
     else
     {
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+        int ret;
         /* If no HWParameter or the production data unset it will keep the default value. */
-        *xtalCap32K = BOARD_32KHZ_XTAL_CLOAD_DEFAULT;
-#if defined gPlatformUseHwParameter_d && (gPlatformUseHwParameter_d > 0)
-        do
-        {
-            hardwareParameters_t *pHWParams = NULL;
-            uint32_t              st;
-            st = NV_ReadHWParameters(&pHWParams);
-            if ((st != gHWParameterSuccess_c) && (st != gHWParameterBlank_c))
-            {
-                status = (int)st;
-                break;
-            }
-            status = 0;
-            if (st == gHWParameterSuccess_c)
-            {
-                if (pHWParams->xtalCap32K != 0xFFU)
-                {
-                    uint32_t regPrimask;
-                    regPrimask  = DisableGlobalIRQ();
-                    *xtalCap32K = pHWParams->xtalCap32K;
-                    EnableGlobalIRQ(regPrimask);
-                }
-                else
-                {
-                    /* Production Data not blank but no valid xtalCap32K, keep xtalCap32K default value and return no
-                     * error */
-                }
-            }
-            else
-            {
-                /* Production Data blank, keep xtalCap32K default value and return no error */
-            }
-        } while (false);
+        ret = DEVMGR_Get32kHzTrim(xtalCap32K);
+        if ((ret != DEVMGR_Success_c) || (*xtalCap32K == 0xffU))
 #endif
+        {
+            *xtalCap32K = BOARD_32KHZ_XTAL_CLOAD_DEFAULT;
+        }
     }
     return status;
 }
 
 int PLATFORM_SetOscCap32KValue(uint8_t xtalCap32K)
 {
-    int status = -1;
-    if (xtalCap32K <= BOARD_32KHZ_XTAL_CAPACITANCE_MAX_VALUE)
+    int status = 0;
+    do
     {
-        /* From now on xtalCap32K is sanitized */
-        status = 0;
-#if defined gPlatformUseHwParameter_d && (gPlatformUseHwParameter_d > 0)
-        do
+        int ret;
+        if (xtalCap32K > BOARD_32KHZ_XTAL_CAPACITANCE_MAX_VALUE)
         {
-            hardwareParameters_t *pHWParams = NULL;
-            uint32_t              regPrimask;
-            uint32_t              st;
-            st = NV_ReadHWParameters(&pHWParams);
-            if ((st != gHWParameterSuccess_c) && (st != gHWParameterBlank_c))
-            {
-                status = (int)st;
-                break;
-            }
-            /* We have read the production data area, replace the previous xtalCap32K value by the new one */
-            regPrimask = DisableGlobalIRQ();
-            if (pHWParams->xtalCap32K != xtalCap32K)
-            {
-                /* update value only if it changed */
-                pHWParams->xtalCap32K = xtalCap32K;
-                (void)NV_WriteHWParameters();
-            }
-            EnableGlobalIRQ(regPrimask);
-        } while (false);
-
-        if (status == 0)
-#endif
-
-        {
-            ccm32k_osc_config_t osc32k_config;
-
-            osc32k_config.enableInternalCapBank = true;
-            osc32k_config.coarseAdjustment = (ccm32k_osc_coarse_adjustment_value_t)BOARD_32KHZ_XTAL_COARSE_ADJ_DEFAULT;
-
-            osc32k_config.extalCap = (ccm32k_osc_extal_cap_t)xtalCap32K;
-            osc32k_config.xtalCap  = (ccm32k_osc_xtal_cap_t)xtalCap32K;
-
-            CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &osc32k_config);
+            /* Invalid value */
+            status = -1;
+            break;
         }
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+        /* From now on xtalCap32K is sanitized */
+        ret = DEVMGR_Set32kHzTrim(xtalCap32K);
+        if (ret != DEVMGR_Success_c)
+        {
+            break;
+        }
+#endif
+        status = 0;
+    } while (false);
+    if (status == 0)
+    {
+        PLATFORM_ApplyCCM32K_OscConfig(xtalCap32K);
     }
     return status;
 }
@@ -944,43 +928,27 @@ uint8_t PLATFORM_GetXtal32MhzTrim(bool_t regRead)
     return xtal32MhzTrim;
 }
 
-/* Calling this function assumes HWParameters in flash have been read */
 void PLATFORM_SetXtal32MhzTrim(uint8_t trimValue, bool_t saveToHwParams)
 {
-    uint32_t rfmc_xo;
-
-#if defined gPlatformUseHwParameter_d && (gPlatformUseHwParameter_d > 0)
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+    /* Attempts to save permanently the value given by trimValue on if saveToHwParams is set */
     if (TRUE == saveToHwParams)
     {
-        uint32_t              status;
-        hardwareParameters_t *pHWParams = NULL;
-        status                          = NV_ReadHWParameters(&pHWParams);
-        if ((status == gHWParameterSuccess_c) || (status == gHWParameterBlank_c))
-        {
-            /* update value only if it changed */
-            if (trimValue != pHWParams->xtalTrim)
-            {
-                pHWParams->xtalTrim = trimValue;
-                (void)NV_WriteHWParameters();
-            }
-        }
+        /* DEVMGR_Set* invocations imply a platform reset on KW43/MCXW70 backend */
+        (void)DEVMGR_Set32MHzTrim(trimValue);
     }
-#else
-    NOT_USED(saveToHwParams);
 #endif
-    /* Apply a trim value to the crystal oscillator */
-    rfmc_xo = RFMC->XO_TEST;
-
-    rfmc_xo &= ~(RFMC_XO_TEST_CDAC_MASK);
-    rfmc_xo |= RFMC_XO_TEST_CDAC(trimValue);
-
-    RFMC->XO_TEST = rfmc_xo;
+    /* Write to XCVR register equivalent to what XCVR_SetXtalTrim but avoid dependency on XCVR */
+    PLATFORM_Apply32MHzXOTrim(trimValue);
 }
 
 int PLATFORM_InitTimerManager(void)
 {
     int status = 0;
-
+    /* Initialize the timer manager service. Normally the input clock source is a
+     * 32kHz clock LowPower that keeps ticking during core sleep phases.
+     * On FPGA tagets it may not be available, in which case we select main clock / 2.
+     */
 #if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
     if (timer_manager_initialized == 0)
     {
@@ -997,6 +965,7 @@ int PLATFORM_InitTimerManager(void)
         timerConfig.timeStampClockSrcSelect = PLATFORM_TM_STAMP_CLK_SELECT;
 #endif
 
+        /* TM_Init creates a semaphore */
         tm_st = TM_Init(&timerConfig);
         if (tm_st != kStatus_TimerSuccess)
         {
@@ -1023,6 +992,7 @@ void PLATFORM_DeinitTimerManager(void)
 #if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
     if (timer_manager_initialized == 1)
     {
+        /* TM_Init destroys the semaphore TM_Init created */
         TM_Deinit();
         timer_manager_initialized = 0;
     }

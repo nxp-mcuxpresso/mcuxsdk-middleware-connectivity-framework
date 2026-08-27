@@ -26,4 +26,8 @@
 #define gPlatformUseTimerManager_d 0
 #endif
 
+#if !defined(gPlatformUseDevMgr_d)
+#define gPlatformUseDevMgr_d 0
+#endif
+
 #endif /* FWK_CONFIG_ZEPHYR_H_ */

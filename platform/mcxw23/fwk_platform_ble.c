@@ -17,6 +17,9 @@
 #include "fwk_platform.h"
 #include "fwk_platform_ble.h"
 #include "ble_controller.h"
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+#include "fwk_devmgr.h"
+#endif
 
 #ifdef SERIAL_BTSNOOP
 #include "sbtsnoop.h"
@@ -75,9 +78,10 @@ int PLATFORM_InitBle(void)
         }
 #else
         uint8_t bdAddr[6];
-
-        PLATFORM_GetBDAddr(bdAddr);
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
+        (void)DEVMGR_GetBdAddress(bdAddr, NULL);
         (void)BLEController_WriteBdAddr(bdAddr);
+#endif
 #endif
 
         initialized = true;

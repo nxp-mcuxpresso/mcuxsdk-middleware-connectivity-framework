@@ -64,19 +64,6 @@ extern "C" {
  */
 int PLATFORM_InitOT(void);
 
-/*!
- * \brief Return OpenThread / iEEE 802.15.4 MAC address
- *
- *  If MAC address already programmed return its value.
- *  If not yet programmed generate one using the OUI defined by the IEEE_15_4_ADDR_OUI
- *  macro. The remaining 5 bytes are picked either from the Radio UID or generated
- *  randomly.
- * \param eui64_address pointer on buffer storage supplied by caller to receive the 8
- * bytes of EUI-64 MAC address.
- *
- */
-void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address);
-
 #ifdef __cplusplus
 }
 #endif
