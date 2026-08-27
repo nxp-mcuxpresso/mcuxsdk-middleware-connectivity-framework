@@ -14,6 +14,13 @@
 #include "fwk_nbu_dbg.h"
 
 /* -------------------------------------------------------------------------- */
+/*                             Private macros                                */
+/* -------------------------------------------------------------------------- */
+
+#define HCI_MIN_LEN (3U)
+#define HCI_MAX_LEN (((uint32_t)UINT16_MAX)) /* In pure BLE the limit is 258 but in ACL it can reach 65535 */
+
+/* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
 
@@ -116,7 +123,7 @@ static void PLATFORM_InitHciLink(void)
 
 static hal_rpmsg_return_status_t PLATFORM_HciRpmsgRxCallback(void *param, uint8_t *data, uint32_t len)
 {
-    if ((hci_rx_callback != NULL) && (len >= 3U) && (len <= (uint32_t)UINT8_MAX))
+    if ((hci_rx_callback != NULL) && (len >= HCI_MIN_LEN) && (len <= HCI_MAX_LEN))
     {
         hci_rx_callback(data[0], &data[1], (uint16_t)(len - 1U));
     }
