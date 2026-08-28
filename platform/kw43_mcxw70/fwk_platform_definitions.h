@@ -152,9 +152,6 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define PLATFORM_TM_CLK_SELECT 0U
 #endif
 
-/* KW43 / MCXW70 require RF power domain configuration */
-#define gPlatformHasRFPowerDomain_d 1
-
 /*********************************************************************
  *        Service definitions
  *********************************************************************/

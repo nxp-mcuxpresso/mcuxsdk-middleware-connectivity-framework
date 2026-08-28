@@ -25,10 +25,6 @@
 
 #include "fsl_os_abstraction.h"
 #include "fsl_adapter_rpmsg.h"
-#if (defined gPlatformHasRFPowerDomain_d && (gPlatformHasRFPowerDomain_d == 1))
-#include "fsl_cmc.h"
-#endif
-
 #include "rpmsg_platform.h"
 
 #if defined(gPlatformUseTimerManager_d) && (gPlatformUseTimerManager_d > 0)
@@ -320,34 +316,6 @@ static void PLATFORM_DebuggerLowPowerConfigure(void)
 #endif
 }
 
-#if (defined(gPlatformHasRFPowerDomain_d) && (gPlatformHasRFPowerDomain_d == 1))
-/*!
- * \brief Set Power Mode for RF / NBU power domain (sleep or deep sleep).
- */
-static void PLATFORM_SetNbuPowerMode(void)
-{
-    uint32_t lpm_val     = kCMC_SleepMode; /* TODO replace by kCMC_DeepSleepMode when ready */
-    uint32_t cur_pm_prot = CMC_0->PMPROT;
-    if ((CMC_0->PMPROT & CMC_PMPROT_LOCK_MASK) == 0)
-    {
-        cur_pm_prot &= CMC_PMPROT_LPMODE_MASK;
-        cur_pm_prot >>= CMC_PMPROT_LPMODE_SHIFT;
-        if ((cur_pm_prot & lpm_val) != lpm_val)
-        {
-            CMC_SetPowerModeProtection(CMC_0, kCMC_AllowAllLowPowerModes);
-        }
-
-    }
-    else
-    {
-        if ((cur_pm_prot & lpm_val) != lpm_val)
-        {
-            assert(0);
-        }
-    }
-}
-#endif
-
 #if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
 /*!
  * \brief Initialize the mutex used to protect PLATFORM_RemoteActiveReq() and
@@ -620,9 +588,6 @@ int PLATFORM_InitNbu(void)
         RFMC->RF2P4GHZ_TIMER |= RFMC_RF2P4GHZ_TIMER_TIM_EN(0x1U);
 
         PLATFORM_DebuggerLowPowerConfigure();
-#if (defined(gPlatformHasRFPowerDomain_d) && (gPlatformHasRFPowerDomain_d == 1))
-        PLATFORM_SetNbuPowerMode();
-#endif
 
         regPrimask = DisableGlobalIRQ();
         timestamp  = PLATFORM_GetTimeStamp();
