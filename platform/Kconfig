@@ -13,6 +13,7 @@ menuconfig MCUX_COMPONENT_middleware.wireless.framework.platform
                 MCUX_HW_DEVICE_K32W1480   ||\
                 MCUX_HW_DEVICE_RW612      || MCUX_HW_DEVICE_RW610 ||\
                 MCUX_HW_DEVICE_MIMXRT595S ||\
+                MCUX_HW_DEVICE_MIMXRT685S ||\
                 MCUX_HW_DEVICE_KW47B42ZB7 || MCUX_HW_DEVICE_KW47B42ZB6 ||\
                 MCUX_HW_DEVICE_KW47B42ZB3 || MCUX_HW_DEVICE_KW47B42ZB2 ||\
                 MCUX_HW_DEVICE_KW47B42Z83 || MCUX_HW_DEVICE_KW47B42Z96 ||\
@@ -138,6 +139,12 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.MIMXRT595S
     select MCUX_COMPONENT_component.timer_manager
     select MCUX_COMPONENT_component.ostimer_time_stamp_adapter
     depends on MCUX_HW_DEVICE_MIMXRT595S
+
+config MCUX_COMPONENT_middleware.wireless.framework.platform.MIMXRT685S
+    bool "MIMXRT685S family"
+    select MCUX_COMPONENT_component.timer_manager
+    select MCUX_COMPONENT_component.ostimer_time_stamp_adapter
+    depends on MCUX_HW_DEVICE_MIMXRT685S
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.rt1170
     bool "RT1170 family"
@@ -273,6 +280,7 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.lowpower
     depends on  MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x || \
                 MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71 || \
                 MCUX_COMPONENT_middleware.wireless.framework.platform.MIMXRT595S || \
+                MCUX_COMPONENT_middleware.wireless.framework.platform.MIMXRT685S || \
                 MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72|| \
                 MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72_nbu || \
                 MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_mcxw71_nbu || \
