@@ -1,6 +1,6 @@
 /*! *********************************************************************************
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2023 NXP
+ * Copyright 2016-2026 NXP
  *
  * \file
  *
@@ -59,7 +59,7 @@ typedef uint8_t index_t;
 #define NULL ((void *)(0x0UL))
 #endif
 
-#if defined(__GNUC__)
+#if (defined(__GNUC__) || defined(__clang__))
 #define PACKED_STRUCT struct __attribute__((__packed__))
 #define PACKED_UNION  union __attribute__((__packed__))
 #elif defined(__IAR_SYSTEMS_ICC__)

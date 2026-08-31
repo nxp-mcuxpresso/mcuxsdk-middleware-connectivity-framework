@@ -14,6 +14,12 @@
 #include <string.h>
 #include <stdbool.h>
 
+#if defined(WIN32)
+#define STRNCPY(dest, src, n) strncpy_s((dest), sizeof(dest), (src), (n))
+#else  /*defined(WIN32)*/
+#define STRNCPY(dest, src, n) strncpy((dest), (src), (n))
+#endif /*defined(WIN32)*/
+
 /* -------------------------------------------------------------------------- */
 /*                                Public macros                               */
 /* -------------------------------------------------------------------------- */
@@ -160,12 +166,12 @@ static inline void NBUDBG_SetThreadContext(uint32_t thread_entry_addr, const cha
     if (thread_name_ptr != NULL)
     {
         /* Copy up to 7 characters and ensure null termination */
-        (void)strncpy(debug_struct->nbu_dbg_info.execution_context.u.thread_info.thread_name, thread_name_ptr, 7);
+        (void)STRNCPY(debug_struct->nbu_dbg_info.execution_context.u.thread_info.thread_name, thread_name_ptr, 7);
     }
     else
     {
         /* No thread name available, set default */
-        (void)strncpy(debug_struct->nbu_dbg_info.execution_context.u.thread_info.thread_name, "UNKNOWN", 7);
+        (void)STRNCPY(debug_struct->nbu_dbg_info.execution_context.u.thread_info.thread_name, "UNKNOWN", 7);
     }
     debug_struct->nbu_dbg_info.execution_context.u.thread_info.thread_name[7] = '\0';
 }
@@ -208,7 +214,7 @@ static inline void NBUDBG_SetAssertContext(const char *failedExpr, const char *f
         }
 
         /* Copy from start_pos to end of file */
-        (void)strncpy(debug_struct->nbu_dbg_info.u.assert_info.file_name, &file[start_pos],
+        (void)STRNCPY(debug_struct->nbu_dbg_info.u.assert_info.file_name, &file[start_pos],
                       NBUDBG_ASSERT_FILE_NAME_SIZE - 1U);
         debug_struct->nbu_dbg_info.u.assert_info.file_name[NBUDBG_ASSERT_FILE_NAME_SIZE - 1U] =
             '\0'; // Ensure null-termination
