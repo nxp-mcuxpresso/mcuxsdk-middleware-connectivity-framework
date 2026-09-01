@@ -671,11 +671,13 @@ int PLATFORM_InitMulticore(void)
     int                status = 0;
     hal_rpmsg_status_t rpmsg_status;
 
+#if defined(RL_ALLOW_CUSTOM_SHMEM_CONFIG) && (RL_ALLOW_CUSTOM_SHMEM_CONFIG == 1)
     if (nbu_started == 0)
     {
         /* Write in SMU2 the static shared memory config that we have for NBU to use it */
         platform_set_static_shmem_config();
     }
+#endif /* RL_ALLOW_CUSTOM_SHMEM_CONFIG */
 
     /* Start NBU core and Initializes the RPMSG adapter module for dual core communication */
     rpmsg_status = HAL_RpmsgMcmgrInit();
