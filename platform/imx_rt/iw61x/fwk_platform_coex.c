@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                           Copyright 2022-2025 NXP                          */
+/*                           Copyright 2022-2026 NXP                          */
 /*                    SPDX-License-Identifier: BSD-3-Clause                   */
 /* -------------------------------------------------------------------------- */
 
@@ -25,6 +25,9 @@
 #elif defined(SD8978)
 /* import IW416 firmware */
 #include "sduartIW416_wlan_bt.h"
+#elif defined(SD8987)
+/* import W8987 firmware */
+#include "sduart8987_wlan_bt.h"
 #endif
 
 /* -------------------------------------------------------------------------- */
