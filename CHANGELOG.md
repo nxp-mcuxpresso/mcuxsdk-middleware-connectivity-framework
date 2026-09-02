@@ -20,6 +20,7 @@
 
 #### Bug Fixes
 
+- [WorkQ] Increased the default `FWK_SYSWORKQ_STACK_SIZE` from 608 to 640 bytes to fix a stack overflow on the system work queue thread.
 - [rw61x] Fixed RTOS heap exhaustion when initializing BLE several times (`bt init`/`bt disable` loops): the mutex is now created only once in `PLATFORM_InitBle()`, protected against TOCTOU with interrupt masking, the flag is reset in `PLATFORM_TerminateBle()` to allow re-creation after termination, and asserts are replaced by error code returns to remain correct in Release builds.
 - [platform][TSTMR] Fixed the 56 bit version of the timestamp, now reading the TSTMR instance base and testing only the base pointer validity.
 - [IW416][coex] Added the missing SD8978 firmware include guard in `fwk_platform_coex.c`, fixing the compilation error of IW416 coex_edgefast applications.
