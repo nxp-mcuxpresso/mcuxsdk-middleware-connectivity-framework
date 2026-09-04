@@ -81,45 +81,55 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define PLATFORM_ADDRESS_SECURE_MASK (0x10000000U)
 
 #define gPlatformRamStartAddress_c (0x20000000U)
-#define gPlatformRamEndAddress_c   (0x2001BFFFU)
+#define gPlatformRamEndAddress_c   (0x2003FFFFU)
 
-#define PLATFORM_CTCM0_IDX 0U
-#define PLATFORM_CTCM1_IDX 1U
-#define PLATFORM_STCM0_IDX 2U
-#define PLATFORM_STCM1_IDX 3U
-#define PLATFORM_STCM2_IDX 4U
-#define PLATFORM_STCM3_IDX 5U
-#define PLATFORM_STCM4_IDX 6U
-#define PLATFORM_STCM5_IDX 7U
+/* KW43/MCXW70 SRAM layout (RM Table 184, SRAM instance to AXBS port mapping).
+ * The full 256KB is shared between core0 (host) and core1 (NBU); the split is
+ * enforced statically by the connectivity linker scripts. Each bank index below
+ * matches its CMC SRAM control index (CMC_SRAM[n]) so that bit i of the bank_mask
+ * maps to the correct array when calling CMC_PowerOffSRAMLowPowerOnly().
+ *   IDX  Instance  Range                    Size  ECC  Owner
+ *   0    SRAM0_0   0x20000000-0x20007FFF     32K   YES  core0
+ *   1    SRAM0_1   0x20008000-0x2000FFFF     32K   YES  core0
+ *   2    SRAM1_0   0x20010000-0x20017FFF     32K   NO   core0
+ *   3    SRAM1_1   0x20018000-0x2001FFFF     32K   NO   core0
+ *   4    SRAM2     0x20020000-0x2002FFFF     64K   NO   core0 heap + shared + core1
+ *   5    SRAM3     0x20030000-0x2003FFFF     64K   NO   core1 (remapped as code)
+ * Only the core0-owned banks (IDX 0-3) may be shut down in low power; SRAM2
+ * (shared/core1) and SRAM3 (core1) must always be retained. */
+#define PLATFORM_SRAM0_0_IDX 0U
+#define PLATFORM_SRAM0_1_IDX 1U
+#define PLATFORM_SRAM1_0_IDX 2U
+#define PLATFORM_SRAM1_1_IDX 3U
+#define PLATFORM_SRAM2_IDX   4U
+#define PLATFORM_SRAM3_IDX   5U
 
-#define PLATFORM_CTCM0_START_ADDR (0x04000000U)
-#define PLATFORM_CTCM0_END_ADDR   (0x04001FFFU)
-#define PLATFORM_CTCM1_START_ADDR (0x04002000U)
-#define PLATFORM_CTCM1_END_ADDR   (0x04003FFFU)
-#define PLATFORM_STCM0_START_ADDR (0x20000000U)
-#define PLATFORM_STCM0_END_ADDR   (0x20003FFFU)
-#define PLATFORM_STCM1_START_ADDR (0x20004000U)
-#define PLATFORM_STCM1_END_ADDR   (0x20007FFFU)
-#define PLATFORM_STCM2_START_ADDR (0x20008000U)
-#define PLATFORM_STCM2_END_ADDR   (0x2000FFFFU)
-#define PLATFORM_STCM3_START_ADDR (0x20010000U)
-#define PLATFORM_STCM3_END_ADDR   (0x20017FFFU)
-#define PLATFORM_STCM4_START_ADDR (0x20018000U)
-#define PLATFORM_STCM4_END_ADDR   (0x20019FFFU)
-#define PLATFORM_STCM5_START_ADDR (0x2001A000U)
-#define PLATFORM_STCM5_END_ADDR   (0x2001BFFFU)
+#define PLATFORM_SRAM0_0_START_ADDR (0x20000000U)
+#define PLATFORM_SRAM0_0_END_ADDR   (0x20007FFFU)
+#define PLATFORM_SRAM0_1_START_ADDR (0x20008000U)
+#define PLATFORM_SRAM0_1_END_ADDR   (0x2000FFFFU)
+#define PLATFORM_SRAM1_0_START_ADDR (0x20010000U)
+#define PLATFORM_SRAM1_0_END_ADDR   (0x20017FFFU)
+#define PLATFORM_SRAM1_1_START_ADDR (0x20018000U)
+#define PLATFORM_SRAM1_1_END_ADDR   (0x2001FFFFU)
+#define PLATFORM_SRAM2_START_ADDR   (0x20020000U)
+#define PLATFORM_SRAM2_END_ADDR     (0x2002FFFFU)
+#define PLATFORM_SRAM3_START_ADDR   (0x20030000U)
+#define PLATFORM_SRAM3_END_ADDR     (0x2003FFFFU)
 
-#define PLATFORM_BANK_START_ADDR                                                                                \
-    PLATFORM_CTCM0_START_ADDR, PLATFORM_CTCM1_START_ADDR, PLATFORM_STCM0_START_ADDR, PLATFORM_STCM1_START_ADDR, \
-        PLATFORM_STCM2_START_ADDR, PLATFORM_STCM3_START_ADDR, PLATFORM_STCM4_START_ADDR, PLATFORM_STCM5_START_ADDR
+#define PLATFORM_BANK_START_ADDR                                                           \
+    PLATFORM_SRAM0_0_START_ADDR, PLATFORM_SRAM0_1_START_ADDR, PLATFORM_SRAM1_0_START_ADDR, \
+        PLATFORM_SRAM1_1_START_ADDR, PLATFORM_SRAM2_START_ADDR, PLATFORM_SRAM3_START_ADDR
 
-#define PLATFORM_BANK_END_ADDR                                                                          \
-    PLATFORM_CTCM0_END_ADDR, PLATFORM_CTCM1_END_ADDR, PLATFORM_STCM0_END_ADDR, PLATFORM_STCM1_END_ADDR, \
-        PLATFORM_STCM2_END_ADDR, PLATFORM_STCM3_END_ADDR, PLATFORM_STCM4_END_ADDR, PLATFORM_STCM5_END_ADDR
+#define PLATFORM_BANK_END_ADDR                                                                                  \
+    PLATFORM_SRAM0_0_END_ADDR, PLATFORM_SRAM0_1_END_ADDR, PLATFORM_SRAM1_0_END_ADDR, PLATFORM_SRAM1_1_END_ADDR, \
+        PLATFORM_SRAM2_END_ADDR, PLATFORM_SRAM3_END_ADDR
 
-#define PLATFORM_BANK_IS_ECC TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE
+#define PLATFORM_BANK_IS_ECC TRUE, TRUE, FALSE, FALSE, FALSE, FALSE
 
-#define PLATFORM_VBAT_LDORAM_IDX PLATFORM_STCM5_IDX
+/* KW43/MCXW70 has no VBAT-backed SRAM retention mechanism (unlike KW45/KW47).
+ * PLATFORM_VBAT_LDORAM_IDX is intentionally left undefined so the VBAT retention
+ * path in PLATFORM_SetRamBanksRetained() is compiled out on this platform. */
 
 #define SPC_TEST_ADDR            (SPC_0_BASE + 0xf0u)
 #define SPC_TRIM_LOCK            (SPC_0_BASE + 0x18u)

@@ -258,19 +258,34 @@
 #define gPlatformShutdownEccRamInLowPower 1
 #endif
 
+/* On KW43/MCXW70 the 256KB SRAM is statically split by the connectivity linker
+ * scripts between core0 (host) and core1 (NBU). Only the core0-owned banks may
+ * be powered off in low power:
+ *   IDX 0 SRAM0_0 (32K, ECC) - core0
+ *   IDX 1 SRAM0_1 (32K, ECC) - core0
+ *   IDX 2 SRAM1_0 (32K, no ECC) - core0
+ *   IDX 3 SRAM1_1 (32K, no ECC) - core0
+ *   IDX 4 SRAM2   (64K, no ECC) - core0 heap + shared + core1 -> must be retained
+ *   IDX 5 SRAM3   (64K, no ECC) - core1 -> must be retained
+ * The selectable range therefore never includes SRAM2 (IDX 4) or SRAM3 (IDX 5). */
 #if defined(gPlatformShutdownEccRamInLowPower) && (gPlatformShutdownEccRamInLowPower > 0)
-/* In this configuration, all RAM banks can be shutdown during low power if not used
- * The ECC RAM banks can be selectively reinitialized with MEM_ReinitRamBank API
- * This API is also used by the Memory Manager Light */
+/* In this configuration, all core0 RAM banks can be shutdown during low power if
+ * not used. The ECC RAM banks can be selectively reinitialized with the
+ * MEM_ReinitRamBank API. This API is also used by the Memory Manager Light */
 #define PLATFORM_SELECT_RAM_RET_START_IDX 0U
-#define PLATFORM_SELECT_RAM_RET_END_IDX   7U
+#define PLATFORM_SELECT_RAM_RET_END_IDX   3U
 #else
-/* STCM3 and STCM4 only are non-ECC RAM banks
+/* SRAM1_0 (IDX 2) and SRAM1_1 (IDX 3) are the only core0-owned non-ECC banks that
+ * are selectable for shutdown (SRAM2/SRAM3 are also non-ECC but are always retained)
  * NOTE: the following values should be aligned with PLATFORM_BANK_IS_ECC definition
  */
-#define PLATFORM_SELECT_RAM_RET_START_IDX 5U
-#define PLATFORM_SELECT_RAM_RET_END_IDX   6U
+#define PLATFORM_SELECT_RAM_RET_START_IDX 2U
+#define PLATFORM_SELECT_RAM_RET_END_IDX   3U
 #endif /* gPlatformShutdownEccRamInLowPower */
+
+#if (PLATFORM_SELECT_RAM_RET_END_IDX >= PLATFORM_SRAM2_IDX)
+#error "Selectable RAM retention window must not include SRAM2/SRAM3 (shared/core1 banks must stay retained)"
+#endif
 
 /* Disable LDO force mode on the platform */
 #ifndef gPlatformEnableLdoForce

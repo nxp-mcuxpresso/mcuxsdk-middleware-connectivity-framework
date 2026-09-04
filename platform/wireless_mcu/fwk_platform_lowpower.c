@@ -326,13 +326,20 @@ uint32_t PLATFORM_GetDefaultRamBanksRetained(void)
 
 void PLATFORM_SetRamBanksRetained(uint32_t bank_mask)
 {
+#if defined(PLATFORM_VBAT_LDORAM_IDX)
     bool vbat_ldo_ram_required = ((bank_mask & (1uL << PLATFORM_VBAT_LDORAM_IDX)) != 0u);
+#endif
 
     /* Set SRAM retention config handled by the CMC module */
     CMC_PowerOffSRAMLowPowerOnly(CMC0, ~bank_mask);
 
-    /* One RAM bank is handled by VBAT module */
+#if defined(PLATFORM_VBAT_LDORAM_IDX)
+    /* One RAM bank is handled by VBAT module.
+     * Only platforms that expose a VBAT-backed SRAM array define
+     * PLATFORM_VBAT_LDORAM_IDX (e.g. KW45/KW47). On platforms without this
+     * mechanism (e.g. KW43/MCXW70), retention is fully handled by the CMC. */
     VBAT_EnableSRAMArrayRetained(VBAT0, vbat_ldo_ram_required);
+#endif
 
 #if defined(gPlatformShutdownEccRamInLowPower) && (gPlatformShutdownEccRamInLowPower > 0)
     last_bank_mask = bank_mask;
