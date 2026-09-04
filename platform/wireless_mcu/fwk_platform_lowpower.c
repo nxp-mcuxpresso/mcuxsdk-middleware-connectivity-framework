@@ -349,12 +349,19 @@ void PLATFORM_SetRamBanksRetained(uint32_t bank_mask)
  */
 static void PLATFORM_InitWakeUpSources(void)
 {
+#if (defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1))
+    /* Enable low power timers (LPTMR) as wake up source */
+    WUU_SetInternalWakeUpModulesConfig(WUU0, 1U, kWUU_InternalModuleInterrupt); /* LPTMR0 */
+    WUU_SetInternalWakeUpModulesConfig(WUU0, 8U, kWUU_InternalModuleInterrupt); /* LPTMR1 */
+#else  /* KW45/MCXW71 and KW47/MCXW72 implementation */
     /* Enable low power timers (LPTMR) as wake up source */
     WUU_SetInternalWakeUpModulesConfig(WUU0, 0U, kWUU_InternalModuleInterrupt);
 
     /* Enable Radio Async Wakeup request
      * This is needed to correctly wake up SOC XBAR bus when CM3 needs it */
     WUU_SetInternalWakeUpModulesConfig(WUU0, 2U, kWUU_InternalModuleDMATrigger);
+
+#endif /* FWK_KW43_MCXW70_FAMILIES */
 
     /* WUU Irq interrupt is required for proper wakeup functionality from lowpower */
     NVIC_EnableIRQ(WUU0_IRQn);
