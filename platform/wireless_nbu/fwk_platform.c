@@ -152,6 +152,16 @@ static const smu_dmem_config_t smu_dmem_lookup_table[] = {
  * Public functions
  ************************************************************************************/
 
+int PLATFORM_PreKernelInit(void)
+{
+#if defined(gPlatformUseNco32k_d) && (gPlatformUseNco32k_d > 0U)
+    /* Switch to NCO32K from OSC32K/FRO32K */
+    RADIO_CTRL->NCO32K_CTRL |= RADIO_CTRL_NCO32K_CTRL_EN(0x1U);
+#endif /* gPlatformUseNco32k_d */
+
+    return 0;
+}
+
 void PLATFORM_ResetContext(void)
 {
     uint32_t intMask = PLATFORM_SetInterruptMask();

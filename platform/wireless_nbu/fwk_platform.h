@@ -28,6 +28,16 @@ extern "C" {
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
+/*!
+ * \brief Initialize basic resources for the NBU platform such as clocks and peripherals settings.
+ *
+ * This functions doesn't require any kernel services so it's safe to call before starting the OS.
+ *
+ * \return int 0 if success, negative if error.
+ */
+int PLATFORM_PreKernelInit(void);
+
 /*!
  * \brief Set interrupt mask to block interrupts below a certain priority level.
  *
