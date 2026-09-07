@@ -60,4 +60,12 @@
 #define gPlatformIcsDeferDHKeyToHost_d 1
 #endif
 
+/* Enable the NCO32K usage
+ * When active, the NBU will use the NCO32K as clock source instead of OSC32K/FRO32K
+ * The NCO32K is derived from the 32MHz crystal
+ * Before low power entry, the NCO32K must be disabled to switch back to OSC32K/FRO32K */
+#ifndef gPlatformUseNco32k_d
+#define gPlatformUseNco32k_d 1
+#endif
+
 #endif /* _FWK_CONFIG_H_ */
