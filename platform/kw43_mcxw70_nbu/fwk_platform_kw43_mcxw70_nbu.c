@@ -46,7 +46,6 @@ static void PLATFORM_SaveNbuClockCfg(CoreClkCfg_t *cfg)
 
 static void PLATFORM_ApplyNbuClkCfg(CoreClkCfg_t *cfg)
 {
-    /* Not implemented yet */
     NOT_USED(cfg);
 }
 
@@ -56,19 +55,63 @@ static void PLATFORM_ApplySlowestNbuClkCfg(void)
     ;
 }
 
+static void PLATFORM_WaitNco32kSwitchOn(void)
+{
+    uint32_t timeout = 10000U;
+
+    /* If the NCO32K is enabled, wait for the mux to actually switch to it */
+    if ((RADIO_CTRL->NCO32K_CTRL & RADIO_CTRL_NCO32K_CTRL_EN_MASK) != 0U)
+    {
+        while ((RADIO_CTRL->NCO32K_STAT & RADIO_CTRL_NCO32K_STAT_MUX_STATE_MASK) == 0U)
+        {
+            timeout--;
+            if (timeout == 0U)
+            {
+                break;
+            }
+        }
+        assert(timeout > 0U);
+    }
+}
+
+static void PLATFORM_WaitNco32kSwitchOff(void)
+{
+    uint32_t timeout = 10000U;
+
+    /* If the NCO32K is disabled, wait for the mux to actually switch back to OSC32K/FRO32K */
+    if ((RADIO_CTRL->NCO32K_CTRL & RADIO_CTRL_NCO32K_CTRL_EN_MASK) == 0U)
+    {
+        while ((RADIO_CTRL->NCO32K_STAT & RADIO_CTRL_NCO32K_STAT_MUX_STATE_MASK) != 0U)
+        {
+            timeout--;
+            if (timeout == 0U)
+            {
+                break;
+            }
+        }
+        assert(timeout > 0U);
+    }
+}
+
 static void PLATFORM_CheckReadyToDeepSleep(void)
 {
     /* Wait for XCVR DMA completion : backup of unretained configuration ongoing */
-    uint32_t timeout = 10000u; /* Reasonable timeout to prevent infinite loop */
+    uint32_t timeout = 10000U; /* Reasonable timeout to prevent infinite loop */
     while (XCVR_FastPeriph_WaitComplete() != true)
     {
         timeout--;
-        if (timeout == 0u)
+        if (timeout == 0U)
         {
             break;
         }
     }
-    assert(timeout > 0u);
+    assert(timeout > 0U);
+
+    /* Wait clock switching from NCO32K to OSC32K/FRO32K
+     * Clock switch is initiated in PLATFORM_PreDeepSleepSaveCfg() to parallelize
+     * with other pre-lowpower operations and optimize low power entry latency
+     * If the NCO32K was already disabled, this condition will always be false */
+    PLATFORM_WaitNco32kSwitchOff();
 }
 #if defined(PLAT_FWK_INTERCORE_DBG_LP) && (PLAT_FWK_INTERCORE_DBG_LP > 0)
 static uint32_t cnt = 0U; /* counter to keep track of the number of entries in Deep Sleep */
@@ -301,7 +344,21 @@ void PLATFORM_HandleLowPowerEntry(void)
     if (PLATFORM_SwitchSleepClockSource(true) == 0)
     {
         CoreClkCfg_t nbuclk_cfg;
+        uint32_t     nco32k_ctrl = 0U;
+
         PLATFORM_PreDeepSleepSaveCfg();
+
+        /* Save the NCO32K configuration and make sure to switch back to OCS32K/FRO32K source before LP
+         * This NCO32K clock is derived from the 32M crystal
+         * Switching back to OSC32K/FRO32K takes some time so we want to do it as early
+         * as possible, this is a good place to do it
+         * Switch status is check in PLATFORM_CheckReadyToDeepSleep()
+         * This has no effect if the NCO32K is already disabled */
+        nco32k_ctrl = RADIO_CTRL->NCO32K_CTRL;
+        /* If the NCO32K is enabled, we need to make sure the switch had time to complete before disabling it */
+        PLATFORM_WaitNco32kSwitchOn();
+        /* Disable NCO32K and switch back to OSC32K/FRO32K */
+        RADIO_CTRL->NCO32K_CTRL &= ~(RADIO_CTRL_NCO32K_CTRL_EN_MASK);
 
         /* Disable and clear Systicks */
         SysTick->CTRL = 0U;
@@ -337,6 +394,9 @@ void PLATFORM_HandleLowPowerEntry(void)
 
         /* On wake up restore original clock */
         PLATFORM_ApplyNbuClkCfg(&nbuclk_cfg);
+
+        /* Restore the NCO32K configuration saved on low power entry */
+        RADIO_CTRL->NCO32K_CTRL = nco32k_ctrl;
 
         /* Unset bit to prevent lowpower now */
         RF_CMC1->RADIO_LP &= ~RF_CMC1_RADIO_LP_SLEEP_EN_MASK;
