@@ -196,8 +196,12 @@ void PLATFORM_ExitLowPower(void)
 
 void PLATFORM_EnterPowerDown(void)
 {
-    /* Warning : For power down, it requires gLowpowerPowerDownEnable_d variable to be set to 1 in linker file.
-     *    Generate assertion if not the case */
+#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
+    /* Warning: Power down requires the gLowpowerPowerDownEnable_d variable to be set to 1 in the
+     * linker file. Generates an assertion if this is not the case.
+     * This feature is gated by gPlatformRequiresPowerDomainWakeup because it is related to the
+     * power domain wake up requested by the NBU, and is therefore not needed on platforms that do
+     * not use it. */
     extern uint32_t gLowpowerPowerDownEnable_d[];
     assert((uint32_t)&gLowpowerPowerDownEnable_d == 1UL);
     (void)gLowpowerPowerDownEnable_d;
@@ -211,6 +215,7 @@ void PLATFORM_EnterPowerDown(void)
         PLATFORM_RemoteActiveRel();
         power_down_on_host_message_sent = true;
     }
+#endif
 
     return;
 }
