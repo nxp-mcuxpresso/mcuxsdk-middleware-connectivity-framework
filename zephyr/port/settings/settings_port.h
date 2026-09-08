@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  * Copyright (C) 2020, Intel Corporation
  * Copyright (C) 2023, Nordic Semiconductor ASA
  *
@@ -83,6 +83,14 @@ extern "C" {
 #define SETTINGS_NAME_END '\0'
 
 /* Iterable sections imported from Zephyr iterable_sections.h*/
+#ifndef Z_DECL_ALIGN
+#define Z_DECL_ALIGN(type) DECL_ALIGN(type)
+#endif
+
+#ifndef __ASSERT
+#define __ASSERT(test, ...) ((void)0)
+#endif
+
 /**
  * @brief Defines a new element for an iterable section for a generic type.
  *
@@ -102,7 +110,8 @@ extern "C" {
  * @param[in]  section_postfix postfix to use in section name
  */
 #define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
-    DECL_ALIGN(type) varname __in_section(_##secname, static, _CONCAT(section_postfix, _)) __used __noasan
+	Z_DECL_ALIGN(type) varname \
+	__in_section(_##secname, static, _CONCAT(section_postfix, _)) __used __noasan
 
 /**
  * @brief iterable section start symbol for a generic type
@@ -161,10 +170,15 @@ extern "C" {
  * list of struct objects to iterate over. This is normally done using
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
-#define TYPE_SECTION_FOREACH(type, secname, iterator) \
-    TYPE_SECTION_START_EXTERN(type, secname);         \
-    TYPE_SECTION_END_EXTERN(type, secname);           \
-    for (type *iterator = TYPE_SECTION_START(secname); iterator < TYPE_SECTION_END(secname); iterator++)
+#define TYPE_SECTION_FOREACH(type, secname, iterator)		\
+	TYPE_SECTION_START_EXTERN(type, secname);		\
+	TYPE_SECTION_END_EXTERN(type, secname);		\
+	for (type * iterator = TYPE_SECTION_START(secname); ({	\
+		__ASSERT(iterator <= TYPE_SECTION_END(secname),\
+			      "unexpected list end location");	\
+		     iterator < TYPE_SECTION_END(secname);	\
+	     });						\
+	     iterator++)
 
 /**
  * @brief Iterate over a specified iterable section (alternate).
@@ -176,7 +190,21 @@ extern "C" {
  * list of struct objects to iterate over. This is normally done using
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
-#define STRUCT_SECTION_FOREACH(struct_type, iterator) TYPE_SECTION_FOREACH(struct struct_type, struct_type, iterator)
+#define STRUCT_SECTION_FOREACH_ALTERNATE(secname, struct_type, iterator) \
+	TYPE_SECTION_FOREACH(struct struct_type, secname, iterator)
+
+/**
+ * @brief Iterate over a specified iterable section.
+ *
+ * @details
+ * Iterator for structure instances gathered by STRUCT_SECTION_ITERABLE().
+ * The linker must provide a _<struct_type>_list_start symbol and a
+ * _<struct_type>_list_end symbol to mark the start and the end of the
+ * list of struct objects to iterate over. This is normally done using
+ * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
+ */
+#define STRUCT_SECTION_FOREACH(struct_type, iterator) \
+	STRUCT_SECTION_FOREACH_ALTERNATE(struct_type, struct_type, iterator)
 
 #ifndef WITH_LOGS
 

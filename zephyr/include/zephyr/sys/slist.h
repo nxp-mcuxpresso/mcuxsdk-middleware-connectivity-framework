@@ -14,6 +14,9 @@
 
  /**
   * @file
+  * @brief Header file for the single-linked list API.
+  * @ingroup single-linked-list_apis
+  *
   * @defgroup single-linked-list_apis Single-linked list
   * @ingroup datastructure_apis
   *
@@ -216,7 +219,7 @@ static inline void sys_slist_init(sys_slist_t *list)
  */
 #define SYS_SLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 
-static inline sys_snode_t *z_snode_next_peek(sys_snode_t *node)
+static inline sys_snode_t *z_snode_next_peek(const sys_snode_t *node)
 {
 	return node->next;
 }
@@ -243,7 +246,7 @@ static inline void z_slist_tail_set(sys_slist_t *list, sys_snode_t *node)
  *
  * @return A pointer on the first node of the list (or NULL if none)
  */
-static inline sys_snode_t *sys_slist_peek_head(sys_slist_t *list)
+static inline sys_snode_t *sys_slist_peek_head(const sys_slist_t *list)
 {
 	return list->head;
 }
@@ -255,7 +258,7 @@ static inline sys_snode_t *sys_slist_peek_head(sys_slist_t *list)
  *
  * @return A pointer on the last node of the list (or NULL if none)
  */
-static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
+static inline sys_snode_t *sys_slist_peek_tail(const sys_slist_t *list)
 {
 	return list->tail;
 }
@@ -271,7 +274,7 @@ static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
  *
  * @return a boolean, true if it's empty, false otherwise
  */
-static inline bool sys_slist_is_empty(sys_slist_t *list);
+static inline bool sys_slist_is_empty(const sys_slist_t *list);
 
 Z_GENLIST_IS_EMPTY(slist)
 
@@ -284,7 +287,7 @@ Z_GENLIST_IS_EMPTY(slist)
  *
  * @return a pointer on the next node (or NULL if none)
  */
-static inline sys_snode_t *sys_slist_peek_next_no_check(sys_snode_t *node);
+static inline sys_snode_t *sys_slist_peek_next_no_check(const sys_snode_t *node);
 
 Z_GENLIST_PEEK_NEXT_NO_CHECK(slist, snode)
 
@@ -295,7 +298,7 @@ Z_GENLIST_PEEK_NEXT_NO_CHECK(slist, snode)
  *
  * @return a pointer on the next node (or NULL if none)
  */
-static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node);
+static inline sys_snode_t *sys_slist_peek_next(const sys_snode_t *node);
 
 Z_GENLIST_PEEK_NEXT(slist, snode)
 
@@ -331,8 +334,6 @@ Z_GENLIST_APPEND(slist, snode)
  * Append a singly-linked, NULL-terminated list consisting of nodes containing
  * the pointer to the next node as the first element of a node, to @a list.
  * This and other sys_slist_*() functions are not thread safe.
- *
- * FIXME: Why are the element parameters void *?
  *
  * @param list A pointer on the list to affect
  * @param head A pointer to the first element of the list to append
@@ -429,13 +430,28 @@ static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 					     sys_snode_t *node);
 
 /**
+ * @brief Find if a node is already linked in a singly linked list
+ *
+ * This and other sys_slist_*() functions are not thread safe.
+ *
+ * @param list A pointer to the list to check
+ * @param node A pointer to the node to search in the list
+ * @param[out] prev A pointer to the previous node
+ *
+ * @return true if node was found in the list, false otherwise
+ */
+static inline bool sys_slist_find(const sys_slist_t *list, const sys_snode_t *node,
+					    sys_snode_t **prev);
+Z_GENLIST_FIND(slist, snode)
+
+/**
  * @brief Compute the size of the given list in O(n) time
  *
  * @param list A pointer on the list
  *
  * @return an integer equal to the size of the list, or 0 if empty
  */
-static inline size_t sys_slist_len(sys_slist_t *list);
+static inline size_t sys_slist_len(const sys_slist_t *list);
 
 Z_GENLIST_LEN(slist, snode)
 

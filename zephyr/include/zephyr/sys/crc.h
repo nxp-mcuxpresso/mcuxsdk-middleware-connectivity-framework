@@ -30,6 +30,18 @@ extern "C" {
 #define CRC8_CCITT_INITIAL_VALUE 0xFFu
 
 /**
+ * @brief Compute the CCITT variant of CRC 16
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value
+ */
+uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
+
+
+/**
  * @brief Compute CCITT variant of CRC 8
  *
  * Normal CCITT variant of CRC 8 is using 0x07.

@@ -5,5 +5,6 @@ if(CONFIG_CRC AND CONFIG_MCUX_COMPONENT_middleware.wireless.framework.zephyr_com
     mcux_add_source(
         SOURCES ../../include/zephyr/sys/crc.h
                 crc8_sw.c
+                crc16_sw.c
     )
 endif()
