@@ -175,7 +175,7 @@ static int s_DEVMGR_GenerateAndSave154Address(uint8_t *pOutAddr)
  * Public functions
  *************************************************************************************
  ********************************************************************************** */
-int DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation)
+int PLATFORM_DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation)
 {
     /* The order of the functions in the array define the precedence of the MAC address sources:
      * CUST (HWParameter/CFPA)->NMPA->UUID.
@@ -192,6 +192,17 @@ int DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation)
     };
     /* fromLocation is returned with the bit mask corresponding to the successful MAC retrieval / or 0 otherwise */
     return DEVMGR_MacAddrReader(pOutAddr, DEVMGR_BD_ADDR_SZ, fromLocation, tbl, ARRAY_SIZE(tbl));
+}
+
+int DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation)
+{
+    /* Default PLATFORM_DEVMGR_GetBdAddress per platform implementation -
+       DevMgr backend could be HwParameter based for KW43 but is normally CFPA / Platf based.
+       PLATFORM_DEVMGR_GetBdAddress API is required for platf backend.
+       In the case of HwParameter backend PLATFORM_DEVMGR_GetBdAddress could be deemed useless -
+       just there to give a body to this API in HwParameter case.
+    */
+    return PLATFORM_DEVMGR_GetBdAddress(pOutAddr, fromLocation);
 }
 
 int DEVMGR_SetBdAddress(const uint8_t *pAddr)
@@ -238,7 +249,7 @@ int DEVMGR_SetBdAddress(const uint8_t *pAddr)
     return status;
 }
 
-int DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
+int PLATFORM_DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
 {
     /* The order of the functions in the array define the precedence of the MAC address sources:
      * CUST (HWParameter/CFPA)->NMPA->UUID.
@@ -255,6 +266,17 @@ int DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
     };
     /* fromLocation is returned with the bit mask corresponding to the successful MAC retrieval / or 0 otherwise */
     return DEVMGR_MacAddrReader(pOutAddr, DEVMGR_154_ADDR_SZ, fromLocation, tbl, ARRAY_SIZE(tbl));
+}
+
+int DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
+{
+    /* Default PLATFORM_DEVMGR_Get154Address per platform implementation -
+       DevMgr backend could be HwParameter based for KW43 but is normally CFPA / Platf based.
+       PLATFORM_DEVMGR_Get154Address API is required for platf backend.
+       In the case of HwParameter backend PLATFORM_DEVMGR_Get154Address could be deemed useless -
+       just there to give a body to this API in HwParameter case.
+     */
+    return PLATFORM_DEVMGR_Get154Address(pOutAddr, fromLocation);
 }
 
 int DEVMGR_Set154Address(const uint8_t *pAddr)

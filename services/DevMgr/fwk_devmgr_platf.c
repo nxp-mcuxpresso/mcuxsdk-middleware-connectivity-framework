@@ -37,7 +37,9 @@
 #include "fwk_devmgr.h"
 #include "fwk_devmgr_common.h"
 #include "fwk_platform_devmgr.h"
-#include "fwk_platform_devmgr.h"
+/* fwk_platform_definitions.h provides the per-family FWK_*_FAMILIES selectors
+ * (e.g. FWK_MCXW23_FAMILIES) used to fork platform-specific behavior below. */
+#include "fwk_platform_definitions.h"
 
 /**********************************************************************************
  *************************************************************************************
@@ -47,19 +49,7 @@
 
 int DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation)
 {
-    /* The order of the functions in the array define the precedence of the MAC address sources:
-     * CUST (HWParameter/CFPA)->NMPA->UUID.
-     * A 4th option that generates and writes the MAC address (based on DEVMGR_MAC_GEN_ENABLED build option)
-     * exists for the HwParameter based implementation. In the platform based implementation it might be considered
-     * (e.g if CFPA based on KW43/MCXW70, but not for MCXW23. It is discarded for now.
-     */
-    static const devmgr_src_entry_t tbl[] = {
-        {DEVMGR_MAC_SRC_CUST, PLATFORM_DEVMGR_GetBdAddressCust},
-        {DEVMGR_MAC_SRC_NMPA, PLATFORM_DEVMGR_GetBdAddrFromNMPA},
-        {DEVMGR_MAC_SRC_UUID, PLATFORM_DEVMGR_GetBdAddrFromUID},
-    };
-    /* fromLocation is returned with the bit mask corresponding to the successful MAC retrieval / or 0 otherwise */
-    return DEVMGR_MacAddrReader(pOutAddr, DEVMGR_BD_ADDR_SZ, fromLocation, tbl, ARRAY_SIZE(tbl));
+    return PLATFORM_DEVMGR_GetBdAddress(pOutAddr, fromLocation);
 }
 
 int DEVMGR_SetBdAddress(const uint8_t *pAddr)
@@ -69,19 +59,7 @@ int DEVMGR_SetBdAddress(const uint8_t *pAddr)
 
 int DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
 {
-    /* The order of the functions in the array define the precedence of the MAC address sources:
-     * CUST (HWParameter/CFPA)->NMPA->UUID.
-     * A 4th option that generates and writes the MAC address (based on DEVMGR_MAC_GEN_ENABLED build option)
-     * exists for the HwParameter based implementation. In the platform based implementation it might be considered
-     * (e.g if CFPA based on KW43/MCXW70, but not for MCXW23. It is discarded for now.
-     */
-    static const devmgr_src_entry_t tbl[] = {
-        {DEVMGR_MAC_SRC_CUST, PLATFORM_DEVMGR_Get154AddressCust},
-        {DEVMGR_MAC_SRC_NMPA, PLATFORM_DEVMGR_Get154AddrFromNMPA},
-        {DEVMGR_MAC_SRC_UUID, PLATFORM_DEVMGR_Get154AddrFromUID},
-    };
-    /* fromLocation is returned with the bit mask corresponding to the successful MAC retrieval / or 0 otherwise */
-    return DEVMGR_MacAddrReader(pOutAddr, DEVMGR_154_ADDR_SZ, fromLocation, tbl, ARRAY_SIZE(tbl));
+    return PLATFORM_DEVMGR_Get154Address(pOutAddr, fromLocation);
 }
 
 int DEVMGR_Set154Address(const uint8_t *pAddr)

@@ -6,21 +6,18 @@ if MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
 
 # DevMgr storage backend selection for KW43 / MCXW70.
 #
-# The platform/CFPA DevMgr backend is delivered:
+# The platform/CFPA DevMgr backend is activated:
 # (fwk_devmgr_platf.c + the per-platform fwk_platform_devmgr.c CFPA accessors
-# + the fwk_platform_ifr.c IFR engine) but it must NOT be the active backend
-# yet: the HWParameter backend remains the default until next stage.
-# The override below is therefore kept commented out on purpose.
-# Uncomment the block below to force the platform/CFPA backend so the
-# HWParameter backend (and the HWParameter service it selects) is no longer
-# compiled on this device.
+# + the fwk_platform_ifr.c IFR engine).
+# In the unlikely case where we'd need to go back to HWParameter backend,
+# comment out the block below.
 
-#if MCUX_COMPONENT_middleware.wireless.framework.devmgr
+if MCUX_COMPONENT_middleware.wireless.framework.devmgr
 
-#choice MCUX_COMPONENT_middleware.wireless.framework.devmgr_backend
-#    default MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat
-#endchoice
+choice MCUX_COMPONENT_middleware.wireless.framework.devmgr_backend
+    default MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat
+endchoice
 
-#endif
+endif
 
 endif

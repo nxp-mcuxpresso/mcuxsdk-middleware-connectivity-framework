@@ -16,6 +16,7 @@
 #include "ifr0map_struct.h"
 /* DEVMGR_BD_ADDR_SZ / DEVMGR_154_ADDR_SZ used by the CFPA MAC accessors. */
 #include "fwk_platform_devmgr.h"
+#include "fwk_platform_reset.h"
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -202,8 +203,8 @@ static int s_ProgPhrase(uint32_t off, const uint8_t *data)
             ret = DEVMGR_STATUS_ERR_FLASH;
             break;
         }
-
-        st = HAL_FlashReadCheckEccFaults(DEVMGR_IFR0_SCRATCH_BASE + off, DEVMGR_PHRASE_SIZE, rb);
+        /* Read with ECC check cannot be called in the context of the asynch flash driver */
+        st = HAL_FlashRead(DEVMGR_IFR0_SCRATCH_BASE + off, DEVMGR_PHRASE_SIZE, rb);
         if (st != kStatus_HAL_Flash_Success)
         {
             ret = DEVMGR_STATUS_ERR_VERIFY;
@@ -491,7 +492,7 @@ int PLATFORM_DevMgrCommitZone(void)
         if (st == DEVMGR_STATUS_OK)
         {
             /* Force reboot to let DEVCFG update happen */
-            NVIC_SystemReset();
+            PLATFORM_ResetCpu();
         }
     } while (false);
 

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #include "fwk_platform_devmgr.h"
+#include "fwk_devmgr_common.h"
 #include "FunctionLib.h"
 #include "fsl_rom_api.h"
 #include "fsl_debug_console.h"
@@ -108,6 +109,22 @@ static int s_PLATFORM_DEVMGR_GetBdAddrFromLocation(uint8_t *pOutAddr, ffr_bd_add
  * Public functions
  *************************************************************************************
  ********************************************************************************** */
+int PLATFORM_DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation)
+{
+    /* The order of the functions in the array define the precedence of the MAC address sources:
+     * CUST (HWParameter/CFPA)->NMPA->UUID.
+     * A 4th option that generates and writes the MAC address (based on DEVMGR_MAC_GEN_ENABLED build option)
+     * exists for the HwParameter based implementation. In the platform based implementation it might be considered
+     * (e.g if CFPA based on KW43/MCXW70, but not for MCXW23. It is discarded for now.
+     */
+    static const devmgr_src_entry_t tbl[] = {
+        {DEVMGR_MAC_SRC_CUST, PLATFORM_DEVMGR_GetBdAddressCust},
+        {DEVMGR_MAC_SRC_NMPA, PLATFORM_DEVMGR_GetBdAddrFromNMPA},
+        {DEVMGR_MAC_SRC_UUID, PLATFORM_DEVMGR_GetBdAddrFromUID},
+    };
+    /* fromLocation is returned with the bit mask corresponding to the successful MAC retrieval / or 0 otherwise */
+    return DEVMGR_MacAddrReader(pOutAddr, DEVMGR_BD_ADDR_SZ, fromLocation, tbl, ARRAY_SIZE(tbl));
+}
 
 int PLATFORM_DEVMGR_GetBdAddressCust(uint8_t *pOutAddr)
 {
@@ -132,29 +149,16 @@ int PLATFORM_DEVMGR_SetBdAddress(const uint8_t *pAddr)
     return DEVMGR_NotSupported_c;
 }
 
-int PLATFORM_DEVMGR_Get154AddressCust(uint8_t *pOutAddr)
+int PLATFORM_DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
 {
     (void)pOutAddr;
+    (void)fromLocation;
     return DEVMGR_NotSupported_c;
 }
 
 int PLATFORM_DEVMGR_Set154Address(const uint8_t *pAddr)
 {
     (void)pAddr;
-    return DEVMGR_NotSupported_c;
-}
-
-int PLATFORM_DEVMGR_Get154AddrFromNMPA(uint8_t *pOutAddr)
-{
-    (void)pOutAddr;
-    /* MCXW23 carries no IEEE 802.15.4 MAC address in NMPA. */
-    return DEVMGR_NotSupported_c;
-}
-
-int PLATFORM_DEVMGR_Get154AddrFromUID(uint8_t *pOutAddr)
-{
-    (void)pOutAddr;
-    /* No 802.15.4 UID-derived address is provided on MCXW23. */
     return DEVMGR_NotSupported_c;
 }
 

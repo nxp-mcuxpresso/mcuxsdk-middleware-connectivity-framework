@@ -50,7 +50,7 @@
 #endif
 
 #ifndef IEEE802_15_4_ADDR_OUI
-#define IEEE802_15_4_ADDR_OUI 0x37U, 0x60U, 0x00U
+#define IEEE802_15_4_ADDR_OUI 0x65U, 0xD4U, 0x44U
 #endif
 
 /* Number of OUI (most-significant) bytes shared by both address types. */
@@ -110,6 +110,23 @@ extern "C" {
 #endif
 
 /*! *********************************************************************************
+ * \brief  Read the Bluetooth device address from the specified location.
+ *
+ * \param[out] pOutAddr  buffer of DEVMGR_BD_ADDR_SZ bytes receiving the address
+ * \param[in,out] fromLocation pointer specifying bitfield describing from which source BD address is to be read:
+ *                - if pointer is NULL, any source
+ *                - if pointer is not NULL, and equal to 0, any source is accepted, first source is returned
+ *                - non null value, first valid source bit is returned
+ *  Sources are Customer defined address : HwParameter or CFPA,
+ *                                         NXP provided address in NMPA or
+ *                                         UID based address.
+ *
+ * \return DEVMGR_Success_c on success, DEVMGR_Blank_c if the field is blank,
+ *      DEVMGR_Error_c on a NULL pointer or backend failure.
+ ********************************************************************************** */
+int PLATFORM_DEVMGR_GetBdAddress(uint8_t *pOutAddr, uint32_t *fromLocation);
+
+/*! *********************************************************************************
  * \brief  Read the Bluetooth device address from the customer (CFPA/HWParameter)
  *      store.
  *
@@ -152,6 +169,26 @@ int PLATFORM_DEVMGR_GetBdAddrFromUID(uint8_t *pOutAddr);
  *      store is read-only, DEVMGR_Error_c on a NULL pointer or backend failure.
  ********************************************************************************** */
 int PLATFORM_DEVMGR_SetBdAddress(const uint8_t *pAddr);
+
+/*! *********************************************************************************
+ * \brief  Read the IEEE 802.15.4 EUI64 address from the specified location.
+ *
+ * \param[out] pOutAddr  buffer of DEVMGR_154_ADDR_SZ bytes receiving the address
+ * \param[in,out] fromLocation pointer specifying bitfield describing where the BD address
+ *                must be read from:
+ *                - if pointer is NULL, any source
+ *                - if pointer is not NULL, and equal to 0, any source is accepted,
+ *                  first valid source bit is returned
+ *                - non null value, first valid source bit is returned
+ *  Sources are Customer defined address : HwParameter or CFPA,
+ *                                         NXP provided address in NMPA or
+ *                                         UID based address.
+ *
+ * \return DEVMGR_Success_c on success, DEVMGR_Blank_c if the field is blank,
+ *      DEVMGR_NotSupported_c if the platform has no IEEE.802.15.4 support,
+ *      DEVMGR_Error_c on a NULL pointer or backend failure.
+ ********************************************************************************** */
+int PLATFORM_DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation);
 
 /*! *********************************************************************************
  * \brief  Read the IEEE 802.15.4 device address from the platform store.

@@ -13,6 +13,7 @@
 
 #### Minor Changes
 
+- [DevMgr][KW43][MCXW70] Added an interim CFPA MAC-address self-provisioning step (gated by the devmgr_mac_gen option, now allowed on the platform/CFPA backend): when the customer (CFPA) BLE or IEEE 802.15.4 address read fails/blank, both missing addresses are generated (BLE OUI 00:60:37, 802.15.4 OUI 44:D4:65) and persisted in a single batched CFPA commit (one device reset). Changed the shared IEEE802_15_4_ADDR_OUI default to 44:D4:65.
 - [DevMgr][KW47][MCXW70] Added CFPA backend support for KW43/MCXW70. Removed `DEVMGR_PLATFORM_BACKEND_ENABLED` macro and merged `fwk_platform_devmgr_types.h` into `fwk_platform_devmgr.h`.
 - [wireless_mcu][kw43_mcxw70] Low power bring-up: per-platform SPC wake-up delay (`PLATFORM_SPC_LPWKUP_DELAY_10MHz`), PU2ISO wake-up trim override (`PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO`), power-down flag gating (`gPlatformRequiresPowerDownFlag_d`), KW43 RAM bank retention map, `PLATFORM_InitWakeUpSources()` for LPTMR0/1, build-system enablement, use of `SPC_GetVoltageDetectStatusFlag()`, VBAT dependency fix, and skip of power-domain wakeup/power-down flag handshake on platforms that do not require it.
 - [kw43_mcxw70] Updated SPC `LPWKUP_DELAY` to the recommended 0xCC value; added dummy interrupt support in `PLATFORM_RemoteActiveReq()`; removed `PLATFORM_SetNbuPowerMode()`.

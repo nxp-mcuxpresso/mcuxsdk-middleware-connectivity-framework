@@ -29,11 +29,9 @@ choice MCUX_COMPONENT_middleware.wireless.framework.devmgr_backend
     default MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
     help
       Selects the DevMgr storage backend. Exactly one backend is active
-      whenever DevMgr is enabled. HWParameter is the current interim default.
-      CFPA is the intended eventual default; its ioctl driver / source
-      (fwk_devmgr_platf.c) is still a stub / to be delivered, so the working
-      default remains HWParameter for now. Override the default per platform
-      in the platform's Kconfig.defconfig.
+      whenever DevMgr is enabled. HWParameter is deprecated.
+      CFPA becomes the default; its ioctl driver / source is implemented in fwk_devmgr_platf.c
+      Override the default per platform in the platform's Kconfig.defconfig.
 
 # Backend: Hardware Parameter flash storage (KW45, KW47)
 config MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
@@ -44,9 +42,20 @@ config MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
       service). This is the default backend for KW45x/K32W1x/MCXW71x and
       KW47x/MCXW72x families.
 
-# Backend: CFPA ioctl access (MCXW23, KW43, MCXW70) -- stub, TBD
+# Backend: CFPA ioctl access (MCXW23, KW43, MCXW70),
 config MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat
     bool "platform specific backend"
+    # On the KW43/MCXW70 modifiable-CFPA path, the platform backend commits
+    # manufacturing data through PLATFORM_DevMgrCommitZone(), whose IFR update
+    # path calls PLATFORM_ResetCpu() to let the ROM bootloader apply the DEVCFG
+    # update. There, PLATFORM_ResetCpu() is provided by the platform.reset
+    # component (wireless_mcu/fwk_platform_reset.c), so it must be selected,
+    # otherwise the backend fails to link.
+    # MCXW23 is excluded: it does not modify the CFPA contents, and its own
+    # PLATFORM_ResetCpu() lives in mcxw23/fwk_platform.c (always built,
+    # independent of the platform.reset component).
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.reset \
+        if MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
     help
       DevMgr backend using CFPA ioctl access. Intended for MCXW23,
       KW43x, and MCXW70 families. The service-level DEVMGR_* functions are
@@ -55,22 +64,27 @@ config MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat
 
 endchoice
 
-# Optional MAC-address generation service (HWParameter backend only)
+# Optional MAC-address generation service (HWParameter or platform/CFPA backend)
 config MCUX_COMPONENT_middleware.wireless.framework.devmgr_mac_gen
-    bool "MAC-address generation service (HWParameter backend only)"
+    bool "MAC-address generation service"
     default n
-    depends on MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam
+    depends on MCUX_COMPONENT_middleware.wireless.framework.devmgr_hwparam ||\
+               MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70 # whether hwparam backend or platf
     select MCUX_COMPONENT_middleware.wireless.framework.function_lib
     # fwk_devmgr_mac_gen.c pulls its random bytes from the SecLib_RNG service
     # (RNG_Interface.h / RNG_Init / RNG_GetPseudoRandomData), so that component
     # must be present whenever generation is built.
     select MCUX_COMPONENT_middleware.wireless.framework.seclib_rng
     help
-      When enabled, builds fwk_devmgr_mac_gen.c and lets the HWParameter
-      backend compose a device address (BD or IEEE 802.15.4) from a fixed OUI
-      plus RNG / UID-derived bytes as a last-resort fallback when no
-      provisioned address (HWParameter or NMPA) exists. Default n. This option
-      is only meaningful with the HWParameter backend; the platform/CFPA
-      backend never invokes generation.
-
-
+      When enabled, builds fwk_devmgr_mac_gen.c and lets the active backend
+      compose a device address (BD or IEEE 802.15.4) from a fixed OUI plus
+      RNG / UID-derived bytes as a last-resort fallback when no provisioned
+      address exists. Default n.
+      - On the HWParameter backend, this fallback is invoked directly from
+        the HWParameter resolution chain (persisted to HWParameter).
+      - On the platform/CFPA backend (KW43/MCXW70), this fallback is an
+        interim self-provisioning step: it fires only when the CFPA customer
+        store read fails/blank, generates whichever of the BD / 802.15.4
+        addresses are missing, and persists both in a single batched CFPA
+        commit (one device reset), as a bridge until CFPA MAC addresses are
+        factory self-provisioned.

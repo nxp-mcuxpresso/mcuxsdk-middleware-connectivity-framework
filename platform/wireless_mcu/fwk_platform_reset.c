@@ -22,6 +22,9 @@
 #include "fsl_cmc.h"
 #endif
 #endif
+#if defined(CONFIG_FLASH_K4_ASYNC_MODE) && (CONFIG_FLASH_K4_ASYNC_MODE == 1)
+#include "fsl_k4_flash.h"
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                               Private macros                               */
@@ -239,6 +242,11 @@ __NO_RETURN void PLATFORM_NvicSystemReset(void)
 
 __NO_RETURN void PLATFORM_ResetCpu(void)
 {
+#if defined(CONFIG_FLASH_K4_ASYNC_MODE) && (CONFIG_FLASH_K4_ASYNC_MODE == 1)
+    /* Force flush of flash pending operations before resetting the target */
+    (void)FLASH_AsyncDeinit();
+#endif
+
 #if defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByLvdForce_c)
     PLATFORM_ForceLvdReset();
 #elif defined(gPlatResetMethod_c) && (gPlatResetMethod_c == gUseResetByDeepPowerDown_c)

@@ -60,7 +60,6 @@ the possible sources are read in order of precedence: CUST backend
 
 ## Return status
 
-
 | Status | Meaning |
 |---|---|
 | `DEVMGR_Success_c`      | Operation completed successfully |
@@ -104,6 +103,4 @@ graph TD
 | KW45x / K32W1x / MCXW71x | HWParameter | |
 | KW47x / MCXW72x          | HWParameter | |
 | MCXW23                   | Platform / CFPA | CFPA is the active backend on this family |
-| KW43 / MCXW70            | HWParameter | The platform/CFPA backend is **implemented but not yet active**. On KW43/MCXW70 the interim default remains HWParameter; the CFPA-store accessors in `platform/kw43_mcxw70/fwk_platform_devmgr.c` and the backing IFR engine (`fwk_platform_ifr.c`) are compiled only when the platform backend is explicitly selected (`MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat`). The backend is not yet wired as the KW43/MCXW70 default and does not change the active address path; enabling it as the default is planned for a later stage. |
-
-
+| KW43 / MCXW70            | Platform / CFPA | CFPA is the active backend on this family. |
