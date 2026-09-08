@@ -12,8 +12,9 @@
  * Include
  *************************************************************************************
  ********************************************************************************** */
+#include <stdint.h>
 
-#include "fwk_platform_devmgr_types.h"
+#include "fwk_errno.h"
 
 /*!
  * @addtogroup DevMgr
@@ -35,6 +36,10 @@
  *************************************************************************************
  ********************************************************************************** */
 
+/* Number of bits in a byte, used when extracting CRC bytes during UID-derived
+ * address composition. */
+#define DEVMGR_BITS_PER_BYTE 8U
+
 /*
  * Fixed OUI (3 most-significant address bytes) used for each generated address
  * type. Default to the NXP OUI 00:60:37 when the application/board does not
@@ -51,15 +56,48 @@
 /* Number of OUI (most-significant) bytes shared by both address types. */
 #define DEVMGR_MAC_GEN_OUI_SZ 3U
 
-/* Number of bits in a byte, used when extracting CRC bytes during UID-derived
- * address composition. */
-#define DEVMGR_BITS_PER_BYTE 8U
+/*
+ * Size of a Bluetooth device address (48-bit EUI).
+ */
+#define DEVMGR_BD_ADDR_SZ 6U
+
+/*
+ * Size of an IEEE 802.15.4 device address (64-bit EUI).
+ */
+#define DEVMGR_154_ADDR_SZ 8U
 
 /* Number of device-specific (least-significant) bytes per address type. */
 #define DEVMGR_MAC_GEN_BD_RAND_SZ  ((uint32_t)DEVMGR_BD_ADDR_SZ - (uint32_t)DEVMGR_MAC_GEN_OUI_SZ)
 #define DEVMGR_MAC_GEN_154_RAND_SZ ((uint32_t)DEVMGR_154_ADDR_SZ - (uint32_t)DEVMGR_MAC_GEN_OUI_SZ)
 
 #define DEVMGR_UID_SZ 16U
+
+/*
+ * MAC address source selection/reporting masks.
+ *
+ * These bits are used both as an input filter (which sources a caller will
+ *      accept) and as an output tag (which source actually provided the
+ *      returned address). When several bits are set, the sources are tried in
+ *      order of precedence: CUST first, then NMPA, then UUID.
+ */
+
+/* Customer-provisioned store (CFPA or HWParameter). Highest precedence. */
+#define DEVMGR_MAC_SRC_CUST (1U << 0)
+/* Non-volatile Manufacturer Programming Area / IFR factory-programmed store. */
+#define DEVMGR_MAC_SRC_NMPA (1U << 1)
+/* Address derived from the device unique ID (CRC32 of the UUID). Last resort. */
+#define DEVMGR_MAC_SRC_UUID (1U << 2)
+/* Accept/allow any of the supported sources (union of all mask bits). */
+#define DEVMGR_MAC_SRC_ANY (DEVMGR_MAC_SRC_CUST | DEVMGR_MAC_SRC_NMPA | DEVMGR_MAC_SRC_UUID)
+
+/* Value of an erased flash byte, used to detect blank (unprovisioned) fields. */
+#define DEVMGR_BLANK_BYTE 0xFFU
+
+/*! \brief  DevMgr API return status. */
+#define DEVMGR_Success_c      NOERROR  /*!< Operation completed successfully */
+#define DEVMGR_Error_c        -EBADMSG /*!< Generic error (backend read/write failure) */
+#define DEVMGR_Blank_c        -ENOENT  /*!< Requested parameter is unprovisioned (all 0xFF) and could not be resolved */
+#define DEVMGR_NotSupported_c -ENOTSUP /*!< Parameter not supported by the active backend */
 
 /**********************************************************************************
  *************************************************************************************
@@ -157,6 +195,48 @@ int PLATFORM_DEVMGR_Get154AddrFromUID(uint8_t *pOutAddr);
  *      store is read-only, DEVMGR_Error_c on a NULL pointer or backend failure.
  ********************************************************************************** */
 int PLATFORM_DEVMGR_Set154Address(const uint8_t *pAddr);
+
+/*! *********************************************************************************
+ * \brief  Read the 32 MHz crystal trim value from the platform store.
+ *
+ * \param[out] pOutTrim  receives the 32 MHz crystal trim value
+ *
+ * \return DEVMGR_Success_c on success, DEVMGR_Blank_c if the field is blank,
+ *      DEVMGR_NotSupported_c if the platform carries no 32 MHz trim,
+ *      DEVMGR_Error_c on a NULL pointer or backend failure.
+ ********************************************************************************** */
+int PLATFORM_DEVMGR_Get32MHzTrim(uint8_t *pOutTrim);
+
+/*! *********************************************************************************
+ * \brief  Program the 32 MHz crystal trim value in the platform store.
+ *
+ * \param[in] trim  32 MHz crystal trim value to store
+ *
+ * \return DEVMGR_Success_c on success, DEVMGR_NotSupported_c if the platform
+ *      carries no 32 MHz trim, DEVMGR_Error_c on a backend failure.
+ ********************************************************************************** */
+int PLATFORM_DEVMGR_Set32MHzTrim(uint8_t trim);
+
+/*! *********************************************************************************
+ * \brief  Read the 32 kHz crystal load-capacitance trim from the platform store.
+ *
+ * \param[out] pOutCap  receives the 32 kHz crystal load-capacitance value
+ *
+ * \return DEVMGR_Success_c on success, DEVMGR_Blank_c if the field is blank,
+ *      DEVMGR_NotSupported_c if the platform carries no 32 kHz trim,
+ *      DEVMGR_Error_c on a NULL pointer or backend failure.
+ ********************************************************************************** */
+int PLATFORM_DEVMGR_Get32kHzTrim(uint8_t *pOutCap);
+
+/*! *********************************************************************************
+ * \brief  Program the 32 kHz crystal load-capacitance trim in the platform store.
+ *
+ * \param[in] cap  32 kHz crystal load-capacitance value to store
+ *
+ * \return DEVMGR_Success_c on success, DEVMGR_NotSupported_c if the platform
+ *      carries no 32 kHz trim, DEVMGR_Error_c on a backend failure.
+ ********************************************************************************** */
+int PLATFORM_DEVMGR_Set32kHzTrim(uint8_t cap);
 
 #if defined(__cplusplus)
 }

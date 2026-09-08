@@ -16,7 +16,7 @@
 #include "HWParameter.h"
 #include "FunctionLib.h"
 #include "fsl_common.h"
-#include "fwk_platform_devmgr_types.h"
+#include "fwk_platform_devmgr.h"
 
 /* DEVMGR_MAC_GEN_ENABLED is defined (to 1) by the DevMgr CMakeLists.txt when the
  * MCUX_COMPONENT_middleware.wireless.framework.devmgr_mac_gen option is selected. */
@@ -54,7 +54,7 @@ static int s_DEVMGR_GetCustBdAddress(uint8_t *pOutAddr)
     do
     {
         uint32_t regPrimask;
-        assert(pOutAddr != NULL); /* already checked by caller */
+        /* Caller already checked that pOutAddr != NULL */
 
         /* NV_ReadHWParameters reads the hardwareParameters_t structure and verifies the checksum */
         readStatus = NV_ReadHWParameters(&pHwParams);
@@ -97,7 +97,7 @@ static int s_DEVMGR_GetCust154Address(uint8_t *pOutAddr)
     do
     {
         uint32_t regPrimask;
-        assert(pOutAddr != NULL); /* already checked by caller */
+        /* Caller already checked that pOutAddr != NULL */
 
         /* NV_ReadHWParameters reads the hardwareParameters_t structure and verifies the checksum */
         readStatus = NV_ReadHWParameters(&pHwParams);

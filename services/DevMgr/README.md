@@ -95,6 +95,7 @@ graph TD
 | `CMakeLists.txt`             | Build integration |
 | `fwk_platform_devmgr.h`      | Per-platform `PLATFORM_DEVMGR_*` contract and shared MAC-gen macros (in `platform/include/`) |
 | `platform/<soc>/fwk_platform_devmgr.c` | Per-platform `PLATFORM_DEVMGR_*` implementation |
+| `platform/kw43_mcxw70/fwk_platform_ifr.c/.h` | KW43/MCXW70 CFPA/CMPA IFR transactional flash engine backing the platform store |
 
 ## Backend status per platform
 
@@ -103,6 +104,6 @@ graph TD
 | KW45x / K32W1x / MCXW71x | HWParameter | |
 | KW47x / MCXW72x          | HWParameter | |
 | MCXW23                   | Platform / CFPA | CFPA is the active backend on this family |
-| KW43 / MCXW70            | HWParameter | The platform/CFPA backend is **to be implemented**. |
+| KW43 / MCXW70            | HWParameter | The platform/CFPA backend is **implemented but not yet active**. On KW43/MCXW70 the interim default remains HWParameter; the CFPA-store accessors in `platform/kw43_mcxw70/fwk_platform_devmgr.c` and the backing IFR engine (`fwk_platform_ifr.c`) are compiled only when the platform backend is explicitly selected (`MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat`). The backend is not yet wired as the KW43/MCXW70 default and does not change the active address path; enabling it as the default is planned for a later stage. |
 
 

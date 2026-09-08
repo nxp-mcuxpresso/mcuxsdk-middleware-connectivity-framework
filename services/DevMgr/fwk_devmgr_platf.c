@@ -37,7 +37,7 @@
 #include "fwk_devmgr.h"
 #include "fwk_devmgr_common.h"
 #include "fwk_platform_devmgr.h"
-#include "fwk_platform_devmgr_types.h"
+#include "fwk_platform_devmgr.h"
 
 /**********************************************************************************
  *************************************************************************************
@@ -73,7 +73,7 @@ int DEVMGR_Get154Address(uint8_t *pOutAddr, uint32_t *fromLocation)
      * CUST (HWParameter/CFPA)->NMPA->UUID.
      * A 4th option that generates and writes the MAC address (based on DEVMGR_MAC_GEN_ENABLED build option)
      * exists for the HwParameter based implementation. In the platform based implementation it might be considered
-     * (e.g if CFPA based on KW43/MCXW70, but not for MCXW23. It discarded for now.
+     * (e.g if CFPA based on KW43/MCXW70, but not for MCXW23. It is discarded for now.
      */
     static const devmgr_src_entry_t tbl[] = {
         {DEVMGR_MAC_SRC_CUST, PLATFORM_DEVMGR_Get154AddressCust},
@@ -91,27 +91,23 @@ int DEVMGR_Set154Address(const uint8_t *pAddr)
 
 int DEVMGR_Get32MHzTrim(uint8_t *pOutTrim)
 {
-    (void)pOutTrim;
-    /* The 32 MHz crystal trim is not carried by the platform/CFPA backend on
-     * platforms that use this file (MCXW23). KW43/MCXW70 provides its own
-     * fwk_platform_devmgr.c overriding this behavior if required. */
-    return DEVMGR_NotSupported_c;
+    /* The crystal trims are backed by the per-platform store (e.g. the CFPA
+     * XTAL config on KW43/MCXW70). Platforms that carry no such field return
+     * DEVMGR_NotSupported_c from the accessor. */
+    return PLATFORM_DEVMGR_Get32MHzTrim(pOutTrim);
 }
 
 int DEVMGR_Set32MHzTrim(uint8_t trim)
 {
-    (void)trim;
-    return DEVMGR_NotSupported_c;
+    return PLATFORM_DEVMGR_Set32MHzTrim(trim);
 }
 
 int DEVMGR_Get32kHzTrim(uint8_t *pOutCap)
 {
-    (void)pOutCap;
-    return DEVMGR_NotSupported_c;
+    return PLATFORM_DEVMGR_Get32kHzTrim(pOutCap);
 }
 
 int DEVMGR_Set32kHzTrim(uint8_t cap)
 {
-    (void)cap;
-    return DEVMGR_NotSupported_c;
+    return PLATFORM_DEVMGR_Set32kHzTrim(cap);
 }

@@ -32,6 +32,19 @@ if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70)
             fwk_platform_devmgr.c
             DEVICE_IDS ${KW43_FAMILY} ${MCXW70_FAMILY}
         )
+
+        # The CFPA/CMPA IFR transactional flash engine backing the platform
+        # DevMgr store is compiled only when the platform-specific backend is
+        # selected. The default HWParameter backend does not reference it, so
+        # existing builds are unchanged.
+        if(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.devmgr_plat)
+            mcux_add_source(SOURCES
+                fwk_platform_ifr.c
+                fwk_platform_ifr.h
+                ifr0map_struct.h
+                DEVICE_IDS ${KW43_FAMILY} ${MCXW70_FAMILY}
+            )
+        endif()
     endif()
 
     mcux_add_macro(CONFIG_PSA_NO_EXTERNAL_RNG_IN_DRIVER=1)

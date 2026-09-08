@@ -152,3 +152,29 @@ int PLATFORM_DEVMGR_Get154AddrFromUID(uint8_t *pOutAddr)
     /* No 802.15.4 UID-derived address is provided on MCXW23. */
     return DEVMGR_NotSupported_c;
 }
+
+int PLATFORM_DEVMGR_Get32MHzTrim(uint8_t *pOutTrim)
+{
+    (void)pOutTrim;
+    /* MCXW23 carries no 32 MHz crystal trim in the platform store. */
+    return DEVMGR_NotSupported_c;
+}
+
+int PLATFORM_DEVMGR_Set32MHzTrim(uint8_t trim)
+{
+    (void)trim;
+    return DEVMGR_NotSupported_c;
+}
+
+int PLATFORM_DEVMGR_Get32kHzTrim(uint8_t *pOutCap)
+{
+    (void)pOutCap;
+    /* MCXW23 carries no 32 kHz crystal trim in the platform store. */
+    return DEVMGR_NotSupported_c;
+}
+
+int PLATFORM_DEVMGR_Set32kHzTrim(uint8_t cap)
+{
+    (void)cap;
+    return DEVMGR_NotSupported_c;
+}

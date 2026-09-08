@@ -13,14 +13,14 @@
  * (KW43/MCXW70, KW45/K32W1/MCXW71, KW47/MCXW72).
  *
  * This file regroups the fixed OUI tables (s_bdAddrOui, s_154AddrOui), the
- * CRC-32 configuration (crcConfig) and the deterministic UID-to-address
+ * CRC-32 configuration (s_crcConfig) and the deterministic UID-to-address
  * composition functions (PLATFORM_DEVMGR_GetBdAddrFromUID and
  * PLATFORM_DEVMGR_Get154AddrFromUID).
  *
  * The generation OUI defaults (BD_ADDR_OUI / IEEE802_15_4_ADDR_OUI), the
  * MAC-generation size macros (DEVMGR_MAC_GEN_*), DEVMGR_UID_SZ and the shared
  * DevMgr vocabulary (devmgr status codes, address sizes) are provided by the
- * platform layer headers fwk_platform_devmgr.h / fwk_platform_devmgr_types.h.
+ * platform layer headers fwk_platform_devmgr.h.
  * This source depends only on the platform layer and does not include the
  * DevMgr service header (fwk_devmgr.h).
  *
@@ -153,7 +153,7 @@ int PLATFORM_DEVMGR_Get154AddrFromUID(uint8_t *pOutAddr)
             break;
         }
 
-        if (FLib_MemCmpToVal((const void *)uid_string, 0xFFU, DEVMGR_UID_SZ) == TRUE)
+        if (FLib_MemCmpToVal((const void *)uid_string, 0xFFU, DEVMGR_UID_SZ) != FALSE)
         {
             status = DEVMGR_Blank_c;
             break;

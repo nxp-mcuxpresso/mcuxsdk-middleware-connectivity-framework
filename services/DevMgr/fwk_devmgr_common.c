@@ -74,7 +74,7 @@ int DEVMGR_MacAddrReader(
                 break;
             }
         } /* for */
-        if (found == FALSE)
+        if (found != TRUE)
         {
             /* Nothing was found, report so */
             if (fromLocation != NULL)
