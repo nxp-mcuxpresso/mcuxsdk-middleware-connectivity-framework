@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
@@ -51,6 +51,17 @@ union physical_address
     uint8_t *pointer;
 };
 
+/*
+ * Give this port's mutex type and functions distinct symbols to avoid conflicts
+ * with other components/modules that also provide their own Zephyr k_mutex API.
+ * Temporary until a common Zephyr port layer is shared across all middlewares.
+ */
+#define k_mutex         fwk_k_mutex
+#define k_mutex_init    fwk_k_mutex_init
+#define k_mutex_lock    fwk_k_mutex_lock
+#define k_mutex_unlock  fwk_k_mutex_unlock
+#define k_mutex_destroy fwk_k_mutex_destroy
+
 struct k_mutex
 {
     OSA_MUTEX_HANDLE_DEFINE(MutexId);
@@ -77,8 +88,15 @@ struct k_mutex
 #endif
 #endif
 
+/*
+ * Force this port's OSA-backed meaning even if another module already defined
+ * these.
+ * Temporary until a common Zephyr port layer is shared across all middlewares.
+ */
+#undef K_MUTEX_DEFINE
 #define K_MUTEX_DEFINE(_mtx_) struct k_mutex _mtx_
-#define K_FOREVER             ~0UL
+#undef K_FOREVER
+#define K_FOREVER ~0UL
 
 #if (!(defined(__CC_ARM) || defined(__UVISION_VERSION) || defined(__ARMCC_VERSION)))
 /*
@@ -128,9 +146,8 @@ extern uint32_t Image$$NVM_region$$Length;
 extern "C" {
 #endif
 
-#ifndef __syscall
+#undef __syscall
 #define __syscall
-#endif
 /**
  * @}
  */
@@ -158,9 +175,17 @@ struct flash_parameters
  * @}
  */
 
+/* Rename this port's device type to a distinct symbol (like k_mutex above) so
+ * it never collides with other modules' struct device definition. Layout mirrors Zephyr.
+ * Temporary until a common Zephyr port layer is shared across all middlewares. */
+#define device fwk_device
+
 struct device
 {
-    const struct flash_driver_api *api;
+    void       *obj;
+    const void *api;
+    void       *data;
+    const void *config;
 };
 
 struct flash_area

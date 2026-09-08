@@ -1,5 +1,5 @@
 /*! *********************************************************************************
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -87,7 +87,7 @@ int flash_area_get_sectors(int fa_id, uint32_t *count, struct flash_sector *sect
             rc = -EINVAL;
             break;
         }
-        fp               = fa->fa_dev->api->get_parameters(fa->fa_dev);
+        fp               = ((const struct flash_driver_api *)fa->fa_dev->api)->get_parameters(fa->fa_dev);
         *count           = fa->fa_size / fp->sector_size;
         sectors->fs_size = fp->sector_size;
         sectors->fs_off  = fa->fa_off;

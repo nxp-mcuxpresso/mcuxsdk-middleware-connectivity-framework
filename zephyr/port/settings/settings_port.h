@@ -206,32 +206,6 @@ extern "C" {
 #define STRUCT_SECTION_FOREACH(struct_type, iterator) \
 	STRUCT_SECTION_FOREACH_ALTERNATE(struct_type, struct_type, iterator)
 
-#ifndef WITH_LOGS
-
-#define LOG_MODULE_REGISTER(x, y)
-#define LOG_MODULE_DECLARE(...)
-
-#undef LOG_WRN
-#undef LOG_INF
-#undef LOG_DBG
-
-#undef LOG_HEXDUMP_ERR
-#undef LOG_HEXDUMP_WRN
-#undef LOG_HEXDUMP_INF
-#undef LOG_HEXDUMP_DBG
-
-#define LOG_ERR(...) (void)0
-#define LOG_WRN(...) (void)0
-#define LOG_DBG(...) (void)0
-#define LOG_INF(...) (void)0
-
-#define LOG_HEXDUMP_ERR(...) (void)0
-#define LOG_HEXDUMP_WRN(...) (void)0
-#define LOG_HEXDUMP_DBG(...) (void)0
-#define LOG_HEXDUMP_INF(...) (void)0
-#else
-/* TO DO */
-#endif
 #ifdef __cplusplus
 }
 #endif

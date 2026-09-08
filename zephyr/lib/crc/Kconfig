@@ -1,11 +1,17 @@
 # Copyright (c) 2016,2023 Intel Corporation
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config CRC
 	bool
 	help
 	  Enable use of CRC.
+
+# Build the framework CRC lib only when edgefast_open does not already provide
+# it, so a combined build links a single copy.
+config MCUX_COMPONENT_middleware.wireless.framework.zephyr_lib.crc
+	bool
+	default y if CRC && MCUX_COMPONENT_middleware.wireless.framework.zephyr_common && !MCUX_COMPONENT_middleware.edgefast_open.crc
 
 if CRC
 endif
