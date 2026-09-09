@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -13,6 +13,9 @@
 
 /* This platform is an NBU domain */
 #define gPlatformIsNbu_d 1
+
+/* Platform requires a power-domain wakeup sequence prior to access */
+#define gPlatformRequiresPowerDomainWakeup 1
 
 /*********************************************************************
  *        SecLib_RNG

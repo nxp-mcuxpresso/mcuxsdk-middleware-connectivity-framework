@@ -122,7 +122,7 @@ static void PLATFORM_UpdateFrequency(void);
 static void PLATFORM_SetClock(uint8_t range);
 #endif
 
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay);
 #endif
 
@@ -164,21 +164,21 @@ void PLATFORM_ResetContext(void)
 
 void PLATFORM_RemoteActiveReq(void)
 {
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
     PLATFORM_RemoteActiveReqOptionalDelay(true);
 #endif
 }
 
 void PLATFORM_RemoteActiveReqWithoutDelay(void)
 {
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
     PLATFORM_RemoteActiveReqOptionalDelay(false);
 #endif
 }
 
 void PLATFORM_RemoteActiveRel(void)
 {
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
     uint32_t intMask = PLATFORM_SetInterruptMask();
 
     // PWR_DBG_LOG("<--active_request_nb RELEASE=%d", active_request_nb);
@@ -611,7 +611,7 @@ uint32_t PLATFORM_GetClockFreq(void)
 }
 #endif
 
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
 static void PLATFORM_RemoteActiveReqOptionalDelay(bool withDelay)
 {
     uint32_t intMask = PLATFORM_SetInterruptMask();

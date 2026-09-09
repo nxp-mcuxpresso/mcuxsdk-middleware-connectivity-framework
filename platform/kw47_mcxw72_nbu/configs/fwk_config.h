@@ -14,6 +14,9 @@
 /* This platform is an NBU domain */
 #define gPlatformIsNbu_d 1
 
+/* Platform requires a power-domain wakeup sequence prior to access */
+#define gPlatformRequiresPowerDomainWakeup 1
+
 #define FWK_KW47_MCXW72_NBU_FAMILIES 1
 
 /*********************************************************************
