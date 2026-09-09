@@ -19,7 +19,10 @@
 #include "fsl_spc.h"
 #include "fsl_wuu.h"
 #include "fsl_cmc.h"
+
+#if defined(PLATFORM_VBAT_LDORAM_IDX)
 #include "fsl_vbat.h"
+#endif
 
 /* SDK components */
 #include "fsl_pm_core.h"
