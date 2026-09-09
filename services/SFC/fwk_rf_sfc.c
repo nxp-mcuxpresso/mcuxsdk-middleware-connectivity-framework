@@ -710,7 +710,7 @@ static void SFC_MeasureCallback(status_t status)
     uint32_t freq = 0U;
     int32_t  ppm  = 0;
 
-    if (status == kStatus_SFA_MeasurementCompleted)
+    if ((status == kStatus_SFA_MeasurementCompleted) && (sfcHandle.enable == true))
     {
         /* Get the frequency and compute the error in ppm compared to 32768 */
         freq = SFA_CalculateFrequencyOrPeriod(RF_SFA, 32000000U);
