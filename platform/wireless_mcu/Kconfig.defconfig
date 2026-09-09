@@ -122,6 +122,14 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.sensors
     select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
     select MCUX_COMPONENT_device.utility
 
+config MCUX_COMPONENT_middleware.wireless.framework.platform.lowpower
+    select MCUX_COMPONENT_component.power_manager_framework
+    select MCUX_COMPONENT_middleware.wireless.framework.platform.ics
+    select MCUX_COMPONENT_component.mem_manager
+
+config MCUX_COMPONENT_middleware.wireless.framework.platform.lowpower_timer
+    select MCUX_COMPONENT_component.timer_manager
+
 config MCUX_COMPONENT_middleware.wireless.framework.platform.internal_flash
     select MCUX_COMPONENT_component.flash_adapter
 
