@@ -35,10 +35,6 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
-#define SPC_VD_STAT_CLEAR_MASK                                                                    \
-    (SPC_VD_STAT_COREVDD_LVDF_MASK | SPC_VD_STAT_SYSVDD_LVDF_MASK | SPC_VD_STAT_IOVDD_LVDF_MASK | \
-     SPC_VD_STAT_COREVDD_HVDF_MASK | SPC_VD_STAT_SYSVDD_HVDF_MASK | SPC_VD_STAT_IOVDD_HVDF_MASK)
-
 #define PLATFORM_LPWKUP_DELAY_10MHz (0xAAU)
 
 #if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
@@ -168,7 +164,7 @@ void PLATFORM_LowPowerInit(void)
     PLATFORM_InitWakeUpSources();
 
     /* Clear voltage detect status */
-    SPC_ClearVoltageDetectStatusFlag(SPC0, SPC_VD_STAT_CLEAR_MASK);
+    SPC_ClearVoltageDetectStatusFlag(SPC0, SPC_GetVoltageDetectStatusFlag(SPC0));
 
     /* Set number of SPC timer clock cycles to wait on exit from lowpower mode */
     SPC_SetLowPowerWakeUpDelay(SPC0, PLATFORM_LPWKUP_DELAY_10MHz);
