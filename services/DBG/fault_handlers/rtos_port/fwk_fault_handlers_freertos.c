@@ -7,6 +7,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 #include <stdbool.h>
+#include <string.h>
 #include "fwk_fault_handlers_rtos_port.h"
 #include "fwk_fault_handlers_utils.h"
 #include "FreeRTOS.h"
@@ -55,22 +56,22 @@ void sys_dump_task_stats(void)
     uint32_t             ulTotalRunTime = 0U;
     (void)task_state_char;
 
-    PRINTF("==========TASK STATUS==========\r\n");
+    FWK_FaultPrintf("==========TASK STATUS==========\r\n");
 
     {
         /* Generate raw status information about each task. */
         uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, SYS_DEBUG_MAX_TASKS_NB, &ulTotalRunTime);
         if (uxArraySize == SYS_DEBUG_MAX_TASKS_NB)
         {
-            PRINTF("WARNING: SYS_DEBUG_MAX_TASKS_NB too small - task list incomplete !!\r\n");
+            FWK_FaultPrintf("WARNING: SYS_DEBUG_MAX_TASKS_NB too small - task list incomplete !!\r\n");
         }
         /* For percentage calculations.*/
         ulTotalRunTime /= 100UL;
 
         /* For each populated position in the pxTaskStatusArray array,
            format the raw data as human readable ASCII data */
-        PRINTF("%s\t\t%s  %s  %s   %s   %s      %s\r\n", "Task Name", "State", "PRI", "Base_PRI", "Time", "Watermark",
-               "SP");
+        FWK_FaultPrintf("%s\t\t%s  %s  %s   %s   %s      %s\r\n", "Task Name", "State", "PRI", "Base_PRI", "Time",
+                        "Watermark", "SP");
         for (x = 0; x < uxArraySize; x++)
         {
             int task_state;
@@ -85,7 +86,7 @@ void sys_dump_task_stats(void)
             }
             /* If the percentage is zero here then the task has
                consumed less than 1% of the total run time. */
-            PRINTF(
+            FWK_FaultPrintf(
 #if defined(INCLUDE_xTaskGetHandle) && (INCLUDE_xTaskGetHandle > 0)
                 "%s%s%s\t%c\t%d\t%d\t%d\t%d\t0x%8x\r\n",
 #else
@@ -106,8 +107,8 @@ void sys_dump_task_stats(void)
 #endif
         }
 
-        PRINTF("\r\n==========Thread Callstacks========== (code start=0x%x code end=0x%x)\r\n",
-               (unsigned int)_TEXT_START, (unsigned int)_TEXT_END);
+        FWK_FaultPrintf("\r\n==========Thread Callstacks========== (code start=0x%x code end=0x%x)\r\n",
+                        (unsigned int)_TEXT_START, (unsigned int)_TEXT_END);
 #if defined(INCLUDE_xTaskGetHandle) && (INCLUDE_xTaskGetHandle > 0)
         for (x = 0; x < uxArraySize; x++)
         {
@@ -116,7 +117,7 @@ void sys_dump_task_stats(void)
             /* Current stack pointer of the thread is given by the first word in task handle */
             unsigned int CurrentSP = (unsigned int)task_hdl[0];
 
-            PRINTF("%s : ", pxTaskStatusArray[x].pcTaskName);
+            FWK_FaultPrintf("%s : ", pxTaskStatusArray[x].pcTaskName);
             sys_dump_callstack_ext(CurrentSP, task_hdl);
         }
 #endif
@@ -188,6 +189,6 @@ static void sys_dump_callstack_ext(unsigned int stack_pointer, unsigned int *tas
     }
 
     sys_dump_callstack(stack_pointer, topOfStack);
-    PRINTF("\r\n");
+    FWK_FaultPrintf("\r\n");
 }
 #endif

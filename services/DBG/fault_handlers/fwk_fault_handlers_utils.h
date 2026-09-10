@@ -1,16 +1,15 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
+
+#ifndef FWK_FAULT_HANDLERS_UTILS_H_
+#define FWK_FAULT_HANDLERS_UTILS_H_
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 #include <stdint.h>
-#if !defined(gDBG_LogInLinkLayerDebugStructEnabled_d)
-/* Definition for PRINTF */
-#include "fsl_debug_console.h"
-#endif
 
 /* -------------------------------------------------------------------------- */
 /*                               Public macros                                */
@@ -19,11 +18,24 @@
 #define _TEXT_END                m_text_end
 #define _STACK_TOP               m_cstack_end
 #define DBG_NO_ACTIVE_DEVICE_IRQ 0xFFFFFFFFU
-#if defined(gDBG_LogInLinkLayerDebugStructEnabled_d) && (gDBG_LogInLinkLayerDebugStructEnabled_d == 1)
-/* No debug console on NBU core on KW45 */
-#undef PRINTF
-#define PRINTF(...)
-#endif /* gDBG_LogInLinkLayerDebugStructEnabled_d */
+
+/* Size of the FWK_FaultPrintfImpl stack line buffer, one formatted line at a
+ * time. Longest known line is the ThreadX callstack banner
+ * (93 bytes with 32-bit addresses). Overridable by the consuming project; a
+ * smaller value truncates the affected lines. */
+#ifndef FWK_FAULT_OUTPUT_LINE_SIZE
+#define FWK_FAULT_OUTPUT_LINE_SIZE 128U
+#endif
+
+#if defined(BOARD_DBG_FAULT_SINK_ENABLE) && (BOARD_DBG_FAULT_SINK_ENABLE > 0)
+/* App-core (non-NBU): route the fault report through the registered sink when
+ * present; if no sink is registered the report is dropped (no PRINTF fallback). */
+#define FWK_FaultPrintf(...) FWK_FaultPrintfImpl(__VA_ARGS__)
+#else
+/* The fault-report emitter compiles to nothing. No buffer,
+ * no vsnprintf reference and no sink pointer are emitted into the image (NBU case). */
+#define FWK_FaultPrintf(...)
+#endif
 
 /* -------------------------------------------------------------------------- */
 /*                         Public memory declarations                         */
@@ -39,6 +51,15 @@ extern unsigned int m_cstack_end[];
 /* -------------------------------------------------------------------------- */
 /*                              Public functions                              */
 /* -------------------------------------------------------------------------- */
+
+#if defined(BOARD_DBG_FAULT_SINK_ENABLE) && (BOARD_DBG_FAULT_SINK_ENABLE > 0)
+/**
+ * \brief Formats one fault-report line and hands it to the registered sink
+ *
+ * \param[in] fmt printf-style format string, followed by its arguments
+ */
+void FWK_FaultPrintfImpl(const char *fmt, ...);
+#endif /* BOARD_DBG_FAULT_SINK_ENABLE */
 
 /**
  * \brief Parses a stack and dumps addresses that are possibly part of the call stack
@@ -74,3 +95,5 @@ void sys_dump_exception_callstack(void);
  * \return Active device specific irq or DBG_NO_ACTIVE_DEVICE_IRQ if none is found
  */
 unsigned int sys_dump_interrupt_status(void);
+
+#endif /* FWK_FAULT_HANDLERS_UTILS_H_ */

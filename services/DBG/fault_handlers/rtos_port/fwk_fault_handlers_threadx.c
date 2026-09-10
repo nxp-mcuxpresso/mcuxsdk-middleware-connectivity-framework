@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -7,6 +7,7 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 #include <stdbool.h>
+#include <string.h>
 #include "fwk_fault_handlers_rtos_port.h"
 #include "fwk_fault_handlers_utils.h"
 #include "tx_api.h"
@@ -38,7 +39,7 @@ void sys_dump_task_stats(void)
     /* Check if there are any threads created */
     if ((_tx_thread_created_ptr == TX_NULL) || (_tx_thread_created_count == 0U))
     {
-        PRINTF("No threads created in the system\r\n");
+        FWK_FaultPrintf("No threads created in the system\r\n");
     }
     else
     {
@@ -64,9 +65,10 @@ void sys_dump_task_stats(void)
         ULONG      thread_count = 0U;
         UINT       thread_state_index;
 
-        PRINTF("==========THREADX TASK STATUS==========\r\n");
+        FWK_FaultPrintf("==========THREADX TASK STATUS==========\r\n");
 
-        PRINTF("%s\t%s  %s  %s     %s   %s\r\n", "Thread Name", "State", "PRI", "RunCount", "StackStart", "Stackend");
+        FWK_FaultPrintf("%s\t%s  %s  %s     %s   %s\r\n", "Thread Name", "State", "PRI", "RunCount", "StackStart",
+                        "Stackend");
 
         /* Iterate through the circular list of threads */
         thread_ptr = _tx_thread_created_ptr;
@@ -80,18 +82,18 @@ void sys_dump_task_stats(void)
                 thread_state_index = sizeof(thread_state_char) - 1U; /* Unknown */
             }
 
-            PRINTF("%s%s\t%c\t%d\t%d\t0x%x\t0x%x\r\n", thread_ptr->tx_thread_name,
-                   (strlen(thread_ptr->tx_thread_name) < 8U) ? "\t" : "", /* Adjust tabulation */
-                   thread_state_char[thread_state_index], (int)thread_ptr->tx_thread_priority,
-                   (int)thread_ptr->tx_thread_run_count, (unsigned int)thread_ptr->tx_thread_stack_start,
-                   (unsigned int)thread_ptr->tx_thread_stack_end);
+            FWK_FaultPrintf("%s%s\t%c\t%d\t%d\t0x%x\t0x%x\r\n", thread_ptr->tx_thread_name,
+                            (strlen(thread_ptr->tx_thread_name) < 8U) ? "\t" : "", /* Adjust tabulation */
+                            thread_state_char[thread_state_index], (int)thread_ptr->tx_thread_priority,
+                            (int)thread_ptr->tx_thread_run_count, (unsigned int)thread_ptr->tx_thread_stack_start,
+                            (unsigned int)thread_ptr->tx_thread_stack_end);
 
             thread_count++;
             thread_ptr = thread_ptr->tx_thread_created_next;
         } while ((thread_ptr != _tx_thread_created_ptr) && (thread_count < _tx_thread_created_count));
 
-        PRINTF("\r\n==========ThreadX Thread Callstacks========== (code start=0x%x code end=0x%x)\r\n",
-               (unsigned int)_TEXT_START, (unsigned int)_TEXT_END);
+        FWK_FaultPrintf("\r\n==========ThreadX Thread Callstacks========== (code start=0x%x code end=0x%x)\r\n",
+                        (unsigned int)_TEXT_START, (unsigned int)_TEXT_END);
 
         /* Iterate through threads for callstack dump */
         thread_ptr   = _tx_thread_created_ptr;
@@ -99,7 +101,7 @@ void sys_dump_task_stats(void)
 
         do
         {
-            PRINTF("%s : \r\n", thread_ptr->tx_thread_name);
+            FWK_FaultPrintf("%s : \r\n", thread_ptr->tx_thread_name);
             sys_dump_callstack((unsigned int)thread_ptr->tx_thread_stack_ptr,
                                (unsigned int)thread_ptr->tx_thread_stack_end);
             thread_count++;

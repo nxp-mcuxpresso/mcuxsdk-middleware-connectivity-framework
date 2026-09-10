@@ -133,63 +133,64 @@ void HardFaultHandler(unsigned long *hardfault_args)
     (void)stacked_sp;
 
     /* Dump the cortex register first in case of issues in the logging dump */
-    PRINTF("\r\n============\r\n");
-    PRINTF("HardFault from pc    = 0x%08x (%d)\r\n", stacked_pc, stacked_pc);
+    FWK_FaultPrintf("\r\n============\r\n");
+    FWK_FaultPrintf("HardFault from pc    = 0x%08x (%d)\r\n", stacked_pc, stacked_pc);
 
-    PRINTF("r0    = 0x%08x\r\n", stacked_r0);
-    PRINTF("r1    = 0x%08x\r\n", stacked_r1);
-    PRINTF("r2    = 0x%08x\r\n", stacked_r2);
-    PRINTF("r3    = 0x%08x\r\n", stacked_r3);
+    FWK_FaultPrintf("r0    = 0x%08x\r\n", stacked_r0);
+    FWK_FaultPrintf("r1    = 0x%08x\r\n", stacked_r1);
+    FWK_FaultPrintf("r2    = 0x%08x\r\n", stacked_r2);
+    FWK_FaultPrintf("r3    = 0x%08x\r\n", stacked_r3);
 
-    PRINTF("r4    = 0x%08x\r\n", stacked_r4);
-    PRINTF("r5    = 0x%08x\r\n", stacked_r5);
-    PRINTF("r6    = 0x%08x\r\n", stacked_r6);
-    PRINTF("r7    = 0x%08x\r\n", stacked_r7);
-    PRINTF("r8    = 0x%08x\r\n", stacked_r8);
-    PRINTF("r9    = 0x%08x\r\n", stacked_r9);
-    PRINTF("r10   = 0x%08x\r\n", stacked_r10);
-    PRINTF("r11   = 0x%08x\r\n", stacked_r11);
+    FWK_FaultPrintf("r4    = 0x%08x\r\n", stacked_r4);
+    FWK_FaultPrintf("r5    = 0x%08x\r\n", stacked_r5);
+    FWK_FaultPrintf("r6    = 0x%08x\r\n", stacked_r6);
+    FWK_FaultPrintf("r7    = 0x%08x\r\n", stacked_r7);
+    FWK_FaultPrintf("r8    = 0x%08x\r\n", stacked_r8);
+    FWK_FaultPrintf("r9    = 0x%08x\r\n", stacked_r9);
+    FWK_FaultPrintf("r10   = 0x%08x\r\n", stacked_r10);
+    FWK_FaultPrintf("r11   = 0x%08x\r\n", stacked_r11);
 
-    PRINTF("r12   = 0x%08x\r\n", stacked_r12);
-    PRINTF("lr    = 0x%08x (%d)\r\n", stacked_lr, stacked_lr);
-    PRINTF("sp    = 0x%08x\r\n", stacked_sp);
-    PRINTF("psr   = 0x%08x\r\n", stacked_psr);
+    FWK_FaultPrintf("r12   = 0x%08x\r\n", stacked_r12);
+    FWK_FaultPrintf("lr    = 0x%08x (%d)\r\n", stacked_lr, stacked_lr);
+    FWK_FaultPrintf("sp    = 0x%08x\r\n", stacked_sp);
+    FWK_FaultPrintf("psr   = 0x%08x\r\n", stacked_psr);
 
 #if (__CORTEX_M == 33) || (__CORTEX_M == 3)
-    PRINTF("_CFSR = 0x%08x (Configurable Fault Status Register: UFSR|BFSR|MMSR)\r\n", SCB->CFSR);
-    PRINTF("_HFSR = 0x%08x (Hard Fault Status Register)\r\n", SCB->HFSR);
-    PRINTF("_DFSR = 0x%08x (Debug Fault Status Register)\r\n", SCB->DFSR);
-    PRINTF("_AFSR = 0x%08x (Auxiliary Fault Status Register)\r\n", SCB->AFSR);
-    PRINTF("_SHCSR= 0x%08x (System Handler Control and State Register)\r\n", (unsigned int)SCB->SHCSR);
+    FWK_FaultPrintf("_CFSR = 0x%08x (Configurable Fault Status Register: UFSR|BFSR|MMSR)\r\n", SCB->CFSR);
+    FWK_FaultPrintf("_HFSR = 0x%08x (Hard Fault Status Register)\r\n", SCB->HFSR);
+    FWK_FaultPrintf("_DFSR = 0x%08x (Debug Fault Status Register)\r\n", SCB->DFSR);
+    FWK_FaultPrintf("_AFSR = 0x%08x (Auxiliary Fault Status Register)\r\n", SCB->AFSR);
+    FWK_FaultPrintf("_SHCSR= 0x%08x (System Handler Control and State Register)\r\n", (unsigned int)SCB->SHCSR);
 
     if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0U)
     {
-        PRINTF("_MMAR = 0x%08x (MemManage Fault Address Register)\r\n", SCB->MMFAR);
+        FWK_FaultPrintf("_MMAR = 0x%08x (MemManage Fault Address Register)\r\n", SCB->MMFAR);
     }
     if ((SCB->CFSR & SCB_CFSR_BFARVALID_Msk) != 0U)
     {
-        PRINTF("_BFAR = 0x%08x (Bus Fault Address Register)\r\n", SCB->BFAR);
+        FWK_FaultPrintf("_BFAR = 0x%08x (Bus Fault Address Register)\r\n", SCB->BFAR);
     }
     if ((SCB->CFSR & SCB_CFSR_DIVBYZERO_Msk) != 0U)
     {
-        PRINTF("!! Division by zero !!\r\n");
+        FWK_FaultPrintf("!! Division by zero !!\r\n");
     }
     if ((SCB->CFSR & SCB_CFSR_UNALIGNED_Msk) != 0U)
     {
-        PRINTF("!! Unaligned access !!\r\n");
+        FWK_FaultPrintf("!! Unaligned access !!\r\n");
     }
 #if defined(__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1)
     if ((SCB->CFSR & SCB_CFSR_STKOF_Msk) != 0U)
     {
-        PRINTF("!! Stack overflow !!\r\n");
+        FWK_FaultPrintf("!! Stack overflow !!\r\n");
     }
 #endif
 
-    PRINTF("Exception_id = 0x%08x \r\n", __get_IPSR());
+    FWK_FaultPrintf("Exception_id = 0x%08x \r\n", __get_IPSR());
 #endif
 
-    PRINTF("EXEC_RETURN  = 0x%08x (%d current lr)\r\n", EXEC_RETURN, EXEC_RETURN);
-    PRINTF("comming from %s\r\n", (EXEC_RETURN & 0x4) ? "Thread mode (Process stack)" : "Handler mode (Main Stack)");
+    FWK_FaultPrintf("EXEC_RETURN  = 0x%08x (%d current lr)\r\n", EXEC_RETURN, EXEC_RETURN);
+    FWK_FaultPrintf("comming from %s\r\n",
+                    (EXEC_RETURN & 0x4) ? "Thread mode (Process stack)" : "Handler mode (Main Stack)");
 
     /* If gLoggingActive_d is set, Dump the log now */
     DBG_LOG_DUMP();
@@ -213,10 +214,13 @@ void HardFaultHandler(unsigned long *hardfault_args)
             /* Handler mode */
             sys_dump_exception_callstack();
         }
-        PRINTF("\r\n");
-        PRINTF(
-            "Command for parsing a stack:\r\n>arm-none-eabi-addr2line.exe -e <your_project>.elf "
-            "<paste_stack_line_above>\r\nadd option -f to show the function and line\r\n");
+        FWK_FaultPrintf("\r\n");
+        /* Emitted as separate calls so no single formatted line exceeds
+         * FWK_FAULT_OUTPUT_LINE_SIZE; the concatenated console output is
+         * identical to a single print. */
+        FWK_FaultPrintf("Command for parsing a stack:\r\n");
+        FWK_FaultPrintf(">arm-none-eabi-addr2line.exe -e <your_project>.elf <paste_stack_line_above>\r\n");
+        FWK_FaultPrintf("add option -f to show the function and line\r\n");
     }
 
 #if defined(CONFIG_DEBUG_COREDUMP) && defined(BOARD_DBG_COREDUMP_ENABLE) && (BOARD_DBG_COREDUMP_ENABLE > 0U)
