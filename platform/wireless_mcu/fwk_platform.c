@@ -1127,13 +1127,11 @@ void PLATFORM_DisableControllerLowPower(void)
     RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_BLE_WKUP_MASK;
 }
 
-void PLATFORM_RemoteActiveReq(void)
+void PLATFORM_RemoteActiveReqUnsafe(void)
 {
 #if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
     BOARD_DBGLPIOSET(1, 1);
     BOARD_DBGLPIOSET(0, 1);
-
-    PLATFORM_RemoteActiveEnter(PLATFORM_REMOTE_ACTIVE_REQ_ID);
 
     if (active_request_nb == 0)
     {
@@ -1203,21 +1201,28 @@ void PLATFORM_RemoteActiveReq(void)
 
     active_request_nb++;
 
-    PLATFORM_RemoteActiveExit(PLATFORM_REMOTE_ACTIVE_REQ_ID);
-
-    /* Re-initialize radio at the end of PLATFORM_RemoteActiveReq() */
+    /* Re-initialize radio at the end of PLATFORM_RemoteActiveReqUnsafe() */
     PLATFORM_InitRadio();
 
     BOARD_DBGLPIOSET(0, 0);
 #endif
 }
 
-void PLATFORM_RemoteActiveRel(void)
+void PLATFORM_RemoteActiveReq(void)
+{
+#if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
+    PLATFORM_RemoteActiveEnter(PLATFORM_REMOTE_ACTIVE_REQ_ID);
+
+    PLATFORM_RemoteActiveReqUnsafe();
+
+    PLATFORM_RemoteActiveExit(PLATFORM_REMOTE_ACTIVE_REQ_ID);
+#endif
+}
+
+void PLATFORM_RemoteActiveRelUnsafe(void)
 {
 #if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
     BOARD_DBGLPIOSET(0, 1);
-
-    PLATFORM_RemoteActiveEnter(PLATFORM_REMOTE_ACTIVE_REL_ID);
 
     if (active_request_nb > 0)
     {
@@ -1237,8 +1242,8 @@ void PLATFORM_RemoteActiveRel(void)
 
                 /* Verify NBU code execution before allowing deep sleep re-entry.
                  *
-                 * Race condition scenario: If PLATFORM_RemoteActiveRel() is called shortly
-                 * after PLATFORM_RemoteActiveReq(), the NBU may have woken up but not yet
+                 * Race condition scenario: If PLATFORM_RemoteActiveRelUnsafe() is called shortly
+                 * after PLATFORM_RemoteActiveReqUnsafe(), the NBU may have woken up but not yet
                  * executed meaningful code. Releasing the active request prematurely could
                  * cause the NBU to enter deep sleep in an inconsistent state.
                  *
@@ -1250,7 +1255,7 @@ void PLATFORM_RemoteActiveRel(void)
                  * Pass condition 2: nbu_sw_state != last_nbu_sw_state
                  *   The NBU woke up, executed code, and has prepared for a new deep sleep
                  *   cycle (incrementing lowPowerEntryCount). The differing counter value
-                 *   proves execution occurred since PLATFORM_RemoteActiveReq().
+                 *   proves execution occurred since PLATFORM_RemoteActiveReqUnsafe().
                  *
                  * Failure mode: If neither condition is met within the timeout period,
                  * trigger the error callback. This indicates the NBU is stuck in a
@@ -1291,11 +1296,21 @@ void PLATFORM_RemoteActiveRel(void)
         assert(false);
     }
 
-    PLATFORM_RemoteActiveExit(PLATFORM_REMOTE_ACTIVE_REL_ID);
-
     BOARD_DBGLPIOSET(0, 0);
 #endif
 }
+
+void PLATFORM_RemoteActiveRel(void)
+{
+#if ((defined(gPlatformRequiresPowerDomainWakeup)) && (gPlatformRequiresPowerDomainWakeup > 0))
+    PLATFORM_RemoteActiveEnter(PLATFORM_REMOTE_ACTIVE_REL_ID);
+
+    PLATFORM_RemoteActiveRelUnsafe();
+
+    PLATFORM_RemoteActiveExit(PLATFORM_REMOTE_ACTIVE_REL_ID);
+#endif
+}
+
 void PLATFORM_GetResetCause(PLATFORM_ResetStatus_t *reset_status)
 {
     uint32_t SSRS_value;

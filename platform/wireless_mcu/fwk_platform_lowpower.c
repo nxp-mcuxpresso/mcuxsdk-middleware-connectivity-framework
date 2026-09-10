@@ -209,9 +209,12 @@ void PLATFORM_EnterPowerDown(void)
     static bool_t power_down_on_host_message_sent = false;
     if (!power_down_on_host_message_sent)
     {
-        PLATFORM_RemoteActiveReq();
+        /* Use Unsafe variants: this function is called from the SDK Power Manager
+         * low-power callback, which executes in a critical section with interrupts
+         * disabled. The regular APIs use a mutex which cannot be acquired here. */
+        PLATFORM_RemoteActiveReqUnsafe();
         PLATFORM_SetLowPowerFlag(true);
-        PLATFORM_RemoteActiveRel();
+        PLATFORM_RemoteActiveRelUnsafe();
         power_down_on_host_message_sent = true;
     }
 #endif

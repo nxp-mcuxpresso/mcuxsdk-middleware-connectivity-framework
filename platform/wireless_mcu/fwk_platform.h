@@ -290,6 +290,19 @@ void PLATFORM_DisableControllerLowPower(void);
 void PLATFORM_RemoteActiveReq(void);
 
 /*!
+ * \brief  Request Radio domain to be active without mutex protection
+ *
+ *  Same as PLATFORM_RemoteActiveReq() but without mutex lock/unlock.
+ *  This variant must only be called when the caller already guarantees mutual exclusion,
+ *  such as from a critical section with interrupts masked.
+ *
+ * \warning Calling this function without holding a critical section or equivalent
+ *          mutual exclusion leads to undefined behavior on shared state (active_request_nb).
+ *
+ */
+void PLATFORM_RemoteActiveReqUnsafe(void);
+
+/*!
  * \brief  Release Radio domain from being active
  *
  *  On return from this function, the Radio domain and all its HW ressources can not be accessed
@@ -298,6 +311,19 @@ void PLATFORM_RemoteActiveReq(void);
  *
  */
 void PLATFORM_RemoteActiveRel(void);
+
+/*!
+ * \brief  Release Radio domain from being active without mutex protection
+ *
+ *  Same as PLATFORM_RemoteActiveRel() but without mutex lock/unlock.
+ *  This variant must only be called when the caller already guarantees mutual exclusion,
+ *  such as from a critical section with interrupts masked.
+ *
+ * \warning Calling this function without holding a critical section or equivalent
+ *          mutual exclusion leads to undefined behavior on shared state (active_request_nb).
+ *
+ */
+void PLATFORM_RemoteActiveRelUnsafe(void);
 
 /*!
  * \brief Get the reset cause, the reason why the chip is awake
