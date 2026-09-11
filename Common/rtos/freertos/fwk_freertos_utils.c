@@ -1,8 +1,7 @@
-/* -------------------------------------------------------------------------- */
-/*                             Copyright 2023 NXP                             */
-/*                            All rights reserved.                            */
-/*                    SPDX-License-Identifier: BSD-3-Clause                   */
-/* -------------------------------------------------------------------------- */
+/*
+ * Copyright 2023, 2026 NXP
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
@@ -18,7 +17,30 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
-#define US_TO_TICK(us) (TickType_t)((uint64_t)(us) / ((uint64_t)portTICK_PERIOD_MS * (uint64_t)1000U))
+/* Convert a duration in microseconds to FreeRTOS ticks.
+ * The division is performed in 64-bit to avoid intermediate overflow, then the
+ * result is saturated to the maximum value representable by TickType_t before
+ * the narrowing cast. This keeps the conversion compliant with CERT INT31-C:
+ * the value assigned to a TickType_t is guaranteed to fit and cannot be
+ * truncated or misinterpreted. */
+#define FWK_TICK_MAX ((uint64_t)portMAX_DELAY)
+
+/* -------------------------------------------------------------------------- */
+/*                               Private functions                               */
+/* -------------------------------------------------------------------------- */
+static inline TickType_t FWK_UsToTick(uint64_t us)
+{
+    /* One microsecond is a 1000th of a millisecond */
+    uint64_t ticks = us / ((uint64_t)portTICK_PERIOD_MS * (uint64_t)1000U);
+
+    if (ticks > FWK_TICK_MAX)
+    {
+        /* dependent on TickType_t definition */
+        ticks = FWK_TICK_MAX;
+    }
+
+    return (TickType_t)ticks;
+}
 
 /* -------------------------------------------------------------------------- */
 /*                               Private memory                               */
@@ -71,7 +93,7 @@ void FWK_PostIdleHookTickCompensation(void)
         idleHookDurationUs = postIdleHookTimeStampUs - preIdleHookTimeStampUs;
     }
 
-    idleHookDurationTick = US_TO_TICK(idleHookDurationUs);
+    idleHookDurationTick = FWK_UsToTick(idleHookDurationUs);
 
     if (idleHookDurationTick > 0U)
     {
