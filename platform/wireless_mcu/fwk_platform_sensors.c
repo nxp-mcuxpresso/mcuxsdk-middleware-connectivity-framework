@@ -43,6 +43,28 @@
 #define PLATFORM_TEMPERATURE_FILTER_SIZE 4U
 #endif
 
+/*
+ * Temperatures are handled in tenths of a degree Celsius. Every input sample is
+ * clamped to a physically-meaningful range before being fed into the Modified
+ * Moving Average filter:
+ *   - floor   = absolute zero, -273.15 degrees C == -2732 tenths
+ *   - ceiling = 2^20 tenths (about +104857 degrees C), well above any real reading
+ * Combined with a bounded filter size (see the compile-time check below), this
+ * keeps the accumulator |sum| <= PLATFORM_TEMPERATURE_FILTER_SIZE * 2^20 = 2^30
+ * < INT32_MAX, so no wider (64-bit) arithmetic or run-time overflow guards are
+ * required.
+ */
+#define PLATFORM_TEMPERATURE_MAX_LIMIT (1048576L) /* ~2^20 , that's hot! */
+#define PLATFORM_TEMPERATURE_MIN_LIMIT (-2732L)
+
+/*
+ * Ensure PLATFORM_TEMPERATURE_FILTER_SIZE * PLATFORM_TEMPERATURE_MAX_LIMIT stays
+ * strictly within the int32_t range: 2^10 * 2^20 = 2^30 < INT32_MAX.
+ */
+#if (PLATFORM_TEMPERATURE_FILTER_SIZE > (1U << 10))
+#error "PLATFORM_TEMPERATURE_FILTER_SIZE too large: temperature MMA accumulator may overflow int32_t"
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                              Exported functions                            */
 /* -------------------------------------------------------------------------- */
@@ -304,7 +326,25 @@ static void PLATFORM_TemperatureReadyWorkHandler(fwk_work_t *work)
  */
 static int32_t PLATFORM_ComputeMMAOnTemperature(int32_t temperature)
 {
-    int32_t result = temperature;
+    int32_t result;
+
+    /* Clamp the input sample to a physically valid range (see the
+     * PLATFORM_TEMPERATURE_*_LIMIT macros). This bounds the accumulator so the
+     * Modified Moving Average arithmetic below cannot overflow int32_t. */
+    if (temperature > PLATFORM_TEMPERATURE_MAX_LIMIT)
+    {
+        temperature = PLATFORM_TEMPERATURE_MAX_LIMIT;
+    }
+    else if (temperature < PLATFORM_TEMPERATURE_MIN_LIMIT)
+    {
+        temperature = PLATFORM_TEMPERATURE_MIN_LIMIT;
+    }
+    else
+    {
+        /* value already in range */
+    }
+
+    result = temperature;
 #if PLATFORM_TEMPERATURE_FILTER_SIZE > 1U
     int32_t  factor_nbr = 0;
     uint32_t factor_tmp;
@@ -321,29 +361,18 @@ static int32_t PLATFORM_ComputeMMAOnTemperature(int32_t temperature)
         }
         else
         {
-            do
-            {
-                int32_t delta = filterState.sum / factor_nbr;
-
-                /* Sanitize possible overflow/underflow on parameters */
-                if ((delta > 0) && (filterState.sum < (INT32_MIN + delta)))
-                {
-                    assert(false);
-                    break;
-                }
-
-                if (((temperature > 0) && (filterState.sum > (INT32_MAX - temperature))) ||
-                    ((temperature < 0) && (filterState.sum < (INT32_MIN - temperature))))
-                {
-                    assert(false);
-                    break;
-                }
-
-                /* Operations on filterState are now safe to perform */
-                filterState.sum -= delta;
-                filterState.sum += temperature;
-
-            } while (false);
+            /* temperature is clamped to [PLATFORM_TEMPERATURE_MIN_LIMIT, PLATFORM_TEMPERATURE_MAX_LIMIT]
+             * and factor_nbr = 2^shift <= PLATFORM_TEMPERATURE_FILTER_SIZE (compile-time capped at 2^10 by
+             * the #error guard above), so the running accumulator satisfies
+             * |filterState.sum| <= PLATFORM_TEMPERATURE_FILTER_SIZE * 2^20 <= 2^30 < INT32_MAX at all times.
+             * Neither the subtraction nor the addition below can overflow int32_t. */
+            int32_t delta = filterState.sum / factor_nbr;
+            /* coverity[cert_int32_c_violation:FALSE] CID 55957299: bounded accumulator, see above; sum - delta cannot
+             * overflow int32_t */
+            filterState.sum -= delta;
+            /* coverity[cert_int32_c_violation:FALSE] CID 45437074: bounded accumulator, see above; sum + temperature
+             * cannot overflow int32_t */
+            filterState.sum += temperature;
         }
 
         if (filterState.sampleNumber < PLATFORM_TEMPERATURE_FILTER_SIZE)
