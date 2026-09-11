@@ -49,15 +49,27 @@ uint64_t PLATFORM_GetLowPowerTimestampUs(void)
 uint64_t PLATFORM_GetLowPowerDurationUs(uint64_t enterLowPowerTimestamp, uint64_t exitLowPowerTimestamp)
 {
     uint64_t lowPowerDurationUs;
+    /* Express maximum duration in microseconds */
+    uint64_t maxDurationUs = COUNT_TO_USEC(0xFFFFFFFFU, PLATFORM_TM_CLK_FREQ);
 
     if (exitLowPowerTimestamp < enterLowPowerTimestamp)
     {
-        /* Handle counter wrapping: add exitLowPowerTimestamp first to avoid underflow */
-        lowPowerDurationUs =
-            COUNT_TO_USEC(0xFFFFFFFFU, PLATFORM_TM_CLK_FREQ) + exitLowPowerTimestamp - enterLowPowerTimestamp;
+        /* Handle counter wrapping. The timestamps are derived from a 32-bit
+         * tick counter, so both are bounded by the maximum count period.
+         * Compute the elapsed time as (max period - enter) + exit and clamp
+         * enterLowPowerTimestamp to the max period first, so the intermediate
+         * result can never exceed the max range and no uint64 overflow or
+         * underflow can occur. */
+        if (enterLowPowerTimestamp > maxDurationUs)
+        {
+            enterLowPowerTimestamp = maxDurationUs;
+        }
+
+        lowPowerDurationUs = (maxDurationUs - enterLowPowerTimestamp) + exitLowPowerTimestamp;
     }
     else
     {
+        /* No wrap occcurred so straightforward calculation */
         lowPowerDurationUs = exitLowPowerTimestamp - enterLowPowerTimestamp;
     }
 
