@@ -41,15 +41,21 @@
 /* Check if __st is negative,  if true, apply 4 bits shift and add new __error_code,
     assert in debug and break
    Shall be called in a do while(0) bracket */
-#define CHECK_AND_RAISE_ERROR(__st, __error_code)                                                                 \
-    {                                                                                                             \
-        if ((__st) < 0)                                                                                           \
-        {                                                                                                         \
-            assert(false);                                                                                        \
-            uint32_t _encoded = (((uint32_t)(-(__st)) << 4) | (uint32_t)(-(__error_code))) & (uint32_t)INT32_MAX; \
-            (__st)            = -(int)_encoded;                                                                   \
-            break;                                                                                                \
-        }                                                                                                         \
+#define CHECK_AND_RAISE_ERROR(__st, __error_code)                                                \
+    {                                                                                            \
+        if ((__st) < 0)                                                                          \
+        {                                                                                        \
+            assert(false);                                                                       \
+            /* Compute magnitudes via 64-bit negation so a possible INT_MIN status cannot        \
+             * overflow the sign negation. Mask the status magnitude to 27 bits before the 4-bit \
+             * shift so ((_st_mag << 4) | _err_mag) can never exceed INT32_MAX, which keeps      \
+             * (int)_encoded non-negative and the returned -(int)_encoded from underflowing. */  \
+            uint32_t _st_mag  = (uint32_t)(-((int64_t)(__st))) & 0x07FFFFFFUL;                   \
+            uint32_t _err_mag = (uint32_t)(-((int64_t)(__error_code))) & 0x0FUL;                 \
+            uint32_t _encoded = ((_st_mag << 4) | _err_mag) & (uint32_t)INT32_MAX;               \
+            (__st)            = -(int)_encoded;                                                  \
+            break;                                                                               \
+        }                                                                                        \
     }
 
 /* Raise error with status update , shift previous status by 4 bits and OR with new error code.
