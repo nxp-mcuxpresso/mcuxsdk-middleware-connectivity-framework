@@ -50,16 +50,22 @@ uint32_t PLATFORM_SeekForEccFaultsInRange(uint32_t start_addr, uint32_t size)
 {
     uint32_t ecc_fault_at = 0UL;
     uint32_t flash_addr   = ROUND_FLOOR(start_addr, INT_FLASH_PHRASE_SZ_LOG2);
-    uint32_t end_addr     = flash_addr + size;
-    for (; flash_addr < end_addr; flash_addr += FSL_FEATURE_FLASH_PFLASH_PHRASE_SIZE)
+
+    /* Guard against the unsigned overflow of (flash_addr + size) so that end_addr
+     * and the loop iterator can never wrap around UINT32_MAX. */
+    if ((size != 0UL) && (flash_addr <= (UINT32_MAX - size)))
     {
-        uint32_t read_val;
-        /* Dummy read just to probe ECC error */
-        if (HAL_FlashReadCheckEccFaults(flash_addr, sizeof(uint32_t), (uint8_t *)&read_val) ==
-            kStatus_HAL_Flash_EccError)
+        uint32_t end_addr = flash_addr + size;
+        for (; flash_addr < end_addr; flash_addr += FSL_FEATURE_FLASH_PFLASH_PHRASE_SIZE)
         {
-            ecc_fault_at = flash_addr;
-            break;
+            uint32_t read_val;
+            /* Dummy read just to probe ECC error */
+            if (HAL_FlashReadCheckEccFaults(flash_addr, sizeof(uint32_t), (uint8_t *)&read_val) ==
+                kStatus_HAL_Flash_EccError)
+            {
+                ecc_fault_at = flash_addr;
+                break;
+            }
         }
     }
     return ecc_fault_at;
