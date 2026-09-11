@@ -33,7 +33,7 @@
 /* Program wake reset after 10ms */
 #define RESET_WAKE_DELAY MILLISECONDS_TO_32kTICKS(10u)
 
-/* Binding beetween WUU register and LPTMR modules */
+/* Binding between WUU register and LPTMR modules */
 #define PLATFORM_WUU_MOD_LPTMR_IDX 0u
 
 /* -------------------------------------------------------------------------- */
@@ -114,13 +114,17 @@ static void PLATFORM_DisableWakeSources(void)
     WUU0->FILT |= (WUU_FILT_FILTF1_SHIFT | WUU_FILT_FILTF2_SHIFT); /* 2 bits cleared by W1C */
 }
 
-static void PLATFORM_DisableAndClearLpTmr(uint8_t lptmr_mask)
+static void PLATFORM_DisableAndClearLpTmr(uint32_t lptmr_mask)
 {
+    /*
+     * KW43 and KW45 both have 2 LPTMR instances, whereas KW47 has 3.
+     * The caller will only ever set 3 bits in the lpmask
+     */
     LPTMR_Type *lptmr_inst[] = LPTMR_BASE_PTRS;
-
-    for (uint8_t i = 0; i < sizeof(lptmr_inst) / sizeof(LPTMR_Type *); i++)
+    lptmr_mask &= ((1UL << 0) | (1UL << 1) | (1UL << 2));
+    for (uint32_t i = 0U; i < (uint32_t)ARRAY_SIZE(lptmr_inst); i++)
     {
-        if ((lptmr_mask & (uint8_t)(1u << i)) != 0u)
+        if ((lptmr_mask & (1UL << i)) != 0UL)
         {
             volatile uint32_t reg;
             reg = lptmr_inst[i]->CSR;
@@ -168,7 +172,7 @@ __NO_RETURN void PLATFORM_ForceDeepPowerDownReset(void)
     PLATFORM_DisableWakeSources();
 
     /* prevent spurious LPTMR1 wake since it does not have a specific WUU Module mask  */
-    PLATFORM_DisableAndClearLpTmr((1u << 1u) | (1u << 0u));
+    PLATFORM_DisableAndClearLpTmr((1UL << 1) | (1UL << 0));
 
     PLATFORM_LaunchLpTmrWake(RESET_WAKE_DELAY);
 
