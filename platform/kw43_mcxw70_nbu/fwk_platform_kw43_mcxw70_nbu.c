@@ -119,16 +119,6 @@ static uint32_t cnt = 0U; /* counter to keep track of the number of entries in D
 
 static void PLATFORM_PrepareDeepSleep(void)
 {
-#if 1
-    /* For some unexplained reason, DSB clock config (MRCC CC field) must be set to 3 to
-     * let NBU attempt entry in Deep Sleep, even in cases where DSB is unused.
-     */
-    CLOCK_EnableClockLPMode(kCLOCK_Data_stream_2p4, kCLOCK_IpClkControl_fun3);
-#else
-    /* Should work but prevents NBU from entering deep sleep */
-    CLOCK_DisableClock(kCLOCK_Data_stream_2p4);
-#endif
-
 #if defined PLAT_FWK_INTERCORE_DBG_LP && (PLAT_FWK_INTERCORE_DBG_LP > 0)
     cnt++; /* increment deep sleep counter*/
     if (p_Nbu_shared_ctx != NULL)
