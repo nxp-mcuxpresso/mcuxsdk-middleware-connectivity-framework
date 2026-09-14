@@ -11,6 +11,7 @@
 
 #include "fwk_config.h"
 #include "fwk_platform.h"
+#include "fwk_platform_definitions.h"
 #include "fwk_platform_lowpower.h"
 #include "fwk_platform_ics.h"
 #include "fwk_debug.h"
@@ -35,7 +36,12 @@
 /*                               Private macros                               */
 /* -------------------------------------------------------------------------- */
 
-#define PLATFORM_LPWKUP_DELAY_10MHz (0xAAU)
+/* The number of SPC timer clock cycles to wait on exit from low power mode is
+ * platform specific and must be provided by the platform
+ * fwk_platform_definitions.h */
+#if !defined(PLATFORM_SPC_LPWKUP_DELAY_10MHZ)
+#error "PLATFORM_SPC_LPWKUP_DELAY_10MHZ must be defined in the platform fwk_platform_definitions.h"
+#endif
 
 #if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
 
@@ -167,7 +173,7 @@ void PLATFORM_LowPowerInit(void)
     SPC_ClearVoltageDetectStatusFlag(SPC0, SPC_GetVoltageDetectStatusFlag(SPC0));
 
     /* Set number of SPC timer clock cycles to wait on exit from lowpower mode */
-    SPC_SetLowPowerWakeUpDelay(SPC0, PLATFORM_LPWKUP_DELAY_10MHz);
+    SPC_SetLowPowerWakeUpDelay(SPC0, PLATFORM_SPC_LPWKUP_DELAY_10MHZ);
 
     /* Clear IO isolation set by previous apps to ensure proper behavior.
      * In connectivity apps, IO isolation is managed at board level.*/

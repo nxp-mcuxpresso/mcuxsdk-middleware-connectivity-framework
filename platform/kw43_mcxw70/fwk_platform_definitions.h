@@ -135,6 +135,11 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define SPC_TRIM_LOCK            (SPC_0_BASE + 0x18u)
 #define RF_CMC_RADIO_LP_SHUTDOWN RF_CMC1_RADIO_LP_CK(0x2)
 
+/* Number of SPC timer clock cycles to wait on exit from low power mode
+ * (SPC LPWKUP_DELAY), assuming a 10MHz SPC timer clock.
+ * KW43/MCXW70 requires a longer delay than KW45/MCXW71 and KW47/MCXW72 */
+#define PLATFORM_SPC_LPWKUP_DELAY_10MHZ (0x130U)
+
 #define MRCC_TSTMR0_REG MRCC->MRCC_TSTMR0_CLKSEL
 
 /*********************************************************************

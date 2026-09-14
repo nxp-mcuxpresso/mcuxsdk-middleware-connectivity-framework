@@ -91,6 +91,10 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 #define SPC_TRIM_LOCK            (SPC0_BASE + 0x18U)
 #define RF_CMC_RADIO_LP_SHUTDOWN RF_CMC1_RADIO_LP_CK(0x2)
 
+/* Number of SPC timer clock cycles to wait on exit from low power mode
+ * (SPC LPWKUP_DELAY), assuming a 10MHz SPC timer clock */
+#define PLATFORM_SPC_LPWKUP_DELAY_10MHZ (0xAAU)
+
 #define FWK_MRCC_TSTMR0_REG       (volatile uint32_t *)(0x4001C0C0U)
 #define FWK_MRCC_TSTMR0_CLKSEL_CC (0x3U)
 #define FWK_TSRMR0_BASE           0x40030000U
