@@ -14,4 +14,7 @@
 #define FWK_TSRMR0_BASE           0xA91B0000U
 #define FWK_TSTMR_NB_INST         1U
 
+/* Retain all banks by default */
+#define FWK_PLAT_DEFAULT_RF_CMC_RAM_PWR (RF_CMC1_RAM_PWR_DS_EN_MASK)
+
 #endif /* _FWK_PLAT_DEFS_H_ */
