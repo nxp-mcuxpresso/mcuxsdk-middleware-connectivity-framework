@@ -38,8 +38,14 @@
  * ADC on a channel*/
 #define gSensorsAdcCalibrationDurationInMs_c 4U
 
-/* Platform does not require a power-domain wakeup sequence prior to access */
-#define gPlatformRequiresPowerDomainWakeup 0
+/* Platform requires a power-domain wakeup sequence prior to access */
+#define gPlatformRequiresPowerDomainWakeup 1
+
+/* KW43/MCXW70 does not require the host to notify the NBU when entering power
+ * down: the NBU does not use the low-power flag mechanism on this platform.
+ * The PLATFORM_ActiveReq/Rel wakeup sequence is still used elsewhere, but
+ * PLATFORM_SetLowPowerFlag() must not be called here. */
+#define gPlatformRequiresPowerDownFlag_d 0
 
 /*
  * KW43/MCXW70 CM33 core has the DSP extension (__DSP_PRESENT), which allows the use of the NXP UltraFast EC P256

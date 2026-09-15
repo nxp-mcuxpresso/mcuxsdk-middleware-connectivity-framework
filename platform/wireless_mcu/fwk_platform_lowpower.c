@@ -201,12 +201,13 @@ void PLATFORM_ExitLowPower(void)
 
 void PLATFORM_EnterPowerDown(void)
 {
-#if defined(gPlatformRequiresPowerDomainWakeup) && (gPlatformRequiresPowerDomainWakeup > 0)
+#if defined(gPlatformRequiresPowerDownFlag_d) && (gPlatformRequiresPowerDownFlag_d > 0)
     /* Warning: Power down requires the gLowpowerPowerDownEnable_d variable to be set to 1 in the
      * linker file. Generates an assertion if this is not the case.
-     * This feature is gated by gPlatformRequiresPowerDomainWakeup because it is related to the
-     * power domain wake up requested by the NBU, and is therefore not needed on platforms that do
-     * not use it. */
+     * This feature is gated by gPlatformRequiresPowerDownFlag_d because it is related to the
+     * power down flag notification sent to the NBU, and is therefore not needed on platforms that
+     * do not use it (e.g. KW43/MCXW70). */
+
     extern uint32_t gLowpowerPowerDownEnable_d[];
     assert((uint32_t)&gLowpowerPowerDownEnable_d == 1UL);
     (void)gLowpowerPowerDownEnable_d;
