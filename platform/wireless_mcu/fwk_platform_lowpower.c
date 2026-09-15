@@ -51,6 +51,39 @@
 
 #endif                                               /* gAppLpuart0WakeUpSourceEnable_d */
 
+/* A platform requiring an override of the SPC wake up power delay trims must
+ * define PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO to the trim value to apply in
+ * its fwk_platform_definitions.h. Leaving it undefined, or defining it to 0,
+ * disables the override.
+ *
+ * The SPC TRIM_LOCK and PWR_DELAY_WKUP_TRIM registers are internal trim
+ * registers which are intentionally not exposed in the public device headers,
+ * so they cannot be accessed through the SPC_Type structure. They are accessed
+ * here using explicit offsets from the SPC0 instance instead. Offsets and
+ * bit fields come from the SoC reference manual. */
+#if defined(PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO) && (PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO > 0)
+
+#define PLATFORM_SPC_REG(offset) (*(volatile uint32_t *)((uint32_t)SPC0 + (offset)))
+
+/* TRIM_LOCK register, offset 0x18 */
+#define PLATFORM_SPC_TRIM_LOCK           PLATFORM_SPC_REG(0x18U)
+#define PLATFORM_SPC_TRIM_LOCK_KEY_MASK  (0xFFFF0000U)
+#define PLATFORM_SPC_TRIM_LOCK_KEY_SHIFT (16U)
+#define PLATFORM_SPC_TRIM_LOCK_KEY(x) \
+    (((uint32_t)(((uint32_t)(x)) << PLATFORM_SPC_TRIM_LOCK_KEY_SHIFT)) & PLATFORM_SPC_TRIM_LOCK_KEY_MASK)
+/* Key pattern expected by the SPC to allow a trim register update */
+#define PLATFORM_SPC_TRIM_LOCK_KEY_PATTERN (0x5A5AU)
+#define PLATFORM_SPC_TRIM_UNLOCK_MASK      (0x1U)
+
+/* PWR_DELAY_WKUP_TRIM register, offset 0x12C */
+#define PLATFORM_SPC_PWR_DELAY_WKUP_TRIM PLATFORM_SPC_REG(0x12CU)
+#define PLATFORM_SPC_PU2ISO_TRIM_MASK    (0xFF0000U)
+#define PLATFORM_SPC_PU2ISO_TRIM_SHIFT   (16U)
+#define PLATFORM_SPC_PU2ISO_TRIM(x) \
+    (((uint32_t)(((uint32_t)(x)) << PLATFORM_SPC_PU2ISO_TRIM_SHIFT)) & PLATFORM_SPC_PU2ISO_TRIM_MASK)
+
+#endif /* PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO */
+
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -108,6 +141,16 @@ void WUU0_IRQHandler(void);
 
 #if defined(gAppLpuart0WakeUpSourceEnable_d) && (gAppLpuart0WakeUpSourceEnable_d > 0)
 static void PLATFORM_KeepUart0ClockedDuringSleep(void);
+#endif
+
+#if defined(PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO) && (PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO > 0)
+/*!
+ * \brief Override the SPC wake up power delay PU2ISO trim value
+ *        Some platforms require a different value than the default one loaded
+ *        from the IFR to wake up reliably from low power modes.
+ *
+ */
+static void PLATFORM_SetSpcWakeUpTrim(void);
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -174,6 +217,11 @@ void PLATFORM_LowPowerInit(void)
 
     /* Set number of SPC timer clock cycles to wait on exit from lowpower mode */
     SPC_SetLowPowerWakeUpDelay(SPC0, PLATFORM_SPC_LPWKUP_DELAY_10MHZ);
+
+#if defined(PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO) && (PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO > 0)
+    /* Override the SPC wake up power delay trims if the platform requires it */
+    PLATFORM_SetSpcWakeUpTrim();
+#endif
 
     /* Clear IO isolation set by previous apps to ensure proper behavior.
      * In connectivity apps, IO isolation is managed at board level.*/
@@ -722,3 +770,29 @@ static void PLATFORM_KeepUart0ClockedDuringSleep(void)
     /* equivalent to SCG0->SIRCCSR |= SCG_SIRCCSR_SIRCSTEN_MASK */
 }
 #endif
+
+#if defined(PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO) && (PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO > 0)
+static void PLATFORM_SetSpcWakeUpTrim(void)
+{
+    uint32_t pwr_delay_wkup_trim;
+
+    /* The trim registers are write protected, they must be unlocked first by
+     * writing the expected key pattern together with the unlock bit */
+    PLATFORM_SPC_TRIM_LOCK =
+        PLATFORM_SPC_TRIM_LOCK_KEY(PLATFORM_SPC_TRIM_LOCK_KEY_PATTERN) | PLATFORM_SPC_TRIM_UNLOCK_MASK;
+    __DSB();
+
+    /* Only the PU2ISO field must be updated, the other trim fields of the
+     * register keep the value loaded from the IFR */
+    pwr_delay_wkup_trim = PLATFORM_SPC_PWR_DELAY_WKUP_TRIM;
+    pwr_delay_wkup_trim &= ~PLATFORM_SPC_PU2ISO_TRIM_MASK;
+    pwr_delay_wkup_trim |= PLATFORM_SPC_PU2ISO_TRIM(PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO);
+    PLATFORM_SPC_PWR_DELAY_WKUP_TRIM = pwr_delay_wkup_trim;
+
+    /* Make sure the trim update is committed before locking the registers again */
+    __DSB();
+
+    /* Lock the trim registers back by clearing the unlock bit */
+    PLATFORM_SPC_TRIM_LOCK = PLATFORM_SPC_TRIM_LOCK_KEY(PLATFORM_SPC_TRIM_LOCK_KEY_PATTERN);
+}
+#endif /* PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO */

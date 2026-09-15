@@ -140,6 +140,14 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
  * KW43/MCXW70 requires a longer delay than KW45/MCXW71 and KW47/MCXW72 */
 #define PLATFORM_SPC_LPWKUP_DELAY_10MHZ (0x130U)
 
+/* SPC power up to isolation wake up delay trim (SPC PWR_DELAY_WKUP_TRIM PU2ISO).
+ * The default trim value loaded from the IFR is incorrect on early KW43/MCXW70
+ * samples and leads to wake up issues, so it must be overridden at init.
+ * Defining this macro to a non zero value enables the trim override in the
+ * shared low power implementation. Platforms which do not define it, or which
+ * define it to 0, are left untouched. */
+#define PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO (0x40U)
+
 #define MRCC_TSTMR0_REG MRCC->MRCC_TSTMR0_CLKSEL
 
 /*********************************************************************
