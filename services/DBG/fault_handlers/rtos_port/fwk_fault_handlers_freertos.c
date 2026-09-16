@@ -52,7 +52,7 @@ void sys_dump_task_stats(void)
 
     TaskStatus_t        *pxTaskStatusArray = (TaskStatus_t *)&TaskStatusList;
     volatile UBaseType_t uxArraySize, x;
-    uint32_t             ulTotalRunTime;
+    uint32_t             ulTotalRunTime = 0U;
 
     PRINTF("==========TASK STATUS==========\r\n");
 
