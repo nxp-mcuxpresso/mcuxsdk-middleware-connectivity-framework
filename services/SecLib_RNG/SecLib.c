@@ -919,7 +919,12 @@ uint32_t AES_128_CBC_Encrypt_And_Pad(
     do
     {
         uint32_t last_blk_msg_sz;
-        uint8_t  last_block[AES_BLOCK_SIZE]; /* Buffer used to generate last block containing padding */
+        /* Coverity UNINIT: SecLib_Padding() only writes last_block when its
+         * length argument is < AES_BLOCK_SIZE; on the (unreachable here) else path it writes
+         * nothing, so the analyzer cannot prove last_block is fully initialized before it is
+         * consumed by SecLib_AES_128_CBC_Encrypt() below. Zero-initialize the buffer at
+         * declaration to make the read well-defined. */
+        uint8_t last_block[AES_BLOCK_SIZE] = {0}; /* Buffer used to generate last block containing padding */
         /* compute new length */
         roundedLen      = AES_WHOLE_BLOCK_BYTES(inputLen);
         last_blk_msg_sz = AES_PARTIAL_BLOCK_BYTES(inputLen);
@@ -3049,13 +3054,20 @@ static void SecLib_Xor128(const uint8_t *a, const uint8_t *b, uint8_t *out)
  ********************************************************************************** */
 static void AES_128_IncrementCounter(uint8_t *ctr)
 {
-    uint32_t   i;
-    uint64_t   tempLow;
-    uuint128_t tempCtr;
+    uint32_t i;
+    /* Coverity UNINIT and INCONSISTENT_UNION_ACCESS: the uuint128_t union is written through its
+     * u8[] member (loop below) and subsequently read through its u64[] member to
+     * perform the 128-bit carry arithmetic. This type punning is intentional and
+     * required for the big-endian AES CTR counter increment. All 16 bytes of the
+     * union are written before any u64 access, so no genuinely uninitialized memory
+     * is ever read. tempLow and tempCtr are explicitly initialized at declaration to
+     * make the full-initialization intent unambiguous to the static analyzer. */
+    uint64_t   tempLow = 0ULL;
+    uuint128_t tempCtr = {.u64 = {0ULL, 0ULL}};
 
     for (i = 0u; i < AES_BLOCK_SIZE; i++)
     {
-        tempCtr.u8[AES_BLOCK_SIZE - i - 1u] = ctr[i];
+        tempCtr.u8[AES_BLOCK_SIZE - i - 1U] = ctr[i];
     }
 
     tempLow = tempCtr.u64[0];
@@ -3068,7 +3080,7 @@ static void AES_128_IncrementCounter(uint8_t *ctr)
     /* Byte reversal is required due to endianness conversion for AES CTR where counter is MSB first */
     for (i = 0u; i < AES_BLOCK_SIZE; i++)
     {
-        ctr[i] = tempCtr.u8[AES_BLOCK_SIZE - i - 1u];
+        ctr[i] = tempCtr.u8[AES_BLOCK_SIZE - i - 1U];
     }
 }
 #endif /* !(FSL_FEATURE_SOC_LTC_COUNT) */
@@ -3101,6 +3113,9 @@ static void AES_128_CMAC_Generate_Subkey(const uint8_t *key, uint8_t *K1, uint8_
 
     AES_128_Encrypt(Z, key, L); /* Initializes L array */
 
+    /* coverity[uninit_use:FALSE]: L is zero-initialized at declaration (L[16] = {0})
+     * and then fully populated by AES_128_Encrypt() above (16-byte output). The analyzer cannot
+     * see the callee writing the L output parameter, but L[0] is guaranteed initialized here. */
     if ((L[0] & 0x80u) == 0u)
     {
         /* If MSB(L) = 0, then K1 = L << 1 */
