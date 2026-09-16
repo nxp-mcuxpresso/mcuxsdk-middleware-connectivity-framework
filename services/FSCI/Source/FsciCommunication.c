@@ -753,6 +753,10 @@ void FSCI_transmitFormatedPacket(clientPacket_t *pPkt, uint32_t fsciInterface)
     /* send message to Serial Manager */
     /* coverity[cert_int31_c_violation:FALSE]: size is the framed packet length bounded by gFsciMaxPayloadLen_c
      * and fits in uint16_t */
+    /* coverity[inconsistent_union_access:FALSE]: pPkt is a clientPacket_t union whose fields are
+     * populated through the 'structured' member above and here read through the overlapping 'raw' byte-array
+     * member to transmit the fully framed packet. Accessing the packet as a raw byte stream after building it
+     * via the structured view is intentional and is the designed use of this union. */
     FSCI_SendPacketToSerialManager(fsciInterface, pPkt->raw, (uint16_t)size);
 }
 
@@ -1370,7 +1374,13 @@ static void FSCI_SendPacketToSerialManager(uint32_t fsciInterface, uint8_t *pPac
         void         *pVoid;
         pfFSCI_Send_t pfFSCI_Send;
     } fsciHandle;
+    /* coverity[inconsistent_union_access:FALSE]: the registered FSCI send
+     * routine is stored as a generic void* object handle (gFsciSerialInterfaces[]) and
+     * must be invoked as a function pointer. The union is the sanctioned, portable way to
+     * reinterpret the handle; writing pVoid and reading pfFSCI_Send is intentional. */
     fsciHandle.pVoid = gFsciSerialInterfaces[fsciInterface];
+    /* coverity[inconsistent_union_access:FALSE]: see above - reading the
+     * pfFSCI_Send member after writing pVoid is the intended type reinterpretation. */
     fsciHandle.pfFSCI_Send(pPacket, packetLen, TRUE);
 }
 #endif /* !defined(gFsciOverRpmsg_c) || (gFsciOverRpmsg_c == 0) */

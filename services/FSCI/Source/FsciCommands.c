@@ -322,6 +322,10 @@ void FSCI_Error(uint8_t errorCode, uint32_t fsciInterface)
             void         *pVoid;
             pfFSCI_Send_t pfFSCI_Send;
         } fsciHandle;
+        /* coverity[inconsistent_union_access:FALSE]: the registered FSCI send routine
+         * is stored as a generic void* object handle (gFsciSerialInterfaces[]) and
+         * must be invoked as a function pointer. Writing pVoid and reading pfFSCI_Send via
+         * the union is the intended, portable type reinterpretation. */
         fsciHandle.pVoid = gFsciSerialInterfaces[fsciInterface];
         fsciHandle.pfFSCI_Send((uint8_t *)&mFsciErrorMsg, size, FALSE);
 #endif
