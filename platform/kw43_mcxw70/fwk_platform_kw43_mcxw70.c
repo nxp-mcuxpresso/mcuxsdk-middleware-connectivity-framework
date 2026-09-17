@@ -32,8 +32,8 @@
 /* -------------------------------------------------------------------------- */
 /*                         Private memory declarations                        */
 /* -------------------------------------------------------------------------- */
-
-__attribute__((section(".m_shared_data"))) IntercoreSharedCtx_t mNbu_shared_ctx = {.ts.u64 = ~0ULL};
+/* Remove mNbu_shared_ctx initalizer */
+__attribute__((section(".m_shared_data"))) IntercoreSharedCtx_t mNbu_shared_ctx;
 
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
@@ -145,7 +145,8 @@ int PLATFORM_GetRadioIdleDuration32K(void)
  */
 int PLATFORM_SetNbuSharedCtxAddress(void)
 {
-    int                            ret;
+    int ret;
+    mNbu_shared_ctx.ts.u64 = ~0ULL; /* Initialize timestamp before handing the address to NBU side */
     volatile IntercoreSharedCtx_t *p_shared_ctx = &mNbu_shared_ctx;
     ret = PLATFORM_FwkSrvSendPacket(gFwkSrvHostSetNbuSharedCtxAddr_c, (void *)&p_shared_ctx, sizeof(void *));
     return ret;
