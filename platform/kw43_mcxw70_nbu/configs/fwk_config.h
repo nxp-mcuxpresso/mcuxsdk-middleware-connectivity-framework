@@ -68,4 +68,8 @@
 #define gPlatformUseNco32k_d 1
 #endif
 
+/* Enable a dummy interrupt on NBU core that will be triggered by PLATFORM_RemoteActiveReq() on host core each time it
+ * needs to access to NBU power domain */
+#define gPlatformLowpowerEnableWakeUpInterrupt_d 1
+
 #endif /* _FWK_CONFIG_H_ */

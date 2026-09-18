@@ -48,7 +48,7 @@ extern bool PHY_XCVR_AllowLowPower(void);
 #define HANDLE_INIT                            0x000EU
 #define PLATFORM_SWITCH_SLEEP_CLOCK_TIMEOUT_US 200U
 
-#define PLATFORM_BTRTU1_ISR_ADDR 0xA8009424U
+#define PLATFORM_BTRTU1_ISR_ADDR (BTRTU1_BASE + 0x24U)
 
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */

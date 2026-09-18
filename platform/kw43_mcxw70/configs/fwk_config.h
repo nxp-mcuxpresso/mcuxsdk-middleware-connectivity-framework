@@ -325,6 +325,10 @@
  * less perturbation to the NBU Link Layer during OTA transfer */
 #define gOtaEraseWholePartitionOnInit_d 0 /* to be set to 1 if OTA storage cleaning is required */
 
+/* Address which can trigger a dummy interrupt on NBU. Used in PLATFORM_RemoteActiveReq() to ensure code is executed on
+ * NBU when trying to access to its power domain. In some corner cases NBU could become irresponsive if the NBU power domain was woken up without executing any code on the core  */
+#define gPlatformNbuWakeUpInterruptAddr (BTRTU1_BASE + 0x10U)
+
 /*********************************************************************
  *        Configuration check
  *********************************************************************/
