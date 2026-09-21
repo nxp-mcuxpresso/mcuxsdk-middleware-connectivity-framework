@@ -20,10 +20,7 @@
 #define FWK_TSTMR_NB_INST 2U
 
 /* On KW43/MCXW70, RAM retention settings are different (SRAM retention is controlled by CMC, not RF_CMC)
- * So, adapt the configuration to retain EBRAM and TX/RX packet RAM
- * Note: bits 21 and 20 are not related to RAM retention but to RF_CMC FSM and seem required, disabling it
- * leads to issues with the 32k clock
- * There is a known issue when these bits are enabled when low power is used on both cores */
-#define FWK_PLAT_DEFAULT_RF_CMC_RAM_PWR (BIT29 | BIT17 | BIT16 | BIT21 | BIT20)
+ * So, adapt the configuration to retain EBRAM and TX/RX packet RAM */
+#define FWK_PLAT_DEFAULT_RF_CMC_RAM_PWR (BIT29 | BIT17 | BIT16)
 
 #endif /* _FWK_PLAT_DEFS_H_ */
