@@ -119,6 +119,17 @@ config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70
     select MCUX_COMPONENT_middleware.multicore.mcmgr
     select MCUX_COMPONENT_component.timer_manager
     select MCUX_COMPONENT_middleware.wireless.framework.devmgr
+    # flash_adapter does not pull in flash_k4 for KW43/MCXW70; select explicitly.
+    select MCUX_COMPONENT_driver.flash_k4
+    # FLASH_K4_ASYNC_MODE (defined in drivers/flash_k4/Kconfig, sourced once flash_k4
+    # is selected above) is the recommended default for the connectivity/NBU use case
+    # so program/erase does not block the radio. Use imply (not select) so the value
+    # stays overridable: applications that do not need async flash can set
+    # CONFIG_FLASH_K4_ASYNC_MODE=n in their prj.conf to keep flexibility.
+    # Side-effect: PLAT_ASYNC_FLASH_CONTROLLER_SUSPEND (default y, depends on this
+    # symbol && platform.ble) will default to y for kw43_mcxw70+BLE when async flash
+    # stays enabled, which is intended.
+    imply FLASH_K4_ASYNC_MODE
     depends on MCUX_HW_DEVICE_KW43B43ZC7 || MCUX_HW_DEVICE_MCXW70AC
 
 config MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70_nbu
