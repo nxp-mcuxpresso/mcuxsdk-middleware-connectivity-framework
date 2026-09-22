@@ -138,7 +138,7 @@ extern uint32_t PROD_DATA_BASE_ADDR[];
 /* Number of SPC timer clock cycles to wait on exit from low power mode
  * (SPC LPWKUP_DELAY), assuming a 10MHz SPC timer clock.
  * KW43/MCXW70 requires a longer delay than KW45/MCXW71 and KW47/MCXW72 */
-#define PLATFORM_SPC_LPWKUP_DELAY_10MHZ (0x130U)
+#define PLATFORM_SPC_LPWKUP_DELAY_10MHZ (0xCCU)
 
 /* SPC power up to isolation wake up delay trim (SPC PWR_DELAY_WKUP_TRIM PU2ISO).
  * The default trim value loaded from the IFR is incorrect on early KW43/MCXW70
