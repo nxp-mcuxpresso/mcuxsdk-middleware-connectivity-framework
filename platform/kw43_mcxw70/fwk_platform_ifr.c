@@ -39,6 +39,27 @@
 #define CFOFF(f) offsetof(cfpa_zone_t, f)
 #define CMOFF(f) offsetof(cmpa_zone_t, f)
 
+/*
+ * FW update image address accessors.
+ *
+ * The NBU/CPU0 recovery and update image addresses moved between silicon
+ * revisions:
+ *   - KW43 A.0.0 (legacy, KW43_A0_0 != 0): CMPA zone at offset 0x320.
+ *   - KW43 A.0.1 and later (default):      CFPA zone at offset 0x170.
+ *
+ * The zone id and struct-relative field offset are selected at compile time so
+ * the public API stays zone-agnostic. The field names are identical in both
+ * cfpa_zone_t and cmpa_zone_t (only one of the two carries them per build, see
+ * ifr0map_struct.h), so CFOFF()/CMOFF() resolve against the correct struct.
+ */
+#if defined(KW43_A0_0) && (KW43_A0_0 != 0)
+#define IMG_ADDR_ZONE   kDevMgrZone_Cmpa
+#define IMG_ADDR_OFF(f) CMOFF(f)
+#else
+#define IMG_ADDR_ZONE   kDevMgrZone_Cfpa
+#define IMG_ADDR_OFF(f) CFOFF(f)
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
 /* -------------------------------------------------------------------------- */
@@ -708,27 +729,6 @@ int PLATFORM_DevMgrSetCmpaZone(const cmpa_zone_t *src)
     } while (false);
     return st;
 }
-
-/*
- * FW update image address accessors.
- *
- * The NBU/CPU0 recovery and update image addresses moved between silicon
- * revisions:
- *   - KW43 A.0.0 (legacy, KW43_A0_0 != 0): CMPA zone at offset 0x320.
- *   - KW43 A.0.1 and later (default):      CFPA zone at offset 0x170.
- *
- * The zone id and struct-relative field offset are selected at compile time so
- * the public API stays zone-agnostic. The field names are identical in both
- * cfpa_zone_t and cmpa_zone_t (only one of the two carries them per build, see
- * ifr0map_struct.h), so CFOFF()/CMOFF() resolve against the correct struct.
- */
-#if defined(KW43_A0_0) && (KW43_A0_0 != 0)
-#define IMG_ADDR_ZONE   kDevMgrZone_Cmpa
-#define IMG_ADDR_OFF(f) CMOFF(f)
-#else
-#define IMG_ADDR_ZONE   kDevMgrZone_Cfpa
-#define IMG_ADDR_OFF(f) CFOFF(f)
-#endif
 
 uint32_t PLATFORM_DevMgrGetNbuRecoveryImgAddr(void)
 {
