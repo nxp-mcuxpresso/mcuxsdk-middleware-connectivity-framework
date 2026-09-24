@@ -121,6 +121,17 @@ void HardFaultHandler(unsigned long *hardfault_args)
     /* need to remove the stacked words from sp to get the initial SP value when the fault occurred */
     stacked_sp = (unsigned int)hardfault_args + (stack_frame_size * 4U);
 
+    /* avoid armgcc warnings when SDK_DEBUGCONSOLE == DEBUGCONSOLE_DISABLE */
+    (void)stacked_r0;
+    (void)stacked_r1;
+    (void)stacked_r2;
+    (void)stacked_r3;
+    (void)stacked_r12;
+    (void)stacked_lr;
+    (void)stacked_pc;
+    (void)stacked_psr;
+    (void)stacked_sp;
+
     /* Dump the cortex register first in case of issues in the logging dump */
     PRINTF("\r\n============\r\n");
     PRINTF("HardFault from pc    = 0x%08x (%d)\r\n", stacked_pc, stacked_pc);
