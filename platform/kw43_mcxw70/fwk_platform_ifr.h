@@ -236,7 +236,7 @@ uint8_t PLATFORM_DevMgrGetCfpaXtal32MHzCfg(void);
  * @param[in] len  Buffer length (must be 6).
  * @return DEVMGR_STATUS_OK, or DEVMGR_STATUS_ERR_PARAM on invalid arguments.
  */
-int PLATFORM_DevMgrSetCfpaCustBleMacAddr(uint8_t *buf, uint8_t len);
+int PLATFORM_DevMgrSetCfpaCustBleMacAddr(const uint8_t *buf, uint8_t len);
 
 /*!
  * @brief Set customer IEEE 802.15.4 MAC address (8 bytes).
@@ -244,7 +244,7 @@ int PLATFORM_DevMgrSetCfpaCustBleMacAddr(uint8_t *buf, uint8_t len);
  * @param[in] len  Buffer length (must be 8).
  * @return DEVMGR_STATUS_OK, or DEVMGR_STATUS_ERR_PARAM on invalid arguments.
  */
-int PLATFORM_DevMgrSetCfpaCust802154MacAddr(uint8_t *buf, uint8_t len);
+int PLATFORM_DevMgrSetCfpaCust802154MacAddr(const uint8_t *buf, uint8_t len);
 
 /*!
  * @brief Set XTAL 32kHz configuration.
@@ -284,22 +284,81 @@ int PLATFORM_DevMgrGetCmpaZone(cmpa_zone_t *dst);
 int PLATFORM_DevMgrSetCmpaZone(const cmpa_zone_t *src);
 
 /* -------------------------------------------------------------------------- */
-/*                    CMPA FW Update zone getters/setters                     */
+/*                    FW Update image address getters/setters                 */
 /* -------------------------------------------------------------------------- */
 
-/* -- Individual CMPA FW Update field getters ------------------------------- */
+/*
+ * The NBU/CPU0 recovery and update image addresses moved between silicon
+ * revisions: they live in CMPA at offset 0x320 on KW43 A.0.0 (legacy,
+ * KW43_A0_0 != 0) and in CFPA at offset 0x170 from A.0.1 onward. The
+ * accessors below hide that migration - the implementation selects the
+ * correct zone at compile time based on KW43_A0_0 - so callers use a single
+ * zone-agnostic API regardless of the target revision.
+ */
 
-uint32_t PLATFORM_DevMgrGetCmpaNbuRecoveryImgAddr(void);
-uint32_t PLATFORM_DevMgrGetCmpaNbuUpdateImgAddr(void);
-uint32_t PLATFORM_DevMgrGetCmpaCpu0RecoveryImgAddr(void);
-uint32_t PLATFORM_DevMgrGetCmpaCpu0UpdateImgAddr(void);
+/* -- Individual FW Update image address getters ---------------------------- */
 
-/* -- Individual CMPA FW Update field setters ------------------------------- */
+/*!
+ * @brief Get the NBU recovery image address.
+ *
+ * @return The stored NBU recovery image address.
+ */
+uint32_t PLATFORM_DevMgrGetNbuRecoveryImgAddr(void);
 
-int PLATFORM_DevMgrSetCmpaNbuRecoveryImgAddr(uint32_t val);
-int PLATFORM_DevMgrSetCmpaNbuUpdateImgAddr(uint32_t val);
-int PLATFORM_DevMgrSetCmpaCpu0RecoveryImgAddr(uint32_t val);
-int PLATFORM_DevMgrSetCmpaCpu0UpdateImgAddr(uint32_t val);
+/*!
+ * @brief Get the NBU update image address.
+ *
+ * @return The stored NBU update image address.
+ */
+uint32_t PLATFORM_DevMgrGetNbuUpdateImgAddr(void);
+
+/*!
+ * @brief Get the CPU0 recovery image address.
+ *
+ * @return The stored CPU0 recovery image address.
+ */
+uint32_t PLATFORM_DevMgrGetCpu0RecoveryImgAddr(void);
+
+/*!
+ * @brief Get the CPU0 update image address.
+ *
+ * @return The stored CPU0 update image address.
+ */
+uint32_t PLATFORM_DevMgrGetCpu0UpdateImgAddr(void);
+
+/* -- Individual FW Update image address setters ---------------------------- */
+
+/*!
+ * @brief Set the NBU recovery image address.
+ *
+ * @param[in] val   New NBU recovery image address.
+ * @return DEVMGR_STATUS_OK on success, negative error code on failure.
+ */
+int PLATFORM_DevMgrSetNbuRecoveryImgAddr(uint32_t val);
+
+/*!
+ * @brief Set the NBU update image address.
+ *
+ * @param[in] val   New NBU update image address.
+ * @return DEVMGR_STATUS_OK on success, negative error code on failure.
+ */
+int PLATFORM_DevMgrSetNbuUpdateImgAddr(uint32_t val);
+
+/*!
+ * @brief Set the CPU0 recovery image address.
+ *
+ * @param[in] val   New CPU0 recovery image address.
+ * @return DEVMGR_STATUS_OK on success, negative error code on failure.
+ */
+int PLATFORM_DevMgrSetCpu0RecoveryImgAddr(uint32_t val);
+
+/*!
+ * @brief Set the CPU0 update image address.
+ *
+ * @param[in] val   New CPU0 update image address.
+ * @return DEVMGR_STATUS_OK on success, negative error code on failure.
+ */
+int PLATFORM_DevMgrSetCpu0UpdateImgAddr(uint32_t val);
 
 /* -------------------------------------------------------------------------- */
 /*               CMPA Customer Defined zone getters/setters                  */

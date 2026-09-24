@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef IFR0MAP_STRUCTS_H_
-#define IFR0MAP_STRUCTS_H_
+#ifndef IFR0MAP_STRUCT_H_
+#define IFR0MAP_STRUCT_H_
 
 #include <stdint.h>
 
-#define CMPA_CUSTOMER_DEFINED_AREA_SZ 512 /* Size in bytes : could be up to 0x1400 */
+#define CMPA_CUSTOMER_DEFINED_AREA_SZ 512U /* Size in bytes : could be up to 0x1400 */
 /*******************************************************************************
  * UPDATE Zone Structure (0x00000000 - 0x0000000F)
  ******************************************************************************/
@@ -94,7 +94,26 @@ typedef struct _cfpa_zone
     uint8_t xtal_32kHz_cfg;            /* 0x160: XTAL 32kHz trim */
     uint8_t reserved_161[3];           /* 0x161 - 0x163: Reserved */
     uint8_t xtal_32MHz_cfg;            /* 0x164: XTAL 32MHz Capacitance */
-    uint8_t reserved_165[3];           /* 0x165 - 0x167: Reserved */
+    uint8_t reserved_165[11];          /* 0x165 - 0x16F: Reserved */
+
+    /*
+     * FW update image addresses (0x170 - 0x17F).
+     *
+     * Silicon revision compatibility:
+     *   - KW43 A.0.1 and later: these addresses live in CFPA at offset 0x170.
+     *   - KW43 A.0.0 (legacy, KW43_A0_0 != 0): they live in CMPA at offset
+     *     0x320, so the CFPA slots are reserved here and the fields are placed
+     *     in cmpa_zone_t instead.
+     */
+#if defined(KW43_A0_0) && (KW43_A0_0 != 0)
+    uint32_t reserved_170[4]; /* 0x170 - 0x17F: Reserved (addresses live in CMPA on A.0.0) */
+#else
+    uint32_t nbu_recovery_img_addr;  /* 0x170: NBU recovery image address */
+    uint32_t nbu_update_img_addr;    /* 0x174: NBU update image address */
+    uint32_t cpu0_recovery_img_addr; /* 0x178: CPU0 recovery image address */
+    uint32_t cpu0_update_img_addr;   /* 0x17c: CPU0 update image address */
+#endif
+
 } cfpa_zone_t;
 
 /*******************************************************************************
@@ -147,23 +166,32 @@ typedef struct _cmpa_zone
     uint32_t pqc_rotkh[12]; /* 0x2C0 - 0x2EF: PQC RoT key hash (384 bits) */
 
     /* Quick GPIO Configuration (0x2F0 - 0x31F) */
-    uint32_t quick_set_gpio_0;       /* 0x2F0: Quick set GPIO port 0 */
-    uint32_t quick_clr_gpio_0;       /* 0x2F4: Quick clear GPIO port 0 */
-    uint32_t quick_set_gpio_1;       /* 0x2F8: Quick set GPIO port 1 */
-    uint32_t quick_clr_gpio_1;       /* 0x2FC: Quick clear GPIO port 1 */
-    uint32_t quick_set_gpio_2;       /* 0x300: Quick set GPIO port 2 */
-    uint32_t quick_clr_gpio_2;       /* 0x304: Quick clear GPIO port 2 */
-    uint32_t quick_set_gpio_3;       /* 0x308: Quick set GPIO port 3 */
-    uint32_t quick_clr_gpio_3;       /* 0x30C: Quick clear GPIO port 3 */
-    uint32_t quick_set_gpio_4;       /* 0x310: Quick set GPIO port 4 */
-    uint32_t quick_clr_gpio_4;       /* 0x314: Quick clear GPIO port 4 */
-    uint32_t quick_set_gpio_5;       /* 0x318: Quick set GPIO port 5 */
-    uint32_t quick_clr_gpio_5;       /* 0x31C: Quick clear GPIO port 5 */
-    uint8_t  reserved_320[16];       /* 0x320 - 0x32F: Reserved */
-    uint32_t nbu_recovery_img_addr;  /* 0x330: NBU recovery image address */
-    uint32_t nbu_update_img_addr;    /* 0x334: NBU update image address */
-    uint32_t cpu0_recovery_img_addr; /* 0x338: CPU0 recovery image address */
-    uint32_t cpu0_update_img_addr;   /* 0x33C: CPU0 update image address */
+    uint32_t quick_set_gpio_0; /* 0x2F0: Quick set GPIO port 0 */
+    uint32_t quick_clr_gpio_0; /* 0x2F4: Quick clear GPIO port 0 */
+    uint32_t quick_set_gpio_1; /* 0x2F8: Quick set GPIO port 1 */
+    uint32_t quick_clr_gpio_1; /* 0x2FC: Quick clear GPIO port 1 */
+    uint32_t quick_set_gpio_2; /* 0x300: Quick set GPIO port 2 */
+    uint32_t quick_clr_gpio_2; /* 0x304: Quick clear GPIO port 2 */
+    uint32_t quick_set_gpio_3; /* 0x308: Quick set GPIO port 3 */
+    uint32_t quick_clr_gpio_3; /* 0x30C: Quick clear GPIO port 3 */
+    uint32_t quick_set_gpio_4; /* 0x310: Quick set GPIO port 4 */
+    uint32_t quick_clr_gpio_4; /* 0x314: Quick clear GPIO port 4 */
+    uint32_t quick_set_gpio_5; /* 0x318: Quick set GPIO port 5 */
+    uint32_t quick_clr_gpio_5; /* 0x31C: Quick clear GPIO port 5 */
+
+    /*
+     * FW update image addresses (legacy KW43 A.0.0 layout, 0x320 - 0x32F).
+     *
+     * On A.0.0 the update image addresses live in CMPA at offset 0x320. From
+     * A.0.1 onward they were moved to CFPA at offset 0x170 (see cfpa_zone_t),
+     * so these CMPA fields exist only for the legacy build (KW43_A0_0 != 0).
+     */
+#if defined(KW43_A0_0) && (KW43_A0_0 != 0)
+    uint32_t nbu_recovery_img_addr;  /* 0x320: NBU recovery image address */
+    uint32_t nbu_update_img_addr;    /* 0x324: NBU update image address */
+    uint32_t cpu0_recovery_img_addr; /* 0x328: CPU0 recovery image address */
+    uint32_t cpu0_update_img_addr;   /* 0x32C: CPU0 update image address */
+#endif
 
 } cmpa_zone_t;
 
@@ -174,4 +202,4 @@ typedef struct _cmpa_cust_defined_zone
     uint32_t customer_defined[CMPA_CUSTOMER_DEFINED_AREA_SZ / 4]; /* 0x400 - 0x5FF: Customer defined area */
 } cmpa_cust_defined_zone_t;
 
-#endif /* IFR0MAP_STRUCTS_H_ */
+#endif /* IFR0MAP_STRUCT_H_ */

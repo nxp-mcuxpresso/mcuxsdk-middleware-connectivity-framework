@@ -641,7 +641,7 @@ uint8_t PLATFORM_DevMgrGetCfpaXtal32MHzCfg(void)
     return (uint8_t)(tmp & 0xffU);
 }
 
-int PLATFORM_DevMgrSetCfpaCustBleMacAddr(uint8_t *buf, uint8_t len)
+int PLATFORM_DevMgrSetCfpaCustBleMacAddr(const uint8_t *buf, uint8_t len)
 {
     int st = DEVMGR_STATUS_ERR_PARAM;
     if ((buf != NULL) && (len == DEVMGR_BD_ADDR_SZ))
@@ -651,7 +651,7 @@ int PLATFORM_DevMgrSetCfpaCustBleMacAddr(uint8_t *buf, uint8_t len)
     return st;
 }
 
-int PLATFORM_DevMgrSetCfpaCust802154MacAddr(uint8_t *buf, uint8_t len)
+int PLATFORM_DevMgrSetCfpaCust802154MacAddr(const uint8_t *buf, uint8_t len)
 {
     int st = DEVMGR_STATUS_ERR_PARAM;
     if ((buf != NULL) && (len == DEVMGR_154_ADDR_SZ))
@@ -709,38 +709,59 @@ int PLATFORM_DevMgrSetCmpaZone(const cmpa_zone_t *src)
     return st;
 }
 
-uint32_t PLATFORM_DevMgrGetCmpaNbuRecoveryImgAddr(void)
+/*
+ * FW update image address accessors.
+ *
+ * The NBU/CPU0 recovery and update image addresses moved between silicon
+ * revisions:
+ *   - KW43 A.0.0 (legacy, KW43_A0_0 != 0): CMPA zone at offset 0x320.
+ *   - KW43 A.0.1 and later (default):      CFPA zone at offset 0x170.
+ *
+ * The zone id and struct-relative field offset are selected at compile time so
+ * the public API stays zone-agnostic. The field names are identical in both
+ * cfpa_zone_t and cmpa_zone_t (only one of the two carries them per build, see
+ * ifr0map_struct.h), so CFOFF()/CMOFF() resolve against the correct struct.
+ */
+#if defined(KW43_A0_0) && (KW43_A0_0 != 0)
+#define IMG_ADDR_ZONE   kDevMgrZone_Cmpa
+#define IMG_ADDR_OFF(f) CMOFF(f)
+#else
+#define IMG_ADDR_ZONE   kDevMgrZone_Cfpa
+#define IMG_ADDR_OFF(f) CFOFF(f)
+#endif
+
+uint32_t PLATFORM_DevMgrGetNbuRecoveryImgAddr(void)
 {
-    return s_GetField32(kDevMgrZone_Cmpa, CMOFF(nbu_recovery_img_addr));
+    return s_GetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(nbu_recovery_img_addr));
 }
-uint32_t PLATFORM_DevMgrGetCmpaNbuUpdateImgAddr(void)
+uint32_t PLATFORM_DevMgrGetNbuUpdateImgAddr(void)
 {
-    return s_GetField32(kDevMgrZone_Cmpa, CMOFF(nbu_update_img_addr));
+    return s_GetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(nbu_update_img_addr));
 }
-uint32_t PLATFORM_DevMgrGetCmpaCpu0RecoveryImgAddr(void)
+uint32_t PLATFORM_DevMgrGetCpu0RecoveryImgAddr(void)
 {
-    return s_GetField32(kDevMgrZone_Cmpa, CMOFF(cpu0_recovery_img_addr));
+    return s_GetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(cpu0_recovery_img_addr));
 }
-uint32_t PLATFORM_DevMgrGetCmpaCpu0UpdateImgAddr(void)
+uint32_t PLATFORM_DevMgrGetCpu0UpdateImgAddr(void)
 {
-    return s_GetField32(kDevMgrZone_Cmpa, CMOFF(cpu0_update_img_addr));
+    return s_GetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(cpu0_update_img_addr));
 }
 
-int PLATFORM_DevMgrSetCmpaNbuRecoveryImgAddr(uint32_t val)
+int PLATFORM_DevMgrSetNbuRecoveryImgAddr(uint32_t val)
 {
-    return s_SetField32(kDevMgrZone_Cmpa, CMOFF(nbu_recovery_img_addr), val);
+    return s_SetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(nbu_recovery_img_addr), val);
 }
-int PLATFORM_DevMgrSetCmpaNbuUpdateImgAddr(uint32_t val)
+int PLATFORM_DevMgrSetNbuUpdateImgAddr(uint32_t val)
 {
-    return s_SetField32(kDevMgrZone_Cmpa, CMOFF(nbu_update_img_addr), val);
+    return s_SetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(nbu_update_img_addr), val);
 }
-int PLATFORM_DevMgrSetCmpaCpu0RecoveryImgAddr(uint32_t val)
+int PLATFORM_DevMgrSetCpu0RecoveryImgAddr(uint32_t val)
 {
-    return s_SetField32(kDevMgrZone_Cmpa, CMOFF(cpu0_recovery_img_addr), val);
+    return s_SetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(cpu0_recovery_img_addr), val);
 }
-int PLATFORM_DevMgrSetCmpaCpu0UpdateImgAddr(uint32_t val)
+int PLATFORM_DevMgrSetCpu0UpdateImgAddr(uint32_t val)
 {
-    return s_SetField32(kDevMgrZone_Cmpa, CMOFF(cpu0_update_img_addr), val);
+    return s_SetField32(IMG_ADDR_ZONE, IMG_ADDR_OFF(cpu0_update_img_addr), val);
 }
 
 /* ========================================================================== */
