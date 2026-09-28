@@ -219,7 +219,7 @@ void HardFaultHandler(unsigned long *hardfault_args)
             "<paste_stack_line_above>\r\nadd option -f to show the function and line\r\n");
     }
 
-#if defined(CONFIG_DEBUG_COREDUMP)
+#if defined(CONFIG_DEBUG_COREDUMP) && defined(BOARD_DBG_COREDUMP_ENABLE) && (BOARD_DBG_COREDUMP_ENABLE > 0U)
     /* Capture the fault as a Zephyr coredump. fault_capture() rebuilds the
      * exception stack frame from the fault-time stack pointer, sets
      * z_arm_coredump_fault_sp, decodes the fault reason and calls coredump(),
