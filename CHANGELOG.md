@@ -1,5 +1,36 @@
 ## Connectivity framework CHANGELOG
 
+### 7.5.1 mcux SDK 26.12.00 pvw1
+
+#### Major Changes
+
+- [DevMgr] New Device Manager abstraction layer with APIs `DEVMGR_GetBdAddress`/`DEVMGR_SetBdAddress`, `DEVMGR_Get154Address`/`DEVMGR_Set154Address`, `DEVMGR_Get32MHzTrim`/`DEVMGR_Set32MHzTrim`/`DEVMGR_Get32kHzTrim`/`DEVMGR_Set32kHzTrim` to abstract access to HwParameter/CFPA/NMPA across platforms. If the HwParameter BD address is blank, a random address is generated.
+- [DevMgr][KW43] FW update image address fields relocated from CMPA to CFPA for A.0.1+ silicon; accessors renamed to be zone-agnostic. Added `KW43_A0_0` compile switch to retain the legacy A.0.0 CMPA layout.
+- [DBG] Host coredump capture is now gated by `CONFIG_DEBUG_COREDUMP` and `BOARD_DBG_COREDUMP_ENABLE` compile flags instead of being always compiled in.
+- [wireless_mcu] Added `PLATFORM_RemoteActiveReqUnsafe()` and `PLATFORM_RemoteActiveRelUnsafe()` mutex-free variants safe to call from a critical section (e.g. the Power Manager low-power callback). `PLATFORM_EnterPowerDown()` now uses the Unsafe variants directly.
+- [SecLib][PSA] Added `SecLib_HMAC_SHA256` implementation using PSA API with HW acceleration on kw43_mcxw70, mcxw23 and wireless_mcu platforms.
+- [MIMXRT685S] New low power platform layer for RT685: OSTIMER-based timestamp, power manager callbacks and wakeup sources.
+
+#### Minor Changes
+
+- [DevMgr][KW47][MCXW70] Added CFPA backend support for KW43/MCXW70. Removed `DEVMGR_PLATFORM_BACKEND_ENABLED` macro and merged `fwk_platform_devmgr_types.h` into `fwk_platform_devmgr.h`.
+- [wireless_mcu][kw43_mcxw70] Low power bring-up: per-platform SPC wake-up delay (`PLATFORM_SPC_LPWKUP_DELAY_10MHz`), PU2ISO wake-up trim override (`PLATFORM_SPC_PWR_DELAY_WKUP_TRIM_PU2ISO`), power-down flag gating (`gPlatformRequiresPowerDownFlag_d`), KW43 RAM bank retention map, `PLATFORM_InitWakeUpSources()` for LPTMR0/1, build-system enablement, use of `SPC_GetVoltageDetectStatusFlag()`, VBAT dependency fix, and skip of power-domain wakeup/power-down flag handshake on platforms that do not require it.
+- [kw43_mcxw70] Updated SPC `LPWKUP_DELAY` to the recommended 0xCC value; added dummy interrupt support in `PLATFORM_RemoteActiveReq()`; removed `PLATFORM_SetNbuPowerMode()`.
+- [wireless_nbu][kw43_mcxw70_nbu] Added `PLATFORM_PreKernelInit()` and enabled NCO32K usage (`gPlatformUseNco32k_d`) with low-power backup/restore. Removed unnecessary `kCLOCK_Data_stream_2p4` clock enable. Abstracted `RF_CMC->RAM_PWR` configuration per platform.
+- [AsyncFlash] Restricted async flash controller suspend to the BLE platform component only.
+- [OTA] Replaced direct memory reads with `HAL_FlashRead()` for internal flash and disabled post-write verification on KW43 (incompatible with async flash).
+- [zephyr][NVS/Settings] Aligned vendored NVS/Settings port and CRC lib to Zephyr v4.4.1 baseline and added coexistence glue for combined edgefast_open builds.
+- [LowPower] Removed the `m_shared_data` section initializer (moved to runtime) to avoid binary size increase.
+- [wireless_mcu] Guarded `platform_set_static_shmem_config()` with `RL_ALLOW_CUSTOM_SHMEM_CONFIG` to fix build when the macro is not defined.
+
+#### Bug Fixes
+
+- [ble] Fixed HCI packet length checks regression that rejected valid HCI/ACL packets larger than 255 bytes. Introduced shared `HCI_MIN_LEN`/`HCI_MAX_LEN` macros across mcxw23, rw61x, wireless_mcu and wireless_nbu BLE layers.
+- [kw43_mcxw70] Fixed NBU MU unable to wake up core0 (`PMCTRL[2]` must not be set).
+- [KW43] Fixed NBU inability to read RTT Trim values from flash: core0 now reads the values and forwards them to the NBU over inter-core messaging.
+- [fault_handlers] Fixed compiler warnings when `SDK_DEBUGCONSOLE` is configured as `DEBUGCONSOLE_DISABLE`.
+- [Coverity][MISRA][CERT-C] Various Coverity, MISRA and CERT-C compliance fixes gathered across DevMgr (rule 8.6 stubs), fault_handlers (UNINIT), FSCI and SecLib (union access annotations, UNINIT), platform Int_flash (ECC fault range overflow), wireless_mcu BLE error encoding and temperature moving-average overflow clamping, LowPower timestamp wrap handling, LPTMR mask (CERT INT31-C), and freertos_utils `US_TO_TICK` saturation.
+
 ### 7.4.3 mcux SDK 26.09.00 RFP
 
 #### Major Changes
