@@ -155,6 +155,14 @@ void HardFaultHandler(unsigned long *hardfault_args)
     FWK_FaultPrintf("sp    = 0x%08x\r\n", stacked_sp);
     FWK_FaultPrintf("psr   = 0x%08x\r\n", stacked_psr);
 
+#if defined(__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1)
+    /* Dump the stack-limit registers (Armv8-M Main only; they do not exist on
+     * Armv7-M). On a stack overflow (CFSR.STKOF) comparing MSPLIM/PSPLIM against
+     * the fault-time "sp" printed above confirms the overrun. */
+    FWK_FaultPrintf("MSPLIM = 0x%08x\r\n", __get_MSPLIM());
+    FWK_FaultPrintf("PSPLIM = 0x%08x\r\n", __get_PSPLIM());
+#endif /* defined(__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1) */
+
 #if (__CORTEX_M == 33) || (__CORTEX_M == 3)
     FWK_FaultPrintf("_CFSR = 0x%08x (Configurable Fault Status Register: UFSR|BFSR|MMSR)\r\n", SCB->CFSR);
     FWK_FaultPrintf("_HFSR = 0x%08x (Hard Fault Status Register)\r\n", SCB->HFSR);
