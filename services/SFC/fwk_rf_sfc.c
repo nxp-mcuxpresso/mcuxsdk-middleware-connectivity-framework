@@ -32,6 +32,18 @@
 #define RF_SFA_IRQ_PRIORITY      4
 #define HOST_LOWPOWER_CONSTRAINT 2U
 
+/* SFA input-mux selection for the FRO32K measurement. These are SoC dependent: the clock under test
+ * (CUT) is the 32kHz source and the reference (REF) is the 32MHz radio oscillator, but the SFA mux
+ * index used to reach each differs per SoC. They default to the KW45/MCXW71 and KW47/MCXW72 values
+ * (Select0) and may be overridden from a platform fwk_config.h (e.g. KW43/MCXW70 uses CUT=6 for the
+ * CCM32K 32kHz output and REF=3 for the RFOSC). */
+#ifndef RF_SFC_CUT_SELECT
+#define RF_SFC_CUT_SELECT kSFA_CUTSelect0
+#endif
+#ifndef RF_SFC_REF_SELECT
+#define RF_SFC_REF_SELECT kSFA_REFSelect0
+#endif
+
 #ifndef RF_SFC_MAXIMAL_PPM_TARGET
 #define RF_SFC_MAXIMAL_PPM_TARGET 360U
 #endif
@@ -117,8 +129,8 @@ static uint32_t SFC_GetTimestamp(void);
 #if (!defined(gNbuDisableLowpower_d) || (gNbuDisableLowpower_d == 0))
 static const sfa_config_t measureConfigurationTrig = {
     .mode                  = kSFA_FrequencyMeasurement0,
-    .cutSelect             = kSFA_CUTSelect0, // 32K_CLK
-    .refSelect             = kSFA_REFSelect0, // OSC_RF
+    .cutSelect             = RF_SFC_CUT_SELECT, // 32K_CLK
+    .refSelect             = RF_SFC_REF_SELECT, // OSC_RF
     .prediv                = 0U,
     .trigStart             = kSFA_TriggerStartSelect0,
     .startPolarity         = kSFA_TriggerStartPolarityRiseEdge,
@@ -146,8 +158,8 @@ static const sfa_config_t measureConfigurationTrig = {
  */
 static const sfa_config_t measureConfigurationImmediate = {
     .mode                  = kSFA_FrequencyMeasurement0,
-    .cutSelect             = kSFA_CUTSelect0, // 32K_CLK
-    .refSelect             = kSFA_REFSelect0, // OSC_RF
+    .cutSelect             = RF_SFC_CUT_SELECT, // 32K_CLK
+    .refSelect             = RF_SFC_REF_SELECT, // OSC_RF
     .prediv                = 0U,
     .trigStart             = kSFA_TriggerStartSelect0,
     .startPolarity         = kSFA_TriggerStartPolarityRiseEdge,

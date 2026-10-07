@@ -32,9 +32,16 @@
 #define gRngUseSecLib_d 0
 
 /*********************************************************************
- *        FPGA
+ *        SFC (Smart Frequency Calibration for FRO32K)
  *********************************************************************/
-#define gUseSfcRf_d 0
+/* SFA input-mux selection used by RF_SFC on KW43/MCXW70 (SFA0 = RF_SFA):
+ *  - clock under test: CCM32K 32kHz FRO output -> CUT_SEL = 6
+ *  - reference clock : RFOSC 32MHz             -> REF_CLK_SEL = 3
+ * These override the KW45/KW47 defaults (Select0/Select0) consumed in fwk_rf_sfc.c.
+ * The RF_SFC service itself is enabled per application via gUseSfcRf_d in the app's
+ * app_preinclude.h (as on KW47/MCXW72). */
+#define RF_SFC_CUT_SELECT kSFA_CUTSelect6
+#define RF_SFC_REF_SELECT kSFA_REFSelect3
 
 /*********************************************************************
  *        PLATFORM
