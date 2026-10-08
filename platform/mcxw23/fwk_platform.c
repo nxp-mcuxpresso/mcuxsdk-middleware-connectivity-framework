@@ -211,3 +211,21 @@ int PLATFORM_ResetCrypto(void)
 {
     return PLATFORM_ReinitCrypto();
 }
+
+/* Application callback used to report errors returned by platform functions. */
+PLATFORM_ErrorCallback_t pfPlatformErrorCallback = NULL;
+
+void PLATFORM_RegisterErrorCallback(PLATFORM_ErrorCallback_t cb)
+{
+    pfPlatformErrorCallback = cb;
+}
+
+void PLATFORM_GetResetCause(PLATFORM_ResetStatus_t *reset_status)
+{
+    if (reset_status != NULL)
+    {
+        /* Low power / RAMOFF wakeup detection is not available on this device yet,
+         * so every reset is reported as a regular device reset. */
+        *reset_status = PLATFORM_DeviceReset;
+    }
+}
