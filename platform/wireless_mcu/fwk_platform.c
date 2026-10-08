@@ -729,18 +729,18 @@ int PLATFORM_InitMulticore(void)
 
 void PLATFORM_Xtal32MHzInit(void)
 {
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
     /* Read XO trimming value from platform configuration */
     uint8_t xtal_32m_trim = 0xffU;
     int     ret;
-#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
     ret = DEVMGR_Get32MHzTrim(&xtal_32m_trim);
     if ((ret != DEVMGR_Success_c) || (xtal_32m_trim == 0xFFU))
-#endif
     {
         xtal_32m_trim = BOARD_32MHZ_XTAL_CDAC_VALUE;
     }
     /* Apply configuration */
     PLATFORM_Apply32MHzXOTrim(xtal_32m_trim);
+#endif
 }
 
 /* get 4 words of information that uniquely identifies the MCU */
@@ -848,7 +848,6 @@ int PLATFORM_SetOscCap32KValue(uint8_t xtalCap32K)
     int status = 0;
     do
     {
-        int ret;
         if (xtalCap32K > BOARD_32KHZ_XTAL_CAPACITANCE_MAX_VALUE)
         {
             /* Invalid value */
@@ -857,8 +856,7 @@ int PLATFORM_SetOscCap32KValue(uint8_t xtalCap32K)
         }
 #if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
         /* From now on xtalCap32K is sanitized */
-        ret = DEVMGR_Set32kHzTrim(xtalCap32K);
-        if (ret != DEVMGR_Success_c)
+        if (DEVMGR_Set32kHzTrim(xtalCap32K) != DEVMGR_Success_c)
         {
             break;
         }

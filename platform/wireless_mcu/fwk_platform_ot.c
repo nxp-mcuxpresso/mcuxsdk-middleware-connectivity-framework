@@ -106,5 +106,8 @@ int PLATFORM_InitOT(void)
  */
 void PLATFORM_GetIeee802_15_4Addr(uint8_t *eui64_address)
 {
+    NOT_USED(eui64_address);
+#if defined(gPlatformUseDevMgr_d) && (gPlatformUseDevMgr_d != 0)
     (void)DEVMGR_Get154Address(eui64_address, NULL);
+#endif
 }
