@@ -270,7 +270,8 @@ static int PLATFORM_LowPowerModeAllowed(void)
 #endif
     } while (false);
 
-#if (defined(gNbuDisableLowpower_d) && (gNbuDisableLowpower_d > 0))
+#if (defined(gNbuDisableLowpower_d) && (gNbuDisableLowpower_d > 0)) || \
+    (defined(FWK_KW43_MCXW70_NBU_FAMILIES) && (FWK_KW43_MCXW70_NBU_FAMILIES > 0))
     if (ret == 0)
     {
         ret = 1;
