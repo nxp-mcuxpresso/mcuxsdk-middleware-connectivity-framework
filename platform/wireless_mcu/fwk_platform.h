@@ -37,7 +37,10 @@
 #define PLATFORM_TM_INSTANCE 0U
 #endif
 #ifndef PLATFORM_TM_CLK_FREQ
-#if !(defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+#if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
+/* FPGA timer source runs at 16 MHz */
+#define PLATFORM_TM_CLK_FREQ 16000000U
+#else
 #define PLATFORM_TM_CLK_FREQ 32768U
 #endif
 #endif
