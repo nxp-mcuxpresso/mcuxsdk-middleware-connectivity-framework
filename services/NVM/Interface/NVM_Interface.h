@@ -802,6 +802,25 @@ extern NVM_Status_t NvErase(void **ppData);
 extern NVM_Status_t NvSaveOnIdle(void *ptrData, bool_t saveAll);
 
 /*! *********************************************************************************
+ * \brief Reads a dataset pointed by ptrData into the ptrDest buffer.
+ *
+ * \details This function copies the dataset identified by ptrData into the
+ *          destination buffer ptrDest. For mirrored datasets the data is copied
+ *          directly from ptrData. For unmirrored datasets the data is read from
+ *          the location referenced by *ptrData, either from flash (through the
+ *          HAL) or from RAM. The number of bytes copied is the ElementSize of
+ *          the matching NVM table entry.
+ *
+ * \param[in]  ptrData pointer to the NVM table dataset
+ * \param[out] ptrDest destination buffer to receive the data
+ *
+ * \return gNVM_OK_c: if operation completed successfully\n
+ *         gNVM_NullPointer_c: if the provided pointer is NULL \n
+ *         gNVM_PointerOutOfRange_c: if the provided pointer is not found within the RAM table
+ ********************************************************************************* */
+extern NVM_Status_t NvRead(const void *ptrData, void *ptrDest);
+
+/*! *********************************************************************************
  * \brief Saves a dataset no more often than a given time interval.
  *
  * \details This function saves the specified dataset no more often than at a given

@@ -775,7 +775,7 @@ NVM_STATIC bool_t NvGetTableEntry(uint16_t tblEntryId, NVM_DataEntry_t *pDataEnt
  *                                    within the RAM table
  *         gNVM_OK_c - if the operation completed successfully
  *****************************************************************************/
-NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t *pIndex);
+NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(const void *pData, NVM_TableEntryInfo_t *pIndex);
 
 /******************************************************************************
  * Name: NvGetTableEntryIndexFromDataPtr
@@ -790,7 +790,7 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
  *                                    within the RAM table
  *         gNVM_OK_c - if the operation completed successfully
  *****************************************************************************/
-NVM_STATIC NVM_Status_t NvGetTableEntryIndexFromDataPtr(void                 *pData,
+NVM_STATIC NVM_Status_t NvGetTableEntryIndexFromDataPtr(const void           *pData,
                                                         NVM_TableEntryInfo_t *pIndex,
                                                         uint16_t             *pTableEntryIdx);
 /******************************************************************************
@@ -6157,7 +6157,7 @@ NVM_STATIC NVM_Status_t NvSaveRamTable(NVM_VirtualPageID_t pageId)
  *                                    within the RAM table
  *         gNVM_OK_c - if the operation completed successfully
  *****************************************************************************/
-NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t *pIndex)
+NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(const void *pData, NVM_TableEntryInfo_t *pIndex)
 {
     NVM_Status_t status;
     if ((NULL == pData) || (NULL == pIndex))
@@ -6169,7 +6169,7 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
     {
         status = gNVM_PointerOutOfRange_c;
         /* Convert pointer to integer for comparison - MISRA compliant approach */
-        uintptr_t dataAddr = (uintptr_t)(uint8_t *)pData;
+        uintptr_t dataAddr = (uintptr_t)(const uint8_t *)pData;
         uint32_t  max_val  = MIN(mNvTotalPageSize, (uint32_t)UINT16_MAX);
 
         for (uint16_t idx = 0U; idx < mNVM_DataTableNbEntries; idx++)
@@ -6242,7 +6242,7 @@ NVM_STATIC NVM_Status_t NvGetEntryFromDataPtr(void *pData, NVM_TableEntryInfo_t 
  *                                    within the RAM table
  *         gNVM_OK_c - if the operation completed successfully
  *****************************************************************************/
-NVM_STATIC NVM_Status_t NvGetTableEntryIndexFromDataPtr(void                 *pData,
+NVM_STATIC NVM_Status_t NvGetTableEntryIndexFromDataPtr(const void           *pData,
                                                         NVM_TableEntryInfo_t *pIndex,
                                                         uint16_t             *pTableEntryIdx)
 {
@@ -7879,6 +7879,85 @@ NVM_Status_t NvSaveOnIdle(void *ptrData, bool_t saveAll)
     NOT_USED(saveAll);
     return gNVM_Error_c;
 #endif /* # gNvStorageIncluded_d */
+}
+
+/******************************************************************************
+ * Name: NvRead
+ * Description: Read a dataset pointed by ptrData into the ptrDest buffer.
+ * Parameter(s): [IN]  ptrData - pointer to the NVM table dataset
+ *               [OUT] ptrDest - destination buffer to receive the data
+ * Return: gNVM_OK_c - if operation completed successfully
+ *         Note: see also return codes of NvGetTableEntryIndexFromDataPtr()
+ ******************************************************************************/
+NVM_Status_t NvRead(const void *ptrData, void *ptrDest)
+{
+#if gNvStorageIncluded_d
+    NVM_Status_t         status = gNVM_OK_c;
+    NVM_TableEntryInfo_t tblIdx;
+    uint16_t             tableEntryIdx;
+
+    do
+    {
+        if (!mNvModuleInitialized)
+        {
+            status = gNVM_ModuleNotInitialized_c;
+            break;
+        }
+
+        if ((NULL == ptrData) || (NULL == ptrDest))
+        {
+            status = gNVM_NullPointer_c;
+            break;
+        }
+
+        status = NvGetTableEntryIndexFromDataPtr(ptrData, &tblIdx, &tableEntryIdx);
+        if (gNVM_OK_c != status)
+        {
+            break;
+        }
+
+        (void)OSA_MutexLock(mNVMMutexId, osaWaitForever_c);
+#if gUnmirroredFeatureSet_d
+        if ((uint16_t)gNVM_MirroredInRam_c != pNVM_DataTable[tableEntryIdx].DataEntryType)
+        {
+            /* Unmirrored data set: *ptrData holds the pointer to the actual data */
+            void *pSrc = *(void *const *)ptrData;
+
+            if (NULL == pSrc)
+            {
+                /* No data associated with this unmirrored element */
+                status = gNVM_NullPointer_c;
+            }
+            else if (NvIsNVMFlashAddress(pSrc))
+            {
+                /* Source is in flash, read it out through the HAL */
+                if (HAL_FlashRead((uint32_t)(uintptr_t)(uint32_t *)pSrc, pNVM_DataTable[tableEntryIdx].ElementSize,
+                                  (uint8_t *)ptrDest) != kStatus_HAL_Flash_Success)
+                {
+                    status = gNVM_Error_c;
+                }
+            }
+            else
+            {
+                /* Source is already in RAM */
+                FLib_MemCpy(ptrDest, pSrc, pNVM_DataTable[tableEntryIdx].ElementSize);
+            }
+        }
+        else
+#endif /* gUnmirroredFeatureSet_d */
+        {
+            /* Mirrored data set: ptrData points directly to the data */
+            FLib_MemCpy(ptrDest, ptrData, pNVM_DataTable[tableEntryIdx].ElementSize);
+        }
+        (void)OSA_MutexUnlock(mNVMMutexId);
+    } while (FALSE);
+
+    return status;
+#else
+    NOT_USED(ptrData);
+    NOT_USED(ptrDest);
+    return gNVM_Error_c;
+#endif /* gNvStorageIncluded_d */
 }
 
 /******************************************************************************
