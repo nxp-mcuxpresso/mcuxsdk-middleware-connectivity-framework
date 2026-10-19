@@ -399,9 +399,13 @@ void PLATFORM_HandleLowPowerEntry(void)
         /* Update intercore time indication to current time now after wakeup */
         PLATFORM_NBU_Busy();
 
-        PLATFORM_PostWakeupRestoreCfg();
-
         PLATFORM_WaitForXtalReady();
+
+        /* On KW43/MCXW70, XCVR_LIF_RBME_Restore() (called by PostWakeupRestoreCfg)
+         * uses DMA to restore radio registers. These registers require the 32 MHz
+         * clock to be available before they can be restored.
+         * Therefore, WaitForXtalReady() must be called before PostWakeupRestoreCfg(). */
+        PLATFORM_PostWakeupRestoreCfg();
     }
 
     /* Set sleep clock source to auto */
