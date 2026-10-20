@@ -21,6 +21,9 @@
 #warning "Beware KW43/MCXW70 NBUs should not define gNbuDisableLowpower_d for correct NVM operations"
 #endif
 
+/* Using all 0xFF as invalid since the register mask is 0x3F, no risk of collision */
+#define FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID (0xFFFFFFFFU)
+
 /* -------------------------------------------------------------------------- */
 /*                         Private type definitions                           */
 /* -------------------------------------------------------------------------- */
@@ -35,6 +38,8 @@ typedef struct
 /* -------------------------------------------------------------------------- */
 
 IntercoreSharedCtx_t *p_Nbu_shared_ctx = NULL; /*!< Address of intercore shared context */
+
+static uint32_t lpo_wakeup_delay_saved = FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID;
 
 /* -------------------------------------------------------------------------- */
 /*                              Private functions                              */
@@ -280,11 +285,26 @@ uint32_t PLATFORM_GetLowPowerFlag(void)
 
 void PLATFORM_PreDeepSleepSaveCfg(void)
 {
+    /* If LPO wakeup delay was previously saved, restore it
+     * Initial value is FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID, and it will be set to a valid value
+     * at first low power exit, so we need to handle this case for the first entry. */
+    if (lpo_wakeup_delay_saved != FWK_PLATFORM_LPO_WAKEUP_DELAY_INVALID)
+    {
+        BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES =
+            BLE2_REG_BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES_WAKEUP_DELAY_LPO_CYCLES(lpo_wakeup_delay_saved);
+    }
+
     (void)XCVR_LIF_RBME_Backup();
 }
 
 void PLATFORM_PostWakeupRestoreCfg(void)
 {
+    /* Force LPO cycle to 0 to ensure proper LL timing calculation
+     * The value is restored before going into low power in PLATFORM_PreDeepSleepSaveCfg */
+    lpo_wakeup_delay_saved = BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES;
+    BLE2_REG->BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES =
+        BLE2_REG_BLE_REG_TMR_WAKEUP_DELAY_LPO_CYCLES_WAKEUP_DELAY_LPO_CYCLES(0U);
+
     (void)XCVR_LIF_RBME_Restore();
 }
 
