@@ -213,6 +213,11 @@
 /* Use the RNG HAL API from the SDK */
 #define gRngUseRngAdapter_c 1
 
+/* Enable RNG auto reseed using system workqueue */
+#ifndef gRngEnableAutoReseed_d
+#define gRngEnableAutoReseed_d 1
+#endif
+
 #if (defined(FPGA_TARGET) && (FPGA_TARGET != 0))
 /* FPGA target has no functional TRNG; force the RNG adapter off the TRNG path */
 #undef FSL_FEATURE_SOC_TRNG_COUNT
