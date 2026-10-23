@@ -1,5 +1,27 @@
 ## Connectivity framework CHANGELOG
 
+### 7.5.2 mcux SDK 26.12.00 pvw2
+
+#### Major Changes
+
+- [DevMgr][platform] Platform functions now use the Device Manager service internally instead of HwParameter APIs. The feature is enabled by the `gPlatformUseDevMgr_d` compile flag. `PLATFORM_GetBDAddr()` and `PLATFORM_GetIeee802_15_4Addr()` are kept for backward compatibility as `DEVMGR_GetBdAddress()`/`DEVMGR_Get154Address()` aliases. `PLATFORM_LoadHwParams()` renamed to `PLATFORM_Xtal32MHzInit()`, `DEVMGR_Set*` accessors now write only when the value differs, 32 MHz trim is stored permanently with `PLATFORM_Apply32MHzXOTrim()`, and NBU/Core1 platforms no longer pull in the DevMgr service.
+- [SFC][kw43_mcxw70] Enabled RF_SFC FRO32K calibration on KW43/MCXW70.
+
+#### Minor Changes
+
+- [mcxw23] Implemented `PLATFORM_RegisterErrorCallback()` and `PLATFORM_GetResetCause()` so BLE applications relying on these platform services link on this device.
+- [kw43_mcxw70] Enabled flash_k4 asynchronous mode from the connectivity platform component (instead of the board project) so it is only turned on for the connectivity/NBU use case.
+- [fpga] Disabled the HW TRNG on the KW43 FPGA target.
+- [DBG] Print MSPLIM/PSPLIM stack-limit registers in the hard fault handler (Armv8-M Main only) to help confirm and measure stack overflows.
+- [common] Added support for LL simulation: clang `PACKED_STRUCT`/`PACKED_UNION` definitions and a Win32 `STRNCPY` mapping to avoid deprecated-strncpy warnings.
+
+#### Bug Fixes
+
+- [wireless_nbu][lowpower] Fixed wrong LL timing calculations on the KW43/MCXW70 NBU by forcing the LPO wake-up delay to 0 while the NBU is active and restoring it before re-entering low power.
+- [wireless_nbu] Ensure the 32 MHz clock is ready before DMA-based radio register restoration on low-power wakeup, fixing invalid register programming in asynchronous wakeup scenarios. This removes the earlier workaround and re-enables NBU deep sleep.
+- [NVM][kw43] Added the `NvRead()` function, now called by `App_NvmRead()`, to return correct data when the flash driver runs in asynchronous mode (`CONFIG_FLASH_K4_ASYNC_MODE=1`).
+- [DevMgr] Fixed the Zephyr build in `PLATFORM_Xtal32MHzInit()`.
+
 ### 7.5.1 mcux SDK 26.12.00 pvw1
 
 #### Major Changes
