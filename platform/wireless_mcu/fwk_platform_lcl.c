@@ -778,6 +778,9 @@ uint8_t PLATFORM_InitLcl(void)
     uint8_t rfgpo_id;
     uint8_t status = 0U; /* default is Success */
 
+    /* Wakeup XCVR */
+    PLATFORM_RemoteActiveReq();
+
     /* set debug pins first which could be overriden later */
     PLATFORM_InitLclGpioDebug(true);
 
@@ -867,6 +870,9 @@ uint8_t PLATFORM_InitLcl(void)
         }
     }
 #endif /* defined(FWK_KW43_MCXW70_FAMILIES) && (FWK_KW43_MCXW70_FAMILIES == 1) */
+
+    /* Release wake up to NBU */
+    PLATFORM_RemoteActiveRel();
 
     return status;
 }
