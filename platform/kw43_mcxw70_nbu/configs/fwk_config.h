@@ -7,6 +7,16 @@
 #ifndef _FWK_CONFIG_H_
 #define _FWK_CONFIG_H_
 
+/* Device features must be known before being overridden below */
+#include "KW43B43ZC7_NBU_features.h"
+
+/*********************************************************************
+ *        General
+ *********************************************************************/
+
+/* This platform is an NBU domain */
+#define gPlatformIsNbu_d 1
+
 /*********************************************************************
  *        SecLib
  *********************************************************************/
@@ -30,6 +40,14 @@
  * Call Lehmer LCG random generation instead.
  */
 #define gRngUseSecLib_d 0
+
+/*
+ * The TRNG is owned by the host core (main power domain, clock and configuration managed
+ * from the host side) although the NBU device header declares it. Force the RNG onto the
+ * SW PRNG seeded by the host.
+ */
+#undef FSL_FEATURE_SOC_TRNG_COUNT
+#define FSL_FEATURE_SOC_TRNG_COUNT 0
 
 /*********************************************************************
  *        SFC (Smart Frequency Calibration for FRO32K)
