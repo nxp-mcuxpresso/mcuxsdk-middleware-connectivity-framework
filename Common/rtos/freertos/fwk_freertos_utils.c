@@ -83,15 +83,10 @@ void FWK_PostIdleHookTickCompensation(void)
     postIdleHookTickCount   = xTaskGetTickCount();
     postIdleHookTimeStampUs = PLATFORM_GetTimeStamp();
 
-    if (postIdleHookTimeStampUs < preIdleHookTimeStampUs)
-    {
-        /* Handle wrap */
-        idleHookDurationUs = PLATFORM_GetMaxTimeStamp() - preIdleHookTimeStampUs + postIdleHookTimeStampUs;
-    }
-    else
-    {
-        idleHookDurationUs = postIdleHookTimeStampUs - preIdleHookTimeStampUs;
-    }
+    /* Use the platform API to compute the duration: it handles the timestamp wrap and applies the FRO6M ratio
+     * correction when needed. A raw subtraction of the timestamps would underestimate the duration and FreeRTOS would
+     * lose ticks. */
+    idleHookDurationUs = PLATFORM_GetTimeStampDeltaUs(preIdleHookTimeStampUs, postIdleHookTimeStampUs);
 
     idleHookDurationTick = FWK_UsToTick(idleHookDurationUs);
 

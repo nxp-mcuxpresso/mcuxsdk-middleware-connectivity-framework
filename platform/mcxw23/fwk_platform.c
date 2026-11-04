@@ -123,6 +123,23 @@ uint64_t PLATFORM_GetMaxTimeStamp(void)
 #endif /* TIMER_PORT_TYPE_CTIMER */
 }
 
+uint64_t PLATFORM_GetTimeStampDeltaUs(uint64_t timestamp0, uint64_t timestamp1)
+{
+    uint64_t duration_us;
+
+    if (timestamp1 >= timestamp0)
+    {
+        duration_us = timestamp1 - timestamp0;
+    }
+    else
+    {
+        /* Counter wrapped: PLATFORM_GetMaxTimeStamp() is the last valid counter value */
+        duration_us = PLATFORM_GetMaxTimeStamp() - timestamp0 + timestamp1 + 1U;
+    }
+    /* No FRO6M ratio correction on this platform */
+    return duration_us;
+}
+
 void PLATFORM_Delay(uint64_t delayUs)
 {
     SDK_DelayAtLeastUs((uint32_t)delayUs, SystemCoreClock);
