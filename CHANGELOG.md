@@ -21,6 +21,8 @@
 - [wireless_nbu] Ensure the 32 MHz clock is ready before DMA-based radio register restoration on low-power wakeup, fixing invalid register programming in asynchronous wakeup scenarios. This removes the earlier workaround and re-enables NBU deep sleep.
 - [NVM][kw43] Added the `NvRead()` function, now called by `App_NvmRead()`, to return correct data when the flash driver runs in asynchronous mode (`CONFIG_FLASH_K4_ASYNC_MODE=1`).
 - [DevMgr] Fixed the Zephyr build in `PLATFORM_Xtal32MHzInit()`.
+- [wireless_mcu][kw43] Fixed a BusFault in `PLATFORM_InitLcl()` when the NBU is in low power: the function now wakes up the NBU (`PLATFORM_RemoteActiveReq()`/`PLATFORM_RemoteActiveRel()`) before accessing the XCVR `RADIO_CTRL->DTEST_CTRL` register.
+- [freertos_utils] Fixed FreeRTOS tick loss after flash operations in the idle hook: `FWK_PostIdleHookTickCompensation()` now computes the idle hook duration with `PLATFORM_GetTimeStampDeltaUs()`, which applies the FRO6M ratio correction. Added `PLATFORM_GetTimeStampDeltaUs()` on mcxw23.
 
 ### 7.5.1 mcux SDK 26.12.00 pvw1
 
